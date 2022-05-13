@@ -1,0 +1,36 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<Defs>
+	<!--These motes use dynamic materials which are set in code automatically via properties.-->
+
+	<ThingDef ParentName="MoteBase_Tele">
+		<defName>Mote_Beam</defName>
+		<thingClass>TeleCore.Mote_Beam</thingClass>
+		<graphicData>
+			<texPath>Blank</texPath>
+		</graphicData>
+		<altitudeLayer>MoteOverhead</altitudeLayer>
+		<drawOffscreen>true</drawOffscreen>
+	</ThingDef>
+	
+	<ThingDef ParentName="MoteBase_Tele">
+		<defName>Mote_MuzzleFlash</defName>
+		<thingClass>TeleCore.Mote_MuzzleFlash</thingClass>
+		<graphicData>
+			<texPath>Blank</texPath>
+		</graphicData>
+		<altitudeLayer>MoteOverhead</altitudeLayer>
+		<drawOffscreen>true</drawOffscreen>
+	</ThingDef>
+	
+	<ThingDef ParentName="MoteBase_Tele">
+		<defName>Mote_Arc</defName>
+		<thingClass>TeleCore.Mote_Arc</thingClass>
+		<graphicData>
+			<texPath>Things/Mote/Black</texPath>
+			<shaderType>MoteGlow</shaderType>
+		</graphicData>
+		<altitudeLayer>MoteOverhead</altitudeLayer>
+		<drawOffscreen>true</drawOffscreen>
+	</ThingDef>
+
+</Defs>

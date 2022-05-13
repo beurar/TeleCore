@@ -1,0 +1,25 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<Defs>
+
+	<TeleCore.DevToolDef>
+		<defName>AnimatorDef</defName>
+		<label>Animator</label>
+		<windowClass>TeleCore.Window_Animator</windowClass>
+	</TeleCore.DevToolDef>
+	
+	<!--
+	<TeleCore.DevToolDef>
+		<defName>ModuleVisualizerDef</defName>
+		<label>Module Visualizer</label>
+		<windowClass>TeleCore.Window_ModuleVisualizer</windowClass>
+	</TeleCore.DevToolDef>
+	-->
+	
+	<!--
+	<TeleCore.DevToolDef>
+		<defName>UIMaker</defName>
+		<label>UI Maker</label>
+		<windowClass>TeleCore.Window_UIMaker</windowClass>
+	</TeleCore.DevToolDef>
+	-->
+</Defs>
