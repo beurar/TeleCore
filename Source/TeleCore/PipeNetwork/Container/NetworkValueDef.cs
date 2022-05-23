@@ -10,13 +10,15 @@ namespace TeleCore
 {
     public class NetworkValueDef : Def
     {
+        //
         public string labelShort;
+        public string valueUnit;
         public Color valueColor;
         public NetworkDef networkDef;
-        public ThingDef dropThing;
-        public float ratioForThing = 1;
 
-        public List<ThingDefCountClass> valueThings;
+        //
+        public ThingDef thingDroppedFromContainer;
+        public float valueToThingRatio = 1;
 
         public override void ResolveReferences()
         {
@@ -26,7 +28,7 @@ namespace TeleCore
                 labelShort = label;
             }
 
-            networkDef.ResolvedValueDef(this);
+            networkDef.Notify_ResolvedNetworkValueDef(this);
         }
 
         public override IEnumerable<string> ConfigErrors()

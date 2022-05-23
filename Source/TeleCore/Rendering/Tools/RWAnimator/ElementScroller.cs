@@ -20,7 +20,7 @@ namespace TeleCore
 
         private List<UIElement> copyList = new();
         //private List<IReorderableElement> elementList = new();
-        public List<UIElement> ElementList => parentContainer.Children;
+        public List<UIElement> ElementList => parentContainer.TextureElements;
 
         //Internal Dragging
         private Vector2 scrollVec = Vector2.one;

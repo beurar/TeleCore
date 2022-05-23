@@ -74,7 +74,7 @@ namespace TeleCore
             set => parent = value;
         }
 
-        public virtual List<UIElement> Children => children;
+        public virtual List<UIElement> TextureElements => children;
 
         public virtual UIContainerMode ContainerMode => UIContainerMode.InOrder;
 
@@ -179,7 +179,7 @@ namespace TeleCore
         //Relation Functions
         public T GetChildElement<T>() where T : UIElement
         {
-            return (T)Children.First(t => t is T);
+            return (T)TextureElements.First(t => t is T);
         }
 
         //Relation Changes
@@ -188,10 +188,10 @@ namespace TeleCore
             switch (ContainerMode)
             {
                 case UIContainerMode.InOrder:
-                    Children.Add(newElement);
+                    TextureElements.Add(newElement);
                     break;
                 case UIContainerMode.Reverse:
-                    Children.Insert(0, newElement);
+                    TextureElements.Insert(0, newElement);
                     break;
             }
             newElement.SetParent(this);
@@ -204,7 +204,7 @@ namespace TeleCore
 
         public void DiscardElement(UIElement element)
         {
-            Children.Remove(element);
+            TextureElements.Remove(element);
             element.SetParent(null);
             Notify_RemovedElement(element);
 
@@ -274,9 +274,9 @@ namespace TeleCore
             {
                 case UIContainerMode.InOrder:
                 {
-                    for (var i = 0; i < Children.Count; i++)
+                    for (var i = 0; i < TextureElements.Count; i++)
                     {
-                        var element = Children[i];
+                        var element = TextureElements[i];
                         element.DrawElement();
                     }
 
@@ -284,9 +284,9 @@ namespace TeleCore
                 }
                 case UIContainerMode.Reverse:
                 {
-                    for (int i = Children.Count - 1; i >= 0; i--)
+                    for (int i = TextureElements.Count - 1; i >= 0; i--)
                     {
-                        var element = Children[i];
+                        var element = TextureElements[i];
                         element.DrawElement();
                     }
                     break;
@@ -302,14 +302,14 @@ namespace TeleCore
             Widgets.BeginGroup(TopRect);
             {
                 WidgetRow topBarRow = new WidgetRow();
+                topBarRow.Init(TopRect.x, TopRect.y, UIDirection.RightThenDown);
                 DrawSettings(topBarRow);
                 if (title != null)
                 {
                     topBarRow.Label(Title);
                 }
-
                 DoTopBarExtra(topBarRow);
-                topBarRow.Init(TopRect.width - (WidgetRow.IconSize * 2 + 1), TopRect.height - (WidgetRow.IconSize + 1), UIDirection.RightThenDown);
+                DrawTopBarExtras(TopRect.AtZero());
             }
             Widgets.EndGroup();
         }
@@ -323,13 +323,12 @@ namespace TeleCore
                     IsLocked = !IsLocked;
                 }
             }
-            if (parent is ToolBar)
+            /*
+            if (row.ButtonIcon(TeleContent.DeleteX))
             {
-                if (row.ButtonIcon(TeleContent.DeleteX))
-                {
-                    ToggleOpen();
-                }
+                ToggleOpen();
             }
+            */
         }
 
         protected virtual void DoTopBarExtra(WidgetRow row) { }

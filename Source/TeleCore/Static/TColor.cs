@@ -27,7 +27,7 @@ namespace TeleCore
         public static readonly Color White075 = new Color(1, 1, 1, 0.75f);
         public static readonly Color White05 = new Color(1, 1, 1, 0.5f);
         public static readonly Color White025 = new Color(1, 1, 1, 0.25f);
-        public static readonly Color White01 = new Color(1, 1, 1, 0.01f);
+        public static readonly Color White01 = new Color(1, 1, 1, 0.10f);
         public static readonly Color White005 = new Color(1, 1, 1, 0.05f);
 
         public static readonly Color LightBlack = new Color(0, 0, 0, 0.15f);

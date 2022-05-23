@@ -6,32 +6,42 @@ using Verse;
 
 namespace TeleCore
 {
-    public class AnimationMetaData : IExposable
+    internal class AnimationMetaData : IExposable
     {
+        //KeyFrame String Buffer
+        internal const int BufferSize = 2 + 2 + 2 + 4 + 1;
+        internal Dictionary<KeyFrame, string[]> StringBuffers = new();
+
+        //Reference Data
+        private TextureCanvas parentCanvas;
+
+        //Animation
         internal string defName;
-        private TextureCanvas canvas;
         private bool initialized = false;
         private Rot4 internalRot = Rot4.North;
-
-        private AnimationDataDef internalDef;
-
-        private List<int> lastSelectedElementIndex;
-        private List<int> lastSelectedAnimationIndex;
         private List<UIElement>[] elementsByRotation;
         private List<AnimationPartValue>[] animationsByRotation;
 
+        private AnimationDataDef internalDef;
+        private List<int> lastSelectedElementIndex;
+        private List<int> lastSelectedAnimationIndex;
+
         private AnimationPartValue _currentAnimation;
 
+
+        public Rot4 CurRot => internalRot;
         public bool Initialized => initialized;
+        public bool Loading { get; private set; }
 
         public int ElementIndex => lastSelectedElementIndex[CurRot.AsInt];
         public int AnimationIndex => lastSelectedAnimationIndex[CurRot.AsInt];
-
-        public bool Loading { get; private set; }
+        public List<UIElement> CurrentElementList => elementsByRotation[CurRot.AsInt];
+        public List<AnimationPartValue> CurrentAnimations => animationsByRotation[CurRot.AsInt];
+        public AnimationPartValue SelectedAnimationPart => _currentAnimation;
 
         public AnimationMetaData(TextureCanvas parentCanvas)
         {
-            canvas = parentCanvas;
+            this.parentCanvas = parentCanvas;
             lastSelectedElementIndex = new (){ -1, -1, -1, -1 };
             lastSelectedAnimationIndex = new (){ -1, -1, -1, -1 };
             elementsByRotation = new List<UIElement>[4]
@@ -45,11 +55,6 @@ namespace TeleCore
             };
         }
 
-        public Rot4 CurRot => internalRot;
-        public List<UIElement> CurrentElementList => elementsByRotation[CurRot.AsInt];
-        public List<AnimationPartValue> CurrentAnimations => animationsByRotation[CurRot.AsInt];
-        public AnimationPartValue SelectedAnimationPart => _currentAnimation;
-
         public void Notify_Init()
         {
             this.initialized = true;
@@ -62,12 +67,12 @@ namespace TeleCore
             newDef.animationSets = new List<AnimationSet>(4);
             for (int i = 0; i < 4; i++)
             {
-                newDef.animationSets.Add(SetFor(i));
+                newDef.animationSets.Add(ConstructSetForRotation(i));
             }
             return newDef;
         }
 
-        private AnimationSet SetFor(int rot)
+        private AnimationSet ConstructSetForRotation(int rot)
         {
             AnimationSet animationSet = new AnimationSet();
             if (!elementsByRotation[rot].NullOrEmpty())
@@ -94,7 +99,7 @@ namespace TeleCore
             return animationSet;
         }
 
-        private void Deconstruct(AnimationDataDef dataDef)
+        private void loadFromDef(AnimationDataDef dataDef)
         {
             defName = dataDef.defName;
             for (int i = 0; i < 4; i++)
@@ -111,8 +116,8 @@ namespace TeleCore
             {
                 foreach (var textureData in animationSet.textureParts)
                 {
-                    var newElement = new TextureElement(new Rect(Vector2.zero, canvas.Size), textureData);
-                    canvas.Notify_LoadedElement(newElement);
+                    var newElement = new TextureElement(new Rect(Vector2.zero, parentCanvas.Size), textureData);
+                    parentCanvas.Notify_LoadedElement(newElement);
                     elementsByRotation[rot].Add(newElement);
                 }
             }
@@ -124,6 +129,18 @@ namespace TeleCore
                     animationsByRotation[rot].Add(new AnimationPartValue(elementsByRotation[rot], animation));
                 }
             }
+        }
+
+        public string[] BufferFor(KeyFrame frame)
+        {
+            if (StringBuffers.ContainsKey(frame))
+            {
+                return StringBuffers[frame];
+            }
+            var buffer = new string[BufferSize];
+            frame.Data.UpdateBuffer(buffer);
+            StringBuffers.Add(frame, buffer);
+            return StringBuffers[frame];
         }
 
         public void ExposeData()
@@ -145,17 +162,14 @@ namespace TeleCore
         public void LoadAnimation()
         {
             Loading = true;
-            TLog.Message($"Entering LoadAnimation", Color.magenta);
 
             Scribe_Deep.Look(ref internalDef, "internalDef");
             Scribe_Values.Look(ref internalRot, "internalRot");
             Scribe_Collections.Look(ref lastSelectedElementIndex, "lastSelectedElementIndex");
             Scribe_Collections.Look(ref lastSelectedAnimationIndex, "lastSelectedAnimationIndex");
-            
-            TLog.Message($"Loaded Animation: Def: {internalDef != null} Rot: {internalRot} ElementIndices: {lastSelectedElementIndex.ToStringSafeEnumerable()} AnimationIndices: {lastSelectedAnimationIndex.ToStringSafeEnumerable()}",Color.magenta);
 
             //GenDataFromDef
-            Deconstruct(internalDef);
+            loadFromDef(internalDef);
 
             if (internalDef != null)
             {
@@ -166,13 +180,27 @@ namespace TeleCore
             Loading = false;
         }
 
+        public void Notify_RemoveAnimationPart(int index)
+        {
+            CurrentAnimations.RemoveAt(index);
+
+            int nextIndex = CurrentAnimations.Count - 1;
+            SetAnimationIndex(nextIndex);
+            if (nextIndex >= 0)
+                _currentAnimation = CurrentAnimations[nextIndex];
+        }
+
         public AnimationPartValue Notify_CreateNewAnimationPart(string tag, float lengthSeconds)
         {
             AnimationPartValue animation = new AnimationPartValue(tag, lengthSeconds);
             CurrentAnimations.Add(animation);
-            _currentAnimation = animation;
-            SetAnimationIndex(CurrentAnimations.Count - 1);
             return animation;
+        }
+
+        public void Notify_PostCreateAnimation()
+        {
+            _currentAnimation = CurrentAnimations.Last();
+            SetAnimationIndex(CurrentAnimations.Count - 1);
         }
 
         public void SetRotation(Rot4 newRotation)

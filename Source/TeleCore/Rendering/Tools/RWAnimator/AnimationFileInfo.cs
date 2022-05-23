@@ -8,7 +8,7 @@ using Verse;
 
 namespace TeleCore
 {
-    public class AnimationFileInfo
+    internal class AnimationFileInfo
     {
         private string fileName;
         private bool loaded;

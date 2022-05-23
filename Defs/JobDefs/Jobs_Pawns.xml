@@ -1,0 +1,19 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<Defs>
+
+	<JobDef>
+		<defName>DoNetworkBill</defName>
+		<driverClass>TeleCore.JobDriver_DoNetworkBill</driverClass>
+		<reportString>doing network bill.</reportString>
+		<allowOpportunisticPrefix>true</allowOpportunisticPrefix>
+	</JobDef>
+	
+	<JobDef>
+		<defName>EmptyPortableContainer</defName>
+		<driverClass>TeleCore.JobDriver_EmptyPortableContainer</driverClass>
+		<reportString>emptying container into {0}.</reportString>
+	    <suspendable>false</suspendable>
+		<allowOpportunisticPrefix>true</allowOpportunisticPrefix>
+	</JobDef>
+
+</Defs>

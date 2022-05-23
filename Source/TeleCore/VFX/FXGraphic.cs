@@ -31,28 +31,26 @@ namespace TeleCore
         private readonly MaterialPropertyBlock materialProperties = new MaterialPropertyBlock();
 
         public MaterialPropertyBlock PropertyBlock => materialProperties;
-        public float Rotation => exactRotation;
 
+        public float ExactRotation => exactRotation;
 
         //Parent Values
         private FXDefExtension ExData => parent.GraphicExtension;
         private Rot4 Rot4 => parent.parent.Rotation;
         private float GetOpacity => parent.OpacityFloat(index);
-        private float GetRotation => parent.RotationOverride(index) ?? 0;
-        private float GetMoveSpeed => parent.MoveSpeed(index) ?? 1;
-        private Color GetColorOverride => parent.ColorOverride(index);
-        private Vector3 GetDrawPos => parent.DrawPosition(index);
+        private float GetRotation => (parent.RotationOverride(index) ?? 0) + exactRotation;
+        private float GetRotationSpeed => (parent.GetRotationSpeedOverride(index) ?? 1) * RotationSpeed;
+        private Color GetColorOverride => parent.ColorOverride(index) ?? Color.white;
+        private Vector3 GetDrawPos => parent.DrawPosition(index) ?? parent.parent.DrawPos;
         private Action<FXGraphic> GetAction => parent.Action(index);
 
-        //Move
-        public float MoverSpeed => data.move.MoverSpeed;
-
         //Blink
+        public bool ShouldBeBlinkingNow => blinkDuration > 0;
 
         //Fade
 
         //Rotate
-        public float RotationSpeed => data.rotate.rotationSpeed;
+        public float RotationSpeed => data.rotate?.rotationSpeed ?? 0;
 
         public FXGraphic(CompFX parent, FXGraphicData data, int index)
         {
@@ -69,28 +67,37 @@ namespace TeleCore
 
             //
             drawColor = Color.white;
-            exactRotation = data.rotate.startRotation;
-            if (data.drawLayer.HasValue)
-                altitude = parent.parent.def.altitudeLayer.AltitudeFor() + (data.drawLayer.Value * Altitudes.AltInc);
+            if (data.rotate != null)
+            {
+                exactRotation = data.rotate.startRotation.RandomInRange;
+            }
+            altitude = (data.altitude ?? parent.parent.def.altitudeLayer).AltitudeFor();
+            if (data.drawLayer != null)
+                altitude += (data.drawLayer.Value * Altitudes.AltInc);
             else
-                altitude = parent.parent.def.altitudeLayer.AltitudeFor() + ((index + 1) * Altitudes.AltInc);
+                altitude += ((index + 1) * Altitudes.AltInc);
         }
 
         public void Tick()
         {
             if (unused) return;
+            var tick = Find.TickManager.TicksGame;
+
             //Rotate
-            if (RotationSpeed != 0)
-                exactRotation += (GetMoveSpeed * (RotationSpeed * 0.0166666675f));
+            if (GetRotationSpeed != 0)
+                exactRotation += GetRotationSpeed * StaticData.DeltaTime;
 
             //Blink
-            TryTickBlink();
+            TryTickBlink(tick);
 
             //Fade
-            TryTickFade();
+            TryTickFade(tick);
+
+            //Resize
+            TryTickSize(tick);
         }
 
-        private void TryTickBlink()
+        private void TryTickBlink(int tick)
         {
             if (data.blink == null) return;
             if (ticksToBlink > 0 && blinkDuration == 0)
@@ -115,23 +122,24 @@ namespace TeleCore
             blinkDuration = data.blink.duration;
         }
 
-        private void TryTickFade()
+        private void TryTickFade(int tick)
         {
             if (data.fade == null) return;
-            var tick = Find.TickManager.TicksGame;
             var fade = data.fade;
-            var opaVal = TMath.OscillateBetween(fade.opacityRange.min, fade.opacityRange.max, fade.opacityDuration, tick + parent.TickOffset);
-            if (fade.opacityRange != FloatRange.Zero)
-                drawColor.a = opaVal;
+            if (fade.opacityRange.Average <= 0) return;
+            var opaVal = TMath.OscillateBetween(fade.opacityRange.min, fade.opacityRange.max, fade.opacityDuration, tick + parent.TickOffset + fade.initialOpacityOffset);
+            drawColor.a = opaVal;
         }
 
-        private void TryTickSize()
+        private void TryTickSize(int tick)
         {
-            //var sizeVal = TeleMath.OscillateBetween(pulse.sizeRange.min, pulse.sizeRange.max, pulse.sizeDuration, tick + parent.tickOffset);
-            //if (fade.sizeRange != FloatRange.Zero)
-                //drawSize *= sizeVal;
+            if (data.resize == null) return;
+            var resize = data.resize;
+            if (resize.sizeRange.Average <= 0) return;
+            var sizeVal = TMath.OscillateBetween(resize.sizeRange.min, resize.sizeRange.max, resize.sizeDuration, tick + parent.TickOffset + resize.initialSizeOffset);
+            drawSize *= sizeVal;
         }
-        
+
         public Graphic Graphic
         {
             get
@@ -211,28 +219,34 @@ namespace TeleCore
             extraRotation = num;
         }
 
-        public void Draw()
+        //[TweakValue("FXLayer", 0, 10f)]
+        //private static int CurrentLayer = 0;
+
+        public void Draw(Vector3? drawLocOverride = null)
         {
             //Pre-Action
             GetAction?.Invoke(this);
             
             //
-            var drawPos = GetDrawPos;
+            var drawPos = drawLocOverride ?? GetDrawPos;
             GetDrawInfo(Graphic, ref drawPos, Rot4, ExData, parent.parent.def, out drawSize, out drawMat, out drawMesh, out float extraRotation, out flipUV);
             drawPos += data.drawOffset;
 
+            //Colors
             var graphicColor = data.data.color;
-            graphicColor *= drawColor;
-            graphicColor.a = GetOpacity;
             if (GetColorOverride != Color.white)
                 graphicColor *= GetColorOverride;
 
-            drawMat.SetTextureOffset("_MainTex", parent.TextureOffset);
-            drawMat.SetTextureScale("_MainTex", parent.TextureScale);
+            graphicColor.a = GetOpacity;
+            graphicColor *= drawColor;
+
+            //
+            drawMat.SetTextureOffset("_MainTex", data.texCoords.position);
+            drawMat.SetTextureScale("_MainTex", data.texCoords.size);
 
             materialProperties.SetColor(ShaderPropertyIDs.Color, graphicColor);
 
-            var rotationQuat = (exactRotation + extraRotation + GetRotation).ToQuat();
+            var rotationQuat = (GetRotation + extraRotation).ToQuat();
 
             if (data.PivotOffset != null)
             {
@@ -250,7 +264,7 @@ namespace TeleCore
             var drawPos = GetDrawPos;
             GetDrawInfo(Graphic, ref drawPos, Rot4, ExData, parent.parent.def, out drawSize, out drawMat, out drawMesh, out float extraRotation, out flipUV);
             drawPos += data.drawOffset;
-            Printer_Plane.PrintPlane(layer, new Vector3(drawPos.x, altitude, drawPos.z), drawSize, drawMat, (GetRotation + exactRotation) + extraRotation, flipUV);
+            Printer_Plane.PrintPlane(layer, new Vector3(drawPos.x, altitude, drawPos.z), drawSize, drawMat, (GetRotation + extraRotation), flipUV);
         }
     }
 }

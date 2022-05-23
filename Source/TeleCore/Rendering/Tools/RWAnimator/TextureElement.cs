@@ -32,10 +32,10 @@ namespace TeleCore
         BottomRight,
     }
 
-    public class TextureElement : UIElement, IKeyFramedElement, IReorderableElement
+    internal class TextureElement : UIElement, IKeyFramedElement, IReorderableElement
     {
         //
-        private string[] tempBuffer = new string[TextureCanvas.BufferSize];
+        private string[] tempBuffer = new string[AnimationMetaData.BufferSize];
 
         //
         protected TextureData texture;
@@ -93,8 +93,8 @@ namespace TeleCore
                 var tempFrame = CurrentData;
                 tempFrame.PivotPoint = value;
 
-                //Apply edited Data onto actual frame
-                ParentCanvas.TimeLine.UpdateKeyframeFor(this, CurrentData);
+                //
+                ParentCanvas.TimeLine.UpdateKeyframeFor(this, tempFrame);
             }
         }
 
@@ -223,7 +223,7 @@ namespace TeleCore
             {
                 if (IsAtKeyFrame)
                 {
-                    return ParentCanvas.BufferFor(CurrentFrame);
+                    return ParentCanvas.AnimationData.BufferFor(CurrentFrame);
                 }
                 CurrentData.UpdateBuffer(tempBuffer);
                 return tempBuffer;
@@ -312,7 +312,7 @@ namespace TeleCore
 
         public void SetTRSP_FromScreenSpace(Vector2? pos = null, float? rot = null, Vector2? size = null, Vector2? pivot = null)
         {
-            SetTRSP_Direct(ParentCanvas.MousePos);
+            SetTRSP_Direct(ParentCanvas.MouseOnCanvas);
         }
 
         public void Reset()
@@ -436,7 +436,7 @@ namespace TeleCore
                     case ManipulationMode.Rotate:
                         var vec1 = StartDragPos - RenderPivot;
                         var vec2 = ev.mousePosition - RenderPivot;
-                        var newRot = oldKF.Value.TRotation + Vector2.SignedAngle(vec1, vec2);
+                        var newRot = oldKF.Value.TRotation + Mathf.Abs(Vector2.SignedAngle(vec1, vec2));//Vector2.SignedAngle(vec1, vec2);
                         TRotation = newRot;
                         break;
                 }
@@ -480,8 +480,6 @@ namespace TeleCore
                 GUI.matrix = matrix;
             }
 
-            TWidgets.DrawBox(TextureRect, BorderColor, 1);
-
             if (ShowTexCoordGhost)
             {
                 //Widgets.BeginGroup(TextureRect);
@@ -493,11 +491,21 @@ namespace TeleCore
                 TWidgets.DrawBox(TWidgets.TexCoordsToRect(TextureRect, TexCoords), TColor.NiceBlue, 1);
                 Widgets.EndGroup();
             }
+        }
 
-            //Draw Pivot
-            GUI.color = ManiMode == ManipulationMode.PivotDrag ? Color.red : Color.white;
-            Widgets.DrawTextureFitted(RenderPivot.RectOnPos(new Vector2(24, 24)), TeleContent.PivotPoint, 1, Vector2.one, new Rect(0, 0, 1, 1), TRotation);
-            GUI.color = Color.white;
+        internal static void DrawOverlay(TextureElement te)
+        {
+            Widgets.BeginGroup(te.Parent.InRect);
+            {
+                TWidgets.DrawBox(te.TextureRect, te.BorderColor, 1);
+
+                //Draw Pivot
+                GUI.color = te.ManiMode == ManipulationMode.PivotDrag ? Color.red : Color.white;
+                Widgets.DrawTextureFitted(te.RenderPivot.RectOnPos(new Vector2(24, 24)), TeleContent.PivotPoint, 1,
+                    Vector2.one, new Rect(0, 0, 1, 1), te.TRotation);
+                GUI.color = Color.white;
+            }
+            Widgets.EndGroup();
         }
 
         public void DrawElementInScroller(Rect inRect)
@@ -509,18 +517,19 @@ namespace TeleCore
             TWidgets.DoTinyLabel(inRect, LayerTag);
             Text.Anchor = default;
 
+            Color varColor = Color.white;
             if (parentElement != null)
-                GUI.color = Color.blue;
+                varColor = Color.blue;
 
             if(!subParts.NullOrEmpty())
-                GUI.color = Color.red;
+                varColor = Color.red;
 
-            Rect linkButton = new Rect(inRect.xMax-32, inRect.y, 32, 32);
-            Rect visibleButton = new Rect(inRect.xMax - 32, inRect.y+32, 32, 32);
-            if (Widgets.ButtonImage(linkButton, TeleContent.LinkIcon, GUI.color))
+            var bottomPart = inRect.BottomPartPixels(24).RightPartPixels(24);
+            WidgetRow buttonRow = new WidgetRow(bottomPart.x, bottomPart.y, UIDirection.RightThenUp, 24);
+            if (buttonRow.ButtonIcon(TeleContent.LinkIcon, (parentElement != null ? $"Linked To: {parentElement.LayerTag}" : null), iconColor:varColor))
             {
                 var floatOptions = new List<FloatMenuOption>();
-                foreach (TextureElement tex in ParentCanvas.Children)
+                foreach (TextureElement tex in ParentCanvas.TextureElements)
                 {
                     if (tex != this)
                     {
@@ -532,18 +541,11 @@ namespace TeleCore
                 }
                 Find.WindowStack.Add(new FloatMenu(floatOptions));
             }
-            GUI.color = Color.white;
 
-            var visibility = Visibility ? TeleContent.VisibilityOn : TeleContent.VisibilityOff;
-            if (Widgets.ButtonImage(visibleButton, visibility, Color.white))
+            if (buttonRow.ButtonIcon(TeleContent.VisibilityOff, iconColor: Visibility ? TColor.White05 : Color.white))
             {
                 Visibility = !Visibility;
             }
-
-            if(parentElement != null)
-                TooltipHandler.TipRegion(linkButton, $"Linked To: {parentElement.LayerTag}");
-
-            GUI.color = Color.white;
             //TWidgets.DoTinyLabel(inRect, $"{mat.mainTexture.name}\n{mat.shader.name}\n{RectSimple(texCoords ?? default)}\n{pivotPoint}\n{mat.mainTextureOffset}\n{mat.mainTextureScale}");
         }
 

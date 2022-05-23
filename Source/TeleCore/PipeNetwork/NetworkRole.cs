@@ -7,15 +7,15 @@ using System.Threading.Tasks;
 namespace TeleCore
 {
     [Flags]
-    public enum NetworkRole : uint
+    public enum NetworkRole
     {
-        Controller = 1U,
-        Transmitter = 2U,
-        Producer = 4U,
-        Consumer = 8U,
-        Storage = 16U,
-        Requester = 32U,
-        All = 64U,
+        Controller = 1,
+        Transmitter = 2,
+        Producer = 4,
+        Consumer = 8,
+        Storage = 16,
+        Requester = 32,
+        All = 64,
 
         AllContainers = Producer | Consumer | Storage,
         //All = Transmitter | AllContainers,

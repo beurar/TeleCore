@@ -7,6 +7,12 @@
 		<windowClass>TeleCore.Window_Animator</windowClass>
 	</TeleCore.DevToolDef>
 	
+	<TeleCore.DevToolDef>
+		<defName>EffectBuilderDef</defName>
+		<label>Effect Builder</label>
+		<windowClass>TeleCore.Window_EffectBuilder</windowClass>
+	</TeleCore.DevToolDef>
+	
 	<!--
 	<TeleCore.DevToolDef>
 		<defName>ModuleVisualizerDef</defName>
@@ -14,6 +20,7 @@
 		<windowClass>TeleCore.Window_ModuleVisualizer</windowClass>
 	</TeleCore.DevToolDef>
 	-->
+	
 	
 	<!--
 	<TeleCore.DevToolDef>

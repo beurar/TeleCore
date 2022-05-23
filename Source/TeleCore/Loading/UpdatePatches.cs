@@ -10,15 +10,5 @@ namespace TeleCore
 {
     internal static class UpdatePatches
     {
-        //
-        [HarmonyPatch(typeof(MemoryUtility))]
-        [HarmonyPatch(nameof(MemoryUtility.ClearAllMapsAndWorld))]
-        internal static class MemoryUtility_ClearAllMapsAndWorldPatch
-        {
-            public static void Postfix()
-            {
-                StaticData.Notify_ClearingMapAndWorld();
-            }
-        }
     }
 }

@@ -8,11 +8,10 @@ using Verse;
 
 namespace TeleCore
 {
-    //TODO: Add way to quick test animation ingame via button and then get back to animation tool
     public class Window_Animator : Window
     {
         //
-        internal WindowContainer windowContents;
+        internal AnimationWindowContainer content;
 
         public sealed override Vector2 InitialSize => new Vector2(UI.screenWidth, UI.screenHeight);
         public override float Margin => 5f;
@@ -20,7 +19,7 @@ namespace TeleCore
         public Window_Animator()
         {
             forcePause = true;
-            doCloseX = true;
+            doCloseX = false;
             doCloseButton = false;
             closeOnClickedOutside = false;
             absorbInputAroundWindow = true;
@@ -30,18 +29,20 @@ namespace TeleCore
             layer = WindowLayer.Super;
 
             //
-            windowContents = new WindowContainer(new Rect(Vector2.zero, InitialSize), UIElementMode.Static);
+            content = new AnimationWindowContainer(this, new Rect(Vector2.zero, InitialSize), UIElementMode.Static);
         }
 
         public override void PreOpen()
         {
             base.PreOpen();
-            windowContents.Notify_Reopened();
+            content.Notify_Reopened();
         }
 
         public override void DoWindowContents(Rect inRect)
         {
-            windowContents.DrawElement(inRect);
+            UIEventHandler.Begin();
+            content.DrawElement(inRect);
+            UIEventHandler.End();
         }
     }
 }

@@ -4,6 +4,7 @@ using System.Reflection;
 using System.Reflection.Emit;
 using HarmonyLib;
 using RimWorld;
+using RimWorld.BaseGen;
 using UnityEngine;
 using Verse;
 
@@ -41,6 +42,32 @@ namespace TeleCore
                 Graphics.DrawMesh(mesh, Matrix4x4.TRS(drawLoc, quat, new Vector3(size.x, 1, size.y)), mat, layer);
             }
         }
+
+        /*
+        //Fix pipe designator drawghost
+        [HarmonyPatch(typeof(Designator_Place))]
+        [HarmonyPatch(nameof(Designator_Place.DrawGhost))]
+        internal static class Designator_Place_DrawGhost
+        {
+            public static bool Prefix(Designator_Place __instance, Color ghostCol)
+            {
+                if (__instance.PlacingDef is TRThingDef trDef)
+                {
+                    if (trDef.building.blueprintGraphicData is { } data)
+                    {
+                        IntVec3 center = UI.MouseCell();
+                        Rot4 rot = __instance.placingRot;
+
+                        Graphic graphic = GhostUtility.GhostGraphicFor(data.Graphic, trDef, ghostCol, __instance.StuffDef);
+                        Vector3 loc = GenThing.TrueCenter(center, rot, trDef.Size, AltitudeLayer.Blueprint.AltitudeFor());
+                        graphic.DrawFromDef(loc, rot, trDef, 0f);
+                        return false;
+                    }
+                }
+                return true;
+            }
+        }
+        */
 
         //
         //Fix projectile random graphics
@@ -84,7 +111,6 @@ namespace TeleCore
             }
         }
 
-        //
         [HarmonyPatch(typeof(GhostDrawer))]
         [HarmonyPatch("DrawGhostThing")]
         public static class DrawGhostThingPatch
@@ -116,5 +142,35 @@ namespace TeleCore
         }
 
         //
+        [HarmonyPatch(typeof(GhostUtility))]
+        [HarmonyPatch(nameof(GhostUtility.GhostGraphicFor))]
+        public static class GhostUtilityGhostGraphicForPatch
+        {
+            public static bool Prefix(ref Graphic __result, Graphic baseGraphic, ThingDef thingDef, Color ghostCol, ThingDef stuff = null)
+            {
+                //Network Pipe Ghost Graphic Fix
+                if (baseGraphic.IsCustomLinked())
+                {
+                    if (thingDef.useSameGraphicForGhost)
+                    {
+                        __result = baseGraphic;
+                        return false;
+                    }
+                    int seed = 0;
+                    seed = Gen.HashCombine(seed, baseGraphic);
+                    seed = Gen.HashCombine(seed, thingDef);
+                    seed = Gen.HashCombineStruct(seed, ghostCol);
+                    seed = Gen.HashCombine(seed, stuff);
+                    if (!GhostUtility.ghostGraphics.TryGetValue(seed, out var value))
+                    {
+                        value = GraphicDatabase.Get<Graphic_Single>(thingDef.uiIconPath, ShaderTypeDefOf.EdgeDetect.Shader, thingDef.graphicData.drawSize, ghostCol);
+                        GhostUtility.ghostGraphics.Add(seed, value);
+                    }
+                    __result = baseGraphic;
+                    return false;
+                }
+                return true;
+            }
+        }
     }
 }

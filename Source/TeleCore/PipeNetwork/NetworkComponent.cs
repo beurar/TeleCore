@@ -18,8 +18,11 @@ namespace TeleCore
 
         protected NetworkComponentProperties props;
 
+        //
+        private Gizmo_NetworkInfo networkInfoGizmo;
+
         //Values
-        private Dictionary<NetworkValueDef, float> requestedTypes;
+        private Dictionary<NetworkValueDef, (bool, float)> requestedTypes;
         private float requestedCapacityPercent = 0.5f;
 
         private RequesterMode requesterMode = RequesterMode.Automatic;
@@ -57,7 +60,7 @@ namespace TeleCore
         public Network Network { get; set; }
         public NetworkComponentSet ConnectedComponentSet => componentSet;
 
-        public string ContainerTitle => NetworkDef.containerLabel;
+        public string ContainerTitle => "_Obsolete_";
         public ContainerProperties ContainerProps => Props.containerProps;
 
         public NetworkContainer Container
@@ -66,7 +69,7 @@ namespace TeleCore
             private set => container = value;
         }
 
-        public Dictionary<NetworkValueDef, float> RequestedTypes => requestedTypes;
+        public Dictionary<NetworkValueDef, (bool,float)> RequestedTypes => requestedTypes;
 
         public float RequestedCapacityPercent
         {
@@ -108,17 +111,23 @@ namespace TeleCore
         {
             //Generate components
             componentSet = new NetworkComponentSet(NetworkDef, this);
-            if (NetworkRole.HasFlag(NetworkRole.Requester))
-            {
-                requestedTypes = new Dictionary<NetworkValueDef, float>();
-                foreach (var allowedValue in props.AllowedValues)
-                {
-                    requestedTypes.Add(allowedValue, 0);
-                }
-            }
+
+            RolePropertySetup();
             if (respawningAfterLoad) return; // IGNORING EXPOSED CONSTRUCTORS
             if (HasContainer)
                 Container = new NetworkContainer(this, Props.AllowedValues);
+        }
+
+        private void RolePropertySetup()
+        {
+            if (NetworkRole.HasFlag(NetworkRole.Requester))
+            {
+                requestedTypes = new Dictionary<NetworkValueDef, (bool, float)>();
+                foreach (var allowedValue in Props.AllowedValuesByRole[NetworkRole.Requester])
+                {
+                    requestedTypes.Add(allowedValue, (true, 0));
+                }
+            }
         }
 
         public void PostDestroy(DestroyMode mode, Map previousMap)
@@ -193,7 +202,7 @@ namespace TeleCore
 
         protected virtual void ProducerTick()
         {
-            TransferToOthers(NetworkRole.Storage, false);
+            TransferToOthers(NetworkRole.Producer, NetworkRole.Storage, false);
         }
 
         protected virtual void StorageTick()
@@ -202,11 +211,11 @@ namespace TeleCore
             {
                 PushForbiddenTypes();
             }
-            if (Props.storeEvenly)
+            if (ContainerProps.storeEvenly)
             {
-                TransferToOthers(NetworkRole.Storage, true);
+                TransferToOthers(NetworkRole.Storage, NetworkRole.Storage, true);
             }
-            TransferToOthers(NetworkRole.Consumer, false);
+            TransferToOthers(NetworkRole.Storage, NetworkRole.Consumer, false);
         }
 
         protected virtual void ConsumerTick()
@@ -219,14 +228,15 @@ namespace TeleCore
             {
                 //Resolve..
                 var maxVal = RequestedCapacityPercent * Container.Capacity;
-
-                foreach (var valType in Container.AcceptedTypes)
+                foreach (var valType in Props.AllowedValuesByRole[NetworkRole.Requester])
                 {
                     var valTypeValue = Container.ValueForType(valType) + Network.NetworkValueFor(valType, NetworkRole.Storage);
                     if (valTypeValue > 0)
                     {
                         var setValue = Mathf.Min(maxVal, valTypeValue);
-                        RequestedTypes[valType] = setValue;
+                        var tempVal = requestedTypes[valType];
+                        tempVal.Item2 = setValue;
+                        RequestedTypes[valType] = tempVal;
                         maxVal = Mathf.Clamp(maxVal - setValue, 0, maxVal);
                     }
                 }
@@ -235,7 +245,9 @@ namespace TeleCore
             if (Container.StoredPercent >= RequestedCapacityPercent) return;
             foreach (var requestedType in RequestedTypes)
             {
-                if (Container.ValueForType(requestedType.Key) < requestedType.Value)
+                //If not requested, skip
+                if(!requestedType.Value.Item1) continue;
+                if (Container.ValueForType(requestedType.Key) < requestedType.Value.Item2)
                 {
                     foreach (var component in Network.ComponentSet[NetworkRole.Storage])
                     {
@@ -251,17 +263,19 @@ namespace TeleCore
             }
         }
 
-        private void PushForbiddenTypes()
+        private void TransferToOthers(NetworkRole fromRole, NetworkRole ofRole, bool evenly)
         {
-            if (!Container.HasValueStored) return;
-            foreach (var component in Network.ComponentSet[NetworkRole.Storage])
+            if (Container.Empty) return;
+            var usedTypes = Props.AllowedValuesByRole[fromRole];
+            foreach (var component in Network.ComponentSet[ofRole])
             {
-                if (component.Container.CapacityFull) continue;
-                for (int i = Container.AllStoredTypes.Count - 1; i >= 0; i--)
+                if (Container.Empty || component.Container.Full) continue;
+                if (evenly && component.Container.StoredPercent > Container.StoredPercent) continue;
+
+                for (int i = usedTypes.Count - 1; i >= 0; i--)
                 {
-                    var type = Container.AllStoredTypes.ElementAt(i);
-                    if (Container.AcceptsType(type)) continue;
-                    if (!component.NeedsValue(type)) continue;
+                    var type = usedTypes[i];
+                    if (!component.NeedsValue(type, ofRole)) continue;
                     if (Container.TryTransferTo(component.Container, type, 1))
                     {
                         component.Notify_ReceivedValue();
@@ -270,18 +284,17 @@ namespace TeleCore
             }
         }
 
-        private void TransferToOthers(NetworkRole ofRole, bool evenly)
+        private void PushForbiddenTypes()
         {
-            if (!Container.HasValueStored) return;
-            foreach (var component in Network.ComponentSet[ofRole])
+            if (Container.Empty) return;
+            foreach (var component in Network.ComponentSet[NetworkRole.Storage])
             {
-                if (!Container.HasValueStored || component.Container.CapacityFull) continue;
-                if (evenly && component.Container.StoredPercent > Container.StoredPercent) continue;
-
+                if (component.Container.Full) continue;
                 for (int i = Container.AllStoredTypes.Count - 1; i >= 0; i--)
                 {
                     var type = Container.AllStoredTypes.ElementAt(i);
-                    if (!component.NeedsValue(type)) continue;
+                    if (Container.AcceptsType(type)) continue;
+                    if (!component.NeedsValue(type, NetworkRole.Storage)) continue;
                     if (Container.TryTransferTo(component.Container, type, 1))
                     {
                         component.Notify_ReceivedValue();
@@ -311,10 +324,10 @@ namespace TeleCore
             return other.Network.NetworkRank == Network.NetworkRank;
         }
 
-        public bool NeedsValue(NetworkValueDef value)
+        public bool NeedsValue(NetworkValueDef value, NetworkRole forRole)
         {
-            //Feel free to extend as needed
-            return parent.AcceptsValue(value); // && Whatever..
+            if (!Props.AllowedValuesByRole[forRole].Contains(value)) return false;
+            return parent.AcceptsValue(value);
         }
 
         public void Draw()
@@ -329,20 +342,6 @@ namespace TeleCore
         public virtual string NetworkInspectString()
         {
             return string.Empty;
-        }
-
-        public virtual Gizmo SpecialNetworkDescription
-        {
-            get => null;
-        }
-
-        protected virtual IEnumerable<Gizmo> GetSpecialNetworkGizmos()
-        {
-            yield return StaticData.GetDesignatorFor<Designator_Build>(NetworkDef.transmitter);
-            if (!IsMainController && Network.NetworkController == null)
-            {
-                yield return StaticData.GetDesignatorFor<Designator_Build>(NetworkDef.controllerDef);
-            }
         }
 
         private bool drawNetworkInfo = false;
@@ -410,10 +409,8 @@ namespace TeleCore
             } );
         */
         }
-        //
-        private Gizmo_NetworkInfo networkInfoGizmo;
+        
         public Gizmo_NetworkInfo NetworkGizmo => networkInfoGizmo ??= new Gizmo_NetworkInfo(this);
-
 
         public virtual IEnumerable<Gizmo> GetPartGizmos()
         {

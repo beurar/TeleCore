@@ -41,20 +41,28 @@ namespace TeleCore
 
         //
         private string label;
-
-        private bool isOpen = false;
         private List<TopBarButtonOption> optionList;
+        private Action action;
+
+        //
+        private bool isOpen = false;
 
         private Color baseColor = Color.white;
 
-        public float TotalHeight => optionList.Sum(o => o.OptionHeight + (2 * optionMargin));
-
+        public bool IsOpen => isOpen;
+        public float TotalHeight => optionList?.Sum(o => o.OptionHeight + (2 * optionMargin)) ?? 0;
         public float ButtonWidth => Text.CalcSize(label).x + 10;
 
         public TopBarButtonMenu(string menuLabel, List<TopBarButtonOption> optionList)
         {
             this.label = menuLabel;
             this.optionList = optionList;
+        }
+
+        public TopBarButtonMenu(string menuLabel, Action action)
+        {
+            this.label = menuLabel;
+            this.action = action;
         }
 
         public void Close()
@@ -97,7 +105,14 @@ namespace TeleCore
             Text.Anchor = default;
 
             if (Widgets.ButtonInvisible(rect))
+            {
+                if (action != null)
+                {
+                    action.Invoke();
+                    return;
+                }
                 Open();
+            }
 
             if (isOpen)
             {
@@ -122,7 +137,14 @@ namespace TeleCore
 
     public class UITopBar : UIElement
     {
+        //
         private List<TopBarButtonMenu> buttons;
+        //
+        private Action closeAction;
+        private bool doCloseButton = false;
+
+        private TopBarButtonMenu CurrentOpen => buttons.FirstOrFallback(b => b.IsOpen);
+        private bool AnyMenuOpen => CurrentOpen != null;
 
         public UITopBar(List<TopBarButtonMenu> buttons) : base(UIElementMode.Static)
         {
@@ -141,8 +163,28 @@ namespace TeleCore
                 var buttonRect = new Rect(curX, inRect.y, button.ButtonWidth, inRect.height);
                 button.DoButton(buttonRect);
 
+                if (AnyMenuOpen && Mouse.IsOver(buttonRect) && button != CurrentOpen)
+                {
+                    CurrentOpen.Close();
+                    button.Open();
+                }
+
                 curX += button.ButtonWidth;
             }
+
+            if (doCloseButton)
+            {
+                if (TWidgets.CloseButtonCustom(inRect, inRect.height))
+                {
+                    closeAction.Invoke();
+                }
+            }
+        }
+
+        public void AddCloseButton(Action action)
+        {
+            doCloseButton = true;
+            closeAction = action;
         }
     }
 }

@@ -9,7 +9,7 @@ using Verse;
 
 namespace TeleCore
 {
-    public class TextureLayerView : UIElement
+    internal class TextureLayerView : UIElement
     {
         private UIElement parentContainer;
         private ElementScroller internalScroller;

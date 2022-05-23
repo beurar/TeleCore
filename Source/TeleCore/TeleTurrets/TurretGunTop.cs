@@ -31,6 +31,9 @@ namespace TeleCore
         public List<TurretBarrel> Barrels => barrels;
 
         public Vector3 DrawPos => new Vector3(parent.DrawPos.x, AltitudeLayer.BuildingOnTop.AltitudeFor(), parent.DrawPos.z);
+
+        public bool HasBarrels => props.barrels != null;
+
         public bool OnTarget
         {
             get
@@ -38,11 +41,12 @@ namespace TeleCore
                 if (parent.CurrentTarget.IsValid)
                 {
                     targetRot = (parent.CurrentTarget.CenterVector3 - parent.DrawPos).AngleFlat();
-                    return Quaternion.Angle(rotation.ToQuat(), targetRot.ToQuat()) < props.aimAngle;
+                    return Quaternion.Angle(rotation.ToQuat(), targetRot.ToQuat()) < 1.5f;
                 }
                 return false;
             }
         }
+
         public float CurRotation
         {
             get => rotation;
@@ -64,7 +68,7 @@ namespace TeleCore
         {
             this.parent = parent;
             props = topProps;
-            if (props.barrels != null)
+            if (HasBarrels)
             {
                 barrels = new List<TurretBarrel>(props.barrels.Count);
                 foreach (var barrel in props.barrels)
@@ -77,7 +81,7 @@ namespace TeleCore
         //
         public void Notify_TurretShot(int index)
         {
-            if (!barrels.NullOrEmpty() && barrels.Count > index)
+            if (HasBarrels && barrels.Count > index)
             {
                 barrels[index].Notify_TurretShot();
             }
@@ -86,9 +90,9 @@ namespace TeleCore
         public void TurretTopTick()
         {
             //Tick Barrels
-            foreach (TurretBarrel barrel in barrels)
+            if (HasBarrels)
             {
-                barrel.BarrelTick();
+                barrels.ForEach(b => b.BarrelTick());
             }
 
             //Rotate Turret To Target Or Idle
@@ -119,7 +123,7 @@ namespace TeleCore
                 if (turnTicks <= 0)
                     ticksUntilTurn = props.idleInterval.RandomInRange;
             }
-            rotation = Mathf.SmoothDampAngle(rotation, targetRot, ref rotationSpeed, 0.01f, props.speed, 0.01666f);
+            rotation = Mathf.SmoothDampAngle(rotation, targetRot, ref rotationSpeed, 0.01f, props.aimSpeed, 0.01666f);
             if (OnTarget && !targetAcquired)
             {
                 targetAcquired = true;
@@ -130,7 +134,10 @@ namespace TeleCore
         public void DrawTurret()
         {
             TDrawing.Draw(parent.TurretGraphic, DrawPos, Rot4.North, CurRotation, null, null);
-            barrels.ForEach(b => b.Draw());
+            if (HasBarrels)
+            {
+                barrels.ForEach(b => b.Draw());
+            }
         }
     }
 }

@@ -25,7 +25,7 @@ namespace TeleCore
 
         public NetworkRank NetworkRank => networkRank;
         //
-        public virtual bool IsWorking => NetworkController?.IsPowered ?? false;
+        public virtual bool IsWorking => !def.UsesController || (NetworkController?.IsPowered ?? false);
         public virtual float TotalNetworkValue => ContainerSet.TotalNetworkValue;
         public virtual float TotalStorageNetworkValue => ContainerSet.TotalStorageValue;
 

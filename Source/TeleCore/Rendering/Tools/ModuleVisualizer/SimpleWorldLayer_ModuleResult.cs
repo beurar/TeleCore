@@ -86,7 +86,11 @@ namespace TeleCore
             int num = 0;
             for (int i = 0; i < tilesCount; i++)
             {
-                LayerSubMesh subMesh = GetSubMesh(TeleContent.WorldTerrain, Color.white, out int j);
+                var pos = WorldGrid.GetTileCenter(i);
+                var val = ModuleResult.GetValue(pos); 
+                if(val <= 0.15) continue; //Exclude tile from being added to mesh gen
+
+                LayerSubMesh subMesh = GetSubMesh(TeleContent.WorldTerrain, Color.cyan, out int j);
                 while (j >= triangleIndexToTileID.Count)
                 {
                     triangleIndexToTileID.Add(new List<int>());
@@ -124,24 +128,49 @@ namespace TeleCore
 
         public IEnumerable Regenerate()
         {
-            TLog.Message($"Submeshes: {subMeshes.Count}");
             dirty = false;
             //
+            /*
             int tilesCount = WorldGrid.TilesCount;
+            int i = 0;
+            while (i < tilesCount)
+            {
+                var pos = WorldGrid.GetTileCenter(i);
+                var val = ModuleResult.GetValue(pos);
+
+                if (val <= 0)
+                {
+                    i++;
+                    continue;
+                }
+                var color = val > 0.1f ? Color.cyan : Color.white;
+                LayerSubMesh subMesh = GetSubMesh(TeleContent.WorldTerrain, color);
+
+                Vector3 vector = WorldGrid.GetTileCenter(i);
+                WorldRendererUtility.PrintQuadTangentialToPlanet(vector, vector, WorldGrid.averageTileSize, 0.0005f, subMesh);
+                i++;
+            }
+            */
+
+            /*
+            int tilesCount = WorldGrid.TilesCount;
+            for (int i = 0; i < tilesCount; i++)
+            {
+                var result = ModuleResult.GetValue(WorldRendererUtility.)
+            }
             for (var i = 0; i < subMeshes.Count; i++)
             {
                 var mesh = subMeshes[i];
                 mesh.SetColor(Color.Lerp(Color.green, Color.red, (float)(i/(float)subMeshes.Count)));
             }
-
-            /*
+            
+            int tilesCount = WorldGrid.TilesCount;
             for (int i = 0; i < tilesCount; i++)
             {
                 var pos = WorldGrid.GetTileCenter(i);
                 var val = ModuleResult.GetValue(pos);
 
-                var color = val > 0 ? Color.white : Color.clear;
-
+                var color = val > 0.1f ? Color.white : Color.clear;
                 subMeshes[i].SetColor(color);
             }
             */

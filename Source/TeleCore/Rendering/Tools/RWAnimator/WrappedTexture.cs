@@ -15,6 +15,9 @@ namespace TeleCore
         public string Path => path;
         public Texture Texture => texture;
 
+        //
+        public bool IsValid => path != null && texture != null;
+
         public WrappedTexture(string path, Texture texture)
         {
             this.path = path;

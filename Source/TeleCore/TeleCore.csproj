@@ -5,18 +5,32 @@
     <RootNamespace>TeleCore</RootNamespace>
     <AssemblyName>TeleCore</AssemblyName>
     <TargetFramework>net472</TargetFramework>
-    <LangVersion>10.0</LangVersion>
+    <LangVersion>latest</LangVersion>
     <PlatformTarget>x64</PlatformTarget>
     <OutputPath>C:\Program Files (x86)\Steam\steamapps\common\RimWorld\Mods\TeleCore\Assemblies\</OutputPath>
     <Optimize>true</Optimize>
     <DebugType>none</DebugType>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+
+    <Authors>Telefonmast (aka Maxim)</Authors>
+    <PackageTags>RimWorld;Mod;Telefonmast;Framework;Library;</PackageTags>
+    <RepositoryUrl>https://github.com/RealTelefonmast/TeleCore</RepositoryUrl>
+    <Copyright></Copyright>
+    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+    <Company>Telefonmast</Company>
+    <Description>A collection of tools and functionalities for RimWorld modding.</Description>
+    <PackageProjectUrl>https://github.com/RealTelefonmast/TeleCore</PackageProjectUrl>
+    <PackageIcon>TeleCore.jpg</PackageIcon>
+    <AssemblyVersion></AssemblyVersion>
+    <FileVersion></FileVersion>
+    <Version>1.0.12</Version>
+    <SignAssembly>False</SignAssembly>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
-    <DefineConstants>TRACE;DEBUG</DefineConstants> <!-- All published builds have to be built as 'release' because of the debug flag! -->
+    <DefineConstants>TRACE;DEBUG</DefineConstants>
     <WarningLevel>4</WarningLevel>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks> <!-- Unsafe is required for publicising! -->
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
   </PropertyGroup>
 
@@ -26,15 +40,31 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
+	<PropertyGroup>
+		<PackageReadmeFile>README.md</PackageReadmeFile>
+		<PackageLicenseFile>LICENSE.md</PackageLicenseFile>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<None Include="LICENSE.md" Pack="true" PackagePath="" />
+		<None Include="..\..\README.md" Pack="true" PackagePath="" />
+	</ItemGroup>
+
   <ItemGroup>
     <PackageReference Include="Krafs.Rimworld.Ref" Version="*" GeneratePathProperty="true" />
-    <!-- Use Version="*-*" to get the latest beta! -->
     <PackageReference Include="Lib.Harmony" Version="*" ExcludeAssets="runtime" />
     <PackageReference Include="TaskPubliciser" Version="1.0.3" />
 
     <PackageReference Include="Microsoft.NETCore.Platforms" Version="*" />
     <PackageReference Include="UnlimitedHugs.Rimworld.HugsLib" Version="*" ExcludeAssets="runtime" />
     <PackageReference Include="RimWorld.MultiplayerAPI" Version="*" ExcludeAssets="runtime" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="TeleCore.jpg">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
   </ItemGroup>
 
   <Target Name="MyCode" BeforeTargets="UpdateReferences">

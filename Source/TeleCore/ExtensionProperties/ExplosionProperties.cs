@@ -3,17 +3,18 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using RimWorld;
 using Verse;
 
 namespace TeleCore
 {
-    public class ExplosionProperties
+    public class ExplosionProperties : Editable
     {
         public float intensity = 1;
 
         //Default
         //Explosion Props
-        public float explosionRadius;
+        public float explosionRadius = 5f;
         public int? damageOverride;
         public DamageDef damageDef;
 
@@ -31,6 +32,12 @@ namespace TeleCore
         public EffecterDef explosionEffect;
 
         public SoundDef explosionSound;
+
+        public override void ResolveReferences()
+        {
+            base.ResolveReferences();
+            damageDef = DamageDefOf.Bomb;
+        }
 
         public void DoExplosion(IntVec3 center, Map map, Thing instigator)
         {

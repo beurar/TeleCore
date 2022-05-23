@@ -18,8 +18,8 @@ namespace TeleCore.Loading
             {
                 if (__result.recipe is RecipeDef_Network {networkCost: { }} tRecipe)
                 {
-                    NetworkBill_Production networkBill = new NetworkBill_Production(tRecipe);
-                    __result = networkBill;
+                    Bill_Production_Network billProductionNetworkBill = new Bill_Production_Network(tRecipe);
+                    __result = billProductionNetworkBill;
                 }
             }
         }

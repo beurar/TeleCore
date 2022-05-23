@@ -11,21 +11,56 @@ using Verse;
 
 namespace TeleCore
 {
+    public class ListableOption_Tele : ListableOption
+    {
+        public ListableOption_Tele(string label, Action action, string uiHighlightTag = null) : base(label, action, uiHighlightTag) { }
+
+        public override float DrawOption(Vector2 pos, float width)
+        {
+            var b = Text.CalcHeight(label, width);
+            var num = Mathf.Max(minHeight, b);
+            var rect = new Rect(pos.x, pos.y, width, num);
+
+            Texture2D atlas = TeleContent.ButtonBGAtlas;
+            if (Mouse.IsOver(rect))
+            {
+                atlas = TeleContent.ButtonBGAtlasMouseover;
+                if (Input.GetMouseButton(0))
+                {
+                    atlas = TeleContent.ButtonBGAtlasClick;
+                }
+            }
+            Widgets.DrawAtlas(rect, atlas);
+            
+            Text.Anchor = TextAnchor.MiddleCenter;
+            Widgets.Label(rect, label);
+            Text.Anchor = default;
+
+
+            if (Widgets.ButtonInvisible(rect)) 
+                action();
+
+            if (uiHighlightTag != null) 
+                UIHighlighter.HighlightOpportunity(rect, uiHighlightTag);
+            return num;
+        }
+    }
+
     internal static class UIPatches
     {
         [HarmonyPatch(typeof(MainMenuDrawer))]
         [HarmonyPatch(nameof(MainMenuDrawer.DoMainMenuControls))]
-        public static class DoMainMenuControlsPatch
+        internal static class DoMainMenuControlsPatch
         {
-            public static float addedHeight = 45f + 7f;
-            public static List<ListableOption> OptionList;
+            private static float addedHeight = 45f + 7f;
+            private static List<ListableOption> OptionList;
             private static MethodInfo ListingOption = SymbolExtensions.GetMethodInfo(() => AdjustList(null));
 
             static void AdjustList(List<ListableOption> optList)
             {
                 var label = "Options".Translate();
                 var idx = optList.FirstIndexOf(opt => opt.label == label);
-                if (idx > 0 && idx < optList.Count) optList.Insert(idx + 1, new ListableOption(StringCache.TeleTools, delegate ()
+                if (idx > 0 && idx < optList.Count) optList.Insert(idx + 1, new ListableOption_Tele(StringCache.TeleTools, delegate ()
                 {
                     Find.WindowStack.Add(new Dialog_ToolSelection());
                 }, null));
@@ -65,12 +100,13 @@ namespace TeleCore
         //Dialogs
         [HarmonyPatch(typeof(Dialog_BillConfig))]
         [HarmonyPatch("DoWindowContents")]
-        public static class Dialog_BillConfigDoWindowContentsPatch
+        internal static class Dialog_BillConfigDoWindowContentsPatch
         {
-            public static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
+            static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
             {
                 MethodInfo methodFinder = AccessTools.Method(typeof(StringBuilder), nameof(StringBuilder.AppendLine));
-                MethodInfo helper = AccessTools.Method(typeof(Dialog_BillConfigDoWindowContentsPatch), nameof(WriteNetworkCost));
+                MethodInfo helper = AccessTools.Method(typeof(Dialog_BillConfigDoWindowContentsPatch),
+                    nameof(WriteNetworkCost));
 
                 bool continuedToPop = false, finalPatched = false;
                 int i = 0;
@@ -101,22 +137,43 @@ namespace TeleCore
 
             }
 
-            private static void WriteNetworkCost(Dialog_BillConfig instance, StringBuilder stringBuilder)
+            static void WriteNetworkCost(Dialog_BillConfig instance, StringBuilder stringBuilder)
             {
-                if (instance.bill is NetworkBill_Production tBill)
+                if (instance.bill is Bill_Production_Network tBill)
                 {
                     stringBuilder.AppendLine($"Network Cost:");
                     foreach (var cost in tBill.def.networkCost.Cost.SpecificCosts)
                     {
-                        stringBuilder.AppendLine($" - {cost.valueDef.LabelCap.Colorize(cost.valueDef.valueColor)}: {cost.value}");
+                        stringBuilder.AppendLine(
+                            $" - {cost.valueDef.LabelCap.Colorize(cost.valueDef.valueColor)}: {cost.value}");
                     }
 
                     stringBuilder.AppendLine($"BaseShouldBeDone: {tBill.BaseShouldDo}");
                     stringBuilder.AppendLine($"ShouldBeDone: {tBill.ShouldDoNow()}");
-                    stringBuilder.AppendLine($"CompTNW: {tBill.CompTNW is { IsPowered: true }}");
+                    stringBuilder.AppendLine($"CompTNW: {tBill.CompTNW is {IsPowered: true}}");
                     stringBuilder.AppendLine($"def.CanPay: {tBill.def.networkCost.CanPayWith(tBill.CompTNW)}");
                 }
             }
         }
+
+        [HarmonyPatch(typeof(PlaySettings))]
+        [HarmonyPatch(nameof(PlaySettings.DoPlaySettingsGlobalControls))]
+        public static class PlaySettingsPatch
+        {
+            public static void Postfix(WidgetRow row, bool worldView)
+            {
+                if (worldView)
+                {
+                    if (row.ButtonIcon(TeleContent.AddKeyFrame))
+                    {
+                        Find.WindowStack.Add(DefDatabase<DevToolDef>.GetNamed("ModuleVisualizerDef").GetWindow);
+                    }
+                }
+
+                if (worldView || row == null) return;
+
+            }
+        }
+
     }
 }

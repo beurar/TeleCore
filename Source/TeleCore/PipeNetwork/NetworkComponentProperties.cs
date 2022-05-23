@@ -12,35 +12,59 @@ namespace TeleCore
         //Cached Data
         private NetworkRole? networkRole;
         private List<NetworkValueDef> allowedValuesInt;
+        private Dictionary<NetworkRole, List<NetworkValueDef>> allowedValuesByRoleInt;
 
         //Loaded from XML
-        public bool storeEvenly = false;
-
         public Type workerType = typeof(NetworkComponent);
         public NetworkDef networkDef;
         public ContainerProperties containerProps;
+
         //TODO NetworkRoleProperties
-        public List<NetworkRoleProperties> networkRoleProperties = new();
-        public List<NetworkRole> networkRoles = new() { NetworkRole.Transmitter };
-        public NetworkDef allowValuesFromNetwork;
-        private List<NetworkValueDef> allowedValues;
+        public List<NetworkRoleProperties> networkRoles = new(){ NetworkRole.Transmitter };
+
+        //
+        public NetworkDef networkDefForValues;
+        private List<NetworkValueDef> handledValues;
+
+        public Dictionary<NetworkRole, List<NetworkValueDef>> AllowedValuesByRole
+        {
+            get
+            {
+                if (allowedValuesByRoleInt == null)
+                {
+                    allowedValuesByRoleInt = new();
+                    foreach (var role in networkRoles)
+                    {
+                        if (role.HasSubValues && role != NetworkRole.Transmitter)
+                        {
+                            allowedValuesByRoleInt.Add(role, role.subValues);
+                            continue;
+                        }
+                        allowedValuesByRoleInt.Add(role, AllowedValues);
+                    }
+                }
+                return allowedValuesByRoleInt;
+            }
+        }
 
         public List<NetworkValueDef> AllowedValues
         {
             get
             {
-                var list = new List<NetworkValueDef>();
-                if (allowValuesFromNetwork != null)
+                if (allowedValuesInt == null)
                 {
-                    list.AddRange(allowValuesFromNetwork.NetworkValueDefs);
+                    var list = new List<NetworkValueDef>();
+                    if (networkDefForValues != null)
+                    {
+                        list.AddRange(networkDefForValues.NetworkValueDefs);
+                    }
+                    if (!handledValues.NullOrEmpty())
+                    {
+                        list.AddRange(handledValues);
+                    }
+                    allowedValuesInt = list.Distinct().ToList();
                 }
-
-                if (!allowedValues.NullOrEmpty())
-                {
-                    list.AddRange(allowedValues);
-                }
-
-                return allowedValuesInt ??= list.Distinct().ToList();
+                return allowedValuesInt;
             }
         }
 
@@ -48,6 +72,7 @@ namespace TeleCore
         {
             get
             {
+                
                 if (networkRole == null)
                 {
                     networkRole = NetworkRole.Transmitter;

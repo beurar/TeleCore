@@ -10,6 +10,11 @@ namespace TeleCore
         public static readonly Texture2D InfoButton = ContentFinder<Texture2D>.Get("UI/Buttons/InfoButton", true);
         public static readonly Texture2D SideBarArrow = ContentFinder<Texture2D>.Get("UI/Icons/Arrow", true);
 
+        //
+        public static readonly Texture2D ButtonBGAtlas = ContentFinder<Texture2D>.Get("UI/Buttons/ButtonBG");
+        public static readonly Texture2D ButtonBGAtlasMouseover = ContentFinder<Texture2D>.Get("UI/Buttons/ButtonBGMouseover");
+        public static readonly Texture2D ButtonBGAtlasClick = ContentFinder<Texture2D>.Get("UI/Buttons/ButtonBGClick");
+
         //General
         public static readonly Texture2D HightlightInMenu = ContentFinder<Texture2D>.Get("UI/Icons/HighLight", true);
         public static readonly Texture2D OpenMenu = ContentFinder<Texture2D>.Get("UI/Icons/OpenMenu", true);
@@ -27,8 +32,12 @@ namespace TeleCore
         public static readonly Texture2D VisibilityOff = ContentFinder<Texture2D>.Get("UI/Icons/VisibilityOff", false);
         public static readonly Texture2D VisibilityOn = ContentFinder<Texture2D>.Get("UI/Icons/VisibilityOn", false);
 
+        public static readonly Texture2D BurgerMenu = ContentFinder<Texture2D>.Get("UI/Icons/BurgerMenu", false);
+        public static readonly Texture2D SettingsWheel = ContentFinder<Texture2D>.Get("UI/Icons/SettingsWheel", false);
+
         //TimeLine
         public static readonly Texture2D KeyFrame = ContentFinder<Texture2D>.Get("UI/Icons/Animator/KeyFrame", true);
+        public static readonly Texture2D KeyFrameSelection = ContentFinder<Texture2D>.Get("UI/Icons/Animator/KeyFrameSelection", true);
         public static readonly Texture2D AddKeyFrame = ContentFinder<Texture2D>.Get("UI/Icons/Animator/AddKeyFrame", true);
         public static readonly Texture2D TimeSelMarker = ContentFinder<Texture2D>.Get("UI/Icons/Animator/TimeSelector", true);
         public static readonly Texture2D PlayPause = ContentFinder<Texture2D>.Get("UI/Icons/Animator/PlayPause", true);

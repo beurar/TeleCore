@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package >
+  <metadata>
+    <id>$id$</id>
+    <version>1.0.5</version>
+    <title>$title$</title>
+    <authors>Telefonmast (aka Maxim)</authors>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <license type="expression">MIT</license>
+    <icon>TeleCore.jpg</icon>
+    <projectUrl>https://github.com/RealTelefonmast/TeleCore</projectUrl>
+    <description>A collection of tools and functionalities for RimWorld modding.</description>
+    <releaseNotes></releaseNotes>
+    <copyright>$copyright$</copyright>
+    <tags>RimWorld Framework Telefonmast</tags>
+  </metadata>
+</package>

@@ -12,4 +12,10 @@
 		<parentGroup>All</parentGroup>
 	</TeleCore.ThingGroupDef>
 	
+	<TeleCore.ThingGroupDef>
+		<defName>NetworkPortableContainers</defName>
+		<label>portable network containers</label>
+		<parentGroup>All</parentGroup>
+	</TeleCore.ThingGroupDef>
+	
 </Defs>

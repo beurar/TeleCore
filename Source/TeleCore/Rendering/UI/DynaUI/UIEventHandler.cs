@@ -14,8 +14,9 @@ namespace TeleCore
     {
         private static Rect?[] layers = new Rect?[255];
         private static UIElement[] elementLayers = new UIElement[255];
+        private static bool IsInitialized = false;
 
-        public static int CurrentLayer;
+        private static int CurrentLayer;
         public static Vector2 MouseOnScreen { get; private set; }
         public static IFocusable FocusedElement { get; private set; }
         public static UIElement[] Layers => elementLayers;
@@ -24,8 +25,6 @@ namespace TeleCore
 
         public static void RegisterLayer(UIElement element)
         {
-            //TLog.Debug($"Registering {element} at {CurrentLayer}");
-            
             element.RenderLayer = CurrentLayer;
             elementLayers[CurrentLayer] = element;
             CurrentLayer++;
@@ -46,9 +45,21 @@ namespace TeleCore
         }
 
 
-        public static void Notify_MouseOnScreen(Vector2 mousePos)
+        public static void Begin()
         {
-            MouseOnScreen = mousePos;
+            if (IsInitialized)
+            {
+                TLog.Warning($"More calls to {nameof(UIEventHandler)}.{nameof(Begin)} than {nameof(UIEventHandler)}.{nameof(End)}, make sure to close the scope correctly.");
+            }
+            CurrentLayer = 0;
+            MouseOnScreen = Event.current.mousePosition;
+            IsInitialized = true;
+        }
+
+        public static void End()
+        {
+            MouseOnScreen = Vector2.zero;
+            IsInitialized = false;
         }
 
         public static void StartFocusForced(IFocusable element)

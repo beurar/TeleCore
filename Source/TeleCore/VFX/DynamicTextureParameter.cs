@@ -10,7 +10,7 @@ using Verse;
 namespace TeleCore
 {
     /// <summary>
-    /// Allows you to set textures for custom shaders with multiple textures.
+    /// Allows you to set <see cref="Texture2D"/> parameters depending on the <see cref="Graphic"/> type for custom shaders
     /// </summary>
     public class DynamicTextureParameter
     {

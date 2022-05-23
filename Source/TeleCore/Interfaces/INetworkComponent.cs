@@ -24,7 +24,7 @@ namespace TeleCore
         public NetworkRole NetworkRole { get; }
 
         bool ConnectsTo(INetworkComponent other);
-        bool NeedsValue(NetworkValueDef value);
+        bool NeedsValue(NetworkValueDef value, NetworkRole forRole);
 
         void Notify_NewComponentAdded(INetworkComponent component);
         void Notify_NewComponentRemoved(INetworkComponent component);

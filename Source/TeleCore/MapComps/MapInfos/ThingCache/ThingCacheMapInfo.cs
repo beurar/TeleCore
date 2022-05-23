@@ -17,7 +17,7 @@ namespace TeleCore
         {
         }
 
-        public List<Thing> GetThingsFromGroup(ThingGroupDef group)
+        public List<Thing> ThingsOfGroup(ThingGroupDef group)
         {
             return CachedThingsByGroup.TryGetValue(group);
         }

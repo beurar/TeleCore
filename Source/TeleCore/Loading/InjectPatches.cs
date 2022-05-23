@@ -15,9 +15,9 @@ namespace TeleCore
         //This adds gizmos to the pawn
         [HarmonyPatch(typeof(Pawn))]
         [HarmonyPatch("GetGizmos")]
-        public static class Pawn_GetGizmoPatch
+        internal static class Pawn_GetGizmoPatch
         {
-            public static void Postfix(ref IEnumerable<Gizmo> __result, Pawn __instance)
+            private static void Postfix(ref IEnumerable<Gizmo> __result, Pawn __instance)
             {
                 List<Gizmo> gizmos = new List<Gizmo>(__result);
 

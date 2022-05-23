@@ -9,7 +9,7 @@ using Verse;
 namespace TeleCore
 {
     [StaticConstructorOnStartup]
-    public static class CanvasCursor
+    internal static class CanvasCursor
     {
         internal static readonly Texture2D CustomCursor_Drag = ContentFinder<Texture2D>.Get("UI/Cursors/CursorCustom_Drag", true);
         internal static readonly Texture2D CustomCursor_Rotate = ContentFinder<Texture2D>.Get("UI/Cursors/CursorCustom_Rotate", true);

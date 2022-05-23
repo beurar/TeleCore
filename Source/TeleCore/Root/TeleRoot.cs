@@ -9,16 +9,14 @@ namespace TeleCore
     /// </summary>
     public class TeleRoot : MonoBehaviour
     {
-        private TeleTickManager internalTickManager;
-
-        public TeleTickManager TickManager => internalTickManager;
+        //
+        public TeleTickManager TickManager { get; private set; }
 
         public virtual void Start()
         {
             try
             {
-                TFind.TRoot = this;
-                internalTickManager = new TeleTickManager();
+                TickManager = new TeleTickManager();
             }
             catch (Exception arg)
             {
@@ -30,7 +28,7 @@ namespace TeleCore
         {
             try
             {
-                internalTickManager?.Update();
+                TickManager?.Update();
             }
             catch (Exception arg)
             {

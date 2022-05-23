@@ -17,7 +17,7 @@ namespace TeleCore
         {
             public static void Postfix(Thing __instance)
             {
-                var TeleCore = __instance.Map.TeleCore();
+                var TeleCore = __instance.MapHeld.TeleCore();
 
                 //Register For DataBase
                 TeleCore.Notify_ThingSpawned(__instance);
@@ -30,10 +30,10 @@ namespace TeleCore
         {
             public static bool Prefix(Thing __instance)
             {
-                var TeleCore = __instance.Map.TeleCore();
+                var TeleCore = __instance.MapHeld.TeleCore();
 
                 //Register For DataBase
-                TeleCore.Notify_ThingSpawned(__instance);
+                TeleCore.Notify_DespawnedThing(__instance);
                 return true;
             }
         }

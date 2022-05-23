@@ -13,11 +13,15 @@ namespace TeleCore.Static
     {
         //JobDefs
         public static JobDef DoNetworkBill;
+        public static JobDef EmptyPortableContainer;
 
         //Motes Special
         public static ThingDef Mote_Beam;
         public static ThingDef Mote_MuzzleFlash;
         public static ThingDef Mote_Arc;
+        
+        //
+        public static ThingGroupDef NetworkPortableContainers;
 
         //
         public static ThingDef PortableContainer;

@@ -74,30 +74,32 @@ namespace TeleCore
             Rect closeSettingsRect = new Rect(settingsRect.x + halfWidth, settingsRect.y - settingCloseSize.y, settingCloseSize.x, settingCloseSize.y + gizmoPadding);
 
             Rect mainRect = r.ContractedBy(5f);
-            Rect titleRect = new Rect(mainRect.x, mainRect.y, titleSize.x, titleSize.y);
+            Rect widgetRowRect = new Rect(mainRect.x, mainRect.y, mainRect.width, 20);
+            Rect titleRect = new Rect(mainRect.x, widgetRowRect.yMax, titleSize.x, titleSize.y);
             Vector2 roleTextSize = new Vector2(mainRect.width / 2, Text.CalcHeight(cachedStrings[1], mainRect.width / 2));
-            Rect roleReadoutRect = new Rect(mainRect.x + roleTextSize.x, mainRect.y, roleTextSize.x, roleTextSize.y);
-            Rect contentRect = new Rect(mainRect.x, titleRect.yMax, mainRect.width, mainRect.height - titleRect.height);
+            Rect roleReadoutRect = new Rect(mainRect.x + roleTextSize.x, widgetRowRect.yMax, roleTextSize.x, roleTextSize.y);
+            Rect contentRect = new Rect(mainRect.x, titleRect., mainRect.width, mainRect.height - titleRect.height);
             Rect containerBarRect = new Rect(contentRect.x, contentRect.yMax - 16, contentRect.width / 2, 16);
             Rect requestSelectionRect = new Rect(contentRect.x, containerBarRect.y - 10, contentRect.width / 2, 10);
             var padding = 5;
             var iconSize = 30;
             var width = iconSize + 2 * padding;
             var height = 2 * width;
-            Rect buildOptionsRect = new Rect(contentRect.xMax - width, contentRect.yMax - height, width, height);
+            Rect buildOptionsRect = new Rect(contentRect.xMax - width, mainRect.yMax - height, width, height);
 
             UILayout.Register("BGRect", bgRect); //
             UILayout.Register("SettingsRect", settingsRect); //
             UILayout.Register("CloseSettingsButtonRect", closeSettingsRect); //
             UILayout.Register("MainRect", mainRect); //
+            UILayout.Register("WidgetRow", widgetRowRect);
             UILayout.Register("TitleRect", titleRect); //
             UILayout.Register("RoleReadoutRect", roleReadoutRect);
             UILayout.Register("ContentRect", contentRect); //
             UILayout.Register("ContainerRect", containerBarRect); //
             UILayout.Register("RequestSelectionRect", requestSelectionRect); //
             UILayout.Register("BuildOptionsRect", buildOptionsRect); //
-            UILayout.Register("ControllerOptionRect", buildOptionsRect.ContractedBy(5).TopPartPixels(iconSize)); //
-            UILayout.Register("PipeOptionRect", buildOptionsRect.ContractedBy(5).BottomPartPixels(iconSize)); //
+            UILayout.Register("ControllerOptionRect", buildOptionsRect.ContractedBy(padding).TopPartPixels(iconSize)); //
+            UILayout.Register("PipeOptionRect", buildOptionsRect.ContractedBy(padding).BottomPartPixels(iconSize)); //
         }
 
         private string selectedSetting = null;
@@ -176,7 +178,21 @@ namespace TeleCore
         private void DrawMainContent(Rect rect)
         {
             Widgets.DrawWindowBackground(rect);
+
+            //
             Text.Font = GameFont.Tiny;
+
+            WidgetRow subFunctionRow = new WidgetRow();
+            subFunctionRow.Init(rect.x, rect.y, UIDirection.RightThenDown, gap: 0);
+            foreach (var role in parentComp.Props.networkRoles)
+            {
+                if (!role.HasSubValues) continue;
+                if (subFunctionRow.ButtonBox(role.ToString(), TColor.BlueHueBG, Color.gray))
+                {
+
+                }
+            }
+
             Widgets.Label(UILayout["TitleRect"], cachedStrings[0]);
             Text.Anchor = TextAnchor.UpperRight;
             Widgets.Label(UILayout["RoleReadoutRect"], cachedStrings[1]);
@@ -241,7 +257,7 @@ namespace TeleCore
             //Do network build options
             TWidgets.DrawBoxHighlight(UILayout["BuildOptionsRect"]);
             var controllDesignator = StaticData.GetDesignatorFor<Designator_Build>(parentComp.NetworkDef.controllerDef);
-            var pipeDesignator = StaticData.GetDesignatorFor<Designator_Build>(parentComp.NetworkDef.transmitter);
+            var pipeDesignator = StaticData.GetDesignatorFor<Designator_Build>(parentComp.NetworkDef.transmitterDef);
             if (Widgets.ButtonImage(UILayout["ControllerOptionRect"], controllDesignator.icon))
             {
                 controllDesignator.ProcessInput(Event.current);
@@ -308,18 +324,25 @@ namespace TeleCore
                     contentRect = contentRect.AtZero();
 
                     var curX = 5;
-                    var allowedTypes = Container.AcceptedTypes;
+                    var allowedTypes = parentComp.Props.AllowedValuesByRole[NetworkRole.Requester];
                     foreach (var type in allowedTypes)
                     {
                         Rect typeRect = new Rect(curX, contentRect.height - 15, 10, 10);
                         Rect typeSliderSetting = new Rect(curX, contentRect.height - (20 + 100), 10, 100);
+                        Rect typeFilterRect = new Rect(curX, typeSliderSetting.y - 10, 10, 10);
                         Widgets.DrawBoxSolid(typeRect, type.valueColor);
 
-                        var previousValue = parentComp.RequestedTypes[type];
-                        var newValue = TWidgets.VerticalSlider(typeSliderSetting, previousValue, 0, Container.Capacity, 0.01f);
-                        parentComp.RequestedTypes[type] = newValue;
+                        var previous = parentComp.RequestedTypes[type];
+                        var previousValue = previous.Item2;
+                        var previousBool = previous.Item1;
 
-                        var totalRequested = parentComp.RequestedTypes.Values.Sum();
+                        //
+                        var newValue = TWidgets.VerticalSlider(typeSliderSetting, previousValue, 0, Container.Capacity, 0.01f);
+                        Widgets.Checkbox(typeFilterRect.position, ref previousBool, 10);
+
+                        parentComp.RequestedTypes[type] = (previousBool, newValue);
+
+                        var totalRequested = parentComp.RequestedTypes.Values.Sum(v => v.Item2);
                         if (totalRequested > Container.Capacity)
                         {
                             if (previousValue < newValue)
@@ -327,7 +350,10 @@ namespace TeleCore
                                 foreach (var type2 in allowedTypes)
                                 {
                                     if (type2 == type) continue;
-                                    parentComp.RequestedTypes[type2] = Mathf.Lerp(0, parentComp.RequestedTypes[type2], 1f - Mathf.InverseLerp(0, Container.Capacity, newValue));
+                                    var val = parentComp.RequestedTypes[type2].Item2;
+                                    val = Mathf.Lerp(val, 0, 1f - newValue);
+                                    parentComp.RequestedTypes[type2] = (parentComp.RequestedTypes[type2].Item1, val);
+                                    //val = Mathf.Lerp(0, val, 1f - Mathf.InverseLerp(0, Container.Capacity, newValue));
                                     //parentComp.RequestedTypes[type2] = Mathf.Clamp(parentComp.RequestedTypes[type2] - (diff / (parentComp.RequestedTypes.Count - 1)), 0, Container.Capacity);
                                 }
                             }

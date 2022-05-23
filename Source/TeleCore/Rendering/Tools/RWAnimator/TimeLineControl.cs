@@ -16,11 +16,10 @@ namespace TeleCore
     {
         //public KeyFrameData EditData { get; }
         public KeyFrameData CurrentData { get; }
-
         public UIElement Owner { get; }
     }
 
-    public class TimeLineControl : UIElement
+    internal class TimeLineControl : UIElement
     {
         //
         private const int _PixelsPerTick = 4;
@@ -30,21 +29,46 @@ namespace TeleCore
         private bool isPaused = true;
         private IntRange _tempReplayBounds;
 
+        //
+        private (IKeyFramedElement, KeyFrame)? selectedKeyframe;
+        private (IKeyFramedElement, KeyFrame)? draggedKeyframe;
+
+        private KeyFrame? oldKF;
+        private KeyFrame? currentDraggedKF;
+
+        //Copy & Paste
+        private (IKeyFramedElement, KeyFrame)? copiedKeyFrame;
+
         //Animation Data
-        public AnimationPartValue CurrentPart => Canvas.CurrentAnimationPart;
-
-        public Dictionary<IKeyFramedElement, Dictionary<int, KeyFrame>> AnimationPartFrames => CurrentPart.InternalFrames;
         public bool HasAnimation => Canvas.AnimationData.CurrentAnimations.Any();
+        public AnimationPartValue CurrentPart => Canvas.CurrentAnimationPart;
         public int AnimationLength => CurrentPart.frames;
+        public Dictionary<IKeyFramedElement, Dictionary<int, KeyFrame>> AnimationPartFrames => CurrentPart.InternalFrames;
 
-        public List<UIElement> Elements => Canvas.Children;
+        //Canvas Elements
+        public List<UIElement> Elements => Canvas.TextureElements;
+        public IEnumerable<IKeyFramedElement> KeyFramedElements => Canvas.TextureElements.Select(t => (IKeyFramedElement) t);
 
         //UI
         private float zoomFactor = 1f;
-        private FloatRange zoomRange = new FloatRange(0.25f, 2f);
+        private FloatRange zoomRange = new FloatRange(1f, 8f);
 
         private Vector2 elementScrollPos = Vector2.zero;
         private Vector2 timeLineScrollPos = Vector2.zero;
+
+        private const int _TopSize = 40;
+        private const int _LeftSize = 125;
+        private const int _ElementSize = 25;
+        private const int _TimeLineContract = 10;
+
+        private Rect LeftRect => InRect.LeftPartPixels(_LeftSize);
+        private Rect RightRect => InRect.RightPartPixels(InRect.width - _LeftSize);
+
+        private Rect TopLeft => LeftRect.TopPartPixels(_TopSize);
+        private Rect BotLeft => LeftRect.BottomPartPixels(InRect.height - _TopSize);
+
+        private Rect TopRight => RightRect.TopPartPixels(_TopSize);
+        private Rect BotRight => RightRect.BottomPartPixels(InRect.height - _TopSize);
 
         private float TimeSelectorPctPos => CurrentFrame / (float)AnimationLength;
 
@@ -77,7 +101,7 @@ namespace TeleCore
         {
             TFind.TickManager.RegisterUITickAction(delegate
             {
-                if (isPaused) return;
+                if (isPaused || !HasAnimation) return;
                 if (CurrentFrame >= ReplayBounds.max)
                 {
                     CurrentFrame = ReplayBounds.min;
@@ -87,6 +111,10 @@ namespace TeleCore
             });
         }
 
+        public void Reset()
+        {
+            isPaused = true;
+        }
 
         //KeyFrames
         //Adding
@@ -179,6 +207,38 @@ namespace TeleCore
                 if (ev.keyCode == KeyCode.RightArrow)
                     CurrentFrame++;
             }
+
+            var holdingLShift = Input.GetKey(KeyCode.LeftShift);
+            var holdingCtrl = Input.GetKey(KeyCode.LeftControl);
+            if (holdingCtrl && Input.GetKeyDown(KeyCode.C))
+            {
+                if (selectedKeyframe.HasValue)
+                {
+                    var selKF = selectedKeyframe.Value;
+                    copiedKeyFrame = (selKF.Item1, selKF.Item2);
+                }
+            }
+
+            if (holdingCtrl && Input.GetKeyDown(KeyCode.V))
+            {
+                if(copiedKeyFrame.HasValue)
+                    UpdateKeyframeFor(copiedKeyFrame?.Item1, copiedKeyFrame.Value.Item2.Data);
+            }
+
+            if (holdingLShift && ev.isScrollWheel && RightRect.Contains(ev.mousePosition))
+            {
+                CurrentZoom += Input.mouseScrollDelta.y / 10f;
+                ev.Use();
+            }
+
+            if (Input.GetKeyDown(KeyCode.Delete))
+            {
+                if (selectedKeyframe.HasValue)
+                {
+                    CurrentPart.InternalFrames[selectedKeyframe.Value.Item1].Remove(selectedKeyframe.Value.Item2.Frame);
+                }
+            }
+
             /*
             if (ev.isScrollWheel)
             {
@@ -193,20 +253,6 @@ namespace TeleCore
 
         protected override void DrawContentsBeforeRelations(Rect inRect)
         {
-            int topSize = 40;
-            int leftSize = 125;
-            int elementSize = 25;
-            int timeLineContract = 10;
-
-            Rect leftRect = inRect.LeftPartPixels(leftSize);
-            Rect rightRect = inRect.RightPartPixels(inRect.width - leftSize);
-
-            Rect topLeft = leftRect.TopPartPixels(topSize);
-            Rect botLeft = leftRect.BottomPartPixels(inRect.height - topSize);
-
-            Rect topRight = rightRect.TopPartPixels(topSize);
-            Rect botRight = rightRect.BottomPartPixels(inRect.height - topSize);
-
             if (!HasAnimation)
             {
                 /*
@@ -244,54 +290,54 @@ namespace TeleCore
                 return;
             }
 
-            TimeControlButtons(TopRect.RightPartPixels(TopRect.width - leftSize));
+            TimeControlButtons(TopRect.RightPartPixels(TopRect.width - _LeftSize));
 
             //Element List Scroller
             int elementListCount = Elements.Count;
-            Rect elementListViewRect = new Rect(botLeft.x, botLeft.y, botLeft.width, (elementListCount * elementSize));
+            Rect elementListViewRect = new Rect(BotLeft.x, BotLeft.y, BotLeft.width, (elementListCount * _ElementSize));
 
             //Time Line Scroller
-            Rect timeLineSelectorRect = new Rect(topRight.x, topRight.y, TimeLineLength, topRight.height);
-            Rect timelineViewRect = new Rect(topRight.x, topRight.y, TimeLineLength, rightRect.height).ExpandedBy(timeLineContract, 0);
-            Rect timelineBotViewRect = new Rect(botRight.x, botRight.y, TimeLineLength, elementListViewRect.height);
+            Rect timeLineSelectorRect = new Rect(TopRight.x, TopRight.y, TimeLineLength, TopRight.height);
+            Rect timelineViewRect = new Rect(TopRight.x, TopRight.y, TimeLineLength, RightRect.height).ExpandedBy(_TimeLineContract, 0);
+            Rect timelineBotViewRect = new Rect(BotRight.x, BotRight.y, TimeLineLength, elementListViewRect.height);
 
             //
             float curY = 0;
-            Widgets.BeginScrollView(botLeft, ref elementScrollPos, elementListViewRect, false);
+            Widgets.BeginScrollView(BotLeft, ref elementScrollPos, elementListViewRect, false);
             {
                 curY = elementListViewRect.y;
-                foreach (var element in AnimationPartFrames.Keys)
+                foreach (var element in KeyFramedElements)
                 {
-                    Rect left = new Rect(botLeft.x, curY, botLeft.width, elementSize);
+                    Rect left = new Rect(BotLeft.x, curY, BotLeft.width, _ElementSize);
                     ElementListing(left, element);
-                    curY += elementSize;
+                    curY += _ElementSize;
                 }
             }
             Widgets.EndScrollView();
 
             //
-            Widgets.DrawBoxSolid(rightRect, TColor.BGDarker);
-            Widgets.ScrollHorizontal(rightRect, ref timeLineScrollPos, timelineViewRect);
-            Widgets.BeginScrollView(rightRect, ref timeLineScrollPos, timelineViewRect, false);
+            Widgets.DrawBoxSolid(RightRect, TColor.BGDarker);
+            Widgets.ScrollHorizontal(RightRect, ref timeLineScrollPos, timelineViewRect);
+            Widgets.BeginScrollView(RightRect, ref timeLineScrollPos, timelineViewRect, false);
             {
                 DrawTimeSelector(timeLineSelectorRect, timelineViewRect.height);
             }
             Widgets.EndScrollView();
 
             timeLineScrollPos = new Vector2(timeLineScrollPos.x, elementScrollPos.y);
-            GUI.BeginScrollView(botRight, timeLineScrollPos, timelineBotViewRect, GUIStyle.none, GUIStyle.none);
+            GUI.BeginScrollView(BotRight, timeLineScrollPos, timelineBotViewRect, GUIStyle.none, GUIStyle.none);
             {
                 curY = timelineBotViewRect.y;
-                foreach (var element in AnimationPartFrames.Keys)
+                foreach (var element in KeyFramedElements)
                 {
-                    Rect right = new Rect(timelineBotViewRect.x, curY, TimeLineLength, elementSize).ContractedBy(timeLineContract, 0);
+                    Rect right = new Rect(timelineBotViewRect.x, curY, TimeLineLength, _ElementSize).ContractedBy(_TimeLineContract, 0);
                     ElementTimeLine(right, element);
-                    curY += elementSize;
+                    curY += _ElementSize;
                 }
             }
             GUI.EndScrollView();
 
-            TWidgets.DrawBox(rightRect, TColor.MenuSectionBGBorderColor, 1);
+            TWidgets.DrawBox(RightRect, TColor.MenuSectionBGBorderColor, 1);
         }
 
         private void DrawTimeSelector(Rect timeBar, float totalHeight)
@@ -448,16 +494,80 @@ namespace TeleCore
         private void ElementListing(Rect leftRect, IKeyFramedElement element)
         {
             TWidgets.DrawBox(leftRect, SelectedElement  == element ? Color.cyan : TColor.White05, 1);
-            Widgets.Label(leftRect, $"{element.Owner.Label}");
+            Widgets.Label(leftRect, $"{((TextureElement)element).LayerTag}");
             if (Widgets.ButtonImage(leftRect.RightPartPixels(20), TeleContent.DeleteX))
             {
                 AnimationPartFrames[element].Clear();
             }
         }
 
-        private void TryStartOrDragKeyframe(KeyFrame keyframe, Rect keyFrameRect)
+        private void TryStartOrDragKeyframe(IKeyFramedElement element, KeyFrame keyFrame, Rect selRect)
         {
+            //
+            var ev = Event.current;
+            if (ev.type == EventType.MouseDown && Mouse.IsOver(selRect))
+            {
+                //Left Click
+                if (ev.button == 0)
+                {
+                    oldKF ??= keyFrame;
+                    currentDraggedKF ??= keyFrame;
+                    draggedKeyframe ??= (element, keyFrame);
+                    SetSelectedKeyFrame(element, keyFrame);
+                }
 
+                //Right Click
+                if (ev.button == 1)
+                {
+                    Find.WindowStack.Add(new FloatMenu(new List<FloatMenuOption>()
+                    {
+                        new ("Delete", () =>
+                        {
+                            CurrentPart.InternalFrames[element].Remove(keyFrame.Frame);
+                        })
+                    }));
+                }
+            }
+
+            if (ev.type == EventType.MouseDrag)
+            {
+                //
+                if (oldKF.HasValue)
+                {
+                    var tickDiff = oldKF.Value.Frame + Mathf.RoundToInt(CurrentDragDiff.x / PixelPerTickAdjusted);
+                    currentDraggedKF = new KeyFrame(oldKF.Value.Data, Mathf.Clamp(tickDiff, 0, AnimationLength));
+                }
+            }
+
+            if (ev.type == EventType.MouseUp)
+            {
+                if (currentDraggedKF.HasValue)
+                {
+                    if (currentDraggedKF.Value.Frame != oldKF.Value.Frame)
+                    {
+                        //Drop dragged and replace with old KeyFrame
+                        CurrentPart.InternalFrames[draggedKeyframe.Value.Item1].Remove(oldKF.Value.Frame);
+                        CurrentPart.InternalFrames[draggedKeyframe.Value.Item1].Add(currentDraggedKF.Value.Frame, currentDraggedKF.Value);
+                        SetSelectedKeyFrame(draggedKeyframe.Value.Item1, currentDraggedKF.Value);
+                    }
+                }
+
+                //Reset
+                draggedKeyframe = null;
+                oldKF = null;
+                currentDraggedKF = null;
+            }
+        }
+
+        private void SetSelectedKeyFrame(IKeyFramedElement element, KeyFrame keyFrame)
+        {
+            selectedKeyframe = (element, keyFrame);
+        }
+
+        private bool IsSelected(IKeyFramedElement element, KeyFrame keyFrame)
+        {
+            if (!selectedKeyframe.HasValue) return false;
+            return selectedKeyframe.Value.Item2 == keyFrame && selectedKeyframe?.Item1 == element;
         }
 
         private void ElementTimeLine(Rect rightRect, IKeyFramedElement element)
@@ -468,29 +578,42 @@ namespace TeleCore
             Widgets.DrawLineHorizontal(rightRect.x, yPos, rightRect.width);
             GUI.color = Color.white;
 
-            GetKeyFrames(element, out var frame1, out var frame2, out _);
-            var elements = AnimationPartFrames[element].Values;
-            var elementData = GetDataFor(element);
-            var atKeyFrame = GetKeyFrame(element);
-            foreach (var keyFrame in elements)
+            var elements = AnimationPartFrames[element].Values.ToList();
+            for (var i = 0; i < elements.Count; i++)
             {
+                var keyFrame = elements[i];
                 Rect rect = new Vector2(rightRect.x + keyFrame.Frame * PixelPerTickAdjusted, yPos).RectOnPos(new Vector2(20, 20));
                 TooltipHandler.TipRegion(rect, $"Frame:\n{element.CurrentData}");
 
                 //Dragger
-                TryStartOrDragKeyframe(keyFrame, rect);
+                TryStartOrDragKeyframe(element, keyFrame, rect);
 
-                if (keyFrame.Equals(frame1))
-                    GUI.color = Color.magenta;
-                if (keyFrame.Equals(frame2))
-                    GUI.color = Color.cyan;
+                if (draggedKeyframe.HasValue)
+                {
+                    if (draggedKeyframe.Value.Item1 == element && draggedKeyframe.Value.Item2 == keyFrame)
+                    {
+                        GUI.color = TColor.NiceBlue;
+                        Rect rect2 = new Vector2(rightRect.x + currentDraggedKF.Value.Frame * PixelPerTickAdjusted, yPos).RectOnPos(new Vector2(20, 20));
+                        Widgets.DrawTextureFitted(rect2, TeleContent.KeyFrame, 1f);
+                        GUI.color = Color.white;
+                    }
+                }
 
-                //if(IsAtKeyFrame(element, out var data) && data == keyFrame && element == SelectedElement)
+                var isSelected = IsSelected(element, keyFrame);
+                if (isSelected)
+                    GUI.color = TColor.Blue;
 
-                if(atKeyFrame == keyFrame)
-                    GUI.color = Color.green;
+                if (keyFrame.Equals(oldKF))
+                    GUI.color = TColor.White05;
+
+                if (Mouse.IsOver(rect))
+                    GUI.color = TColor.NiceBlue;
 
                 Widgets.DrawTextureFitted(rect, TeleContent.KeyFrame, 1f);
+                if (isSelected)
+                {
+                    Widgets.DrawTextureFitted(rect, TeleContent.KeyFrameSelection, 1f);
+                }
 
                 GUI.color = Color.white;
             }
@@ -508,7 +631,7 @@ namespace TeleCore
             //Add at current frame
             if (row.ButtonIcon(TeleContent.AddKeyFrame))
             {
-                foreach (var element in AnimationPartFrames.Keys)
+                foreach (var element in KeyFramedElements)
                 {
                     SetKeyFrameFor(element);
                 }
@@ -517,7 +640,7 @@ namespace TeleCore
             //Remove at current frame
             if (row.ButtonIcon(TeleContent.AddKeyFrame,backgroundColor:Color.red))
             {
-                foreach (var element in AnimationPartFrames.Keys)
+                foreach (var element in KeyFramedElements)
                 {
                     RemoveKeyFrameFor(element);
                 }

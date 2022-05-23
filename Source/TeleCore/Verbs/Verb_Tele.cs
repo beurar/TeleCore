@@ -214,10 +214,19 @@ namespace TeleCore
             var flag = TryCastAttack();
             if (!flag) return false;
 
-            Props.originEffecter.Spawn(caster.Position, caster.Map, CurrentShotOffset);
+            //Do Origin Effect if exists
+            if (Props.originEffecter != null)
+            {
+                Props.originEffecter.Spawn(caster.Position, caster.Map, CurrentShotOffset);
+            }
 
             //Did Shot
             Notify_SingleShot();
+
+            if (verbProps.consumeFuelPerShot > 0f)
+            {
+                turretGun?.RefuelComp?.ConsumeFuel(verbProps.consumeFuelPerShot);
+            }
 
             //TODO: Add power consumption
             if (Props.powerConsumptionPerShot > 0)

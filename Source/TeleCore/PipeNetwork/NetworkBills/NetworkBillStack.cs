@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using RimWorld;
+using UnityEngine;
 using Verse;
 
 namespace TeleCore
@@ -13,6 +15,9 @@ namespace TeleCore
         public static readonly float MarketPriceFactor = 2.4f;
         public static readonly float WorkAmountFactor = 10;
         
+        //Details
+        private CustomNetworkBill detailsRequester;
+
         //
         private Comp_NetworkBillsCrafter billStackOwner;
         private List<CustomNetworkBill> bills = new();
@@ -32,10 +37,10 @@ namespace TeleCore
         public IEnumerable<NetworkComponent> ParentNetComps => UsedNetworks?.Select(n => ParentComp[n]) ?? null;
         public IEnumerable<NetworkDef> UsedNetworks => CurrentBill?.networkCost.Select(t => t.Def.networkDef)?.Distinct() ?? null;
 
-        public List<CustomRecipeRatioDef> Ratios => ParentComp.Props.ratios;
+        public List<CustomRecipeRatioDef> Ratios => ParentComp.Props.UsedRatioDefs;
 
         public List<CustomNetworkBill> Bills => bills;
-        public CustomNetworkBill CurrentBill => bills.FirstOrDefault();
+        public CustomNetworkBill CurrentBill => bills.FirstOrDefault(c => c?.ShouldDoNow() ?? false);
         public int Count => bills.Count;
 
         public CustomNetworkBill this[int index] => bills[index];
@@ -43,8 +48,8 @@ namespace TeleCore
         public NetworkBillStack(Comp_NetworkBillsCrafter parent)
         {
             billStackOwner = parent;
-            textBuffers = new string[parent.Props.ratios.Count];
-            foreach (var recipe in parent.Props.ratios)
+            textBuffers = new string[Ratios.Count];
+            foreach (var recipe in Ratios)
             {
                 RequestedAmount.Add(recipe, 0);
             }
@@ -116,6 +121,28 @@ namespace TeleCore
                 RequestedAmount[Ratios[i]] = 0;
                 TotalCost = null;
             }
+        }
+
+        //Drawing
+        public void TryDrawBillDetails(Rect detailRect)
+        {
+            if (detailsRequester == null) return;
+            Find.WindowStack.ImmediateWindow(this.GetHashCode(), detailRect, WindowLayer.Dialog, () =>
+            {
+                detailRect = detailRect.AtZero();
+                TWidgets.DrawColoredBox(detailRect, TColor.BGDarker, TColor.WindowBGBorderColor, 1);
+                CustomNetworkBillUtility.DrawDetails(detailRect.ContractedBy(5), detailsRequester);
+            }, false, false, 0);
+        }
+
+        public void RequestDetails(CustomNetworkBill customNetworkBill)
+        {
+            if (detailsRequester == customNetworkBill)
+            {
+                detailsRequester = null;
+                return;
+            }
+            detailsRequester = customNetworkBill;
         }
     }
 }

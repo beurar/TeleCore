@@ -41,7 +41,8 @@ namespace TeleCore
             for (var i = 0; i < holderProps.turrets.Count; i++)
             {
                 var props = holderProps.turrets[i];
-                var turret = (TurretGun) Activator.CreateInstance(props.turretGunClass, new {props, i, set, parent});
+                var turret = (TurretGun) Activator.CreateInstance(props.turretGunClass);
+                turret.Setup(props, i, set, parent);
                 turrets.Add(turret);
                 mainGun ??= turret;
             }
@@ -140,6 +141,8 @@ namespace TeleCore
         {
             StringBuilder sb = new StringBuilder();
             sb.AppendLine($"Active turrets: {turrets.Count}");
+            sb.AppendLine($"PlayerControlled: {this.parent.PlayerControlled}");
+            sb.AppendLine($"CanSetForcedTarget: {MainGun.CanSetForcedTarget}");
             if (!Enumerable.Any(turrets)) return sb.ToString().TrimEndNewlines();
 
             sb.AppendLine("-- Main Turret --");

@@ -17,17 +17,18 @@ namespace TeleCore
         public FXDefExtension Extension => def.Tele().graphics;
         public CompFX FXComp => this.GetComp<CompFX>();
 
+        public virtual bool IsMain => true;
+        public virtual int Priority => 100;
         public virtual bool ShouldThrowFlecks => true;
-        public virtual bool[] DrawBools => new bool[1] { true };
-        public virtual float[] OpacityFloats => new float[1] { 1f };
-        public virtual float?[] RotationOverrides => null;
-        public virtual float?[] MoveSpeeds => null;
-        public virtual Color?[] ColorOverrides => null;
-        public virtual Vector3?[] DrawPositions => null;
-        public virtual Action<FXGraphic>[] Actions => null;
-        public virtual Vector2? TextureOffset => null;
-        public virtual Vector2? TextureScale => null;
         public virtual CompPower ForcedPowerComp => null;
+        public virtual bool FX_AffectsLayerAt(int index) => true;
+        public virtual bool FX_ShouldDrawAt(int index) => true;
+        public virtual float FX_GetOpacityAt(int index) => 1f;
+        public virtual float? FX_GetRotationAt(int index) => null;
+        public virtual float? FX_GetRotationSpeedAt(int index) => null;
+        public virtual Color? FX_GetColorAt(int index) => null;
+        public virtual Vector3? FX_GetDrawPositionAt(int index) => null;
+        public virtual Action<FXGraphic> FX_GetActionAt(int index) => null;
 
         //
         public override void SpawnSetup(Map map, bool respawningAfterLoad)

@@ -7,95 +7,52 @@ using Verse;
 
 namespace TeleCore
 {
-    public class TextureCanvas : UIElement, IDragAndDropReceiver
+    internal class TextureCanvas : BasicCanvas
     {
-        //
-        internal const int BufferSize = 2 + 2 + 2 + 4 + 1;
-        internal const int _TileSize = 100;
-        internal const float CanvasSize = 5;
-        internal static FloatRange SizeRange = new FloatRange(0.01f, CanvasSize);
-        internal static Vector2 TileVector = new Vector2(_TileSize, _TileSize);
-
-        //
-        private Dictionary<KeyFrame, string[]> StringBuffers = new();
-
-        //Layer Scroller
         private TextureLayerView layerView;
-
-        //Internal Data
         private AnimationMetaData animationMetaData;
 
-        public AnimationMetaData AnimationData
-        {
-            get => animationMetaData;
-        }
+        private Vector2 partListingScrollPos = Vector2.zero;
 
-        public bool Initialized => animationMetaData.Initialized;
-        public bool ReadyToAnimate => animationMetaData.SelectedAnimationPart != null;
-
-        public bool CanWork => Initialized && ReadyToAnimate;
-
-        public override List<UIElement> Children => animationMetaData.CurrentElementList;
-
-        public AnimationPartValue CurrentAnimationPart => animationMetaData.SelectedAnimationPart;
-        public TextureElement ActiveTexture => layerView.ActiveElement;
+        //Public Accessors
+        public AnimationMetaData AnimationData => animationMetaData;
         public TimeLineControl TimeLine { get; set; }
 
         public override string Label => "Canvas";
         public override UIContainerMode ContainerMode => UIContainerMode.Reverse;
 
+        //State
+        public bool Initialized => animationMetaData.Initialized;
+        public bool ReadyToAnimate => animationMetaData.SelectedAnimationPart != null;
+        public bool CanWork => Initialized && ReadyToAnimate;
+        private bool CanDrawEelementProperties => ActiveTexture != null && DrawElementPropertiesSetting;
+
+        //Settings
+        public bool DrawMetaDataSetting { get; private set; } = true;
+        private bool DrawElementPropertiesSetting { get; set; }
+
+        //
+        public override List<UIElement> TextureElements => animationMetaData.CurrentElementList;
+
+        public TextureElement ActiveTexture => layerView.ActiveElement;
+        public AnimationPartValue CurrentAnimationPart => animationMetaData.SelectedAnimationPart;
+
+        //Rects
         private Rect TextureLayerViewRect => new Rect((Position.x + Size.x) - 1, Position.y, 150, Size.y);
         private Rect DataReadoutRect => new Rect(InRect.xMax - 250, InRect.y + 1, 250, 750);
         public Rect MetaDataViewRect => new Rect((CanWork ? TextureLayerViewRect.xMax : TextureLayerViewRect.x) - 1, Position.y, 500 + 1, 250);
 
-
-        //Render Data
-        private Vector2? oldDragPos;
-        private float zoomScale = 1;
-        private FloatRange scaleRange = new FloatRange(0.5f, 20);
-
-        //Scroller
-        private Vector2 partListingScrollPos = Vector2.zero;
-
-        public Vector2 Origin => InRect.AtZero().center + DragPos;
-        public Vector2 TrueOrigin => InRect.center + DragPos;
-        public Vector2 DragPos { get; private set; } = Vector2.zero;
-        private Vector2 LimitSize => (Size * 1f) * CanvasZoomScale;
-
-        public float CanvasZoomScale => zoomScale;
-
-        //Settings
-        public bool DrawMetaDataSetting { get; private set; } = true;
-        public bool DrawElementPropertiesSetting { get; private set; }
-
-        //States
-        private bool CanDrawEelementProperties => ActiveTexture != null && DrawElementPropertiesSetting;
-
-        //Event stuff
-        public Vector2 MousePos => (Event.current.mousePosition - TrueOrigin) / CanvasZoomScale;
-
         public TextureCanvas(UIElementMode mode) : base(mode)
         {
-            animationMetaData = new AnimationMetaData(this);
             layerView = new TextureLayerView(this);
+            animationMetaData = new AnimationMetaData(this);
             UIDragNDropper.RegisterAcceptor(this);
         }
 
-        //
-        public string[] BufferFor(KeyFrame frame)
+        //Data
+        public override void Reset()
         {
-            if (StringBuffers.ContainsKey(frame))
-            {
-                return StringBuffers[frame];
-            }
-            var buffer = new string[BufferSize];
-            frame.Data.UpdateBuffer(buffer);
-            StringBuffers.Add(frame, buffer);
-            return StringBuffers[frame];
-        }
-
-        public void Reset()
-        {
+            base.Reset();
             animationMetaData = new AnimationMetaData(this);
             layerView = new TextureLayerView(this);
         }
@@ -110,8 +67,12 @@ namespace TeleCore
         {
             base.Notify_AddedElement(newElement);
             layerView.Notify_NewLayer(newElement as TextureElement);
-            if (AnimationData.Loading) return;
-            AnimationData.CurrentAnimations.ForEach(a => a.InternalFrames.Add(newElement as TextureElement, new Dictionary<int, KeyFrame>()));
+
+            if (newElement is not IKeyFramedElement framedElement) return;
+            foreach (var animation in AnimationData.CurrentAnimations)
+            {
+                animation.InternalFrames.Add(framedElement, new Dictionary<int, KeyFrame>());
+            }
         }
 
         protected override void Notify_RemovedElement(UIElement newElement)
@@ -145,7 +106,13 @@ namespace TeleCore
             layerView.Notify_SelectIndex(AnimationData.ElementIndex);
         }
 
-        protected override void HandleEvent_Custom(Event ev, bool inContext = false)
+        private void Notify_UpdateAllLayers(TextureElement element)
+        {
+            AnimationData.CurrentAnimations.ForEach(c => c.InternalFrames[element].TryAdd(TimeLine.CurrentFrame, new KeyFrame(element.CurrentData, TimeLine.CurrentFrame)));
+        }
+
+        //Events
+        protected override void HandleEvent_OnCanvas(Event ev, bool inContext = false)
         {
             if (!CanWork) return;
 
@@ -153,70 +120,53 @@ namespace TeleCore
             {
                 if (CanDrawEelementProperties && Mouse.IsOver(DataReadoutRect))
                 {
-                    if(ev.type == EventType.MouseDown)
+                    if (ev.type == EventType.MouseDown)
                         UIEventHandler.StartFocus(this, DataReadoutRect);
-                }
-                else
-                {
-                    if (IsFocused && ev.button == 0)
-                    {
-                        if (ev.type == EventType.MouseDown)
-                        {
-                            oldDragPos = DragPos;
-                        }
-
-                        //Pan
-                        if (ev.type == EventType.MouseDrag && oldDragPos.HasValue)
-                        {
-                            var dragDiff = (CurrentDragDiff);
-                            var oldDrag = oldDragPos.Value;
-                            DragPos = new Vector2(oldDrag.x + dragDiff.x, oldDrag.y + dragDiff.y);
-                        }
-                    }
-
-                    //Zoom
-                    if (ev.type == EventType.ScrollWheel)
-                    {
-                        var zoomDelta = (ev.delta.y / _TileSize) * zoomScale;
-                        zoomScale = Mathf.Clamp(zoomScale - zoomDelta, scaleRange.min, scaleRange.max);
-                        if (zoomScale < scaleRange.max && zoomScale > scaleRange.min)
-                            DragPos += MousePos * zoomDelta;
-                    }
-                }
-
-                //Clear data always
-                if (ev.type == EventType.MouseUp)
-                {
-                    oldDragPos = null;
                 }
             }
         }
 
-        private void DoTopBarControls()
+        //Drawing
+        private void DrawChildProperties(Rect rect)
         {
-            //TopBar
-            Rect rightTop = TopRect.RightPartPixels(60);
-            Rect viewMetaData = rightTop.RightHalf();
-            Rect viewElementProperties = rightTop.LeftHalf();
-            if (Widgets.ButtonImage(viewMetaData, TeleContent.HightlightInMenu))
+            Widgets.DrawMenuSection(rect);
+            Listing_Standard listing = new Listing_Standard();
+            listing.Begin(rect.ContractedBy(4));
+            listing.Label("Sub Parts");
+            listing.GapLine();
+
+            foreach (var part in ActiveTexture.SubParts)
+            {
+                listing.TextureElement(part);
+            }
+
+            listing.End();
+        }
+
+        protected override void DrawTopBarExtras(Rect topRect)
+        {
+            if (!Initialized) return;
+            WidgetRow buttonRow = new WidgetRow();
+            buttonRow.Init(topRect.xMax, topRect.y, UIDirection.LeftThenDown);
+            if (buttonRow.ButtonIcon(TeleContent.SettingsWheel))
             {
                 DrawMetaDataSetting = !DrawMetaDataSetting;
             }
-            if (Widgets.ButtonImage(viewElementProperties, TeleContent.HightlightInMenu))
+            if (buttonRow.ButtonIcon(TeleContent.BurgerMenu))
             {
                 DrawElementPropertiesSetting = !DrawElementPropertiesSetting;
             }
         }
 
-        protected override void DrawContentsBeforeRelations(Rect inRect)
+        protected override bool CanManipulateAt(Vector2 mousePos, Rect inRect)
         {
-            if (!Initialized) return;
-            DrawGrid(inRect);
+            if (!Initialized) return false;
+            if (DrawElementPropertiesSetting && DataReadoutRect.Contains(mousePos)) return false;
+            return true;
         }
 
-        protected override void DrawContentsAfterRelations(Rect inRect)
+        protected override void DrawOnCanvas(Rect inRect)
         {
-            DoTopBarControls();
             if (Initialized)
             {
                 if (DrawMetaDataSetting)
@@ -226,7 +176,7 @@ namespace TeleCore
 
                 if (!CanWork)
                 {
-                    var workingRect = Origin.RectOnPos(new Vector2(260, 130)).Rounded();
+                    var workingRect = InRect.AtZero().center.RectOnPos(new Vector2(260, 130)).Rounded();
                     Text.Anchor = TextAnchor.MiddleCenter;
                     Widgets.Label(workingRect, "Missing Animation Parts");
                     Text.Anchor = default;
@@ -260,23 +210,21 @@ namespace TeleCore
             //
             var element = UIEventHandler.FocusedElement as UIElement;
             var texElement = element as TextureElement;
-            TWidgets.DoTinyLabel(inRect, $"Focused: {element}[{(element)?.RenderLayer}]\n{Event.current.mousePosition}\n{MousePos}\n{(element)?.CurrentDragDiff}" + $"\n{((element?.StartDragPos - (texElement?.TextureRect.center)) ?? Vector2.zero).normalized}");
+            TWidgets.DoTinyLabel(inRect, $"Focused: {element}[{(element)?.RenderLayer}]\n{Event.current.mousePosition}\n{MouseOnCanvas}\n{(element)?.CurrentDragDiff}" + $"\n{((element?.StartDragPos - (texElement?.TextureRect.center)) ?? Vector2.zero).normalized}");
+
+            //Sel Element
+            if (ActiveTexture != null)
+                TextureElement.DrawOverlay(ActiveTexture);
 
             CanvasCursor.Notify_TriggeredMode(ActiveTexture?.LockedInMode);
 
             if (CanDrawEelementProperties)
             {
-                DrawReadout(DataReadoutRect, ActiveTexture);
+                DrawTexturePropertiesReadout(DataReadoutRect, ActiveTexture);
             }
         }
 
-        private void DrawGrid(Rect inRect)
-        {
-            Widgets.BeginGroup(inRect);
-            DrawCanvasGuidelines();
-            Widgets.EndGroup();
-        }
-
+        //Extra Windows
         private void DrawAnimationMetaData()
         {
             Rect rect = MetaDataViewRect;
@@ -301,7 +249,7 @@ namespace TeleCore
             Listing_Standard listing = new Listing_Standard();
             listing.Begin(leftRect.ContractedBy(5));
 
-            listing.Label($"Animation Set Collection");
+            listing.Label($"Animation Settings");
             listing.GapLine();
 
             Text.Anchor = TextAnchor.MiddleLeft;
@@ -334,22 +282,35 @@ namespace TeleCore
             }
 
             Widgets.Label(animationLabelRect, "Animations");
-            var partsViewRect = new Rect(animationListingRect.x, animationListingRect.y, animationListingRect.width,animationMetaData.CurrentAnimations.Count * 20);
+            var partsViewRect = new Rect(animationListingRect.x, animationListingRect.y, animationListingRect.width, animationMetaData.CurrentAnimations.Count * 20);
             TWidgets.DrawColoredBox(animationListingRect, TColor.BlueHueBG, Color.gray, 1);
             Widgets.BeginScrollView(animationListingRect, ref partListingScrollPos, partsViewRect);
             {
                 float curY = animationListingRect.y;
-                foreach (var animationPart in animationMetaData.CurrentAnimations)
+                for (var i = animationMetaData.CurrentAnimations.Count - 1; i >= 0; i--)
                 {
+                    var animationPart = animationMetaData.CurrentAnimations[i];
                     Rect partListing = new Rect(animationListingRect.x, curY, animationListingRect.width, 20);
 
-                    var color = Mouse.IsOver(partListing) || (AnimationData.SelectedAnimationPart == animationPart) ? TColor.White025 : TColor.White005;
-                    Widgets.DrawBoxSolid(partListing.ContractedBy(2).Rounded(), color);
-                    Widgets.Label(partListing, animationPart.tag);
+                    var color = Mouse.IsOver(partListing) || (AnimationData.SelectedAnimationPart == animationPart)
+                        ? TColor.White025
+                        : TColor.White005;
+
+                    var partSelRect = partListing.ContractedBy(2).Rounded();
+                    Widgets.DrawBoxSolid(partSelRect, color);
+                    Widgets.Label(partListing.ContractedBy(5, 0), animationPart.tag);
+
+                    //
+                    if (TWidgets.CloseButtonCustom(partSelRect, partSelRect.height))
+                    {
+                        animationMetaData.Notify_RemoveAnimationPart(i);
+                    }
+
                     if (Widgets.ButtonInvisible(partListing))
                     {
                         animationMetaData.SetAnimationPart(animationPart);
                     }
+
                     curY += 20;
                 }
             }
@@ -357,10 +318,13 @@ namespace TeleCore
             if (Widgets.ButtonText(animationButtonRect, "Add Part"))
             {
                 var animation = AnimationData.Notify_CreateNewAnimationPart("Undefined", 1);
-                foreach (var element in Children)
+                foreach (var element in TextureElements)
                 {
-                    animation.InternalFrames.Add((IKeyFramedElement)element, new Dictionary<int, KeyFrame>());
+                    TextureElement texElement = (TextureElement)element;
+                    animation.InternalFrames.Add(texElement, new Dictionary<int, KeyFrame>());
+                    animation.InternalFrames[texElement].TryAdd(TimeLine.CurrentFrame, new KeyFrame(texElement.CurrentData, TimeLine.CurrentFrame));
                 }
+                AnimationData.Notify_PostCreateAnimation();
             }
 
             Widgets.Label(availableSetsLabelRect, "Available Sets");
@@ -374,18 +338,18 @@ namespace TeleCore
 
                     var color = Mouse.IsOver(setSelectionListing) || (AnimationData.CurRot.AsInt == i) ? TColor.White025 : TColor.White005;
                     Widgets.DrawBoxSolid(setSelectionListing.ContractedBy(2).Rounded(), color);
-                    Widgets.Label(setSelectionListing, new Rot4(i).ToStringHuman());
+                    Widgets.Label(setSelectionListing.ContractedBy(5, 0), new Rot4(i).ToStringHuman());
                     if (Widgets.ButtonInvisible(setSelectionListing))
                     {
                         AnimationData.SetRotation(new Rot4(i));
                         Notify_SideChanged();
-                    } 
+                    }
                     curYNew += 20;
                 }
             }
         }
 
-        private void DrawReadout(Rect rect, TextureElement tex)
+        private void DrawTexturePropertiesReadout(Rect rect, TextureElement tex)
         {
             //Transform
             Widgets.DrawMenuSection(rect);
@@ -457,6 +421,10 @@ namespace TeleCore
             listing.TextFieldNumericLabeled("Width", ref widthCoords, ref buffer[9], float.MinValue, anchor: TextAnchor.MiddleLeft);
             listing.DoBGForNext(TColor.White025);
             listing.TextFieldNumericLabeled("Height", ref heightCoords, ref buffer[10], float.MinValue, anchor: TextAnchor.MiddleLeft);
+            if (listing.ButtonText("Reset TexCoords"))
+            {
+                tex.TexCoords = tex.Data.TexCoordReference;
+            }
 
             listing.GapLine();
             listing.Label($"Extra".Bold());
@@ -466,7 +434,7 @@ namespace TeleCore
             var layerIndexBuffer = tex.Data.StringBuffer;
             listing.TextFieldNumericLabeled("Layer: ", ref layerIndex, ref layerIndexBuffer, 0, int.MaxValue, TextAnchor.MiddleLeft);
             tex.StringBuffer = layerIndexBuffer;
-            
+
             listing.CheckboxLabeled("Attach Script: ", ref attachScript);
 
             if (listing.ButtonTextLabeled("TextAnchor: ", $"{tex.TexCoordAnchor}"))
@@ -522,54 +490,11 @@ namespace TeleCore
                 if (layerIndex != tex.LayerIndex)
                     tex.LayerIndex = layerIndex;
             }
-
             listing.End();
-        }
-
-        private void DrawChildProperties(Rect rect)
-        {
-            Widgets.DrawMenuSection(rect);
-            Listing_Standard listing = new Listing_Standard();
-            listing.Begin(rect.ContractedBy(4));
-            listing.Label("Sub Parts");
-            listing.GapLine();
-
-            foreach (var part in ActiveTexture.SubParts)
-            {
-                listing.TextureElement(part);
-            }
-
-            listing.End();
-        }
-
-        private void DrawCanvasGuidelines()
-        {
-            //Limit rect
-            var dimension = 5;
-            var tileSize = _TileSize * CanvasZoomScale;
-            var limitSize = (new Vector2(tileSize, tileSize) * dimension);
-            var canvasRect = Origin.RectOnPos(limitSize).Rounded();
-            TWidgets.DrawColoredBox(canvasRect, TColor.BGDarker, TColor.White05, 1);
-
-            GUI.color = TColor.White025;
-            var curX = canvasRect.x;
-            var curY = canvasRect.y;
-            for (int x = 0; x < dimension; x++)
-            {
-                Widgets.DrawLineVertical(curX, canvasRect.y, canvasRect.height);
-                Widgets.DrawLineHorizontal(canvasRect.x, curY, canvasRect.width);
-                curY += tileSize;
-                curX += tileSize;
-            }
-
-            GUI.color = TColor.White05;
-            Widgets.DrawLineHorizontal(Origin.x - limitSize.x / 2, Origin.y, limitSize.x);
-            Widgets.DrawLineVertical(Origin.x, Origin.y - limitSize.y / 2, limitSize.y);
-            GUI.color = Color.white;
         }
 
         //Dragging
-        public void DrawHoveredData(object draggedData, Vector2 pos)
+        public override void DrawHoveredData(object draggedData, Vector2 pos)
         {
             if (!CanWork) return;
 
@@ -593,7 +518,7 @@ namespace TeleCore
             GUI.color = Color.white;
         }
 
-        public bool TryAccept(object draggedObject, Vector2 pos)
+        public override bool TryAccept(object draggedObject, Vector2 pos)
         {
             if (!CanWork) return false;
 
@@ -603,19 +528,23 @@ namespace TeleCore
                 element = new TextureElement(new Rect(Vector2.zero, Size), texture);
                 AddElement(element);
                 element.SetTRSP_FromScreenSpace();
+
+                Notify_UpdateAllLayers(element);
             }
 
             if (draggedObject is SpriteTile tile)
             {
                 element = new TextureElement(new Rect(Vector2.zero, Size), tile.spriteMat, tile.normalRect);
                 AddElement(element);
-                element.SetTRSP_FromScreenSpace(pivot:tile.pivot);
+                element.SetTRSP_FromScreenSpace(pivot: tile.pivot);
+
+                Notify_UpdateAllLayers(element);
             }
 
             return element != null;
         }
 
-        public bool Accepts(object draggedObject)
+        public override bool Accepts(object draggedObject)
         {
             if (!CanWork) return false;
 
@@ -626,11 +555,12 @@ namespace TeleCore
         //
         protected override IEnumerable<FloatMenuOption> RightClickOptions()
         {
-            yield return new FloatMenuOption("Recenter...", delegate
+            foreach (var rightClickOption in base.RightClickOptions())
             {
-                DragPos = Vector2.zero;
-            });
+                yield return rightClickOption;
+            }
 
+            //
             foreach (var option in RoationOptions())
             {
                 yield return option;

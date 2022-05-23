@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Xml;
 using RimWorld;
 using UnityEngine;
 using Verse;
@@ -28,6 +29,20 @@ namespace TeleCore
         public static IEnumerable<T> AllFlags<T>(this T enumType) where T : Enum
         {
             return enumType.GetAllSelectedItems<T>();
+        }
+
+        public static T ObjectValue<T>(this XmlNode node, bool doPostLoad = true)
+        {
+            return DirectXmlToObject.ObjectFromXml<T>(node, doPostLoad);
+        }
+
+        public static bool IsCustomLinked(this Graphic graphic)
+        {
+            if (graphic is Graphic_LinkedWithSame or Graphic_LinkedNetworkStructure)
+            {
+                return true;
+            }
+            return false;
         }
 
         //

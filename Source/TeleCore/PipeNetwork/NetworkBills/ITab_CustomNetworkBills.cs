@@ -27,8 +27,8 @@ namespace TeleCore
         public Comp_NetworkBillsCrafter CrafterComp => SelThing.TryGetComp<Comp_NetworkBillsCrafter>();
         public NetworkBillStack BillStack => CrafterComp.BillStack;
 
-        public List<CustomRecipeRatioDef> Ratios => CrafterComp.Props.ratios;
-        public List<CustomRecipePresetDef> Presets => CrafterComp.Props.presets;
+        public List<CustomRecipeRatioDef> Ratios => CrafterComp.Props.UsedRatioDefs;
+        public List<CustomRecipePresetDef> Presets => CrafterComp.Props.UsedPresetDefs;
         public CustomNetworkBill ClipBoard => ClipBoardUtility.TryGetClipBoard<CustomNetworkBill>(StringCache.NetworkBillClipBoard);
 
         private CustomBillTab SelTab { get; set; }
@@ -100,6 +100,7 @@ namespace TeleCore
 
             //Right Part
             DrawBillReadout(rightPart.ContractedBy(5));
+
             //Paste Option
             var clipBoardValue = ClipBoard;
             if (clipBoardValue != null)
@@ -115,26 +116,34 @@ namespace TeleCore
                 Widgets.DrawTextureFitted(pasteButton, TeleContent.Paste, 1);
                 GUI.color = Color.white;
             }
+
+            //Draw Details
+            Rect detailRect = new Rect(TabRect.xMax, TabRect.y, 200, WinSize.y);
+            BillStack.TryDrawBillDetails(detailRect);
         }
 
-        private void DrawBillReadout(Rect rect)
+        private void DrawBillReadout(Rect inRect)
         {
-            Widgets.DrawMenuSection(rect);
-            Widgets.BeginGroup(rect);
+            var readoutRect = inRect;
 
-            Rect outRect = new Rect(0, 0, rect.width, rect.height);
-            Rect viewRect = new Rect(0, 0, rect.width, CrafterComp.billStack.Bills.Sum(a => a.DrawHeight));
-            Widgets.BeginScrollView(outRect, ref billReadourScroller, viewRect, false);
-            float curY = 0;
-            for (var index = 0; index < CrafterComp.billStack.Count; index++)
+            Widgets.DrawMenuSection(inRect);
+            Rect viewRect = new Rect(inRect.x, inRect.y, readoutRect.width, CrafterComp.billStack.Bills.Sum(a => a.DrawHeight));
+            Widgets.BeginScrollView(readoutRect, ref billReadourScroller, viewRect, false);
             {
-                var bill = CrafterComp.billStack[index];
-                bill.DrawBill(new Rect(0, curY, rect.width, bill.DrawHeight), index);
-                curY += bill.DrawHeight;
+                float curY = inRect.y;
+                for (var index = 0; index < CrafterComp.billStack.Count; index++)
+                {
+                    var bill = CrafterComp.billStack[index];
+                    var billRect = new Rect(inRect.x, curY, readoutRect.width, bill.DrawHeight);
+                    bill.DrawBill(billRect, index);
+                    if (bill == BillStack.CurrentBill)
+                    {
+                        TWidgets.DrawBox(billRect, TColor.White05, 2);
+                    }
+                    curY += bill.DrawHeight;
+                }
             }
-
             Widgets.EndScrollView();
-            Widgets.EndGroup();
         }
 
         private Vector2 presetScrollVec = Vector2.zero;

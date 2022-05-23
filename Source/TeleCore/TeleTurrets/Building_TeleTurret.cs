@@ -11,7 +11,7 @@ using Verse.AI;
 
 namespace TeleCore
 {
-    public class Building_TeleTurret : Building_Turret, ITurretHolder
+    public class Building_TeleTurret : Building_Turret, ITurretHolder, IFXObject
     {
         private CompPowerTrader powerComp;
         private CompCanBeDormant dormantComp;
@@ -26,6 +26,8 @@ namespace TeleCore
 
         private bool canForceTarget;
 
+        public TurretDefExtension Extension => defExtension;
+
         //
         public virtual LocalTargetInfo TargetOverride => base.forcedTarget;
 
@@ -36,7 +38,7 @@ namespace TeleCore
 
         //TurretHolder
         public bool IsActive => Spawned && (PowerComp == null || PowerComp.PowerOn) && (MannableComp == null || MannableComp.MannedNow);
-        public bool PlayerControlled => (Faction == Faction.OfPlayer || MannedByColonist) && !MannedByNonColonist;
+        public bool PlayerControlled => Faction == Faction.OfPlayer || MannedByColonist;
         public bool MannedByColonist => ManningPawn?.Faction == Faction.OfPlayer;
         public bool MannedByNonColonist => ManningPawn?.Faction != Faction.OfPlayer;
         public bool HoldingFire => turretSet.HoldingFire;
@@ -55,17 +57,31 @@ namespace TeleCore
         public virtual StunHandler Stunner => stunner;
 
         //FX
+        //Layers:
+        //[2] : TurretTopOverlay
+        public bool IsMain => true;
+        public int Priority => 100;
         public virtual bool ShouldThrowFlecks => true;
-        public virtual bool[] DrawBools => new bool[3] {true, true, true};
-        public virtual float[] OpacityFloats => new float[3] {1f, 1f, 1f};
-        public virtual float?[] RotationOverrides => new float?[3] {null, null, MainGun?.TurretRotation};
-        public virtual float?[] MoveSpeeds => null;
-        public virtual Color?[] ColorOverrides => new Color?[3] {Color.white, Color.white, Color.white};
-        public virtual Vector3?[] DrawPositions => new Vector3?[3] {base.DrawPos, base.DrawPos, base.DrawPos};
-        public virtual Action<FXGraphic>[] Actions => null;
-        public virtual Vector2? TextureOffset => null;
-        public virtual Vector2? TextureScale => null;
         public virtual CompPower ForcedPowerComp => null;
+
+        public virtual bool FX_AffectsLayerAt(int index) => true;
+        public virtual bool FX_ShouldDrawAt(int index) => true;
+        public virtual float FX_GetOpacityAt(int index) => 1f;
+
+        public virtual float? FX_GetRotationAt(int index)
+        {
+            return index switch
+            {
+                2 => MainGun?.TurretRotation,
+                _ => null
+            };
+        }
+
+        public virtual float? FX_GetRotationSpeedAt(int index) => null;
+        public virtual Color? FX_GetColorAt(int index) => null;
+        public virtual Vector3? FX_GetDrawPositionAt(int index) => null;
+        public virtual Action<FXGraphic> FX_GetActionAt(int index) => null;
+
 
         public override void ExposeData()
         {
@@ -108,6 +124,11 @@ namespace TeleCore
             forcedTarget = LocalTargetInfo.Invalid;
             turretSet.ResetOrderedAttack();
             OnResetOrderedAttack();
+        }
+
+        protected virtual void OnOrderAttack(LocalTargetInfo targ)
+        {
+
         }
 
         protected virtual void OnResetOrderedAttack()

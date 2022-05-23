@@ -11,6 +11,9 @@ namespace TeleCore
     public static class StaticData
     {
         //
+        public const float DeltaTime = 1f / 60f;
+
+        //
         private static Dictionary<int, MapComponent_TeleCore> TeleMapComps;
         private static Dictionary<ThingDef, Designator> CachedDesignators;
 

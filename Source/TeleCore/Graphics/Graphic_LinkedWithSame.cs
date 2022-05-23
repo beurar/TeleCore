@@ -11,13 +11,7 @@ namespace TeleCore
 {
     public class Graphic_LinkedWithSame : Graphic_Linked
     {
-        public override Material MatSingle
-        {
-            get
-            {
-                return MaterialAtlasPool.SubMaterialFromAtlas(subGraphic.MatSingle, LinkDirections.None);
-            }
-        }
+        public override Material MatSingle => MaterialAtlasPool.SubMaterialFromAtlas(subGraphic.MatSingle, LinkDirections.None);
 
         public Graphic_LinkedWithSame() { }
 

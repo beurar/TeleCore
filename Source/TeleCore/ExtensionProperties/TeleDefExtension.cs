@@ -10,7 +10,10 @@ namespace TeleCore
 {
     public class TeleDefExtension : DefModExtension
     {
-        public ThingGroupDef thingGroup = ThingGroupDefOf.All;
+        //
+        public List<ThingGroupDef> thingGroups = new List<ThingGroupDef>(){ThingGroupDefOf.All};
+
+        public List<GraphicData> extraGraphics;
 
         public FXDefExtension graphics;
         public TurretDefExtension turret;

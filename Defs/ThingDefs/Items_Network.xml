@@ -43,6 +43,13 @@
 		<thingCategories>
 			<li>Manufactured</li>
 		</thingCategories>
+		<modExtensions>
+			<li Class="TeleCore.TeleDefExtension">
+				<thingGroups>
+					<li>NetworkPortableContainers</li>
+				</thingGroups>
+			</li>
+		</modExtensions>
 	</ThingDef>
 	
 </Defs>

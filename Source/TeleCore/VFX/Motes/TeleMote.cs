@@ -60,9 +60,9 @@ namespace TeleCore
 
         public void AttachMaterial(Material newMat, Color color)
         {
-            this.attachedMat = newMat;
-            this.instanceColor = color;
+            //TLog.Message($"Attaching mat: {newMat}");
+            attachedMat = newMat;
+            instanceColor = color;
         }
-
     }
 }

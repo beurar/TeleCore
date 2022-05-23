@@ -10,39 +10,59 @@ using Verse;
 
 namespace TeleCore
 {
-    public class PortableContainer : FXThing, IFXObject, IContainerHolder
+    /// <summary>
+    /// Temporary <see cref="NetworkContainer"/> holder spawned upon deconstruction of a <see cref="Building"/> containing a <see cref="Comp_NetworkStructure"/> comp.
+    /// </summary>
+    public class PortableContainer : FXThing, IContainerHolder
     {
+        private NetworkDef networkDef;
         private NetworkContainer container;
         private ContainerProperties containerProps;
 
-        public string ContainerTitle => "TC.PortableContainer".Translate();
+        //Target Request
+        private TargetingParameters paramsInt;
+        private LocalTargetInfo currentDesignatedTarget = LocalTargetInfo.Invalid;
+
+        public string ContainerTitle => "TELE.PortableContainer.Title".Translate();
         public Thing Thing => this;
         public NetworkContainer Container => container;
+        public NetworkDef NetworkDef => networkDef;
         public ContainerProperties ContainerProps => containerProps;
+        public float EmptyPercent => Container.StoredPercent - 1f;
 
-        public override bool[] DrawBools => new bool[1] { true };
-        public override float[] OpacityFloats => new float[1] { Container?.StoredPercent ?? 0f };
-        public override Color?[] ColorOverrides => new Color?[1] { Container?.Color ?? Color.white };
+        //Target Request
+        public LocalTargetInfo TargetToEmptyAt => currentDesignatedTarget;
+        public bool HasValidTarget => currentDesignatedTarget.IsValid;
 
-        public void SetContainerProps(ContainerProperties props)
+        //FX
+        public override bool FX_AffectsLayerAt(int index)
         {
-            this.containerProps = new ContainerProperties()
+            return true;
+        }
+
+        public override bool FX_ShouldDrawAt(int index)
+        {
+            return true;
+        }
+        public override float FX_GetOpacityAt(int index)
+        {
+            return Container.StoredPercent;
+        }
+
+        public override Color? FX_GetColorAt(int index)
+        {
+            return index switch
             {
-                doExplosion = props.doExplosion,
-                dropContents = props.leaveContainer,
-                explosionRadius = props.explosionRadius,
-                leaveContainer = false,
-                maxStorage = props.maxStorage,
+                0 => Container?.Color ?? Color.white
             };
         }
 
-        public void SetContainer(NetworkContainer container)
+        public override Vector3? FX_GetDrawPositionAt(int index)
         {
-            this.container = container;
+            return DrawPos + Vector3.one;
         }
 
-
-
+        //
         public override void ExposeData()
         {
             base.ExposeData();
@@ -50,14 +70,31 @@ namespace TeleCore
             Scribe_Deep.Look(ref container, "networkContainer", this);
         }
 
-        public void Notify_ContainerFull()
+        //Setup
+        public void SetupProperties(NetworkDef networkDef, NetworkContainer container, ContainerProperties props)
         {
-            //
-        }
-        public void Notify_ContainerStateChanged()
-        {
+            this.networkDef = networkDef;
+            this.container = container;
+            this.containerProps = props.Copy();
+            this.containerProps.leaveContainer = false;
         }
 
+        //
+        public virtual void Notify_ContainerFull() { }
+        public virtual void Notify_ContainerStateChanged() { }
+
+        //Job-Hook
+        public void Notify_FinishEmptyingToTarget()
+        {
+            if (Container.Empty)
+            {
+                DeSpawn();
+                return;
+            }
+            currentDesignatedTarget = LocalTargetInfo.Invalid;
+        }
+
+        //
         public override void DrawGUIOverlay()
         {
             base.DrawGUIOverlay();
@@ -68,13 +105,33 @@ namespace TeleCore
             }
         }
 
-        public override string GetInspectString()
+        public override void Draw()
         {
-            StringBuilder sb = new StringBuilder();
-            sb.AppendFormat(base.GetInspectString());
-            sb.AppendLine($"{"TR_PortableContainer".Translate()}: {Container.TotalStored}/{Container.Capacity}");
-            return sb.ToString().TrimEndNewlines();
+            base.Draw();
+            if (HasValidTarget && Find.Selector.IsSelected(this))
+            {
+                GenDraw.DrawLineBetween(DrawPos, currentDesignatedTarget.CenterVector3, SimpleColor.White);
+            }
         }
+
+        //
+        private TargetingParameters ForSelf => paramsInt ??= new TargetingParameters
+        {
+            canTargetBuildings = true,
+            validator = (info) =>
+            {
+                if (info.Thing is ThingWithComps twc)
+                {
+                    var n = twc.TryGetComp<Comp_NetworkStructure>();
+                    if (n == null) return false;
+                    if (!n[NetworkDef].NetworkRole.HasFlag(NetworkRole.Storage)) return false;
+                    if (!Container.AllStoredTypes.Any(n.AcceptsValue)) return false;
+                    if (n[networkDef].Container.Full) return false;
+                    return true;
+                }
+                return false;
+            },
+        };
 
         public override IEnumerable<Gizmo> GetGizmos()
         {
@@ -86,6 +143,25 @@ namespace TeleCore
             {
                 yield return g;
             }
+
+            yield return new Command_Target
+            {
+                defaultLabel = "TELE.PortableContainer.Designator".Translate(),
+                defaultDesc = "TELE.PortableContainer.DesignatorDesc".Translate(),
+                icon = BaseContent.BadTex,
+                targetingParams = ForSelf,
+                action = (info) =>
+                {
+                    currentDesignatedTarget = info;
+                }
+            };
+        }
+
+        public override string GetInspectString()
+        {
+            StringBuilder sb = new StringBuilder();
+            sb.AppendFormat(base.GetInspectString());
+            return sb.ToString().TrimEndNewlines();
         }
     }
 }

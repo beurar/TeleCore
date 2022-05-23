@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Defs>
+
+	<WorkGiverDef>
+		<defName>EmptyAvailablePortableContainer</defName>
+		<label>Empty Portable Container</label>
+		<giverClass>TeleCore.WorkGiver_EmptyPortableContainers</giverClass>
+		<workType>Hauling</workType>
+		<workTags>
+			<li>ManualDumb</li>
+			<li>Hauling</li>
+		</workTags>
+		<priorityInType>90</priorityInType>
+		<verb>empty portable container</verb>
+		<gerund>emptying portable container</gerund>
+		<requiredCapacities>
+			<li>Manipulation</li>
+			<li>Moving</li>
+		</requiredCapacities>
+	</WorkGiverDef>
+	
+</Defs>

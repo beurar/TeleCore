@@ -10,11 +10,10 @@ namespace TeleCore
 {
     public class TurretTopProperties
     {
-        public GraphicData turret;
+        public GraphicData topGraphic;
         public List<TurretBarrelProperties> barrels;
 
-        public float speed = 20f;
-        public float aimAngle = 1.5f;
+        public float aimSpeed = 20f;
 
         //
         public float resetSpeed = 5;

@@ -1,0 +1,9 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+
+	<!-- Network -->
+	<TELE.PortableContainer.Title>Temporary</TELE.PortableContainer.Title>
+	<TELE.PortableContainer.Designator>Empty At</TELE.PortableContainer.Designator>
+	<TELE.PortableContainer.DesignatorDesc>Choose a network building to unload this container into.</TELE.PortableContainer.DesignatorDesc>
+	
+</LanguageData>

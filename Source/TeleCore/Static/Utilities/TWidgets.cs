@@ -12,6 +12,32 @@ namespace TeleCore
 {
     public static class TWidgets
     {
+        public static float GapLine(float x, float y, float width, float gapSize = 5, float sideContraction = 4, TextAnchor anchor = TextAnchor.MiddleCenter)
+        {
+            //Adds 
+            GUI.color = TColor.GapLineColor;
+            {
+                var yPos = y;
+                switch (anchor)
+                {
+                    case TextAnchor.MiddleCenter:
+                        yPos = y + (gapSize / 2f);
+                        break;
+                    case TextAnchor.UpperCenter:
+                        yPos = y;
+                        break;
+                    case TextAnchor.LowerCenter:
+                        yPos = y + gapSize;
+                        break;
+                }
+
+                Widgets.DrawLineHorizontal(x + sideContraction, yPos, width - (2 * sideContraction));
+                y += gapSize;
+            }
+            GUI.color = Color.white;
+            return y;
+        }
+
         //
         public static void DrawBarMarkerAt(Rect barRect, float pct)
         {
@@ -312,6 +338,42 @@ namespace TeleCore
             return rect;
         }
 
+        public static bool ButtonIcon(this WidgetRow row, Texture2D tex, string tooltip = null, float iconSize = 24, Color? iconColor = null)
+        {
+            float num = iconSize;
+            float num2 = (24f - num) / 2f;
+            row.IncrementYIfWillExceedMaxWidth(num);
+            Rect rect = new Rect(row.LeftX(num) + num2, row.curY + num2, num, num);
+            MouseoverSounds.DoRegion(rect);
+
+            bool result = Widgets.ButtonImage(rect, tex, iconColor ?? Color.white, GenUI.MouseoverColor);
+            GUI.color = Color.white;
+            row.IncrementPosition(num);
+            if (!tooltip.NullOrEmpty())
+            {
+                TooltipHandler.TipRegion(rect, tooltip);
+            }
+            return result;
+        }
+
+        //
+        public static bool CloseButtonCustom(Rect rectToClose, float buttonSize = 18)
+        {
+            return Widgets.ButtonImage(new Rect(rectToClose.x + rectToClose.width - buttonSize, rectToClose.y, buttonSize, buttonSize), TexButton.CloseXSmall, true);
+        }
+
+        public static bool ButtonBox(this WidgetRow row, string label, Color fill, Color border, float? fixedWidth = null)
+        {
+            Rect rect = row.ButtonRect(label, fixedWidth);
+            DrawColoredBox(rect, fill, border, 1);
+            Widgets.DrawHighlightIfMouseover(rect);
+
+            Text.Anchor = TextAnchor.MiddleCenter;
+            Widgets.Label(rect, label);
+            Text.Anchor = default;
+            return Widgets.ButtonInvisible(rect);
+        }
+
         //Listing_Standard Extensions
         public static Rect GetNextRect(this Listing_Standard listing)
         {
@@ -324,7 +386,7 @@ namespace TeleCore
             Widgets.DrawBoxSolid(rect, color);
         }
 
-        public static void TextureElement(this Listing_Standard listing, TextureElement tex)
+        internal static void TextureElement(this Listing_Standard listing, TextureElement tex)
         {
             Rect rect = listing.GetRect(Text.LineHeight);
             if (listing.BoundingRectCached == null || rect.Overlaps(listing.BoundingRectCached.Value))

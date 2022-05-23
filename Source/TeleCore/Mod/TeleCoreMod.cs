@@ -26,6 +26,8 @@ namespace TeleCore
             modInt = this;
             var assembly = Assembly.GetExecutingAssembly();
             var version = assembly.GetName().Version.ToString();
+            
+            //
             TLog.Message($"[{version}] - Init", Color.cyan);
             modSettings = GetSettings<TeleCoreSettings>();
 
@@ -33,9 +35,19 @@ namespace TeleCore
             TeleCore.PatchAll(assembly);
         }
 
+        public override string SettingsCategory()
+        {
+            return "TeleCore";
+        }
+
         public override void WriteSettings()
         {
             base.WriteSettings();
+        }
+
+        public override void DoSettingsWindowContents(Rect inRect)
+        {
+            TWidgets.DoTinyLabel(inRect, "Hi :)");
         }
     }
 }

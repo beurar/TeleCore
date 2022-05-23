@@ -23,9 +23,21 @@ namespace TeleCore
 
             //MP Hook
             TLog.Message($"Multiplayer: {(MP.enabled ? "Enabled - Adding MP hooks..." : "Disabled")}");
-            if (!MP.enabled) return;
+            if (MP.enabled)
             {
                 MP.RegisterAll();
+            }
+
+            //
+            TLog.Message("PostLoad Def Changes:");
+            ApplyDefChangesPostLoad();
+        }
+
+        internal static void ApplyDefChangesPostLoad()
+        {
+            foreach (var def in DefDatabase<BuildableDef>.AllDefsListForReading)
+            {
+                DefExtensionCache.TryRegister(def);
             }
         }
     }

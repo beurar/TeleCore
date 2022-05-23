@@ -11,8 +11,13 @@ namespace TeleCore
     public class SpriteSheetEditor : UIElement, IDragAndDropReceiver
     {
         //
-        private const int GridDimensions = 8;
-        private const int TileSize = 48;
+        private const int _MinGridSize = 8;
+        private const int _MinTileSize = 12;
+        private const int _MaxTileSize = 48;
+        private const int _GridPixels = _MinGridSize * _MaxTileSize; //8*48 = 384
+        private static int[] GridSizes = new int[3] { 1, 2, 4 };
+
+        private int currentScaleIndex = 1;
 
         //Texture Data
         private WrappedTexture texture;
@@ -29,18 +34,23 @@ namespace TeleCore
         private Vector2 spriteListScrollPos;
         private Rect? currentTile;
 
+        private bool Shifting { get; set; }
+
 
         public Texture Texture => texture.Texture;
         public List<SpriteTile> Tiles => tiles;
 
         //
         private static readonly Vector2 _ListSize = new Vector2(75, 20);
-        private Rect TopPartRect => InRect.TopPart(.85f);
-        private Rect BottomRect => InRect.BottomPart(.15f);
+        private Rect TopPartRect => InRect.TopPartPixels(_GridPixels + 20);
+        private Rect BottomRect => InRect.BottomPartPixels(InRect.height - (_GridPixels + 20));
 
         //Work Area
-        private int CanvasSize => GridDimensions * TileSize;
-        private Rect CanvasRect => new Rect(TopPartRect.x +10,TopPartRect.y +10, CanvasSize, CanvasSize);
+        private int TileSize => GridSizes[currentScaleIndex] * _MinTileSize;
+        private int CanvasDimensions => _GridPixels/TileSize;
+        private Rect CanvasRect => TopPartRect.LeftPartPixels(_GridPixels + 20).ContractedBy(10);
+        private Rect SettingsRect => TopPartRect.RightPartPixels(TopPartRect.width - (_GridPixels + 20));
+
         private Rect TileOutPutRect => BottomRect.ContractedBy(10f).Rounded();
 
         //
@@ -94,32 +104,29 @@ namespace TeleCore
             //Dont accept input when empty
             if (Texture == null) return;
 
+            if (Input.GetKeyDown(KeyCode.LeftShift)) Shifting = true;
+            if (Input.GetKeyUp(KeyCode.LeftShift)) Shifting = false;
+
             //
-            var inEditor = CanvasRect.Contains(ev.mousePosition);
-            if (inEditor)
+            if (CanvasRect.Contains(StartDragPos) && CanvasRect.Contains(EndDragPos))
             {
-                if (Tiles.Any(t => t.rect.Contains(ev.mousePosition)))
+                var startDragSnapped = MousePosSnapped((StartDragPos - CanvasRect.position));
+                var dragDiffFromSnapped = (EndDragPos - CanvasRect.position) - startDragSnapped;
+                var dragDiffSnapped = MousePosSnapped(dragDiffFromSnapped);
+
+                if (dragDiffFromSnapped.x < 0)
                 {
-                    
+                    startDragSnapped.x += dragDiffSnapped.x;
                 }
-                else
+                if (dragDiffFromSnapped.y < 0)
                 {
-                    var tileSize = CanvasRect.width/ GridDimensions;
-                    var tp = (StartDragPos - CanvasRect.position);
-                    var cdd = CurrentDragDiff;
-                    var startDragSnapped = new Vector2(Mathf.RoundToInt(tp.x / tileSize) * tileSize, Mathf.RoundToInt(tp.y / tileSize) * tileSize);
-                    var dragDiffSnapped = new Vector2(Mathf.RoundToInt(cdd.x / tileSize) * tileSize, Mathf.RoundToInt(cdd.y / tileSize) * tileSize);
-
-                    if (CurrentDragDiff.x < 0)
-                        startDragSnapped.x += dragDiffSnapped.x;
-
-                    if (CurrentDragDiff.y < 0)
-                        startDragSnapped.y += dragDiffSnapped.y;
-
-                    currentTile = new Rect(startDragSnapped, dragDiffSnapped.Abs());
+                    startDragSnapped.y += dragDiffSnapped.y;
                 }
+
+                currentTile = new Rect(startDragSnapped, dragDiffSnapped.Abs());
             }
 
+            //
             if (ev.type == EventType.MouseUp)
             {
                 if (currentTile.HasValue)
@@ -134,21 +141,37 @@ namespace TeleCore
         {
             DrawCanvas(CanvasRect.Rounded());
 
+            DoSettings(SettingsRect.ContractedBy(10,0).Rounded());
+
             //
-            if (Texture == null) return;
             DrawOutputArea(TileOutPutRect);
         }
 
         private void DrawMouseOnGrid(Rect rect)
         {
-            var mp = Event.current.mousePosition;
-            var mousePos = new Vector2(Mathf.RoundToInt(mp.x / TileSize) * TileSize,
-                Mathf.RoundToInt(mp.y / TileSize) * TileSize);
+            var mousePos = MousePosSnapped(Event.current.mousePosition);
             //Draw SnapPos
             Widgets.DrawLineHorizontal(mousePos.x - 5, mousePos.y, 10);
             Widgets.DrawLineVertical(mousePos.x, mousePos.y - 5, 10);
 
             TWidgets.DoTinyLabel(new Rect(rect.x, rect.yMax - 25, 200, 25), mousePos.ToString());
+        }
+
+        private Rect RectClipped(Rect rectToClip, Rect clippingRect)
+        {
+            float newX = Math.Min(clippingRect.x, rectToClip.x);
+            float newY = Math.Min(clippingRect.y, rectToClip.y);
+            float newXMax = Math.Min(clippingRect.xMax, rectToClip.xMax);
+            float newYMax = Math.Min(clippingRect.yMax, rectToClip.yMax);
+
+            return new Rect(newX, newY, newXMax-newX, newYMax-newY).Rounded();
+        }
+
+        private Vector2 MousePosSnapped(Vector2 mp)
+        {
+            if (Shifting) return mp;
+            //
+            return new Vector2(Mathf.RoundToInt(mp.x / TileSize) *TileSize, Mathf.RoundToInt(mp.y / TileSize) * TileSize); ;
         }
 
         private void DrawCanvasGrid(Rect canvasRect, int tileSize, int dimension)
@@ -169,9 +192,10 @@ namespace TeleCore
             GUI.color = Color.white;
         }
 
+        //
         private void DrawCanvas(Rect rect)
         {
-            DrawCanvasGrid(rect, TileSize, GridDimensions);
+            DrawCanvasGrid(rect, TileSize, CanvasDimensions);
 
             if (Texture == null) return;
             Widgets.DrawTextureFitted(rect, Texture, 1);
@@ -179,13 +203,27 @@ namespace TeleCore
             //Draw Tiles
             Widgets.BeginGroup(rect);
             {
-                for (var i = 0; i < Tiles.Count; i++)
+                for (var i = Tiles.Count - 1; i >= 0; i--)
                 {
                     var spriteTile = Tiles[i];
                     Color color = Color.white;
-                    TWidgets.DrawBox(spriteTile.rect.Rounded(), color, 1);
 
-                    Widgets.Label(spriteTile.rect.ContractedBy(1), $"[{i}]");
+                    var sRect = spriteTile.rect.Rounded();
+                    TWidgets.DrawBox(sRect, color, 1);
+                    Widgets.Label(sRect.ContractedBy(1), $"[{i}]");
+
+                    //
+                    if (Widgets.CloseButtonFor(sRect))
+                    {
+                        Tiles.RemoveAt(i);
+                        if(selTile != null)
+                        {
+                            if (spriteTile == selTile.Value)
+                            {
+                                selTile = null;
+                            }
+                        }
+                    }
                 }
 
                 if (currentTile != null)
@@ -207,6 +245,22 @@ namespace TeleCore
             Widgets.EndGroup();
         }
 
+        private void DoSettings(Rect rect)
+        {
+            Listing_Standard listing = new Listing_Standard();
+            listing.Begin(rect);
+            listing.Label("Settings");
+            listing.Label($"Tile Scale: {currentScaleIndex+1}");
+            listing.GapLine(4);
+            currentScaleIndex = Mathf.RoundToInt(listing.Slider(currentScaleIndex, 0, GridSizes.Length-1));
+            listing.Gap();
+            listing.Label("Info:");
+            listing.Label($"Free Shape: [{KeyCode.LeftShift}]");
+
+            listing.End();
+        }
+
+        //
         private void DrawHovered(SpriteTile spriteTile)
         {
             Widgets.BeginGroup(CanvasRect);

@@ -22,7 +22,7 @@ namespace TeleCore
             mapInfoByType = new Dictionary<Type, MapInformation>(subClasses.Count);
             foreach (var type in subClasses)
             {
-                var mapInfo = (MapInformation)Activator.CreateInstance(type, args:this);
+                var mapInfo = (MapInformation)Activator.CreateInstance(type, args:map);
                 allMapInfos.Add(mapInfo);
                 mapInfoByType.Add(type, mapInfo);
             }
@@ -109,7 +109,10 @@ namespace TeleCore
         {
             if (thing.def.HasTeleExtension(out var extension))
             {
-                ThingCacheInfo.RegisterPart(extension.thingGroup, thing);
+                foreach (var group in extension.thingGroups)
+                {
+                    ThingCacheInfo.RegisterPart(group, thing);
+                }
             }
         }
 
@@ -117,7 +120,10 @@ namespace TeleCore
         {
             if (thing.def.HasTeleExtension(out var extension))
             {
-                ThingCacheInfo.DeregisterPart(extension.thingGroup, thing);
+                foreach (var group in extension.thingGroups)
+                {
+                    ThingCacheInfo.DeregisterPart(group, thing);
+                }
             }
         }
     }

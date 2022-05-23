@@ -14,6 +14,7 @@ namespace TeleCore
         [Unsaved]
         private string costLabel;
 
+        public List<string> tags;
         public List<DefCount<CustomRecipeRatioDef>> desiredResources;
 
         public List<ThingDefCount> Results => cachedResults;
@@ -24,6 +25,9 @@ namespace TeleCore
             base.ResolveReferences();
             cachedResults = desiredResources.Select(m => new ThingDefCount(m.Def.result, m.Value)).ToList();
             costLabel = NetworkBillUtility.CostLabel(NetworkBillUtility.ConstructCustomCost(desiredResources));
+
+            //
+            CustomNetworkRecipeReferences.TryRegister(this);
         }
     }
 }

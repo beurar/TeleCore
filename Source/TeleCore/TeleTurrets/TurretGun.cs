@@ -46,19 +46,19 @@ namespace TeleCore
 
         //
         public TurretProperties Props => props;
-        public TurretGunSet ParentSet { get; }
-        public ITurretHolder ParentHolder { get; }
+        public TurretGunSet ParentSet { get; private set; }
+        public ITurretHolder ParentHolder { get; private set; }
 
         //
         public int BurstCoolDownTicksLeft => burstCooldownTicksLeft;
         public int BurstWarmupTicksLeft => burstWarmupTicksLeft;
 
-        protected CompPowerTrader PowerComp => ParentHolder.PowerComp;
-        protected CompCanBeDormant DormantComp => ParentHolder.DormantComp;
-        protected CompInitiatable InitiatableComp => ParentHolder.InitiatableComp;
-        protected CompRefuelable RefuelComp => ParentHolder.RefuelComp;
-        protected Comp_NetworkStructure NetworkComp => ParentHolder.NetworkComp;
-        protected CompMannable MannableComp => ParentHolder.MannableComp;
+        public CompPowerTrader PowerComp => ParentHolder.PowerComp;
+        public CompCanBeDormant DormantComp => ParentHolder.DormantComp;
+        public CompInitiatable InitiatableComp => ParentHolder.InitiatableComp;
+        public CompRefuelable RefuelComp => ParentHolder.RefuelComp;
+        public Comp_NetworkStructure NetworkComp => ParentHolder.NetworkComp;
+        public CompMannable MannableComp => ParentHolder.MannableComp;
 
         //Basic Turret
         public CompEquippable GunCompEq => Gun.TryGetComp<CompEquippable>();
@@ -67,9 +67,9 @@ namespace TeleCore
         public VerbProperties VerbProps => AttackVerb.verbProps;
         public VerbProperties_Extended VerbPropsExtended => AttackVerb.verbProps as VerbProperties_Extended;
         public bool IsMannable => MannableComp != null;
-        private bool PlayerControlled => ParentHolder.PlayerControlled;
-        private bool CanSetForcedTarget => (MannableComp != null || props.canForceTarget) && PlayerControlled;
-        private bool CanToggleHoldFire => PlayerControlled;
+        public bool PlayerControlled => ParentHolder.PlayerControlled;
+        public bool CanSetForcedTarget => (MannableComp != null || props.canForceTarget) && PlayerControlled;
+        public bool CanToggleHoldFire => PlayerControlled;
 
         private bool IsMortar => ParentThing.def.building.IsMortar || AttackVerb is Verb_Tele {IsMortar: true};
         private bool IsMortarOrProjectileFliesOverhead => AttackVerb.ProjectileFliesOverhead() || IsMortar;
@@ -96,7 +96,7 @@ namespace TeleCore
         //public Verb_Extended AttackVerb => (Verb_Extended)CurrentEffectiveVerb;
 
         public Verb CurrentEffectiveVerb => GunCompEq.PrimaryVerb;
-        public float TurretRotation => top.CurRotation;
+        public float TurretRotation => top?.CurRotation ?? 0;
         public int LastAttackTargetTick => lastAttackTargetTick;
         public int ShotIndex => curShotIndex;
 
@@ -106,12 +106,16 @@ namespace TeleCore
         public TurretGunTop Top => top;
         public bool UsesTurretGunTop => props.turretTop != null;
 
-        public Graphic TurretGraphic => props.turretTop.turret.Graphic;
+        public Graphic TurretGraphic => props.turretTop.topGraphic.Graphic;
         public Vector3 DrawPos => ParentThing.DrawPos + props.drawOffset;
 
         public float TargetPriorityFactor => 1f;
 
-        public TurretGun(TurretProperties props, int index, TurretGunSet set, ITurretHolder parent)
+        public TurretGun()
+        {
+        }
+
+        internal void Setup(TurretProperties props, int index, TurretGunSet set, ITurretHolder parent)
         {
             this.turretIndex = index;
             this.props = props;
@@ -120,7 +124,7 @@ namespace TeleCore
             //
             burstCooldownTicksLeft = props.turretInitialCooldownTime.SecondsToTicks();
             MakeGun();
-            
+
             //
             if (UsesTurretGunTop)
             {
@@ -160,6 +164,13 @@ namespace TeleCore
                 }
                 return;
             }
+
+            if (!CanSetForcedTarget)
+            {
+                Messages.Message("Tele.TurretGunCantSetForced".Translate(), null, MessageTypeDefOf.RejectInput, false);
+                return;
+            }
+
             //Out of Range
             if ((targ.Cell - ParentThing.Position).LengthHorizontal < AttackVerb.verbProps.EffectiveMinRange(targ, Caster))
             {
@@ -185,6 +196,7 @@ namespace TeleCore
             if (HoldFire)
             {
                 Messages.Message("MessageTurretWontFireBecauseHoldFire".Translate(ParentThing.def.label), ParentThing, MessageTypeDefOf.RejectInput, false);
+                ResetForcedTarget();
             }
         }
 
@@ -221,6 +233,12 @@ namespace TeleCore
                 }
                 else if (WarmingUp)
                 {
+                    if (burstWarmupTicksLeft == (props.turretBurstWarmupTime.SecondsToTicks()-1))
+                    {
+                        //Play Warmup Charge, if available
+                        VerbPropsExtended?.chargeSound?.PlayOneShot(SoundInfo.InMap(new TargetInfo(ParentThing)));
+                    }
+
                     burstWarmupTicksLeft--;
                     if (burstWarmupTicksLeft == 0)
                     {
@@ -280,9 +298,6 @@ namespace TeleCore
                 else if (props.turretBurstWarmupTime > 0f)
                 {
                     burstWarmupTicksLeft = props.turretBurstWarmupTime.SecondsToTicks();
-
-                    //Play Warmup Charge, if available
-                    VerbPropsExtended?.chargeSound?.PlayOneShot(SoundInfo.InMap(new TargetInfo(ParentThing)));
                 }
             }
             else

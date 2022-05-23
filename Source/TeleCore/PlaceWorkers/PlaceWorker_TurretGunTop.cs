@@ -19,7 +19,7 @@ namespace TeleCore
             var extension = def.Tele().turret;
             foreach (TurretProperties turret in extension.turrets)
             {
-                Graphic graphic = GhostUtility.GhostGraphicFor(turret.turretTop.turret.Graphic, def, ghostCol);
+                Graphic graphic = GhostUtility.GhostGraphicFor(turret.turretTop.topGraphic.Graphic, def, ghostCol);
                 graphic.DrawFromDef(GenThing.TrueCenter(center, rot, def.Size, AltitudeLayer.MetaOverlays.AltitudeFor()) + turret.drawOffset, rot, def, 0f);
             }
         }

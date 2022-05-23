@@ -9,7 +9,7 @@ using Verse;
 
 namespace TeleCore
 {
-    public class AnimationFileSaveLoader : Window
+    internal class AnimationFileSaveLoader : Window
     {
         private TextureCanvas canvas;
 
@@ -28,7 +28,7 @@ namespace TeleCore
         {
             get
             {
-                DirectoryInfo directoryInfo = new DirectoryInfo(AnimationSaver.SavedAnimationsFolderPath);
+                DirectoryInfo directoryInfo = new DirectoryInfo(AnimationSaveUtility.SavedAnimationsFolderPath);
                 if (!directoryInfo.Exists)
                 {
                     directoryInfo.Create();
@@ -46,7 +46,12 @@ namespace TeleCore
         public AnimationFileSaveLoader(TextureCanvas canvas) : base()
         {
             this.canvas = canvas;
-            this.layer = WindowLayer.Super;
+
+            //Window Props
+            forcePause = true;
+            doCloseX = true;
+            absorbInputAroundWindow = true;
+            layer = WindowLayer.Super;
         }
 
         //Loading
@@ -91,11 +96,11 @@ namespace TeleCore
         {
             try
             {
-                AnimationSaver.SaveDef($"{AnimationInfo.defName}Def", "Defs", delegate
+                AnimationSaveUtility.SaveDef($"{AnimationInfo.defName}Def", "Defs", delegate
                 {
                     var animationData = canvas.AnimationData;
                     var newDef = animationData.ConstructAnimationDef();
-                    Scribe_Deep.Look(ref newDef, nameof(AnimationDataDef));
+                    Scribe_Deep.Look(ref newDef, $"{nameof(TeleCore)}.{nameof(AnimationDataDef)}");
                 });
             }
             catch (Exception arg)
@@ -108,10 +113,10 @@ namespace TeleCore
         {
             try
             {
-                AnimationSaver.Save(AnimationInfo.defName.TrimStart().TrimEnd(), "AnimationMetaData", delegate
+                AnimationSaveUtility.Save(AnimationInfo.defName.TrimStart().TrimEnd(), "AnimationMetaData", delegate
                 {
                     var animationData = canvas.AnimationData;
-                    Scribe_Deep.Look(ref animationData, AnimationSaver._SavingNode);
+                    Scribe_Deep.Look(ref animationData, AnimationSaveUtility._SavingNode);
                 });
             }
             catch (Exception arg)
@@ -126,7 +131,7 @@ namespace TeleCore
             Scribe.loader.InitLoading(fileInfo.FullName);
             try
             {
-                if (!Scribe.EnterNode(AnimationSaver._SavingNode))
+                if (!Scribe.EnterNode(AnimationSaveUtility._SavingNode))
                 {
                     Log.Error("Could not find animation XML node.");
                     Scribe.ForceStop();
@@ -155,6 +160,27 @@ namespace TeleCore
             return pathBack;
         }
 
+        private List<FloatMenuOption> ModSelectionMenuOptions
+        {
+            get
+            {
+                List<FloatMenuOption> options = new List<FloatMenuOption>();
+                foreach (var mod in LoadedModManager.RunningModsListForReading)
+                {
+                    options.Add(new FloatMenuOption(mod.Name, delegate
+                    {
+                        SetDefLocationForMod(mod);
+                    }));
+                }
+                return options;
+            }
+        }
+
+        private void SetDefLocationForMod(ModContentPack mod)
+        {
+            Application.OpenURL(mod.FolderName);
+        }
+
         public override void DoWindowContents(Rect inRect)
         {
             if (files == null)
@@ -162,22 +188,66 @@ namespace TeleCore
                 files = new List<AnimationFileInfo>();
                 ReloadFiles();
             }
-            var SaveCurrentRect = new Rect(inRect.x, inRect.y, 140, 50).ContractedBy(5);
-            if (Widgets.ButtonText(SaveCurrentRect, "Save Current"))
+
+            //
+            var topRect = new Rect(inRect.x, inRect.y, inRect.width, 30).ContractedBy(5);
+
+            //
+            var listerArea = inRect.BottomPartPixels(inRect.height - topRect.height).ContractedBy(5);
+            var saverBlock = listerArea.TopPartPixels((WidgetRow.IconSize * 2) + 4);
+            var animSaverBar = saverBlock.TopPartPixels(WidgetRow.IconSize + 2);
+            var defSaverBar = saverBlock.BottomPartPixels(WidgetRow.IconSize + 2);
+            var listerRect = listerArea.BottomPartPixels(listerArea.height - saverBlock.height);
+
+            TWidgets.DrawColoredBox(listerArea, TColor.BlueHueBG, TColor.MenuSectionBGBorderColor, 1);
+            TWidgets.GapLine(saverBlock.x, saverBlock.yMax, saverBlock.width, 6, 0, TextAnchor.LowerCenter);
+
+            //Save Def
+            animSaverBar = animSaverBar.ContractedBy(2);
+            WidgetRow row = new WidgetRow(animSaverBar.x, animSaverBar.y, gap: 0);
+            if (row.ButtonBox("Save .anim", TColor.White01, TColor.White025))
             {
+                if (!canvas.AnimationData.Initialized) return;
                 SaveAnimation();
                 ReloadFiles();
             }
-
-            var SaveCurrentDefRect = new Rect(SaveCurrentRect.xMax + 5, SaveCurrentRect.y, SaveCurrentRect.width, SaveCurrentRect.height);
-            if (Widgets.ButtonText(SaveCurrentDefRect, "Save As Def"))
+            if (row.ButtonBox("Open Save Directory", TColor.White01, TColor.White025))
             {
-                SaveAnimationDef();
+                Application.OpenURL(AnimationSaveUtility.SavedAnimationsFolderPath);
+            }
+            if (row.ButtonBox("Reload", TColor.White01, TColor.White025))
+            {
+                ReloadFiles();
             }
 
+            //Save Def
+            defSaverBar = defSaverBar.ContractedBy(2);
+            WidgetRow row2 = new WidgetRow(defSaverBar.x, defSaverBar.y, gap: 0);
+            if (row2.ButtonBox("Create Def", TColor.White01, TColor.White025))
+            {
+                if (!canvas.AnimationData.Initialized) return;
+                DirectoryInfo directoryInfo = new DirectoryInfo(AnimationSaveUtility.SavedAnimationDefsFolderPath);
+                if (!directoryInfo.Exists) directoryInfo.Create();
 
-            var listerRect = inRect.BottomPartPixels(inRect.height - SaveCurrentRect.height).ContractedBy(5);
-            TWidgets.DrawColoredBox(listerRect, TColor.BlueHueBG, TColor.MenuSectionBGBorderColor, 1);
+                SaveAnimationDef();
+            }
+            if (row2.ButtonBox("Open Def Directory", TColor.White01, TColor.White025))
+            {
+                DirectoryInfo directoryInfo = new DirectoryInfo(AnimationSaveUtility.SavedAnimationDefsFolderPath);
+                if (!directoryInfo.Exists) directoryInfo.Create();
+
+                Application.OpenURL(AnimationSaveUtility.SavedAnimationDefsFolderPath);
+            }
+
+            if (row2.ButtonBox("Set Def Directory", TColor.White01, TColor.White025))
+            {
+                var selDirAction = (DirectoryInfo info) =>
+                {
+                    TeleCoreMod.Settings.animationSettings.SetAnimationDefLocation(info.FullName);
+                };
+                Find.WindowStack.Add(new Dialog_DirectoryBrowser(selDirAction, "Select Def Creation Directory", GenFilePaths.ModsFolderPath));
+            }
+
             if (files.Any())
             {
                 Vector2 selSize = new Vector2(listerRect.width - 16f, 40);
@@ -205,7 +275,6 @@ namespace TeleCore
 
                             Rect loadButton = buttonsRect.LeftPartPixels(fileSelRect.height*2);
                             Rect deleteButton = buttonsRect.RightPartPixels(fileSelRect.height);
-                            
 
                             GUI.color = Dialog_FileList.DefaultFileTextColor;
                             Text.Font = GameFont.Small;
@@ -224,6 +293,7 @@ namespace TeleCore
                             if (Widgets.ButtonText(loadButton, "Load", true, true, true))
                             {
                                 LoadAnimation(FileInfo);
+                                Close();
                             }
 
                             //Rect buttonRect = new Rect(fileSelRect.width - 36f, (fileSelRect.height - 36f) / 2f, 36f, 36f);

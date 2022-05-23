@@ -12,35 +12,43 @@ namespace TeleCore
 {
     public class NetworkContainer : IExposable
     {
-        //Container Data
+        //Local Set Data
         private IContainerHolder parentHolder;
-        private Color colorInt;
         private float totalCapacity;
+        private List<NetworkValueDef> acceptedTypes;
+
+        //Dynamic Data
+        private Color colorInt;
         private float totalStoredCache;
         private HashSet<NetworkValueDef> storedTypeCache;
-        private List<NetworkValueDef> acceptedTypes;
 
         private Dictionary<NetworkValueDef, bool> TypeFilter = new();
         private Dictionary<NetworkValueDef, float> StoredValues = new();
 
         public string Title => parentHolder.ContainerTitle;
 
+        //Capacity Values
         public float Capacity => totalCapacity;
         public float TotalStored => totalStoredCache;
         public float StoredPercent => TotalStored / Capacity;
 
-        public bool HasValueStored => TotalStored > 0;
-        public bool Empty => !StoredValues.Any() || TotalStored <= 0;
-        public bool CapacityFull => TotalStored >= Capacity;
+        //Capacity States
+        public bool NotEmpty => TotalStored > 0;
+        public bool Empty => TotalStored <= 0;
+        public bool Full => TotalStored >= Capacity;
+
+        //Misc States
         public bool ContainsForbiddenType => AllStoredTypes.Any(t => !AcceptsType(t));
+        public bool HasStructureParent => parentHolder is IContainerHolderStructure;
 
-        public bool IsStructure => parentHolder is IContainerHolderStructure;
-
+        //
         public IContainerHolder Parent => parentHolder;
         public IContainerHolderStructure ParentStructure => Parent is IContainerHolderStructure ? (IContainerHolderStructure)parentHolder : null;
 
+        //
         public ContainerProperties Props => Parent.ContainerProps;
 
+        //Values
         public NetworkValueDef MainValueType
         {
             get
@@ -117,6 +125,7 @@ namespace TeleCore
 
             newContainer.StoredValues = StoredValues.Copy();
             newContainer.TypeFilter = TypeFilter.Copy();
+            newContainer.UpdateContainerState(true);
             return newContainer;
         }
 
@@ -124,45 +133,51 @@ namespace TeleCore
         public void Parent_Destroyed(DestroyMode mode, Map previousMap)
         {
             if (Parent == null || TotalStored <= 0 || mode == DestroyMode.Vanish) return;
-            if ((mode is DestroyMode.Deconstruct or DestroyMode.Refund) && Props.leaveContainer)
+            if ((mode is DestroyMode.Deconstruct or DestroyMode.Refund) && Props.leaveContainer && ParentStructure.NetworkComp.NetworkDef.portableContainerDef != null)
             {
-                PortableContainer container = (PortableContainer)ThingMaker.MakeThing(TeleDefOf.PortableContainer);
-                container.SetContainerProps(Props);
-                container.SetContainer(Copy(container));
+                PortableContainer container = (PortableContainer)ThingMaker.MakeThing(ParentStructure.NetworkComp.NetworkDef.portableContainerDef);
+                container.SetupProperties(ParentStructure.NetworkComp.NetworkDef, Copy(container), Props);
                 GenSpawn.Spawn(container, Parent.Thing.Position, previousMap);
             }
-            else if (Props.doExplosion)
+
+            if (mode is DestroyMode.KillFinalize)
             {
-                if (TotalStored > 0)
+                if (Props.explosionProps != null)
                 {
-                    float radius = Props.explosionRadius * StoredPercent;
-                    int damage = (int)(10 * StoredPercent);
-                    var mainTypeDef = MainValueType.dropThing;
-                    GenExplosion.DoExplosion(Parent.Thing.Position, previousMap, radius, DamageDefOf.Bomb, Parent.Thing, damage, 5, null, null, null, null, mainTypeDef, 0.18f);
+                    if (TotalStored > 0)
+                    {
+                        //float radius = Props.explosionProps.explosionRadius * StoredPercent;
+                        //int damage = (int)(10 * StoredPercent);
+                        //var mainTypeDef = MainValueType.dropThing;
+                        Props.explosionProps.DoExplosion(Parent.Thing.Position, previousMap, Parent.Thing);
+
+                        //GenExplosion.DoExplosion(Parent.Thing.Position, previousMap, radius, DamageDefOf.Bomb, Parent.Thing, damage, 5, null, null, null, null, mainTypeDef, 0.18f);
+                    }
+                }
+
+                if (Props.dropContents)
+                {
+                    int i = 0;
+                    List<Thing> drops = this.PotentialItemDrops().ToList();
+                    Predicate<IntVec3> pred = c => c.InBounds(previousMap) && c.GetEdifice(previousMap) == null;
+                    Action<IntVec3> action = delegate(IntVec3 c)
+                    {
+                        if (i < drops.Count)
+                        {
+                            Thing drop = drops[i];
+                            if (drop != null)
+                            {
+                                GenSpawn.Spawn(drop, c, previousMap);
+                                drops.Remove(drop);
+                            }
+
+                            i++;
+                        }
+                    };
+                    _ = TeleFlooder.Flood(previousMap, Parent.Thing.OccupiedRect(), action, pred, drops.Count);
                 }
             }
-            else if (Props.dropContents)
-            {
-                int i = 0;
-                List<Thing> drops = this.PotentialItemDrops().ToList();
-                Predicate<IntVec3> pred = c => c.InBounds(previousMap) && c.GetEdifice(previousMap) == null;
-                Action<IntVec3> action = delegate (IntVec3 c)
-                {
-                    if (i < drops.Count)
-                    {
-                        Thing drop = drops[i];
-                        if (drop != null)
-                        {
-                            GenSpawn.Spawn(drop, c, previousMap);
-                            drops.Remove(drop);
-                        }
-                        i++;
-                    }
-                };
-                _ = TeleFlooder.Flood(previousMap, Parent.Thing.OccupiedRect(), action, pred, drops.Count);
-            }
 
-            //
             Clear();
         }
 
@@ -181,10 +196,10 @@ namespace TeleCore
         {
             foreach (var storedValue in StoredValues)
             {
-                if(storedValue.Key.dropThing == null) continue;
-                int count = Mathf.RoundToInt(storedValue.Value / storedValue.Key.ratioForThing);
+                if(storedValue.Key.thingDroppedFromContainer == null) continue;
+                int count = Mathf.RoundToInt(storedValue.Value / storedValue.Key.valueToThingRatio);
                 if(count <= 0) continue;
-                yield return ThingMaker.MakeThing(storedValue.Key.dropThing);
+                yield return ThingMaker.MakeThing(storedValue.Key.thingDroppedFromContainer);
             }
             yield break;
         }
@@ -272,7 +287,7 @@ namespace TeleCore
             actualValue = wantedValue - excessValue;
 
             //If the container is full, or doesnt accept the type, we dont add anything
-            if (CapacityFull)
+            if (Full)
             {
                 Notify_Full();
                 return false;
@@ -289,7 +304,7 @@ namespace TeleCore
 
             Notify_AddedValue(valueType, actualValue);
             //If this adds the last drop, notify full
-            if (CapacityFull)
+            if (Full)
                 Notify_Full();
 
             return true;
@@ -407,7 +422,7 @@ namespace TeleCore
             return val >= Capacity;
         }
 
-        private void UpdateContainerState(bool updateMetaData = false)
+        public void UpdateContainerState(bool updateMetaData = false)
         {
             //Set Stack
             ValueStack = new NetworkValueStack(StoredValues);

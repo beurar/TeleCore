@@ -9,6 +9,10 @@ namespace TeleCore
 {
     public class TurretDefExtension
     {
+        //
+        public TurretHubProperties hub;
+
+        //
         public List<TurretProperties> turrets;
     }
 }

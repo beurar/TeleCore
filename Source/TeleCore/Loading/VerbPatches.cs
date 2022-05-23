@@ -11,9 +11,9 @@ namespace TeleCore
     internal static class VerbPatches
     {
         [HarmonyPatch(typeof(VerbTracker), nameof(VerbTracker.CreateVerbTargetCommand))]
-        public static class CreateVerbTargetCommandPatch
+        internal static class CreateVerbTargetCommandPatch
         {
-            public static void Postfix(Command_VerbTarget __result, Verb verb)
+            private static void Postfix(Command_VerbTarget __result, Verb verb)
             {
                 if (!verb.Available())
                     __result.Disable("Not available...");
@@ -21,43 +21,46 @@ namespace TeleCore
         }
 
         [HarmonyPatch(typeof(VerbProperties), nameof(VerbProperties.LaunchesProjectile), MethodType.Getter)]
-        public static class VerbPropertiesLaunchesProjectilePatch
+        internal static class VerbPropertiesLaunchesProjectilePatch
         {
-            public static bool Prefix(VerbProperties __instance, ref bool __result)
+            private static bool Prefix(VerbProperties __instance, ref bool __result)
             {
                 if (__instance is VerbProperties_Extended teleProps)
                 {
                     __result = teleProps.isProjectile;
                     return false;
                 }
+
                 return true;
             }
         }
 
         [HarmonyPatch(typeof(VerbUtility), nameof(VerbUtility.GetProjectile))]
-        public static class VerbUtilityGetProjectilePatch
+        internal static class VerbUtilityGetProjectilePatch
         {
-            public static bool Prefix(Verb verb, ref ThingDef __result)
+            private static bool Prefix(Verb verb, ref ThingDef __result)
             {
                 if (verb is Verb_Tele verbTele)
                 {
                     __result = verbTele.Projectile;
                     return false;
                 }
+
                 return true;
             }
         }
 
         [HarmonyPatch(typeof(VerbUtility), nameof(VerbUtility.GetDamageDef))]
-        public static class VerbUtilityGetDamageDefPatch
+        internal static class VerbUtilityGetDamageDefPatch
         {
-            public static bool Prefix(Verb verb, ref DamageDef __result)
+            private static bool Prefix(Verb verb, ref DamageDef __result)
             {
                 if (verb is Verb_Tele verbTele)
                 {
                     __result = verbTele.DamageDef;
                     return false;
                 }
+
                 return true;
             }
         }

@@ -14,5 +14,5 @@
 		</li>
 	</modDependencies>
    <packageId>telefonmast.telecore</packageId>
-   <description>The main core.</description>
+   <description>A collection of tools and functionalities to extend RimWorld!</description>
 </ModMetaData>

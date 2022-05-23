@@ -23,12 +23,14 @@ namespace TeleCore
         public int? drawLayer = null;
 
         //
-        public MoveProperties move;
+        public RotateProperties rotate;
         public BlinkProperties blink;
         public FadeProperties fade;
-        public RotateProperties rotate;
+        public ResizeProperties resize;
 
         //Texture Data
+        public Rect texCoords = new Rect(0, 0, 1, 1);
+
         public Vector2 textureSize = Vector2.one;
         public Vector3 drawOffset = Vector3.zero;
 

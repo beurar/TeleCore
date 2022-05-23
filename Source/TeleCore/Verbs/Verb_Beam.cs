@@ -8,13 +8,13 @@ using TeleCore.Static;
 using UnityEngine;
 using Verse;
 
-namespace TeleCore.Verbs
+namespace TeleCore
 {
     public class Verb_Beam : Verb_Tele
     {
         public override DamageDef DamageDef => Props.beamProps.damageDef;
 
-        protected override float ExplosionOnTargetSize => Props.beamProps.impactExplosion.explosionRadius;
+        protected override float ExplosionOnTargetSize => Props.beamProps.impactExplosion?.explosionRadius ?? 0;
 
         protected override BattleLogEntry_RangedFire EntryOnWarmupComplete()
         {
@@ -60,11 +60,10 @@ namespace TeleCore.Verbs
 
             //Spawn beam effect
             Mote_Beam beam = (Mote_Beam)ThingMaker.MakeThing(TeleDefOf.Mote_Beam);
-            Material mat = MaterialPool.MatFrom(beamProps.beamTexturePath, ShaderDatabase.MoteGlow);
             beam.solidTimeOverride = beamProps.solidTime;
             beam.fadeInTimeOverride = beamProps.fadeInTime;
             beam.fadeOutTimeOverride = beamProps.fadeOutTime;
-            beam.AttachMaterial(mat, Color.white);
+            beam.AttachMaterial(beamProps.BeamMat, Color.white);
             beam.SetConnections(origin, targetPos);
             beam.Attach(caster);
             GenSpawn.Spawn(beam, caster.Position, caster.Map, WipeMode.Vanish);

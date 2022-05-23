@@ -38,5 +38,19 @@ namespace TeleCore
         {
             GenUI.DrawTextureWithMaterial(rect, spriteMat.mainTexture, spriteMat, normalRect);
         }
+
+        public static bool operator ==(SpriteTile tile1, SpriteTile tile2)
+        {
+            if (tile1.rect != tile2.rect) return false;
+            if (tile1.normalRect != tile2.normalRect) return false;
+            if (tile1.pivot != tile2.pivot) return false;
+            if (tile1.spriteMat != tile2.spriteMat) return false;
+            return true;
+        }
+
+        public static bool operator !=(SpriteTile tile1, SpriteTile tile2)
+        {
+            return !(tile1 == tile2);
+        }
     }
 }
