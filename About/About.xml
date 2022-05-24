@@ -13,6 +13,6 @@
 		  <downloadUrl>https://github.com/pardeike/HarmonyRimWorld/releases/latest</downloadUrl>
 		</li>
 	</modDependencies>
-   <packageId>telefonmast.telecore</packageId>
+   <packageId>Telefonmast.TeleCore</packageId>
    <description>A collection of tools and functionalities to extend RimWorld!</description>
 </ModMetaData>

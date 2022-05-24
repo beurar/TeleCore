@@ -15,7 +15,13 @@ namespace TeleCore
     public class Gizmo_NetworkInfo : Gizmo
     {
         private NetworkComponent parentComp;
+        private bool usesSubValues;
         private string[] cachedStrings;
+
+        private string selectedSetting = null;
+        private FloatRange extensionSettingYRange;
+        private float desiredY;
+        private float currentExtendedY = 0;
 
         private UILayout UILayout;
         private int mainWidth = 200;
@@ -25,6 +31,8 @@ namespace TeleCore
         private Dictionary<string, Action<Rect>> extensionSettings;
 
         public NetworkContainer Container => parentComp.Container;
+
+        public bool HasSubValues => usesSubValues;
 
         private bool HasExtension
         {
@@ -49,6 +57,8 @@ namespace TeleCore
                 SetUpExtensionUIData();
             }
 
+            usesSubValues = parentComp.Props.networkRoles.Any(n => n.HasSubValues);
+
             cachedStrings = new[]
             {
                 $"{parentComp.NetworkDef}",
@@ -56,56 +66,69 @@ namespace TeleCore
                 $"Add NetworkValue",
                 "Set Mode"
             };
-            UILayout = new UILayout();
-            //
             var currentInspectTab = Find.MainTabsRoot.OpenTab.TabWindow as MainTabWindow_Inspect;
-            Vector2 pos = new Vector2(0, currentInspectTab.PaneTopY);
-            Vector2 size = currentInspectTab.RequestedTabSize;
-            Vector2 titleSize = Text.CalcSize(cachedStrings[0]);
 
-            var mainSize = new Vector2(mainWidth + gizmoPadding, size.y);
-            Rect bgRect = new Rect(pos.x, pos.y, mainSize.x, mainSize.y);
-            Rect settingsRect = new Rect(bgRect.x, bgRect.y - mainSize.y, bgRect.width, bgRect.height);
+            Vector2 POS = new Vector2(0, currentInspectTab.PaneTopY);
+            Vector2 SIZE = currentInspectTab.RequestedTabSize;
 
-            var r = bgRect.AtZero();
+            var MAINSIZE = new Vector2(mainWidth + gizmoPadding, SIZE.y);
+            Rect BGRECT = new Rect(POS.x, POS.y, MAINSIZE.x, MAINSIZE.y);
+            Rect MAINRECT = BGRECT.AtZero().ContractedBy(5f);
 
-            var settingCloseSize = new Vector2(settingsRect.width - (gizmoPadding * 2), 16);
-            var halfWidth = (settingsRect.width / 2) - (settingCloseSize.x / 2);
-            Rect closeSettingsRect = new Rect(settingsRect.x + halfWidth, settingsRect.y - settingCloseSize.y, settingCloseSize.x, settingCloseSize.y + gizmoPadding);
+            //Popout Settings
+            Rect SETTINGS_Rect = new Rect(BGRECT.x, BGRECT.y - MAINSIZE.y, BGRECT.width, BGRECT.height);
+            var SETTINGS_CloseButtonSize = new Vector2(SETTINGS_Rect.width - (gizmoPadding * 2), 16); ;
+            var SETTINGS_XOffsetAlignedCenter = (SETTINGS_Rect.width / 2) - (SETTINGS_CloseButtonSize.x / 2); ;
+            Rect SETTINGS_CloseButtonRect = new Rect(SETTINGS_Rect.x + SETTINGS_XOffsetAlignedCenter, SETTINGS_Rect.y - SETTINGS_CloseButtonSize.y, SETTINGS_CloseButtonSize.x, SETTINGS_CloseButtonSize.y + gizmoPadding);
 
-            Rect mainRect = r.ContractedBy(5f);
-            Rect widgetRowRect = new Rect(mainRect.x, mainRect.y, mainRect.width, 20);
-            Rect titleRect = new Rect(mainRect.x, widgetRowRect.yMax, titleSize.x, titleSize.y);
-            Vector2 roleTextSize = new Vector2(mainRect.width / 2, Text.CalcHeight(cachedStrings[1], mainRect.width / 2));
-            Rect roleReadoutRect = new Rect(mainRect.x + roleTextSize.x, widgetRowRect.yMax, roleTextSize.x, roleTextSize.y);
-            Rect contentRect = new Rect(mainRect.x, titleRect., mainRect.width, mainRect.height - titleRect.height);
-            Rect containerBarRect = new Rect(contentRect.x, contentRect.yMax - 16, contentRect.width / 2, 16);
-            Rect requestSelectionRect = new Rect(contentRect.x, containerBarRect.y - 10, contentRect.width / 2, 10);
+            var nextY = MAINRECT.y;
+            
+            //WidgetRow if available
+            Rect WIDGETROW_Rect = Rect.zero;
+            if (HasSubValues)
+            {
+                WIDGETROW_Rect = new Rect(MAINRECT.x, nextY, MAINRECT.width, 14);
+                nextY = WIDGETROW_Rect.yMax;
+            }
+
+            //Title
+            Vector2 TITLE_Size = Text.CalcSize(cachedStrings[0]);
+            Rect TITLE_Rect = new Rect(new Vector2(MAINRECT.x, nextY), TITLE_Size); // CONTENT_Rect.TopPartPixels(TITLE_Size.y);
+            nextY = TITLE_Rect.yMax;
+
+            var CONTENT_Rect = MAINRECT.BottomPartPixels(MAINRECT.height - nextY);
+
+            Vector2 ROLETEXT_Size = new Vector2(MAINRECT.width / 2, Text.CalcHeight(cachedStrings[1], MAINRECT.width / 2));
+            Rect ROLETEXT_Rect = new Rect(CONTENT_Rect.x + ROLETEXT_Size.x, TITLE_Rect.y, ROLETEXT_Size.x, ROLETEXT_Size.y);
+
+            //Container Readout
+            Rect ContainerGroupRect = CONTENT_Rect.BottomPartPixels(26).LeftHalf();
+            Rect CONTAINER_Rect = ContainerGroupRect.BottomPartPixels(16);
+            Rect REQUESTSELECTION_Rect = ContainerGroupRect.TopPartPixels(10);
+
             var padding = 5;
             var iconSize = 30;
             var width = iconSize + 2 * padding;
             var height = 2 * width;
-            Rect buildOptionsRect = new Rect(contentRect.xMax - width, mainRect.yMax - height, width, height);
+            //Designators
+            Rect DESIGNATORS_Rect = new Rect(CONTENT_Rect.xMax - width, CONTENT_Rect.yMax - height, width, height);
 
-            UILayout.Register("BGRect", bgRect); //
-            UILayout.Register("SettingsRect", settingsRect); //
-            UILayout.Register("CloseSettingsButtonRect", closeSettingsRect); //
-            UILayout.Register("MainRect", mainRect); //
-            UILayout.Register("WidgetRow", widgetRowRect);
-            UILayout.Register("TitleRect", titleRect); //
-            UILayout.Register("RoleReadoutRect", roleReadoutRect);
-            UILayout.Register("ContentRect", contentRect); //
-            UILayout.Register("ContainerRect", containerBarRect); //
-            UILayout.Register("RequestSelectionRect", requestSelectionRect); //
-            UILayout.Register("BuildOptionsRect", buildOptionsRect); //
-            UILayout.Register("ControllerOptionRect", buildOptionsRect.ContractedBy(padding).TopPartPixels(iconSize)); //
-            UILayout.Register("PipeOptionRect", buildOptionsRect.ContractedBy(padding).BottomPartPixels(iconSize)); //
+            UILayout = new UILayout();
+            UILayout.Register("BGRect", BGRECT); //
+            UILayout.Register("SettingsRect", SETTINGS_Rect); //
+            UILayout.Register("CloseSettingsButtonRect", SETTINGS_CloseButtonRect); //
+            UILayout.Register("MainRect", MAINRECT); //
+            UILayout.Register("WidgetRow", WIDGETROW_Rect);
+            UILayout.Register("TitleRect", TITLE_Rect); //
+            UILayout.Register("RoleReadoutRect", ROLETEXT_Rect);
+            UILayout.Register("ContentRect", CONTENT_Rect); //
+            UILayout.Register("ContainerRect", CONTAINER_Rect); //
+            UILayout.Register("RequestSelectionRect", REQUESTSELECTION_Rect); //
+
+            UILayout.Register("BuildOptionsRect", DESIGNATORS_Rect); //
+            UILayout.Register("ControllerOptionRect", DESIGNATORS_Rect.ContractedBy(padding).TopPartPixels(iconSize)); //
+            UILayout.Register("PipeOptionRect", DESIGNATORS_Rect.ContractedBy(padding).BottomPartPixels(iconSize)); //
         }
-
-        private string selectedSetting = null;
-        private FloatRange extensionSettingYRange;
-        private float desiredY;
-        private float currentExtendedY = 0;
 
         private void Notify_ExtendHovered(bool isHovered)
         {
@@ -182,14 +205,17 @@ namespace TeleCore
             //
             Text.Font = GameFont.Tiny;
 
-            WidgetRow subFunctionRow = new WidgetRow();
-            subFunctionRow.Init(rect.x, rect.y, UIDirection.RightThenDown, gap: 0);
-            foreach (var role in parentComp.Props.networkRoles)
+            if (HasSubValues)
             {
-                if (!role.HasSubValues) continue;
-                if (subFunctionRow.ButtonBox(role.ToString(), TColor.BlueHueBG, Color.gray))
+                WidgetRow subFunctionRow = new WidgetRow();
+                subFunctionRow.Init(rect.x, rect.y, UIDirection.RightThenDown, gap: 0);
+                foreach (var role in parentComp.Props.networkRoles)
                 {
+                    if (!role.HasSubValues) continue;
+                    if (subFunctionRow.ButtonBox(role.ToString(), TColor.BlueHueBG, Color.gray))
+                    {
 
+                    }
                 }
             }
 

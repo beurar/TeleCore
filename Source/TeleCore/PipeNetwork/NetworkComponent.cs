@@ -70,6 +70,7 @@ namespace TeleCore
         }
 
         public Dictionary<NetworkValueDef, (bool,float)> RequestedTypes => requestedTypes;
+        public Dictionary<NetworkRole, List<NetworkValueDef>> ValuesByRole => Props.AllowedValuesByRole;
 
         public float RequestedCapacityPercent
         {

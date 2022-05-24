@@ -18,6 +18,9 @@ namespace TeleCore
         //Container Processing
         public bool storeEvenly = false;
 
+        //Override
+        public string containerLabel;
+
         //Events
         //public ThingDef droppedContainer = TeleDefOf.PortableContainer;
         public bool dropContents = false;

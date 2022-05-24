@@ -19,6 +19,9 @@ namespace TeleCore
         [Unsaved]
         private readonly List<NetworkValueDef> belongingValueDefs = new();
 
+        //General Label
+        public string containerLabel;
+
         // Loaded from XML
         public ThingDef portableContainerDef = TeleDefOf.PortableContainer;
 
@@ -62,6 +65,10 @@ namespace TeleCore
                 if (compProps == null)
                 {
                     yield return $"controllerDef {controllerDef} does not have a Network ThingComp!";
+                }
+                else if (compProps.networks.NullOrEmpty())
+                {
+                    yield return $"controllerDef {controllerDef} has no networks defined!";
                 }
                 else if (!compProps.networks.Find(n => n.networkDef == this).NetworkRole.HasFlag(NetworkRole.Controller))
                 {
