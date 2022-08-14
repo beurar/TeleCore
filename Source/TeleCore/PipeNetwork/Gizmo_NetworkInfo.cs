@@ -14,7 +14,7 @@ namespace TeleCore
 {
     public class Gizmo_NetworkInfo : Gizmo
     {
-        private NetworkComponent parentComp;
+        private NetworkSubPart parentComp;
         private bool usesSubValues;
         private string[] cachedStrings;
 
@@ -45,14 +45,13 @@ namespace TeleCore
             }
         }
 
-        public Gizmo_NetworkInfo(NetworkComponent parent) : base()
+        public Gizmo_NetworkInfo(NetworkSubPart parent) : base()
         {
             this.order = -250f;
             this.parentComp = parent;
             if (HasExtension)
             {
-                //TODO: MapUI ticks? clear these when map is cleared but tick it like UI
-                TFind.TickManager.RegisterUITickAction(Tick);
+                TFind.TickManager.RegisterMapUITickAction(Tick);
                 SetExtensions();
                 SetUpExtensionUIData();
             }
@@ -282,8 +281,8 @@ namespace TeleCore
 
             //Do network build options
             TWidgets.DrawBoxHighlight(UILayout["BuildOptionsRect"]);
-            var controllDesignator = StaticData.GetDesignatorFor<Designator_Build>(parentComp.NetworkDef.controllerDef);
-            var pipeDesignator = StaticData.GetDesignatorFor<Designator_Build>(parentComp.NetworkDef.transmitterDef);
+            var controllDesignator = GenData.GetDesignatorFor<Designator_Build>(parentComp.NetworkDef.controllerDef);
+            var pipeDesignator = GenData.GetDesignatorFor<Designator_Build>(parentComp.NetworkDef.transmitterDef);
             if (Widgets.ButtonImage(UILayout["ControllerOptionRect"], controllDesignator.icon))
             {
                 controllDesignator.ProcessInput(Event.current);

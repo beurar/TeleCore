@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using UnityEngine;
 using Verse;
 
 namespace TeleCore
@@ -67,6 +68,49 @@ namespace TeleCore
                 }
             }
             yield break;
+        }
+
+
+        /// <summary>
+        /// Offsets a list of cells by a given reference cell.
+        /// </summary>
+        public static List<IntVec3> OffsetIntvecs(IEnumerable<IntVec3> cells, IntVec3 reference)
+        {
+            List<IntVec3> offsetVecs = new List<IntVec3>();
+            foreach (IntVec3 c in cells)
+            {
+                offsetVecs.Add(c - reference);
+            }
+
+            return offsetVecs;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public static Vector3[] CornerVec3s(this IntVec3 origin)
+        {
+            var originVec = origin.ToVector3();
+            return new Vector3[]
+            {
+                originVec,                              //00
+                originVec + new Vector3(1,0,0),   //10
+                originVec + new Vector3(0,0,1),   //01
+                originVec + new Vector3(1,0,1)    //11
+            };
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public static Vector2[] CornerVecs(this IntVec3 origin)
+        {
+            var originVec = origin.ToIntVec2.ToVector2();
+            return new Vector2[]
+            {
+                originVec, originVec + new Vector2(1,0),
+                originVec + new Vector2(1,1), originVec +  new Vector2(0,1)
+            };
         }
     }
 }

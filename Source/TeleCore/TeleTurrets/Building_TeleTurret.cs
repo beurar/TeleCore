@@ -11,6 +11,9 @@ using Verse.AI;
 
 namespace TeleCore
 {
+    /// <summary>
+    /// 
+    /// </summary>
     public class Building_TeleTurret : Building_Turret, ITurretHolder, IFXObject
     {
         private CompPowerTrader powerComp;

@@ -9,41 +9,39 @@ namespace TeleCore
 {
     public class NetworkMapInfo : MapInformation
     {
-        private Dictionary<NetworkDef, NetworkMaster> NetworksByType = new Dictionary<NetworkDef, NetworkMaster>();
-        private List<NetworkMaster> NetworkSystems = new List<NetworkMaster>();
+        private readonly Dictionary<NetworkDef, PipeNetworkManager> NetworksByType = new ();
+        private readonly List<PipeNetworkManager> PipeNetworks = new ();
 
         public NetworkMapInfo(Map map) : base(map)
         {
         }
 
-        public NetworkMaster this[NetworkDef type] => NetworksByType.TryGetValue(type);
+        public PipeNetworkManager this[NetworkDef type] => NetworksByType.TryGetValue(type);
 
-        public NetworkMaster GetOrCreateNewNetworkSystemFor(NetworkDef networkDef)
+        public PipeNetworkManager GetOrCreateNewNetworkSystemFor(NetworkDef networkDef)
         {
-            if (NetworksByType.TryGetValue(networkDef, out var network))
-            {
-                return network;
-            }
-            var networkMaster = new NetworkMaster(Map, networkDef);
+            if (NetworksByType.TryGetValue(networkDef, out var network)) return network;
+
+            //Make New
+            var networkMaster = new PipeNetworkManager(Map, networkDef);
             NetworksByType.Add(networkDef, networkMaster);
-            NetworkSystems.Add(networkMaster);
+            PipeNetworks.Add(networkMaster);
             return networkMaster;
         }
 
-        public void Notify_NewNetworkStructureSpawned(INetworkStructure structure)
+        public void Notify_NewNetworkStructureSpawned(Comp_NetworkStructure structure)
         {
             foreach (var networkComponent in structure.NetworkParts)
             {
-                var master = GetOrCreateNewNetworkSystemFor(networkComponent.NetworkDef);
-                master.RegisterComponent(networkComponent);
+                GetOrCreateNewNetworkSystemFor(networkComponent.NetworkDef).RegisterComponent(networkComponent, structure);
             }
         }
 
-        public void Notify_NetworkStructureDespawned(INetworkStructure structure)
+        public void Notify_NetworkStructureDespawned(Comp_NetworkStructure structure)
         {
             foreach (var networkComponent in structure.NetworkParts)
             {
-                GetOrCreateNewNetworkSystemFor(networkComponent.NetworkDef).DeregisterComponent(networkComponent);
+                GetOrCreateNewNetworkSystemFor(networkComponent.NetworkDef).DeregisterComponent(networkComponent, structure);
             }
         }
 
@@ -64,16 +62,23 @@ namespace TeleCore
 
         public override void Tick()
         {
-            base.Tick();
-            foreach (var networkSystem in NetworkSystems)
+            foreach (var networkSystem in PipeNetworks)
             {
-                networkSystem.TickNetwork();
+                networkSystem.TickNetworks();
             }
         }
 
-        public override void Draw()
+        public override void UpdateOnGUI()
         {
-            foreach (var networkSystem in NetworkSystems)
+            foreach (var networkSystem in PipeNetworks)
+            {
+                networkSystem.DrawNetworkOnGUI();
+            }
+        }
+
+        public override void Update()
+        {
+            foreach (var networkSystem in PipeNetworks)
             {
                 networkSystem.DrawNetwork();
             }

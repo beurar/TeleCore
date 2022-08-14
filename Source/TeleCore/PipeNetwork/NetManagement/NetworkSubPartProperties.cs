@@ -3,11 +3,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using JetBrains.Annotations;
 using Verse;
 
 namespace TeleCore
 {
-    public class NetworkComponentProperties
+    public class NetworkSubPartProperties
     {
         //Cached Data
         private NetworkRole? networkRole;
@@ -15,11 +16,11 @@ namespace TeleCore
         private Dictionary<NetworkRole, List<NetworkValueDef>> allowedValuesByRoleInt;
 
         //Loaded from XML
-        public Type workerType = typeof(NetworkComponent);
+        public Type workerType = typeof(NetworkSubPart);
         public NetworkDef networkDef;
         public ContainerProperties containerProps;
+        public string networkIOPattern;
 
-        //TODO NetworkRoleProperties
         public List<NetworkRoleProperties> networkRoles = new(){ NetworkRole.Transmitter };
 
         //

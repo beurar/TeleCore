@@ -526,5 +526,49 @@ namespace TeleCore
             Text.Anchor = default;
             Widgets.EndGroup();
         }
+
+        //Internals
+        internal static string GetPathOf(GraphicData data)
+        {
+            if (data != null && data.graphicClass == typeof(Graphic_Single))
+            {
+                return data.texPath;
+            }
+            return null;
+        }
+
+        internal static Texture TextureForFleckMote(Def def)
+        {
+            Texture texture = null;
+            if (def is ThingDef mote)
+            {
+                texture = mote.uiIcon;
+            }
+            if (def is FleckDef fleck)
+            {
+                if (fleck.graphicData != null)
+                    texture = fleck.graphicData.Graphic?.MatNorth?.mainTexture;
+                if (texture == null && fleck.randomGraphics != null)
+                {
+                    texture = fleck.randomGraphics.FirstOrFallback(c => GetPathOf(c) != null).Graphic.MatNorth.mainTexture;
+                }
+            }
+            return texture;
+        }
+
+        //
+        /*
+        internal static void DrawFlagAtlas(Rect rect)
+        {
+            rect = rect.Rounded();
+            var texture2D = TeleContent.TimeFlag;
+
+            Rect drawRect;
+            Rect uvRect;
+
+            //Draw Left
+            Widgets.DrawTexturePart(drawRect, uvRect, texture2D);
+        }
+        */
     }
 }

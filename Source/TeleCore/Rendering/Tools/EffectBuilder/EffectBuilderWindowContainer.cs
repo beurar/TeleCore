@@ -2,7 +2,7 @@
 using UnityEngine;
 using Verse;
 
-namespace TeleCore.Rendering.Tools.EffectBuilder
+namespace TeleCore
 {
     internal class EffectBuilderWindowContainer : UIElement
     {
@@ -10,6 +10,8 @@ namespace TeleCore.Rendering.Tools.EffectBuilder
 
         private readonly UITopBar topBar;
         private readonly EffectCanvas canvas;
+
+        private readonly FleckMoteBrowser browser;
 
         public EffectBuilderWindowContainer(Window parent, Rect rect, UIElementMode mode) : base(rect, mode)
         {
@@ -22,6 +24,7 @@ namespace TeleCore.Rendering.Tools.EffectBuilder
             this.borderColor = Color.clear;
             //
             canvas = new EffectCanvas(UIElementMode.Static);
+            browser = new FleckMoteBrowser(UIElementMode.Static);
 
             //
             var buttonMenus = new List<TopBarButtonMenu>();
@@ -64,14 +67,16 @@ namespace TeleCore.Rendering.Tools.EffectBuilder
             Widgets.BeginGroup(inRect);
             {
                 Rect canvasRect = new Rect(0, 0, 900, 900);
+                Rect objectBrowserRect = new Rect(canvasRect.xMax-1, canvasRect.y, 300, canvasRect.height + 1);
 
                 //
                 canvas.DrawElement(canvasRect);
-
-                //
-                topBar.DrawElement(TopRect);
+                browser.DrawElement(objectBrowserRect);
             }
             Widgets.EndGroup();
+
+            //
+            topBar.DrawElement(TopRect);
         }
     }
 }

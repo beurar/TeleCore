@@ -11,44 +11,49 @@ namespace TeleCore
     public class TeleCoreSettings : ModSettings
     {
         internal bool enableProjectileGraphicRandomFix = false;
-        internal AnimationSettings animationSettings = new();
 
-        //
+        //Tools.General
+        internal Dictionary<string, ScribeDictionary<string, bool>> DataBrowserSettings = new();
+
+        //Tools.Animation
+        private string userDefinedAnimationDefLocation = null;
+
+        //Properties
+        public string SaveAnimationDefLocation => userDefinedAnimationDefLocation;
         public bool ProjectileGraphicRandomFix => enableProjectileGraphicRandomFix;
 
-        //
-        public override void ExposeData()
+        public TeleCoreSettings()
         {
-            Scribe_Values.Look(ref enableProjectileGraphicRandomFix, "enableProjectileGraphicRandomFix");
-            Scribe_Deep.Look(ref animationSettings, "animationSettings");
-        }
-    }
-
-    internal class AnimationSettings : IExposable
-    {
-        private string userDefinedAnimationDefLocation = null;
-        private Dictionary<string, bool> textureBrowserSettings = new();
-
-        public string SaveAnimationDefLocation => userDefinedAnimationDefLocation;
-
-        internal bool AllowsModInBrowser(ModContentPack mod)
-        {
-            return !textureBrowserSettings.TryGetValue(mod.Name, out var value) || value;
         }
 
-        internal void SetAllowedModInBrowser(ModContentPack mod, bool setting)
+        //Data Notifiers
+        internal bool AllowsModInDataBrowser(Type forType, ModContentPack mod)
         {
-            if (!textureBrowserSettings.ContainsKey(mod.Name))
+            if (!DataBrowserSettings.TryGetValue(forType.ToString(), out var settings)) return true;
+            return !settings.TryGetValue(mod.Name, out var value) || value;
+        }
+
+        internal void SetDataBrowserSettings(Type forType, string packName, bool value)
+        {
+            if (!DataBrowserSettings.TryGetValue(forType.ToString(), out var settings))
             {
-                textureBrowserSettings.Add(mod.Name, setting);
+                settings = new ScribeDictionary<string, bool>(LookMode.Value, LookMode.Value);
+                DataBrowserSettings.Add(forType.ToString(), settings);
+            }
+            if (!settings.ContainsKey(packName))
+            {
+                settings.Add(packName, value);
                 return;
             }
-            textureBrowserSettings[mod.Name] = setting;
+            settings[packName] = value;
+            Write();
         }
 
-        internal void SetAnimationDefLocation(string newPath)
+        internal void SetAnimationDefLocation(string newPath, bool write = true)
         {
             userDefinedAnimationDefLocation = newPath;
+            if(write)
+                Write();
         }
 
         internal void ResetAnimationDefLocation()
@@ -56,14 +61,23 @@ namespace TeleCore
             SetAnimationDefLocation(StringCache.DefaultAnimationDefLocation);
         }
 
-        public void ExposeData()
+        //
+        private List<string> keyList;
+        private List<Dictionary<string, bool>> valueList;
+        public override void ExposeData()
         {
+            Scribe_Values.Look(ref enableProjectileGraphicRandomFix, "enableProjectileGraphicRandomFix");
             Scribe_Values.Look(ref userDefinedAnimationDefLocation, "userDefinedAnimationDefLocation");
-            Scribe_Collections.Look(ref textureBrowserSettings, "textureBrowserSettings");
+            Scribe_Collections.Look(ref DataBrowserSettings, "DataBrowserSettings", LookMode.Value, LookMode.Deep);
 
             if (userDefinedAnimationDefLocation == null)
             {
-                SetAnimationDefLocation(StringCache.DefaultAnimationDefLocation);
+                SetAnimationDefLocation(StringCache.DefaultAnimationDefLocation, false);
+            }
+
+            if (DataBrowserSettings == null)
+            {
+                DataBrowserSettings = new Dictionary<string, ScribeDictionary<string, bool>>();
             }
         }
     }

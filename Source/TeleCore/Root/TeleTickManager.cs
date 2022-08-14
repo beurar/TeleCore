@@ -13,6 +13,7 @@ namespace TeleCore
         private bool isPaused = false;
 
         private Action UITickers;
+        private Action GameUITickers;
         private Action GameTickers;
 
         private int timeControlTicks;
@@ -75,7 +76,7 @@ namespace TeleCore
                     GameTickers?.Invoke();
 
                 UITickers?.Invoke();
-
+                GameUITickers?.Invoke();
 
                 //
                 realTimeToTickThrough -= curTimePerTick;
@@ -91,6 +92,7 @@ namespace TeleCore
         public void ClearGameTickers()
         {
             GameTickers = null;
+            GameUITickers = null;
         }
 
         public void TogglePlay()
@@ -101,6 +103,11 @@ namespace TeleCore
         public void RegisterUITickAction(Action action)
         {
             UITickers += action;
+        }
+
+        public void RegisterMapUITickAction(Action action)
+        {
+            GameUITickers += action;
         }
 
         public void RegisterMapTickAction(Action action)

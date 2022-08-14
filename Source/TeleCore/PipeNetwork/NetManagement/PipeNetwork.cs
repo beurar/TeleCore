@@ -3,51 +3,47 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using HarmonyLib;
 using Verse;
 
 namespace TeleCore
 {
-    public class Network : IExposable
+    public class PipeNetwork : IExposable
     {
-        //
         protected NetworkDef def;
-        protected NetworkMaster networkParent;
-        protected Map map;
         protected NetworkRank networkRank = NetworkRank.Alpha;
-        protected int networkID = -1;
 
-        //
-        protected NetworkComponentSet componentSet;
+        protected PipeNetworkManager parentManager;
+
+        protected NetworkPartSet partSet;
         protected NetworkContainerSet containerSet;
 
-        //
-        public INetworkStructure NetworkController => ComponentSet.Controller?.Parent;
+        public PipeNetworkManager ParentManager => parentManager;
 
+        public NetworkGraph InternalGraph { get; internal set; }
+        public NetworkPartSet PartSet => partSet;
+        public NetworkContainerSet ContainerSet => containerSet;
+
+        public INetworkStructure NetworkController => PartSet.Controller?.Parent;
+        public List<IntVec3> NetworkCells { get; }
+
+        public NetworkDef Def => def;
         public NetworkRank NetworkRank => networkRank;
-        //
+        public int ID { get; set; } = -1;
+
         public virtual bool IsWorking => !def.UsesController || (NetworkController?.IsPowered ?? false);
         public virtual float TotalNetworkValue => ContainerSet.TotalNetworkValue;
         public virtual float TotalStorageNetworkValue => ContainerSet.TotalStorageValue;
 
-        public List<IntVec3> NetworkCells { get; set; }
+        //DEBUG
+        internal bool DrawInternalGraph = false;
 
-        public NetworkDef Def => def;
-        public int ID
+        public PipeNetwork(NetworkDef def, PipeNetworkManager manager)
         {
-            get => networkID;
-            set => networkID = value;
-        }
-
-        public NetworkMaster NetworkParent => networkParent;
-        public NetworkComponentSet ComponentSet => componentSet;
-        public NetworkContainerSet ContainerSet => containerSet;
-
-        public Network(NetworkDef def, Map map, NetworkMaster parent)
-        {
+            this.ID = PipeNetworkManager.MasterID++;
             this.def = def;
-            this.networkParent = parent;
-            this.map = map;
-            componentSet = new NetworkComponentSet(def, null);
+            parentManager = manager;
+            partSet = new NetworkPartSet(def, null);
             containerSet = new NetworkContainerSet();
             NetworkCells = new List<IntVec3>();
         }
@@ -59,31 +55,38 @@ namespace TeleCore
 
         public virtual void Tick()
         {
-
+            foreach (var part in PartSet.FullSet)
+            {
+                part.NetworkTick();
+            }
         }
 
         public virtual void Draw()
         {
+        }
 
+        public void DrawOnGUI()
+        {
+            if(DrawInternalGraph)
+                InternalGraph.DrawGraphOnUI();
         }
 
         //
-        public float NetworkValueFor(NetworkValueDef valueDef)
+        public float TotalValueFor(NetworkValueDef valueDef)
         {
             return ContainerSet.GetValueByType(valueDef);
         }
 
-        public float NetworkValueFor(NetworkRole ofRole)
+        public float TotalValueFor(NetworkRole ofRole)
         {
             return ContainerSet.GetTotalValueByRole(ofRole);
         }
 
-        public float NetworkValueFor(NetworkValueDef valueDef, NetworkRole ofRole)
+        public float TotalValueFor(NetworkValueDef valueDef, NetworkRole ofRole)
         {
             return ContainerSet.GetValueByTypeByRole(valueDef, ofRole);
         }
 
-        //
         public bool ValidFor(NetworkRole role, out string reason)
         {
             reason = string.Empty;
@@ -96,10 +99,10 @@ namespace TeleCore
                     {
                         case NetworkRole.Consumer:
                             reason = "TR_ConsumerLack";
-                            return ComponentSet.FullSet.Any(x => x.NetworkRole.HasFlag(NetworkRole.Storage) || x.NetworkRole.HasFlag(NetworkRole.Producer));
+                            return PartSet.FullSet.Any(x => x.NetworkRole.HasFlag(NetworkRole.Storage) || x.NetworkRole.HasFlag(NetworkRole.Producer));
                         case NetworkRole.Producer:
                             reason = "TR_ProducerLack";
-                            return ComponentSet.FullSet.Any(x => x.NetworkRole.HasFlag(NetworkRole.Storage) || x.NetworkRole.HasFlag(NetworkRole.Consumer));
+                            return PartSet.FullSet.Any(x => x.NetworkRole.HasFlag(NetworkRole.Storage) || x.NetworkRole.HasFlag(NetworkRole.Consumer));
                         case NetworkRole.Transmitter:
                             break;
                         case NetworkRole.Storage:
@@ -108,8 +111,6 @@ namespace TeleCore
                             break;
                         case NetworkRole.AllContainers:
                             break;
-                        case NetworkRole.All:
-                            break;
                         default: break;
                     }
                 }
@@ -117,48 +118,34 @@ namespace TeleCore
             return true;
         }
 
-        public void AddComponent(INetworkComponent component)
+        //Data Updates
+        public void Notify_AddPart(INetworkSubPart part)
         {
-            if (ComponentSet.AddNewComponent(component))
-                NetworkCells.AddRange(component.Parent.InnerConnectionCells);
+            ParentManager.Notify_AddPart(part);
 
-            ContainerSet.AddNewContainerFrom(component);
+            //
+            if (PartSet.AddNewComponent(part))
+                NetworkCells.AddRange(part.CellIO.InnerConnectionCells);
+
+            ContainerSet.AddNewContainerFrom(part);
         }
 
-        public void RemoveComponent(INetworkComponent component)
+        public void Notify_RemovePart(INetworkSubPart part)
         {
-            ComponentSet.RemoveComponent(component);
-            containerSet.RemoveContainerFrom(component);
-            foreach (var cell in component.Parent.InnerConnectionCells)
+            ParentManager.Notify_RemovePart(part);
+
+            //
+            PartSet.RemoveComponent(part);
+            containerSet.RemoveContainerFrom(part);
+            foreach (var cell in part.CellIO.InnerConnectionCells)
             {
                 NetworkCells.Remove(cell);
             }
         }
 
-        //Network Gen
-        public void Notify_MarkDirty()
-        {
-
-        }
-
-        /*
-        public void Notify_PotentialSplit(INetworkStructure from)
-        {
-            from.Network = null;
-            Network newNet = null;
-            foreach (INetworkStructure root in from.NeighbourStructureSet.FullSet)
-            {
-                if (root.Network != newNet)
-                {
-                    newNet = root.Network = new Network(this.networkType, map, NetworkParent);
-                }
-            }
-        }
-        */
-
         public override string ToString()
         {
-            return $"{def}[{networkID}][{networkRank}]";
+            return $"{def}[{ID}][{networkRank}]";
         }
 
         public string GreekLetter

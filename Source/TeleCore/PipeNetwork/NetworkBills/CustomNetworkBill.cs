@@ -21,7 +21,7 @@ namespace TeleCore
         //Custom
         public string billName;
         public float workAmountTotal;
-        public DefValue<NetworkValueDef>[] networkCost;
+        public DefValue<NetworkValueDef, float>[] networkCost;
         public List<ThingDefCount> results = new List<ThingDefCount>();
 
         private BillRepeatModeDef repeatMode = BillRepeatModeDefOf.Forever;
@@ -35,7 +35,7 @@ namespace TeleCore
         private bool hasBeenPaid = false;
 
         //
-        private List<DefValue<NetworkValueDef>> scribedListInt;
+        private List<DefValue<NetworkValueDef, float>> scribedListInt;
 
         private static float borderWidth = 5;
         private static float contentHeight = 0;
@@ -139,7 +139,7 @@ namespace TeleCore
             foreach (var value in networkCost)
             {
                 var network = billStack.ParentComp[value.Def.networkDef].Network;
-                if (network.NetworkValueFor(value.Def, NetworkFlags) >= value.Value)
+                if (network.TotalValueFor(value.Def, NetworkFlags) >= value.Value)
                 {
                     totalNeeded -= value.Value;
                 }
@@ -213,20 +213,20 @@ namespace TeleCore
 
         private bool TryPay()
         {
-            var storages = billStack.ParentNetComps.SelectMany(n => n.ContainerSet[NetworkFlags]);
-            NetworkValueStack stack = new NetworkValueStack();
+            var storages = billStack.ParentNetParts.SelectMany(n => n.ContainerSet[NetworkFlags]);
+            DefValueStack<NetworkValueDef> stack = new DefValueStack<NetworkValueDef>();
             foreach (var value in networkCost)
             {
-                stack.Add(value.Def, value.Value);
+                stack.PushNew(value.Def, value.Value);
             }
 
             foreach (var storage in storages)
             {
-                foreach (var value in stack.networkValues)
+                foreach (var value in stack.values)
                 {
-                    if (storage.ValueForType(value.valueDef) > 0 && storage.TryRemoveValue(value.valueDef, value.valueF, out float actualVal))
+                    if (storage.ValueForType(value.Def) > 0 && storage.TryRemoveValue(value.Def, value.Value, out float actualVal))
                     {
-                        stack -= new NetworkValue(value.valueDef, actualVal);
+                        stack -= new DefValue<NetworkValueDef, float>(value.Def, actualVal);
                     }
 
                     if (stack.TotalValue <= 0)
@@ -249,23 +249,23 @@ namespace TeleCore
                 Refund();
         }
 
-        private NetworkValueStack StackFor(NetworkComponent comp)
+        private DefValueStack<NetworkValueDef> StackFor(NetworkSubPart comp)
         {
             var storages = comp.ContainerSet[NetworkFlags];
-            NetworkValueStack stack = new NetworkValueStack();
+            DefValueStack<NetworkValueDef> stack = new DefValueStack<NetworkValueDef>();
             foreach (var value in networkCost)
             {
                 if(value.Def.networkDef == comp.NetworkDef)
-                    stack.Add(value.Def, value.Value);
+                    stack.PushNew(value.Def, value.Value);
             }
 
             foreach (var storage in storages)
             {
-                foreach (var value in stack.networkValues)
+                foreach (var value in stack.values)
                 {
-                    if (storage.TryAddValue(value.valueDef, value.valueF, out float actualValue))
+                    if (storage.TryAddValue(value.Def, value.Value, out float actualValue))
                     {
-                        stack -= new NetworkValue(value.valueDef, actualValue);
+                        stack -= new DefValue<NetworkValueDef, float>(value.Def, actualValue);
                     }
                 }
             }
@@ -274,7 +274,7 @@ namespace TeleCore
 
         private void Refund()
         {
-            foreach (var netComp in billStack.ParentNetComps)
+            foreach (var netComp in billStack.ParentNetParts)
             {
                 var portableDef = netComp.NetworkDef.portableContainerDef;
                 if (portableDef == null) continue;
@@ -433,7 +433,7 @@ namespace TeleCore
             bill.repeatCount = repeatCount;
             bill.billName = billName + "_Copy";
             bill.repeatMode = repeatMode;
-            bill.networkCost = new DefValue<NetworkValueDef>[networkCost.Length];
+            bill.networkCost = new DefValue<NetworkValueDef, float>[networkCost.Length];
             networkCost.CopyTo(bill.networkCost);
             bill.results = new List<ThingDefCount>(results);
             return bill;

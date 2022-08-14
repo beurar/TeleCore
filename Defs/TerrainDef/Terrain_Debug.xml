@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Defs>
+
+	<TerrainDef ParentName="FloorBase">
+		<defName>ChromaKeyGreen</defName>
+		<label>ChromaKey Green</label>
+		<renderPrecedence>240</renderPrecedence>
+		<description>N/A</description>
+		<texturePath>TerrainDebug/ChromaKey_Green</texturePath>
+		<costList>
+			<Steel>1</Steel>
+		</costList>
+		<constructEffect>ConstructMetal</constructEffect>
+	</TerrainDef>
+	
+	<TerrainDef ParentName="FloorBase">
+		<defName>ChromaKeyRed</defName>
+		<label>ChromaKey Red</label>
+		<renderPrecedence>240</renderPrecedence>
+		<description>N/A</description>
+		<texturePath>TerrainDebug/ChromaKey_Red</texturePath>
+		<costList>
+			<Steel>1</Steel>
+		</costList>
+		<constructEffect>ConstructMetal</constructEffect>
+	</TerrainDef>
+	
+	<TerrainDef ParentName="FloorBase">
+		<defName>ChromaKeyBlue</defName>
+		<label>ChromaKey Blue</label>
+		<renderPrecedence>240</renderPrecedence>
+		<description>N/A</description>
+		<texturePath>TerrainDebug/ChromaKey_Blue</texturePath>
+		<costList>
+			<Steel>1</Steel>
+		</costList>
+		<constructEffect>ConstructMetal</constructEffect>
+	</TerrainDef>
+	
+	<TerrainDef ParentName="FloorBase">
+		<defName>ChromaKeyBlack</defName>
+		<label>ChromaKey Black</label>
+		<renderPrecedence>240</renderPrecedence>
+		<description>N/A</description>
+		<texturePath>TerrainDebug/ChromaKey_Black</texturePath>
+		<costList>
+			<Steel>1</Steel>
+		</costList>
+		<constructEffect>ConstructMetal</constructEffect>
+	</TerrainDef>
+	
+	<TerrainDef ParentName="FloorBase">
+		<defName>ChromaKeyMagenta</defName>
+		<label>ChromaKey Magenta</label>
+		<renderPrecedence>240</renderPrecedence>
+		<description>N/A</description>
+		<texturePath>TerrainDebug/ChromaKey_Magenta</texturePath>
+		<costList>
+			<Steel>1</Steel>
+		</costList>
+		<constructEffect>ConstructMetal</constructEffect>
+	</TerrainDef>
+	
+</Defs>

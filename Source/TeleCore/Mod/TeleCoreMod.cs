@@ -5,6 +5,7 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using HarmonyLib;
+using RimWorld;
 using UnityEngine;
 using Verse;
 
@@ -33,6 +34,7 @@ namespace TeleCore
 
             //
             TeleCore.PatchAll(assembly);
+
         }
 
         public override string SettingsCategory()

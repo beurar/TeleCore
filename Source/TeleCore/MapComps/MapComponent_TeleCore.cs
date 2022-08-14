@@ -9,29 +9,16 @@ namespace TeleCore
 {
     public class MapComponent_TeleCore : MapComponent
     {
-        internal List<MapInformation> allMapInfos;
-        internal Dictionary<Type, MapInformation> mapInfoByType;
+        internal List<MapInformation> allMapInfos = new();
+        internal Dictionary<Type, MapInformation> mapInfoByType = new();
 
         public NetworkMapInfo NetworkInfo => (NetworkMapInfo)mapInfoByType[typeof(NetworkMapInfo)];
         public ThingCacheMapInfo ThingCacheInfo => (ThingCacheMapInfo)mapInfoByType[typeof(ThingCacheMapInfo)];
 
-        protected void CreateMapInfos()
-        {
-            var subClasses = typeof(MapInformation).AllSubclassesNonAbstract();
-            allMapInfos = new List<MapInformation>(subClasses.Count);
-            mapInfoByType = new Dictionary<Type, MapInformation>(subClasses.Count);
-            foreach (var type in subClasses)
-            {
-                var mapInfo = (MapInformation)Activator.CreateInstance(type, args:map);
-                allMapInfos.Add(mapInfo);
-                mapInfoByType.Add(type, mapInfo);
-            }
-        }
-
         public MapComponent_TeleCore(Map map) : base(map)
         {
             StaticData.Notify_NewTibMapComp(this);
-            CreateMapInfos();
+            FillMapInformations();
         }
 
         public T GetMapInfo<T>() where T : MapInformation
@@ -42,7 +29,32 @@ namespace TeleCore
         public override void ExposeData()
         {
             base.ExposeData();
-            //Scribe_Collections.Look();
+            Scribe_Collections.Look(ref allMapInfos, "mapInfos", LookMode.Deep, map);
+            FillMapInformations();
+        }
+
+        private void FillMapInformations()
+        {
+            allMapInfos.RemoveAll(m => m == null);
+            foreach (Type type in typeof(MapInformation).AllSubclassesNonAbstract())
+            {
+                if (allMapInfos.Any(m => m.GetType() == type)) continue;
+
+                try
+                {
+                    MapInformation item = (MapInformation)Activator.CreateInstance(type, map);
+                    allMapInfos.Add(item);
+                }
+                catch (Exception ex)
+                {
+                    TLog.Error($"Could not instantiate a MapInformation of type {type}: {ex}");
+                }
+            }
+            mapInfoByType.Clear();
+            foreach (var mapInfo in allMapInfos)
+            {
+                mapInfoByType.Add(mapInfo.GetType(), mapInfo);
+            }
         }
 
         public override void FinalizeInit()
@@ -53,7 +65,6 @@ namespace TeleCore
                 var info = allMapInfos[i];
                 info.InfoInit();
             }
-
             //
             LongEventHandler.QueueLongEvent(ThreadSafeFinalize, string.Empty, false, null, false);
         }
@@ -100,7 +111,7 @@ namespace TeleCore
             for (var i = 0; i < allMapInfos.Count; i++)
             {
                 var info = allMapInfos[i];
-                info.Draw();
+                info.Update();
             }
         }
 

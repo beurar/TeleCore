@@ -6,9 +6,9 @@ using System.Threading.Tasks;
 
 namespace TeleCore
 {
-    public enum VerbBurstMode
+    public struct AnimationActionEventFlag
     {
-        AtTarget,
-        AlongPath
+        public string flag;
+        public int frameTick;
     }
 }

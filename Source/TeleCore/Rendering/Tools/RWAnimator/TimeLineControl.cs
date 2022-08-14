@@ -46,8 +46,8 @@ namespace TeleCore
         public Dictionary<IKeyFramedElement, Dictionary<int, KeyFrame>> AnimationPartFrames => CurrentPart.InternalFrames;
 
         //Canvas Elements
-        public List<UIElement> Elements => Canvas.TextureElements;
-        public IEnumerable<IKeyFramedElement> KeyFramedElements => Canvas.TextureElements.Select(t => (IKeyFramedElement) t);
+        public List<UIElement> Elements => Canvas.ChildElements;
+        public IEnumerable<IKeyFramedElement> KeyFramedElements => Canvas.ChildElements.Select(t => (IKeyFramedElement) t);
 
         //UI
         private float zoomFactor = 1f;
@@ -657,6 +657,44 @@ namespace TeleCore
             row.Label($"[{CurrentFrame}][{Math.Round(CurrentFrame.TicksToSeconds(),2)}s]");
             row.Init(0, Rect.height - 16, UIDirection.LeftThenUp);
             Widgets.EndGroup();
+        }
+
+        public void UpdateAllFramesFor(IKeyFramedElement element, ManipulationMode forMode, object byValue)
+        {
+            var elements = AnimationPartFrames[element].Values.ToList();
+            foreach (var frame in elements)
+            {
+                if (CurrentFrame == frame.Frame) continue;
+                var data = frame.Data;
+                switch (forMode)
+                {
+                    case ManipulationMode.Move:
+                        data.TPosition += (Vector2) byValue;
+                        break;
+                    case ManipulationMode.Resize:
+                        data.TSize += (Vector2) byValue;
+                        break;
+                    case ManipulationMode.Rotate:
+                        data.TRotation += (float)byValue;
+                        break;
+                    case ManipulationMode.PivotDrag:
+                        data.PivotPoint += (Vector2)byValue;
+                        break;
+                    default: return;
+                }
+                Update(element, data, frame.Frame);
+            }
+        }
+
+        private void Update(IKeyFramedElement element, KeyFrameData data, int frame)
+        {
+            KeyFrame updatedFrame = new KeyFrame(data, frame);
+            if (AnimationPartFrames[element].ContainsKey(frame))
+            {
+                AnimationPartFrames[element][frame] = updatedFrame;
+                return;
+            }
+            AnimationPartFrames[element].Add(frame, updatedFrame);
         }
     }
 }

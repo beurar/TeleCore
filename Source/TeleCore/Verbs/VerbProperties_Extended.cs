@@ -13,9 +13,6 @@ namespace TeleCore
         //Information
         public string description;
 
-        //Misc..
-        public VerbBurstMode mode = VerbBurstMode.AtTarget;
-
         //Functional
         public bool isProjectile = true;
         public bool avoidFriendlyFire;

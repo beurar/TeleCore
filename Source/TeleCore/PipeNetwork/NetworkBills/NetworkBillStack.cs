@@ -28,13 +28,13 @@ namespace TeleCore
         public Dictionary<CustomRecipeRatioDef, int> RequestedAmount = new();
         public string[] textBuffers;
 
-        public DefValue<NetworkValueDef>[] TotalCost { get; set; }
+        public DefValue<NetworkValueDef,float>[] TotalCost { get; set; }
         public int TotalWorkAmount => TotalCost.NullOrEmpty() ? 0 : TotalCost.Sum(m => (int)(m.Value * WorkAmountFactor));
 
         //
         public Building ParentBuilding => billStackOwner.parent;
         public Comp_NetworkBillsCrafter ParentComp => billStackOwner;
-        public IEnumerable<NetworkComponent> ParentNetComps => UsedNetworks?.Select(n => ParentComp[n]) ?? null;
+        public IEnumerable<NetworkSubPart> ParentNetParts => UsedNetworks?.Select(n => ParentComp[n]) ?? null;
         public IEnumerable<NetworkDef> UsedNetworks => CurrentBill?.networkCost.Select(t => t.Def.networkDef)?.Distinct() ?? null;
 
         public List<CustomRecipeRatioDef> Ratios => ParentComp.Props.UsedRatioDefs;
@@ -89,7 +89,7 @@ namespace TeleCore
 
             CustomNetworkBill customBill = new CustomNetworkBill(TotalWorkAmount);
             customBill.billName = billName;
-            customBill.networkCost = new DefValue<NetworkValueDef>[TotalCost.Length];
+            customBill.networkCost = new DefValue<NetworkValueDef,float>[TotalCost.Length];
             TotalCost.CopyTo(customBill.networkCost);
             customBill.billStack = this;
             customBill.results = RequestedAmount.Where(m => m.Value > 0).Select(m => new ThingDefCount(m.Key.result, m.Value)).ToList();

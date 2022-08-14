@@ -8,7 +8,7 @@ namespace TeleCore
 {
     public interface IContainerHolderStructure : IContainerHolder
     {
-        INetworkComponent NetworkComp { get; }
+        INetworkSubPart NetworkPart { get; }
         NetworkContainerSet ContainerSet { get; }
     }
 }

@@ -122,7 +122,7 @@ namespace TeleCore
                 yield return g;
             }
 
-            yield return StaticData.GetDesignatorFor<Designator_Build>(def); //new Designator_BuildFixed(def);
+            yield return GenData.GetDesignatorFor<Designator_Build>(def); //new Designator_BuildFixed(def);
 
         }
     }

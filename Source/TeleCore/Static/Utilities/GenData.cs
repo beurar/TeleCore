@@ -45,7 +45,6 @@ namespace TeleCore
             return false;
         }
 
-        //
         /// <summary>
         /// Registers an action to be ticked every single tick.
         /// </summary>
@@ -90,6 +89,90 @@ namespace TeleCore
             var reservations = onMap.reservationManager;
             reservedBy = reservations.ReservationsReadOnly.Find(r => r.Target == thing)?.Claimant;
             return reservedBy != null;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public static Room NeighborRoomOf(this Building building, Room room)
+        {
+            for (int i = 0; i < 4; i++)
+            {
+                Room newRoom = (building.Position + GenAdj.CardinalDirections[i]).GetRoom(room.Map);
+                if (newRoom == null || newRoom == room) continue;
+                return newRoom;
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// Returns the current room at a position.
+        /// </summary>
+        public static Room GetRoomFast(this IntVec3 pos, Map map)
+        {
+            Region validRegion = map.regionGrid.GetValidRegionAt_NoRebuild(pos);
+            if (validRegion != null && validRegion.type.Passable())
+            {
+                return validRegion.Room;
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public static Room GetRoomIndirect(this Thing thing)
+        {
+            var room = thing.GetRoom();
+            if (room == null)
+            {
+                room = thing.CellsAdjacent8WayAndInside().Select(c => c.GetRoom(thing.Map)).First(r => r != null);
+            }
+            return room;
+        }
+
+        /// <summary>
+        /// Get the desired <see cref="MapInformation"/> based on type of <typeparamref name="T"/>.
+        /// </summary>
+        public static T GetMapInfo<T>(this Map map) where T : MapInformation
+        {
+            return map.TeleCore().GetMapInfo<T>();
+        }
+
+        /// <summary>
+        /// Get the desired <see cref="Designator"/> based on type of <typeparamref name="T"/>.
+        /// </summary>
+        public static T GetDesignatorFor<T>(ThingDef def) where T : Designator
+        {
+            if (StaticData.CachedDesignators.TryGetValue(def, out var des))
+            {
+                return (T)des;
+            }
+
+            des = (Designator)Activator.CreateInstance(typeof(T), def);
+            des.icon = def.uiIcon;
+            StaticData.CachedDesignators.Add(def, des);
+            return (T)des;
+        }
+
+        //Room Tracking
+        /// <returns>The main <see cref="TeleCore.RoomTracker"/> object of the <paramref name="room"/>.</returns>
+        public static RoomTracker RoomTracker(this Room room)
+        {
+            return room.Map.GetMapInfo<RoomTrackerMapInfo>()[room];
+        }
+
+        /// <summary>
+        /// Get the desired <see cref="RoomComponent"/> based on type of <typeparamref name="T"/>.
+        /// </summary>
+        public static T GetRoomComp<T>(this Room room) where T : RoomComponent
+        {
+            return room.RoomTracker()?.GetRoomComp<T>();
+        }
+
+        public static IEnumerable<Thing> OfType<T>(this ListerThings lister) where T : Thing
+        {
+            return lister.AllThings.Where(t => t is T);
         }
     }
 }

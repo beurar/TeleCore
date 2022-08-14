@@ -14,8 +14,8 @@ namespace TeleCore
         public const float DeltaTime = 1f / 60f;
 
         //
-        private static Dictionary<int, MapComponent_TeleCore> TeleMapComps;
-        private static Dictionary<ThingDef, Designator> CachedDesignators;
+        internal static Dictionary<int, MapComponent_TeleCore> TeleMapComps;
+        internal static Dictionary<ThingDef, Designator> CachedDesignators;
 
         internal static MapComponent_TeleCore TeleMapComp(int mapInt) => TeleMapComps[mapInt];
 
@@ -45,30 +45,10 @@ namespace TeleCore
         {
             if (map == null)
             {
-                TLog.Warning("Map is null for Tiberium MapComp getter");
+                TLog.Warning("Map is null for TeleCore MapComp getter");
                 return null;
             }
             return TeleMapComps[map.uniqueID];
         }
-
-        //
-        public static T MapInfo<T>(this Map map) where T : MapInformation
-        {
-            return map.TeleCore().GetMapInfo<T>();
-        }
-
-        public static T GetDesignatorFor<T>(ThingDef def) where T : Designator
-        {
-            if (CachedDesignators.TryGetValue(def, out var des))
-            {
-                return (T)des;
-            }
-
-            des = (Designator)Activator.CreateInstance(typeof(T), def);
-            des.icon = def.uiIcon;
-            CachedDesignators.Add(def, des);
-            return (T)des;
-        }
-
     }
 }

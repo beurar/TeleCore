@@ -33,14 +33,14 @@ namespace TeleCore
 
         protected override float ExplosionOnTargetSize => Projectile.projectile.explosionRadius;
 
-        public void SetProjectile(ThingDef projectile)
-        {
-            currentProjectile = projectile;
-        }
-
         protected override BattleLogEntry_RangedFire EntryOnWarmupComplete()
         {
             return new BattleLogEntry_RangedFire(caster, currentTarget.HasThing ? currentTarget.Thing : null, EquipmentSource != null ? EquipmentSource.def : null, Projectile, ShotsPerBurst > 1);
+        }
+
+        public void SetProjectile(ThingDef projectile)
+        {
+            currentProjectile = projectile;
         }
 
         protected override bool IsAvailable()

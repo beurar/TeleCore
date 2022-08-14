@@ -33,7 +33,6 @@ namespace TeleCore
         public ThingDef controllerDef;
         public ThingDef transmitterDef;
         
-
         public bool UsesController => controllerDef != null;
         public List<NetworkValueDef> NetworkValueDefs => belongingValueDefs;
 

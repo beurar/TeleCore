@@ -243,7 +243,7 @@ namespace TeleCore
             {
                 var selDirAction = (DirectoryInfo info) =>
                 {
-                    TeleCoreMod.Settings.animationSettings.SetAnimationDefLocation(info.FullName);
+                    TeleCoreMod.Settings.SetAnimationDefLocation(info.FullName);
                 };
                 Find.WindowStack.Add(new Dialog_DirectoryBrowser(selDirAction, "Select Def Creation Directory", GenFilePaths.ModsFolderPath));
             }

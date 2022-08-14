@@ -32,7 +32,8 @@ namespace TeleCore
         private bool DrawElementPropertiesSetting { get; set; }
 
         //
-        public override List<UIElement> TextureElements => animationMetaData.CurrentElementList;
+        public override bool CanDoRightClickMenu => CanWork;
+        public override List<UIElement> ChildElements => animationMetaData.CurrentElementList;
 
         public TextureElement ActiveTexture => layerView.ActiveElement;
         public AnimationPartValue CurrentAnimationPart => animationMetaData.SelectedAnimationPart;
@@ -160,7 +161,7 @@ namespace TeleCore
 
         protected override bool CanManipulateAt(Vector2 mousePos, Rect inRect)
         {
-            if (!Initialized) return false;
+            if (!CanWork) return false;
             if (DrawElementPropertiesSetting && DataReadoutRect.Contains(mousePos)) return false;
             return true;
         }
@@ -197,7 +198,8 @@ namespace TeleCore
 
                 if (listing.ButtonText("Init"))
                 {
-                    AnimationData.Notify_Init();
+                    if(animationMetaData.defName.Length > 0)
+                        AnimationData.Notify_Init();
                 }
 
                 listing.End();
@@ -242,12 +244,20 @@ namespace TeleCore
 
             //Available Sets By Rotation
             var availableSetsLabelRect = availableSetsOutRect.TopPart(0.1f).Rounded();
-            var availableSetsListingRect = availableSetsOutRect.BottomPart(0.9f).Rounded();
+            var availableSetsButtonRect = availableSetsOutRect.BottomPart(0.1f).Rounded();
+            var availableSetsListingRect = new Rect(availableSetsOutRect.x, availableSetsLabelRect.yMax, availableSetsOutRect.width, availableSetsOutRect.height - (availableSetsLabelRect.height + availableSetsButtonRect.height));
 
             var animationPartEditRect = leftRect.BottomPart(0.5f).Rounded();
 
+            var leftContracted = leftRect.ContractedBy(5);
+            WidgetRow row = new WidgetRow(leftContracted.xMax, leftContracted.y, UIDirection.LeftThenDown);
+            if (row.ButtonIcon(TeleContent.HelpIcon))
+            {
+
+            }
+
             Listing_Standard listing = new Listing_Standard();
-            listing.Begin(leftRect.ContractedBy(5));
+            listing.Begin(leftContracted);
 
             listing.Label($"Animation Settings");
             listing.GapLine();
@@ -284,7 +294,7 @@ namespace TeleCore
             Widgets.Label(animationLabelRect, "Animations");
             var partsViewRect = new Rect(animationListingRect.x, animationListingRect.y, animationListingRect.width, animationMetaData.CurrentAnimations.Count * 20);
             TWidgets.DrawColoredBox(animationListingRect, TColor.BlueHueBG, Color.gray, 1);
-            Widgets.BeginScrollView(animationListingRect, ref partListingScrollPos, partsViewRect);
+            Widgets.BeginScrollView(animationListingRect, ref partListingScrollPos, partsViewRect, false);
             {
                 float curY = animationListingRect.y;
                 for (var i = animationMetaData.CurrentAnimations.Count - 1; i >= 0; i--)
@@ -310,7 +320,6 @@ namespace TeleCore
                     {
                         animationMetaData.SetAnimationPart(animationPart);
                     }
-
                     curY += 20;
                 }
             }
@@ -318,7 +327,7 @@ namespace TeleCore
             if (Widgets.ButtonText(animationButtonRect, "Add Part"))
             {
                 var animation = AnimationData.Notify_CreateNewAnimationPart("Undefined", 1);
-                foreach (var element in TextureElements)
+                foreach (var element in ChildElements)
                 {
                     TextureElement texElement = (TextureElement)element;
                     animation.InternalFrames.Add(texElement, new Dictionary<int, KeyFrame>());
@@ -346,6 +355,10 @@ namespace TeleCore
                     }
                     curYNew += 20;
                 }
+            }
+            if (Widgets.ButtonText(availableSetsButtonRect, "Add Side"))
+            {
+                Find.WindowStack.Add(new FloatMenu(RotationOptions().ToList()));
             }
         }
 
@@ -518,7 +531,7 @@ namespace TeleCore
             GUI.color = Color.white;
         }
 
-        public override bool TryAccept(object draggedObject, Vector2 pos)
+        public override bool TryAcceptDrop(object draggedObject, Vector2 pos)
         {
             if (!CanWork) return false;
 
@@ -544,7 +557,7 @@ namespace TeleCore
             return element != null;
         }
 
-        public override bool Accepts(object draggedObject)
+        public override bool CanAcceptDrop(object draggedObject)
         {
             if (!CanWork) return false;
 
@@ -559,15 +572,9 @@ namespace TeleCore
             {
                 yield return rightClickOption;
             }
-
-            //
-            foreach (var option in RoationOptions())
-            {
-                yield return option;
-            }
         }
 
-        private IEnumerable<FloatMenuOption> RoationOptions()
+        private IEnumerable<FloatMenuOption> RotationOptions()
         {
             for (int i = 0; i < 4; i++)
             {

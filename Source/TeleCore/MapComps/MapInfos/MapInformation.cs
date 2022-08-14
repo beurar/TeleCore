@@ -44,7 +44,7 @@ namespace TeleCore
         {
         }
 
-        public void ExposeData()
+        public virtual void ExposeData()
         {
             Scribe_Values.Look(ref initialized, "mapInfoInit");
         }
@@ -71,7 +71,7 @@ namespace TeleCore
         /// <summary>
         /// Allows to run custom map rendering code.
         /// </summary>
-        public virtual void Draw()
+        public virtual void Update()
         {
         }
     }

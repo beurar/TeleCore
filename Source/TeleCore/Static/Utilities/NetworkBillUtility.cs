@@ -7,12 +7,13 @@ namespace TeleCore
 {
     internal static class NetworkBillUtility
     {
-        public static DefValue<NetworkValueDef>[] ConstructCustomCost(List<DefCount<CustomRecipeRatioDef>> list)
+        public static DefValue<NetworkValueDef, float>[] ConstructCustomCost(List<DefCount<CustomRecipeRatioDef>> list)
         {
-            var allValues = list.SelectMany(t => t.Def.inputRatio.Select(r => new DefValue<NetworkValueDef>(r.def, r.value * t.Value)));
+            var allValues = list.SelectMany(t =>
+                t.Def.inputRatio.Select(r => new DefValue<NetworkValueDef, float>(r.def, r.value * t.Value)));
             var allDefs = allValues.Select(d => d.Def).Distinct().ToList();
-            var tempCost = new DefValue<NetworkValueDef>[allDefs.Count];
-            tempCost.Populate(allDefs.Select(d => new DefValue<NetworkValueDef>(d, 0)));
+            var tempCost = new DefValue<NetworkValueDef, float>[allDefs.Count];
+            tempCost.Populate(allDefs.Select(d => new DefValue<NetworkValueDef, float>(d, 0)));
             foreach (var value in allValues)
             {
                 for (var i = 0; i < tempCost.Length; i++)
@@ -27,12 +28,13 @@ namespace TeleCore
             return tempCost;
         }
 
-        public static DefValue<NetworkValueDef>[] ConstructCustomCost(IDictionary<CustomRecipeRatioDef, int> requestedAmount)
+        public static DefValue<NetworkValueDef, float>[] ConstructCustomCost(IDictionary<CustomRecipeRatioDef, int> requestedAmount)
         {
-            var allValues = requestedAmount.SelectMany(t => t.Key.inputRatio.Select(r => new DefValue<NetworkValueDef>(r.def, r.value * t.Value)));
+            var allValues = requestedAmount.SelectMany(t =>
+                t.Key.inputRatio.Select(r => new DefValue<NetworkValueDef, float>(r.def, r.value * t.Value)));
             var allDefs = allValues.Where(d => d.Value > 0).Select(d => d.Def).Distinct().ToList();
-            var tempCost = new DefValue<NetworkValueDef>[allDefs.Count];
-            tempCost.Populate(allDefs.Select(d => new DefValue<NetworkValueDef>(d, 0)));
+            var tempCost = new DefValue<NetworkValueDef, float>[allDefs.Count];
+            tempCost.Populate(allDefs.Select(d => new DefValue<NetworkValueDef, float>(d, 0)));
             foreach (var value in allValues)
             {
                 for (var i = 0; i < tempCost.Length; i++)
@@ -44,10 +46,11 @@ namespace TeleCore
                     }
                 }
             }
+
             return tempCost;
         }
 
-        public static string CostLabel(DefValue<NetworkValueDef>[] values)
+        public static string CostLabel(DefValue<NetworkValueDef, float>[] values)
         {
             if (values.NullOrEmpty()) return "N/A";
             StringBuilder sb = new StringBuilder();

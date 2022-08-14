@@ -115,8 +115,6 @@ namespace TeleCore
 
             //
             topBar.DrawElement(TopRect);
-
-            UIDragNDropper.DrawCurDrag();
         }
     }
 }

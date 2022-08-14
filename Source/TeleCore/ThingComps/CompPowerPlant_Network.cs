@@ -4,26 +4,30 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using RimWorld;
+using UnityEngine;
 using Verse;
 
 namespace TeleCore
 {
     public class CompPowerPlant_Network : CompPowerPlant
     {
-        private int powerProductionTicks = 0;
+        private int powerTicksRemaining;
+        private float internalPowerOutput;
+
         private Comp_NetworkStructure compNetworkStructure;
-        private NetworkComponent networkComponent;
+        private NetworkSubPart networkComponent;
 
-        public new CompProperties_NetworkStructurePowerPlant Props => (CompProperties_NetworkStructurePowerPlant)compNetworkStructure.Props;
+        private List<(float, int)> valuePackage;
 
-        public bool GeneratesPowerNow => powerProductionTicks > 0;
+        public new CompProperties_NetworkStructurePowerPlant Props => (CompProperties_NetworkStructurePowerPlant)base.Props;
 
-        public override float DesiredPowerOutput => GeneratesPowerNow ? base.DesiredPowerOutput : 0f;
+        public bool GeneratesPowerNow => powerTicksRemaining > 0;
+        public override float DesiredPowerOutput => internalPowerOutput;
 
         public override void PostExposeData()
         {
             base.PostExposeData();
-            Scribe_Values.Look(ref powerProductionTicks, "powerTicks");
+            //Scribe_Values.Look(ref powerProductionTicks, "powerTicks");
         }
 
         public override void PostSpawnSetup(bool respawningAfterLoad)
@@ -31,6 +35,22 @@ namespace TeleCore
             base.PostSpawnSetup(respawningAfterLoad);
             compNetworkStructure = parent.GetComp<Comp_NetworkStructure>();
             networkComponent = compNetworkStructure[Props.fromNetwork];
+
+            //Naive Sort
+            valuePackage = new List<(float, int)>();
+            for (var i = 0; i < Props.costPerValue.Count; i++)
+            {
+                var costDefFloat = Props.costPerValue[i];
+                for (var k = 0; k < Props.ticksPerValue.Count; k++)
+                {
+                    var ticksDefFloat = Props.ticksPerValue[k];
+                    if (costDefFloat.def == ticksDefFloat.def)
+                    {
+                        valuePackage.Add((costDefFloat.value, ticksDefFloat.value));
+                        break;
+                    }
+                }
+            }
         }
 
         public override void CompTick()
@@ -41,21 +61,34 @@ namespace TeleCore
 
         private void PowerTick()
         {
-            if (powerProductionTicks <= 0)
+            base.CompTick();
+            if (!base.PowerOn)
             {
-                if (networkComponent.RequestedCapacityPercent >= networkComponent.Container.StoredPercent)
+                internalPowerOutput = 0f;
+                return;
+            }
+
+            if (networkComponent.Container.NotEmpty)
+            {
+                foreach (var storedType in networkComponent.Container.AllStoredTypes)
                 {
-                    var consumeAmt = networkComponent.RequestedCapacityPercent * networkComponent.Container.Capacity;
-                    if (networkComponent.Container.TryConsume(consumeAmt))
+                    for (var i = 0; i < Props.costPerValue.Count; i++)
                     {
-                        var loadTime = (Props.daysPerLoad * (consumeAmt / Props.consumeAmt));
-                        powerProductionTicks = (int)(GenDate.TicksPerDay * loadTime);
+                        var costDefFloat = Props.costPerValue[i];
+                        if(storedType != costDefFloat.def) continue;
+                        var package = valuePackage[i];
+                        if (networkComponent.Container.TryConsume(costDefFloat.def, package.Item1))
+                        {
+                            powerTicksRemaining += Mathf.RoundToInt(package.Item2);
+                        }
                     }
                 }
             }
-            else
+
+            if (powerTicksRemaining > 0)
             {
-                powerProductionTicks--;
+                internalPowerOutput = -base.Props.basePowerConsumption;
+                powerTicksRemaining--;
             }
         }
 
@@ -64,15 +97,17 @@ namespace TeleCore
             StringBuilder sb = new StringBuilder();
             sb.AppendLine(base.CompInspectStringExtra());
             if (GeneratesPowerNow)
-                sb.AppendLine("TR_PowerLeft".Translate(powerProductionTicks.ToStringTicksToPeriod()));
+                sb.AppendLine("TR_PowerLeft".Translate(powerTicksRemaining.ToStringTicksToPeriod()));
             return sb.ToString().TrimEndNewlines();
         }
     }
 
-    public class CompProperties_NetworkStructurePowerPlant : CompProperties_NetworkStructure
+    //TODO: BUFFER FOR NETWORKS; COMPONENT THAT FIRST FILLS UP BEFORE THEN PUSHING THE VALUES ON
+    //TODO: BIG TASK: GRAPH BASED NETWORK; 
+    public class CompProperties_NetworkStructurePowerPlant : CompProperties_Power
     {
         public NetworkDef fromNetwork;
-        public int consumeAmt = 0;
-        public float daysPerLoad = 1;
+        public List<DefFloat<NetworkValueDef>> costPerValue;
+        public List<DefCount<NetworkValueDef>> ticksPerValue;
     }
 }

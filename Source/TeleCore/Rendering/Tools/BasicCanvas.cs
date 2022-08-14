@@ -153,12 +153,12 @@ namespace TeleCore
         {
         }
 
-        public virtual bool TryAccept(object draggedObject, Vector2 pos)
+        public virtual bool TryAcceptDrop(object draggedObject, Vector2 pos)
         {
             return false;
         }
 
-        public virtual bool Accepts(object draggedObject)
+        public virtual bool CanAcceptDrop(object draggedObject)
         {
             return false;
         }

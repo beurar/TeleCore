@@ -59,9 +59,6 @@ namespace TeleCore
         //public KeyFrameData EditData => internalFrameData;
         public KeyFrameData CurrentData => ParentCanvas.TimeLine.GetDataFor(this);
         public KeyFrame CurrentFrame => ParentCanvas.TimeLine.GetKeyFrame(this);
-
-        private Vector2 RenderPivot => TruePos + (PivotPoint * ParentCanvas.CanvasZoomScale);
-
         public List<TextureElement> SubParts => subParts;
 
         public ManipulationMode LockedInMode => lockedInMode ?? ManiMode;
@@ -91,10 +88,16 @@ namespace TeleCore
             set
             {
                 var tempFrame = CurrentData;
+                var oldPivot = tempFrame.PivotPoint;
                 tempFrame.PivotPoint = value;
+                var pivotDiff = value - oldPivot;
 
                 //
                 ParentCanvas.TimeLine.UpdateKeyframeFor(this, tempFrame);
+                if (Input.GetKey(KeyCode.LeftShift))
+                {
+                    ParentCanvas.TimeLine.UpdateAllFramesFor(this, ManipulationMode.PivotDrag, pivotDiff);
+                }
             }
         }
 
@@ -158,15 +161,20 @@ namespace TeleCore
                 var tempFrame = CurrentData;
                 var oldPos = tempFrame.TPosition;
                 tempFrame.TPosition = value;
+                var posDiff = (value - oldPos);
 
                 //
                 foreach (var t in SubParts)
                 {
-                    t.SetTRSP_Direct(t.TPosition + (value - oldPos));
+                    t.SetTRSP_Direct(t.TPosition + posDiff);
                 }
 
                 //
                 ParentCanvas.TimeLine.UpdateKeyframeFor(this, tempFrame);
+                if (Input.GetKey(KeyCode.LeftShift))
+                {
+                    ParentCanvas.TimeLine.UpdateAllFramesFor(this, ManipulationMode.Move, posDiff);
+                }
             }
         }
 
@@ -180,17 +188,20 @@ namespace TeleCore
                 tempFrame.TRotation = value;
 
                 var rotDiff = value - oldRot;
-                var pivot = tempFrame.TPosition;
+                var pivot = tempFrame.TPosition + tempFrame.PivotPoint;
                 foreach (var t in SubParts)
                 {
-                    var point = t.TPosition;
-                    var result = ((Quaternion.Euler(0,0, rotDiff) * (point - pivot)) + (Vector3)pivot);
+                    var point = t.TPosition + t.PivotPoint;
+                    var result = ((Quaternion.Euler(0,0, rotDiff) * (point - pivot)) + (Vector3)pivot) - (Vector3)t.PivotPoint;
                     t.SetTRSP_Direct(result, rot: t.TRotation + rotDiff);
                 }
 
                 //
                 ParentCanvas.TimeLine.UpdateKeyframeFor(this, tempFrame);
-                
+                if (Input.GetKey(KeyCode.LeftShift))
+                {
+                    ParentCanvas.TimeLine.UpdateAllFramesFor(this, ManipulationMode.Rotate, rotDiff);
+                }
             }
         }
 
@@ -214,6 +225,10 @@ namespace TeleCore
 
                 //
                 ParentCanvas.TimeLine.UpdateKeyframeFor(this, tempFrame);
+                if (Input.GetKey(KeyCode.LeftShift))
+                {
+                    ParentCanvas.TimeLine.UpdateAllFramesFor(this, ManipulationMode.Resize, sizeDiff);
+                }
             }
         }
 
@@ -254,9 +269,13 @@ namespace TeleCore
         private Vector2 ZoomedPos => TPosition * ParentCanvas.CanvasZoomScale;
 
         private Vector2 TruePos => ParentCanvas.Origin + (ZoomedPos);
+        private Vector2 RenderPivot => TruePos + (PivotPoint * ParentCanvas.CanvasZoomScale);
+
         public Vector2 RectPosition => TruePos - ZoomedSize / 2f;
+        public Vector2 RectPivotPosition => RenderPivot - ZoomedSize / 2f;
 
         public Rect TextureRect => new Rect(RectPosition, ZoomedSize);
+        public Rect TextureOverlayRect => new Rect(RectPivotPosition, ZoomedSize);
         public override Rect FocusRect => TextureRect.ExpandedBy(15);
 
         public Material Material => texture.Material;
@@ -336,6 +355,10 @@ namespace TeleCore
         {
             newParent.SubParts.Add(this);
             this.parentElement = newParent;
+            if (subParts.Contains(newParent))
+                subParts.Remove(newParent);
+            if (newParent.parentElement == this)
+                newParent.parentElement = null;
         }
 
         public void UnlinkFromParent()
@@ -436,7 +459,7 @@ namespace TeleCore
                     case ManipulationMode.Rotate:
                         var vec1 = StartDragPos - RenderPivot;
                         var vec2 = ev.mousePosition - RenderPivot;
-                        var newRot = oldKF.Value.TRotation + Mathf.Abs(Vector2.SignedAngle(vec1, vec2));//Vector2.SignedAngle(vec1, vec2);
+                        var newRot = oldKF.Value.TRotation + Vector2.SignedAngle(vec1, vec2);//Vector2.SignedAngle(vec1, vec2);
                         TRotation = newRot;
                         break;
                 }
@@ -475,8 +498,8 @@ namespace TeleCore
             if (TRotation != 0 && IsSelected)
             {
                 var matrix = GUI.matrix;
-                UI.RotateAroundPivot(TRotation, TextureRect.center);
-                TWidgets.DrawBoxHighlight(TextureRect);
+                UI.RotateAroundPivot(TRotation, TextureOverlayRect.center);
+                TWidgets.DrawBoxHighlight(TextureOverlayRect);
                 GUI.matrix = matrix;
             }
 
@@ -529,7 +552,7 @@ namespace TeleCore
             if (buttonRow.ButtonIcon(TeleContent.LinkIcon, (parentElement != null ? $"Linked To: {parentElement.LayerTag}" : null), iconColor:varColor))
             {
                 var floatOptions = new List<FloatMenuOption>();
-                foreach (TextureElement tex in ParentCanvas.TextureElements)
+                foreach (TextureElement tex in ParentCanvas.ChildElements)
                 {
                     if (tex != this)
                     {

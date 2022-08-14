@@ -27,7 +27,7 @@ namespace TeleCore
             var comp = thing.TryGetComp<Comp_NetworkStructure>();
             if (comp == null) return;
 
-            foreach (var pos in comp.InnerConnectionCells)
+            foreach (var pos in comp.GeneralIO.InnerConnectionCells)
             {
                 Printer_Plane.PrintPlane(layer, pos.ToVector3ShiftedWithAltitude(AltitudeLayer.FloorEmplacement), Vector2.one, LinkedDrawMatFrom(thing, pos));
             }

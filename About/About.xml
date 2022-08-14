@@ -2,6 +2,7 @@
 <ModMetaData>
    <name>TeleCore</name>
    <author>Telefonmast</author>
+   <packageId>Telefonmast.TeleCore</packageId>
    <supportedVersions>
 	  <li>1.3</li>
    </supportedVersions>
@@ -13,6 +14,5 @@
 		  <downloadUrl>https://github.com/pardeike/HarmonyRimWorld/releases/latest</downloadUrl>
 		</li>
 	</modDependencies>
-   <packageId>Telefonmast.TeleCore</packageId>
    <description>A collection of tools and functionalities to extend RimWorld!</description>
 </ModMetaData>

@@ -13,8 +13,8 @@ namespace TeleCore
         public Rect Rect { get; }
         public bool CanAcceptAnything { get; }
         void DrawHoveredData(object draggedObject, Vector2 pos);
-        bool TryAccept(object draggedObject, Vector2 pos);
-        bool Accepts(object draggedObject);
+        bool TryAcceptDrop(object draggedObject, Vector2 pos);
+        bool CanAcceptDrop(object draggedObject);
     }
 
     public static class UIDragNDropper
@@ -44,6 +44,7 @@ namespace TeleCore
         private static void StartCarrying(UIElement source, object data)
         {
             if (sourceElement != null) return;
+            TLog.Message($"Starting to carry from {source.Label} of {data}");
             sourceElement = source;
             draggedObject = data;
         }
@@ -53,7 +54,7 @@ namespace TeleCore
             foreach (var acceptor in ReadyAcceptors)
             {
                 if(element == acceptor) continue;
-                if (acceptor.Rect.Contains(ev.mousePosition) && acceptor.TryAccept(draggedObject, ev.mousePosition))
+                if (acceptor.Rect.Contains(ev.mousePosition) && acceptor.TryAcceptDrop(draggedObject, ev.mousePosition))
                 {
                     break;
                 }
@@ -66,11 +67,12 @@ namespace TeleCore
         public static void DrawCurDrag()
         {
             if (sourceElement == null) return;
+            TLog.Message($"CurDrag: {sourceElement.Label} of {draggedObject} | {draggedObject is Def}");
 
             var mousePos = Event.current.mousePosition;
             foreach (var acceptor in ReadyAcceptors)
             {
-                if (acceptor.Accepts(draggedObject) && acceptor.Rect.Contains(mousePos))
+                if (acceptor.CanAcceptDrop(draggedObject) && acceptor.Rect.Contains(mousePos))
                 {
                     acceptor.DrawHoveredData(draggedObject, mousePos);
                     return;
@@ -130,7 +132,16 @@ namespace TeleCore
                     }
                 }
                 Widgets.EndGroup();
+                return;
+            }
 
+            if (data is Def def)
+            {
+                TLog.Message($"Drawing def: {def}");
+                var fleckMoteTexture = TWidgets.TextureForFleckMote(def);
+                Rect box = new Rect(pos, new Vector2(45, 45));
+                TWidgets.DrawBoxHighlight(box);
+                Widgets.DrawTextureFitted(box.ContractedBy(1), fleckMoteTexture, 1f);
                 return;
             }
             GUI.color = Color.white;

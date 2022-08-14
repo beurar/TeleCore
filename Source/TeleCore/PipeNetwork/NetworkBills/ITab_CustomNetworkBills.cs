@@ -22,7 +22,7 @@ namespace TeleCore
 
         //Cachery
         private bool inputDirty = false;
-        private DefValue<NetworkValueDef>[] cachedCustomCost;
+        private DefValue<NetworkValueDef, float>[] cachedCustomCost;
 
         public Comp_NetworkBillsCrafter CrafterComp => SelThing.TryGetComp<Comp_NetworkBillsCrafter>();
         public NetworkBillStack BillStack => CrafterComp.BillStack;
@@ -319,7 +319,7 @@ namespace TeleCore
             */
         }
 
-        public DefValue<NetworkValueDef>[] TryGetCachedCost()
+        public DefValue<NetworkValueDef, float>[] TryGetCachedCost()
         {
             if (!inputDirty && cachedCustomCost != null) return cachedCustomCost;
             inputDirty = false;

@@ -23,6 +23,8 @@ namespace TeleCore
         public static readonly Texture2D LockOpen = ContentFinder<Texture2D>.Get("UI/Icons/Animator/LockOpen", true);
         public static readonly Texture2D LockClosed = ContentFinder<Texture2D>.Get("UI/Icons/Animator/LockClosed", true);
 
+        public static readonly Texture2D UIDataNode = ContentFinder<Texture2D>.Get("UI/Icons/Tools/Node", true);
+
         //TextureElement
         public static readonly Texture2D PivotPoint = ContentFinder<Texture2D>.Get("UI/Icons/Animator/PivotPoint", true);
 
@@ -34,6 +36,7 @@ namespace TeleCore
 
         public static readonly Texture2D BurgerMenu = ContentFinder<Texture2D>.Get("UI/Icons/BurgerMenu", false);
         public static readonly Texture2D SettingsWheel = ContentFinder<Texture2D>.Get("UI/Icons/SettingsWheel", false);
+        public static readonly Texture2D HelpIcon = ContentFinder<Texture2D>.Get("UI/Icons/Help", false);
 
         //TimeLine
         public static readonly Texture2D KeyFrame = ContentFinder<Texture2D>.Get("UI/Icons/Animator/KeyFrame", true);
@@ -43,6 +46,8 @@ namespace TeleCore
         public static readonly Texture2D PlayPause = ContentFinder<Texture2D>.Get("UI/Icons/Animator/PlayPause", true);
         public static readonly Texture2D TimeSelRangeL = ContentFinder<Texture2D>.Get("UI/Icons/Animator/RangeL", true);
         public static readonly Texture2D TimeSelRangeR = ContentFinder<Texture2D>.Get("UI/Icons/Animator/RangeR", true);
+
+        internal static readonly Texture2D TimeFlag = ContentFinder<Texture2D>.Get("UI/Icons/Animator/FlagAtlas");
 
         //ModuleVis
         public static readonly Texture Node_Open = ContentFinder<Texture2D>.Get("UI/Icons/Node_Open");
@@ -60,6 +65,7 @@ namespace TeleCore
 
         //Materials
         public static readonly Material ForcedTargetLineMat = MaterialPool.MatFrom(GenDraw.LineTexPath, ShaderDatabase.Transparent, new Color(1f, 0.5f, 0.5f));
+        public static readonly Material IOArrow = MaterialPool.MatFrom("Buildings/IOArrow", ShaderDatabase.Transparent);
 
         public static readonly Material WorldTerrain = MaterialPool.MatFrom("World/Tile/Terrain", ShaderDatabase.WorldOverlayCutout, 3500);
     }

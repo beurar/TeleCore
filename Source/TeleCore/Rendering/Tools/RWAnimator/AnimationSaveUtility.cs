@@ -16,7 +16,7 @@ namespace TeleCore
         public static readonly string _SavingNode = "animation";
 
         public static string SavedAnimationsFolderPath => GenFilePaths.FolderUnderSaveData("Animations");
-        public static string SavedAnimationDefsFolderPath => TeleCoreMod.Settings.animationSettings.SaveAnimationDefLocation;
+        public static string SavedAnimationDefsFolderPath => TeleCoreMod.Settings.SaveAnimationDefLocation;
 
 
         public static void Save(string fileName, string documentElementName, Action saveAction)

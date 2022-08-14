@@ -31,7 +31,7 @@ namespace TeleCore
         {
             Widgets.BeginGroup(inRect);
             List<ListableOption> list = new List<ListableOption>();
-            foreach (UIElement element in TextureElements)
+            foreach (UIElement element in ChildElements)
             {
                 list.Add(new ListableOption(element.Label, () => { element.ToggleOpen(); }));
             }

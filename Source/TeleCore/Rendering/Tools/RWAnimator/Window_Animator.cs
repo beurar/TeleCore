@@ -42,6 +42,7 @@ namespace TeleCore
         {
             UIEventHandler.Begin();
             content.DrawElement(inRect);
+            UIDragNDropper.DrawCurDrag();
             UIEventHandler.End();
         }
     }

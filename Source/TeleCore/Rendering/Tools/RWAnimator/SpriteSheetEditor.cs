@@ -375,7 +375,7 @@ namespace TeleCore
             }
         }
 
-        public bool TryAccept(object draggedObject, Vector2 pos)
+        public bool TryAcceptDrop(object draggedObject, Vector2 pos)
         {
             if (draggedObject is WrappedTexture texture)
             {
@@ -385,7 +385,7 @@ namespace TeleCore
             return false;
         }
 
-        public bool Accepts(object draggedObject)
+        public bool CanAcceptDrop(object draggedObject)
         {
             return draggedObject is WrappedTexture;
         }

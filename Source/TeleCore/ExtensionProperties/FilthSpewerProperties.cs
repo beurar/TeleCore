@@ -6,7 +6,7 @@ namespace TeleCore
 {
     public class FilthSpewerProperties
     {
-        public List<DefFloat<ThingDef>> filths;
+        public List<DefCount<ThingDef>> filths;
         public float spreadRadius = 1.9f;
 
         public void SpawnFilth(IntVec3 center, Map map)

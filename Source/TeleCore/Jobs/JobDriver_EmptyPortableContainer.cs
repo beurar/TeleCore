@@ -17,7 +17,7 @@ namespace TeleCore
 
         private NetworkContainer Container => PortableContainer.Container;
         private Comp_NetworkStructure NetworkComp => NetworkParent.GetComp<Comp_NetworkStructure>();
-        private NetworkComponent NetworkPart => NetworkComp[PortableContainer.NetworkDef];
+        private NetworkSubPart NetworkPart => NetworkComp[PortableContainer.NetworkDef];
         private NetworkContainer TargetContainer => NetworkPart.Container;
 
         public override bool TryMakePreToilReservations(bool errorOnFailed)

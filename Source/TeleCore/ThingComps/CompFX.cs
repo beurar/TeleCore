@@ -274,5 +274,20 @@ namespace TeleCore
                 }
             }
         }
+
+        public bool IgnoreDrawOff;
+
+        public override IEnumerable<Gizmo> CompGetGizmosExtra()
+        {
+            yield return new Command_Action()
+            {
+                defaultLabel = "No DrawOffset",
+                action = () =>
+                {
+                    IgnoreDrawOff = !IgnoreDrawOff;
+                    parent.Map.mapDrawer.MapMeshDirty(parent.Position, MapMeshFlag.Buildings);
+                }
+            };
+        }
     }
 }

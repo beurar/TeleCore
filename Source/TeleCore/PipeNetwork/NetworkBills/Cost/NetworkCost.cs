@@ -20,9 +20,9 @@ namespace TeleCore
             return networkComp.NetworkParts.Any(CanPayWith);
         }
 
-        public bool CanPayWith(INetworkComponent networkComponent)
+        public bool CanPayWith(INetworkSubPart subPart)
         {
-            return useDirectStorage ? CanPayWith(networkComponent.Container) : CanPayWith(networkComponent.Network);
+            return useDirectStorage ? CanPayWith(subPart.Container) : CanPayWith(subPart.Network);
         }
 
         private bool CanPayWith(NetworkContainer directContainer)
@@ -52,7 +52,7 @@ namespace TeleCore
             return totalNeeded == 0;
         }
 
-        private bool CanPayWith(Network wholeNetwork)
+        private bool CanPayWith(PipeNetwork wholeNetwork)
         {
             var totalNetworkValue = wholeNetwork.TotalNetworkValue;
             float totalNeeded = Cost.TotalCost;
@@ -63,7 +63,7 @@ namespace TeleCore
                 foreach (var typeCost in Cost.SpecificCosts)
                 {
                     var specCost = typeCost.value;
-                    if (wholeNetwork.NetworkValueFor(typeCost.valueDef) >= specCost)
+                    if (wholeNetwork.TotalValueFor(typeCost.valueDef) >= specCost)
                         totalNeeded -= specCost;
                 }
             }
@@ -121,7 +121,7 @@ namespace TeleCore
             var totalCost = Cost.TotalCost;
             if (totalCost <= 0) return;
 
-            foreach (var storage in structure.NetworkParts.Select(s => s.Network).SelectMany(n => n.ComponentSet.Storages).TakeWhile(storage => !(totalCost <= 0)))
+            foreach (var storage in structure.NetworkParts.Select(s => s.Network).SelectMany(n => n.PartSet[NetworkRole.Storage]).TakeWhile(storage => !(totalCost <= 0)))
             {
                 foreach (var typeCost in Cost.SpecificCosts)
                 {

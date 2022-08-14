@@ -9,68 +9,86 @@ using Verse;
 
 namespace TeleCore
 {
-    public class NetworkComponent : IExposable, INetworkComponent, IContainerHolderStructure
+    public class NetworkSubPart : INetworkSubPart, IContainerHolderStructure, IExposable
     {
-        protected Comp_NetworkStructure parent;
-        protected NetworkContainer container;
-        protected Network network;
-        protected NetworkComponentSet componentSet;
-
-        protected NetworkComponentProperties props;
-
         //
         private Gizmo_NetworkInfo networkInfoGizmo;
 
-        //Values
+        //
+        protected NetworkCellIO cellIO;
+        protected NetworkContainer container;
+        protected NetworkPartSet directPartSet;
+        protected AdjacentNodePartSet adjacencySet;
+
+        //
+        private int lastReceivedTick;
+        private int receivingTicks;
+
+        //Settings
         private Dictionary<NetworkValueDef, (bool, float)> requestedTypes;
         private float requestedCapacityPercent = 0.5f;
-
         private RequesterMode requesterMode = RequesterMode.Automatic;
 
-        //SaveHelper
-        private int savedPropsIndex = -1;
-
-        //protected List<INetworkComponent> currentReceivers = new List<INetworkComponent>();
+        //
+        private bool drawNetworkInfo = false;
 
         //DEBUG
         protected bool DebugNetworkCells = false;
 
-        public NetworkComponentProperties Props => props;
-        public Thing Thing => parent.Thing;
+        //
+        public NetworkSubPartProperties Props { get; }
+        public Thing Thing => Parent.Thing;
 
-        public INetworkComponent NetworkComp => this;
-        public NetworkContainerSet ContainerSet => Network.ContainerSet;
+        public NetworkDef NetworkDef => Props.networkDef;
+        public NetworkRole NetworkRole => Props.NetworkRole;
+        public PipeNetwork Network { get; set; }
+        public INetworkStructure Parent { get; private set; }
+        public INetworkSubPart NetworkPart => this;
 
-        //Network Data
-        public bool IsMainController => Network.NetworkController == Parent;
+        //States
+        public bool IsMainController => Network?.NetworkController == Parent;
+        public bool IsNetworkNode => NetworkRole != NetworkRole.Transmitter || IsJunction;
+        public bool IsNetworkEdge => !IsNetworkNode;
+        public bool IsJunction => DirectPartSet[NetworkRole.Transmitter]?.Count > 2;
         public bool IsActive => Network.IsWorking;
-        public bool HasLeak => false;
-        public bool HasConnection => ConnectedComponentSet.Transmitters.Any();
-        public bool HasContainer => Props.containerProps != null;
-
-        private int lastReceivedTick;
-        private int receivingTicks;
 
         public bool IsReceiving => receivingTicks > 0;
 
-        public NetworkRole NetworkRole => Props.NetworkRole;
+        public bool HasContainer => Props.containerProps != null;
+        public bool HasConnection => DirectPartSet[NetworkRole.Transmitter]?.Count > 0;
+        public bool HasLeak => false;
 
-        public INetworkStructure Parent => parent;
-        public NetworkDef NetworkDef => Props.networkDef;
-        public Network Network { get; set; }
-        public NetworkComponentSet ConnectedComponentSet => componentSet;
+        //Sub Role Handling
+        public Dictionary<NetworkRole, List<NetworkValueDef>> ValuesByRole => Props.AllowedValuesByRole;
 
+        //
+        public NetworkPartSet DirectPartSet => directPartSet;
+        public AdjacentNodePartSet AdjacencySet => adjacencySet;
+        public NetworkCellIO CellIO
+        {
+            get
+            {
+                if (cellIO != null) return cellIO;
+                if (Props.networkIOPattern == null) return Parent.GeneralIO;
+                return cellIO ??= new NetworkCellIO(Props.networkIOPattern, Parent.Thing);
+            }
+        }
+
+        //
+        public Gizmo_NetworkInfo NetworkGizmo => networkInfoGizmo ??= new Gizmo_NetworkInfo(this);
+
+        //Container
         public string ContainerTitle => "_Obsolete_";
         public ContainerProperties ContainerProps => Props.containerProps;
-
+        public NetworkContainerSet ContainerSet => Network.ContainerSet;
         public NetworkContainer Container
         {
             get => container;
             private set => container = value;
         }
 
-        public Dictionary<NetworkValueDef, (bool,float)> RequestedTypes => requestedTypes;
-        public Dictionary<NetworkRole, List<NetworkValueDef>> ValuesByRole => Props.AllowedValuesByRole;
+        //Requester
+        public Dictionary<NetworkValueDef, (bool, float)> RequestedTypes => requestedTypes;
 
         public float RequestedCapacityPercent
         {
@@ -84,39 +102,53 @@ namespace TeleCore
             set => requesterMode = value;
         }
 
-        public NetworkComponent(Comp_NetworkStructure parent)
+        public NetworkSubPart(INetworkStructure parent, NetworkSubPartProperties properties)
         {
-            this.parent = parent;
-        }
-
-        public NetworkComponent(Comp_NetworkStructure parent, NetworkComponentProperties properties, int index)
-        {
-            this.parent = parent;
-            this.props = properties;
-            this.savedPropsIndex = index;
+            Parent = parent;
+            Props = properties;
         }
 
         public virtual void ExposeData()
         {
-            Scribe_Values.Look(ref savedPropsIndex, "propsIndex", -1);
             Scribe_Values.Look(ref requestedCapacityPercent, "requesterPercent");
-            if (Scribe.mode == LoadSaveMode.LoadingVars)
-            {
-                if (savedPropsIndex >= 0)
-                    props = parent.Props.networks[savedPropsIndex];
-            }
             Scribe_Deep.Look(ref container, "container", this, Props.AllowedValues);
         }
 
-        public void ComponentSetup(bool respawningAfterLoad)
+        public void SubPartSetup(bool respawningAfterLoad)
         {
             //Generate components
-            componentSet = new NetworkComponentSet(NetworkDef, this);
+            directPartSet = new NetworkPartSet(NetworkDef, this);
+            adjacencySet = new AdjacentNodePartSet(this);
 
             RolePropertySetup();
+            GetDirectlyAjdacentNetworkParts();
             if (respawningAfterLoad) return; // IGNORING EXPOSED CONSTRUCTORS
             if (HasContainer)
                 Container = new NetworkContainer(this, Props.AllowedValues);
+        }
+
+        private void GetDirectlyAjdacentNetworkParts()
+        {
+            for (var c = 0; c < CellIO.ConnectionCells.Length; c++)
+            {
+                var connectionCell = CellIO.ConnectionCells[c];
+                List<Thing> thingList = connectionCell.GetThingList(Thing.Map);
+                for (int i = 0; i < thingList.Count; i++)
+                {
+                    if (PipeNetworkMaker.Fits(thingList[i], NetworkDef, out var subPart))
+                    {
+                        directPartSet.AddNewComponent(subPart);
+                    }
+                }
+            }
+        }
+
+        public void PostDestroy(DestroyMode mode, Map previousMap)
+        {
+            AdjacencySet.Notify_ParentDestroyed();
+            DirectPartSet.Notify_ParentDestroyed();
+            Container?.Notify_ParentDestroyed(mode, previousMap);
+            //Network.Notify_RemovePart(this);
         }
 
         private void RolePropertySetup()
@@ -131,46 +163,21 @@ namespace TeleCore
             }
         }
 
-        public void PostDestroy(DestroyMode mode, Map previousMap)
+        //
+        public void NetworkTick()
         {
-            ConnectedComponentSet.ParentDestroyed();
-            Container?.Parent_Destroyed(mode, previousMap);
-            Network.RemoveComponent(this);
-        }
+            var isPowered = Parent.IsPowered;
+            if (isPowered)
+            {
+                if (receivingTicks > 0 && lastReceivedTick < Find.TickManager.TicksGame)
+                    receivingTicks--;
 
-        public virtual void NetworkCompTick(bool isPowered)
-        {
-            if (receivingTicks > 0 && lastReceivedTick < Find.TickManager.TicksGame)
-                receivingTicks--;
+                if (!IsActive) return;
+                ProcessValues();
+                Parent.NetworkPartProcessor(this);
+            }
 
-            if (!isPowered || !IsActive) return;
-            ProcessValues();
-        }
-
-        //Data Notifiers
-        public virtual void Notify_ContainerFull()
-        {
-        }
-
-        public virtual void Notify_ContainerStateChanged()
-        {
-        }
-
-        public void Notify_NewComponentAdded(INetworkComponent component)
-        {
-            ConnectedComponentSet.AddNewComponent(component);
-        }
-
-        public void Notify_NewComponentRemoved(INetworkComponent component)
-        {
-            ConnectedComponentSet.RemoveComponent(component);
-        }
-
-        public void Notify_ReceivedValue()
-        {
-            lastReceivedTick = Find.TickManager.TicksGame;
-            receivingTicks++;
-            parent.Notify_ReceivedValue();
+            Parent.NetworkPostTick(isPowered);
         }
 
         //Network 
@@ -210,7 +217,7 @@ namespace TeleCore
         {
             if (Container.ContainsForbiddenType)
             {
-                PushForbiddenTypes();
+                ClearForbiddenTypes();
             }
             if (ContainerProps.storeEvenly)
             {
@@ -231,7 +238,7 @@ namespace TeleCore
                 var maxVal = RequestedCapacityPercent * Container.Capacity;
                 foreach (var valType in Props.AllowedValuesByRole[NetworkRole.Requester])
                 {
-                    var valTypeValue = Container.ValueForType(valType) + Network.NetworkValueFor(valType, NetworkRole.Storage);
+                    var valTypeValue = Container.ValueForType(valType) + Network.TotalValueFor(valType, NetworkRole.Storage);
                     if (valTypeValue > 0)
                     {
                         var setValue = Mathf.Min(maxVal, valTypeValue);
@@ -247,10 +254,10 @@ namespace TeleCore
             foreach (var requestedType in RequestedTypes)
             {
                 //If not requested, skip
-                if(!requestedType.Value.Item1) continue;
+                if (!requestedType.Value.Item1) continue;
                 if (Container.ValueForType(requestedType.Key) < requestedType.Value.Item2)
                 {
-                    foreach (var component in Network.ComponentSet[NetworkRole.Storage])
+                    foreach (var component in Network.PartSet[NetworkRole.Storage])
                     {
                         var container = component.Container;
                         if (container.Empty) continue;
@@ -264,11 +271,12 @@ namespace TeleCore
             }
         }
 
+        //
         private void TransferToOthers(NetworkRole fromRole, NetworkRole ofRole, bool evenly)
         {
             if (Container.Empty) return;
             var usedTypes = Props.AllowedValuesByRole[fromRole];
-            foreach (var component in Network.ComponentSet[ofRole])
+            foreach (var component in Network.PartSet[ofRole])
             {
                 if (Container.Empty || component.Container.Full) continue;
                 if (evenly && component.Container.StoredPercent > Container.StoredPercent) continue;
@@ -285,10 +293,10 @@ namespace TeleCore
             }
         }
 
-        private void PushForbiddenTypes()
+        private void ClearForbiddenTypes()
         {
             if (Container.Empty) return;
-            foreach (var component in Network.ComponentSet[NetworkRole.Storage])
+            foreach (var component in Network.PartSet[NetworkRole.Storage])
             {
                 if (component.Container.Full) continue;
                 for (int i = Container.AllStoredTypes.Count - 1; i >= 0; i--)
@@ -304,18 +312,47 @@ namespace TeleCore
             }
         }
 
-        public void SendFirstValue(INetworkComponent other)
+        //Data Notifiers
+        public virtual void Notify_ContainerFull()
+        {
+        }
+
+        public virtual void Notify_ContainerStateChanged()
+        {
+        }
+
+        public void Notify_ReceivedValue()
+        {
+            lastReceivedTick = Find.TickManager.TicksGame;
+            receivingTicks++;
+            Parent.Notify_ReceivedValue();
+        }
+
+        public void Notify_SetConnection(INetworkSubPart otherPart, NetEdge withEdge)
+        {
+            AdjacencySet.Notify_SetEdge(otherPart, withEdge);
+        }
+
+        public void Notify_NetworkDestroyed()
+        {
+            AdjacencySet.Notify_Clear();
+        }
+
+        //
+        public void SendFirstValue(INetworkSubPart other)
         {
             Container.TryTransferTo(other.Container, Container.AllStoredTypes.FirstOrDefault(), 1);
         }
 
-        public bool ConnectsTo(INetworkComponent other)
+        //
+        public bool ConnectsTo(INetworkSubPart other)
         {
             if (other == this) return false;
-            return NetworkDef == other.NetworkDef && CompatibleWith(other) && parent.ConnectsTo(other.Parent);
+            return NetworkDef == other.NetworkDef && Parent.CanConnectToOther(other.Parent);
         }
 
-        private bool CompatibleWith(INetworkComponent other)
+        /*
+        private bool CompatibleWith(INetworkSubPart other)
         {
             if (other.Network == null)
             {
@@ -324,95 +361,15 @@ namespace TeleCore
             }
             return other.Network.NetworkRank == Network.NetworkRank;
         }
+        */
 
         public bool NeedsValue(NetworkValueDef value, NetworkRole forRole)
         {
             if (!Props.AllowedValuesByRole[forRole].Contains(value)) return false;
-            return parent.AcceptsValue(value);
+            return Parent.AcceptsValue(value);
         }
 
-        public void Draw()
-        {
-            DrawNetworkInfo();
-            if (DebugNetworkCells)
-            {
-                GenDraw.DrawFieldEdges(Network.NetworkCells, Color.cyan);
-            }
-        }
-
-        public virtual string NetworkInspectString()
-        {
-            return string.Empty;
-        }
-
-        private bool drawNetworkInfo = false;
-
-        private void DrawNetworkInfo()
-        {
-            /*
-            if (!drawNetworkInfo) return;
-            Rect sizeRect = new Rect(UI.screenWidth / 2 - (756/2),UI.screenHeight/2 - (756/2), 756, 756);
-            Find.WindowStack.ImmediateWindow(GetHashCode(), sizeRect, WindowLayer.GameUI, () =>
-            {
-                int row = 0;
-                float curY = 0;
-
-                foreach (var container in Network.ContainerSet[NetworkRole.All])
-                {
-                    Widgets.Label(new Rect(0, curY, 150, 20), $"{keyValue.Key}: ");
-                    int column = 0;
-                    curY += 20;
-                    foreach (var container in keyValue.Value)
-                    {
-                        Rect compRect = new Rect(column * 100 + 5, curY, 100, 100);
-                        Widgets.DrawBox(compRect);
-                        string text = $"{container.Parent.Thing.def}:\n";
-
-                        TWidgets.DrawTiberiumReadout(compRect, container);
-                        column++;
-                    }
-                    row++;
-                    curY += 100 + 5;
-                }
-                
-                foreach (var structures in Network.ComponentSet.StructuresByRole)
-                {
-                    Widgets.Label(new Rect(0, curY, 150, 20), $"{structures.Key}: ");
-                    int column = 0;
-                    curY += 20;
-                    foreach (var component in structures.Value)
-                    {
-                        Rect compRect = new Rect(column * 100 + 5, curY, 100, 100);
-                        Widgets.DrawBox(compRect);
-                        string text = $"{component.Parent.Thing.def}:\n";
-                        switch (structures.Key)
-                        {
-                            case NetworkRole.Producer:
-                                text = $"{text}Producing:";
-                                break;
-                            case NetworkRole.Storage:
-                                text = $"{text}";
-                                break;
-                            case NetworkRole.Consumer:
-                                text = $"{text}";
-                                break;
-                            case NetworkRole.Requester:
-                                text = $"{text}";
-                                break;
-                        }
-                        Widgets.Label(compRect, $"{text}");
-                        column++;
-                    }
-                    row++;
-                    curY += 100 + 5;
-                }
-                
-            } );
-        */
-        }
-        
-        public Gizmo_NetworkInfo NetworkGizmo => networkInfoGizmo ??= new Gizmo_NetworkInfo(this);
-
+        //Gizmos
         public virtual IEnumerable<Gizmo> GetPartGizmos()
         {
             yield return NetworkGizmo;
@@ -450,18 +407,133 @@ namespace TeleCore
 
                 yield return new Command_Action
                 {
+                    defaultLabel = $"View Adjacent Structures",
+                    defaultDesc = DirectPartSet.ToString(),
+                    action = delegate { }
+                };
+
+                yield return new Command_Action
+                {
                     defaultLabel = $"View {NetworkDef.defName} Set",
-                    defaultDesc = ConnectedComponentSet.ToString(),
+                    defaultDesc = AdjacencySet.ToString(),
                     action = delegate { }
                 };
 
                 yield return new Command_Action
                 {
                     defaultLabel = $"View Entire {NetworkDef.defName} Set",
-                    defaultDesc = Network.ComponentSet.ToString(),
+                    defaultDesc = Network?.PartSet?.ToString() ?? "N/A",
                     action = delegate { drawNetworkInfo = !drawNetworkInfo; }
                 };
+
+                yield return new Command_Action
+                {
+                    defaultLabel = $"Draw Graph",
+                    action = delegate { Network.DrawInternalGraph = !Network.DrawInternalGraph; }
+                };
             }
+        }
+
+        //Readouts and UI
+        public virtual string NetworkInspectString()
+        {
+            StringBuilder sb = new StringBuilder();
+            sb.AppendLine($"[{NetworkDef}]ID: {Network?.ID}");
+            sb.AppendLine($"Has Network: {Network != null}");
+            if (IsNetworkNode)
+            {
+                sb.AppendLine("Is Node");
+            }
+            if (IsNetworkEdge)
+            {
+                sb.AppendLine("Is Edge");
+            }
+            if (IsJunction)
+            {
+                sb.AppendLine("Is Junction");
+            }
+
+            sb.AppendLine($"[Transmitters] {DirectPartSet[NetworkRole.Transmitter]?.Count}");
+            return sb.ToString();
+        }
+
+        public void Draw()
+        {
+            DrawNetworkInfo();
+            if (DebugNetworkCells)
+            {
+                GenDraw.DrawFieldEdges(Network.NetworkCells, Color.cyan);
+            }
+        }
+
+        private void DrawNetworkInfo()
+        {
+            /*
+            if (!drawNetworkInfo) return;
+            Rect sizeRect = new Rect(UI.screenWidth / 2 - (756/2),UI.screenHeight/2 - (756/2), 756, 756);
+            Find.WindowStack.ImmediateWindow(GetHashCode(), sizeRect, WindowLayer.GameUI, () =>
+            {
+                int row = 0;
+                float curY = 0;
+
+                foreach (var container in Network.ContainerSet[NetworkRole.All])
+                {
+                    Widgets.Label(new Rect(0, curY, 150, 20), $"{keyValue.Key}: ");
+                    int column = 0;
+                    curY += 20;
+                    foreach (var container in keyValue.Value)
+                    {
+                        Rect compRect = new Rect(column * 100 + 5, curY, 100, 100);
+                        Widgets.DrawBox(compRect);
+                        string text = $"{container.Parent.Thing.def}:\n";
+
+                        TWidgets.DrawTiberiumReadout(compRect, container);
+                        column++;
+                    }
+                    row++;
+                    curY += 100 + 5;
+                }
+                
+                foreach (var structures in Network.PartSet.StructuresByRole)
+                {
+                    Widgets.Label(new Rect(0, curY, 150, 20), $"{structures.Key}: ");
+                    int column = 0;
+                    curY += 20;
+                    foreach (var component in structures.Value)
+                    {
+                        Rect compRect = new Rect(column * 100 + 5, curY, 100, 100);
+                        Widgets.DrawBox(compRect);
+                        string text = $"{component.Parent.Thing.def}:\n";
+                        switch (structures.Key)
+                        {
+                            case NetworkRole.Producer:
+                                text = $"{text}Producing:";
+                                break;
+                            case NetworkRole.Storage:
+                                text = $"{text}";
+                                break;
+                            case NetworkRole.Consumer:
+                                text = $"{text}";
+                                break;
+                            case NetworkRole.Requester:
+                                text = $"{text}";
+                                break;
+                        }
+                        Widgets.Label(compRect, $"{text}");
+                        column++;
+                    }
+                    row++;
+                    curY += 100 + 5;
+                }
+                
+            } );
+        */
+        }
+
+        //
+        public override string ToString()
+        {
+            return Parent.Thing.ToString();
         }
     }
 }

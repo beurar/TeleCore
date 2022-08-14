@@ -63,6 +63,7 @@ namespace TeleCore
         protected bool ClickedIntoTop { get; private set; }
 
         public virtual bool CanBeFocused => true;
+        public virtual bool CanDoRightClickMenu => true;
         public bool IsActive { get; set; } = true;
 
         public object DragAndDropData { get; protected set; }
@@ -74,7 +75,7 @@ namespace TeleCore
             set => parent = value;
         }
 
-        public virtual List<UIElement> TextureElements => children;
+        public virtual List<UIElement> ChildElements => children;
 
         public virtual UIContainerMode ContainerMode => UIContainerMode.InOrder;
 
@@ -179,7 +180,7 @@ namespace TeleCore
         //Relation Functions
         public T GetChildElement<T>() where T : UIElement
         {
-            return (T)TextureElements.First(t => t is T);
+            return (T)ChildElements.First(t => t is T);
         }
 
         //Relation Changes
@@ -188,10 +189,10 @@ namespace TeleCore
             switch (ContainerMode)
             {
                 case UIContainerMode.InOrder:
-                    TextureElements.Add(newElement);
+                    ChildElements.Add(newElement);
                     break;
                 case UIContainerMode.Reverse:
-                    TextureElements.Insert(0, newElement);
+                    ChildElements.Insert(0, newElement);
                     break;
             }
             newElement.SetParent(this);
@@ -204,7 +205,7 @@ namespace TeleCore
 
         public void DiscardElement(UIElement element)
         {
-            TextureElements.Remove(element);
+            ChildElements.Remove(element);
             element.SetParent(null);
             Notify_RemovedElement(element);
 
@@ -274,9 +275,9 @@ namespace TeleCore
             {
                 case UIContainerMode.InOrder:
                 {
-                    for (var i = 0; i < TextureElements.Count; i++)
+                    for (var i = 0; i < ChildElements.Count; i++)
                     {
-                        var element = TextureElements[i];
+                        var element = ChildElements[i];
                         element.DrawElement();
                     }
 
@@ -284,9 +285,9 @@ namespace TeleCore
                 }
                 case UIContainerMode.Reverse:
                 {
-                    for (int i = TextureElements.Count - 1; i >= 0; i--)
+                    for (int i = ChildElements.Count - 1; i >= 0; i--)
                     {
-                        var element = TextureElements[i];
+                        var element = ChildElements[i];
                         element.DrawElement();
                     }
                     break;
@@ -354,7 +355,7 @@ namespace TeleCore
                 }
 
                 //FloatMenu
-                if (curEvent.button == 1 && Mouse.IsOver(FocusRect))
+                if (curEvent.button == 1 && Mouse.IsOver(FocusRect) && CanDoRightClickMenu)
                 {
                     var options = RightClickOptions()?.ToList();
                     if (options != null && options.Any())

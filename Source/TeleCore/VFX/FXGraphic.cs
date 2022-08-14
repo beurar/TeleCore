@@ -230,7 +230,9 @@ namespace TeleCore
             //
             var drawPos = drawLocOverride ?? GetDrawPos;
             GetDrawInfo(Graphic, ref drawPos, Rot4, ExData, parent.parent.def, out drawSize, out drawMat, out drawMesh, out float extraRotation, out flipUV);
-            drawPos += data.drawOffset;
+
+            if(!parent.IgnoreDrawOff)
+                drawPos += data.drawOffset;
 
             //Colors
             var graphicColor = data.data.color;
@@ -263,7 +265,8 @@ namespace TeleCore
             //
             var drawPos = GetDrawPos;
             GetDrawInfo(Graphic, ref drawPos, Rot4, ExData, parent.parent.def, out drawSize, out drawMat, out drawMesh, out float extraRotation, out flipUV);
-            drawPos += data.drawOffset;
+            if (!parent.IgnoreDrawOff)
+                drawPos += data.drawOffset;
             Printer_Plane.PrintPlane(layer, new Vector3(drawPos.x, altitude, drawPos.z), drawSize, drawMat, (GetRotation + extraRotation), flipUV);
         }
     }

@@ -35,6 +35,15 @@ namespace TeleCore
             }
         }
 
+        public static IEnumerable<ModContentPack> GetAllModsWithDefs()
+        {
+            foreach (var mod in LoadedModManager.RunningMods)
+            {
+                if (mod.defs.Count > 0)
+                    yield return mod;
+            }
+        }
+
         public static List<DirectoryInfo> GetAllDefsOf(ModContentPack mod)
         {
             var list = new List<DirectoryInfo>();

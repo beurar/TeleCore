@@ -52,7 +52,7 @@ namespace TeleCore
             var compTNW = t.TryGetComp<Comp_NetworkBillsCrafter>();
             if (compTNW == null) return false;
             if (compTNW.BillStack.Count == 0) return false;
-            if (compTNW.BillStack.ParentNetComps.Any(t => !t.Network.IsWorking)) return false;
+            if (compTNW.BillStack.ParentNetParts.Any(t => !t.Network.IsWorking)) return false;
             if (compTNW.billStack.CurrentBill != null)
             {
                 if (!compTNW.billStack.CurrentBill.ShouldDoNow()) return false;

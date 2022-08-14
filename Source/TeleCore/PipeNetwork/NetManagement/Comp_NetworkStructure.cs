@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using NAudio.Wave;
 using RimWorld;
 using UnityEngine;
 using Verse;
@@ -11,48 +10,40 @@ using Verse;
 namespace TeleCore
 {
     //TODO: Add leaking functionality, broken transmitters losing values
-    public class Comp_NetworkStructure : ThingComp, IFXObject, INetworkStructure
+    public class Comp_NetworkStructure : ThingComp, INetworkStructure, IFXObject
     {
-        //Comp References
-        private CompPowerTrader powerComp;
-        private CompFlickable flickComp;
-        private CompFX fxComp;
-        private MapComponent_TeleCore teleMapCore;
-
-        //Fields
+        //
         private NetworkMapInfo networkInfo;
-        private IntVec3[][] innerConnectionCellsByRot;
-        private IntVec3[][] connectionCellsByRot;
 
-        private List<NetworkComponent> networkParts = new();
-        private readonly Dictionary<NetworkDef, NetworkComponent> networkComponentByDef = new();
+        private List<NetworkSubPart> networkParts;
+        private Dictionary<NetworkDef, NetworkSubPart> networkPartByDef;
+        private NetworkCellIO cellIO;
 
         //Debug
         protected static bool DebugConnectionCells = false;
 
-        public NetworkComponent this[NetworkDef def] => networkComponentByDef[def];
+        //
+        public NetworkSubPart this[NetworkDef def] => networkPartByDef.TryGetValue(def, out var value) ? value : null;
 
-        public Thing Thing => parent;
-
-        //CompStuff
+        //
         public CompProperties_NetworkStructure Props => (CompProperties_NetworkStructure)base.props;
+        public CompPowerTrader CompPower { get; private set; }
+        public CompFlickable CompFlick { get; private set; }
+        public CompFX CompFX { get; private set; }
 
-        public CompPowerTrader CompPower => powerComp;
-        public CompFlickable CompFlick => flickComp;
-        public CompFX CompFX => fxComp;
+        //
+        public Thing Thing => parent;
+        public List<NetworkSubPart> NetworkParts => networkParts;
+
+        public NetworkCellIO GeneralIO => cellIO;
 
         public bool IsPowered => CompPower?.PowerOn ?? true;
 
-        public List<NetworkComponent> NetworkParts => networkParts;
-
-        //
-        //public NetworkStructureSet NeighbourStructureSet { get => structureSet; protected set => structureSet = value; }
-
-        //FX Data
+        //FX
         public virtual bool IsMain => true;
         public virtual int Priority => 10;
         public virtual bool ShouldThrowFlecks => true;
-        public virtual CompPower ForcedPowerComp => parent.GetComp<CompPowerTrader>();
+        public virtual CompPower ForcedPowerComp => CompPower;
 
         public virtual bool FX_AffectsLayerAt(int index)
         {
@@ -72,7 +63,7 @@ namespace TeleCore
         {
             return index switch
             {
-                0 => NetworkParts[0].Container.Color,
+                0 => networkParts[0].Container.Color,
                 _ => Color.white
             };
         }
@@ -87,43 +78,15 @@ namespace TeleCore
         public virtual float? FX_GetRotationSpeedAt(int index) => null;
         public virtual Action<FXGraphic> FX_GetActionAt(int index) => null;
 
-        //
-        public IntVec3[] InnerConnectionCells
-        {
-            get
-            {
-                return innerConnectionCellsByRot[parent.Rotation.AsInt] ??= Props.InnerConnectionCells(parent);
-            }
-        }
-
-        public IntVec3[] ConnectionCells
-        {
-            get
-            {
-                if (connectionCellsByRot[parent.Rotation.AsInt] == null)
-                {
-                    var cellsOuter = new List<IntVec3>();
-                    foreach (var edgeCell in parent.OccupiedRect().ExpandedBy(1).EdgeCells)
-                    {
-                        foreach (var inner in InnerConnectionCells)
-                        {
-                            if (edgeCell.AdjacentToCardinal(inner))
-                            {
-                                cellsOuter.Add(edgeCell);
-                            }
-                        }
-                    }
-                    connectionCellsByRot[parent.Rotation.AsInt] = cellsOuter.ToArray();
-                }
-
-                return connectionCellsByRot[parent.Rotation.AsInt];
-            }
-        }
-
+        //BEGIN OF ACTUAL CLASS
+        
+        //SaveData
         public override void PostExposeData()
         {
             base.PostExposeData();
             Scribe_Collections.Look(ref networkParts, "networkParts", LookMode.Deep, this);
+
+            //
             if (Scribe.mode == LoadSaveMode.PostLoadInit)
             {
                 if (networkParts.NullOrEmpty())
@@ -133,26 +96,25 @@ namespace TeleCore
                 }
                 foreach (var newComponent in networkParts)
                 {
-                    networkComponentByDef.Add(newComponent.NetworkDef, newComponent);
-                    newComponent.ComponentSetup(true);
+                    networkPartByDef.Add(newComponent.NetworkDef, newComponent);
+                    newComponent.SubPartSetup(true);
                 }
             }
         }
 
+        //Init Construction
         public override void PostSpawnSetup(bool respawningAfterLoad)
         {
             base.PostSpawnSetup(respawningAfterLoad);
-            innerConnectionCellsByRot = new IntVec3[4][];
-            connectionCellsByRot = new IntVec3[4][];
 
-            //Get cached data
-            powerComp = parent.TryGetComp<CompPowerTrader>();
-            flickComp = parent.TryGetComp<CompFlickable>();
-            fxComp = parent.TryGetComp<CompFX>();
+            CompPower = parent.TryGetComp<CompPowerTrader>();
+            CompFlick = parent.TryGetComp<CompFlickable>();
+            CompFX = parent.TryGetComp<CompFX>();
+
+            cellIO = new NetworkCellIO(Props.generalIOPattern, parent);
 
             //
-            teleMapCore =  parent.Map.TeleCore();
-            networkInfo = teleMapCore.NetworkInfo;
+            networkInfo = parent.Map.TeleCore().NetworkInfo;
 
             //Create NetworkComponents
             if (!respawningAfterLoad || networkParts.NullOrEmpty())
@@ -161,13 +123,17 @@ namespace TeleCore
                 {
                     TLog.Warning($"Spawning {parent} after load with null parts... Correcting.");
                 }
+
+                //
+                networkParts = new List<NetworkSubPart>(Props.networks.Count);
+                networkPartByDef = new Dictionary<NetworkDef, NetworkSubPart>(Props.networks.Count);
                 for (var i = 0; i < Props.networks.Count; i++)
                 {
                     var compProps = Props.networks[i];
-                    var newComponent = (NetworkComponent)Activator.CreateInstance(compProps.workerType, args: new object[]{this, compProps, i}); //new NetworkComponent(this, compProps, i);
+                    var newComponent = (NetworkSubPart)Activator.CreateInstance(compProps.workerType, args: new object[] { this, compProps}); //new NetworkComponent(this, compProps, i);
                     networkParts.Add(newComponent);
-                    networkComponentByDef.Add(compProps.networkDef, newComponent);
-                    newComponent.ComponentSetup(respawningAfterLoad);
+                    networkPartByDef.Add(compProps.networkDef, newComponent);
+                    newComponent.SubPartSetup(respawningAfterLoad);
                 }
             }
 
@@ -178,8 +144,10 @@ namespace TeleCore
             networkInfo.Notify_NewNetworkStructureSpawned(this);
         }
 
+        //Deconstruction
         public override void PostDestroy(DestroyMode mode, Map previousMap)
         {
+            base.PostDestroy(mode, previousMap);
             //Regen network after all data is set
             networkInfo.Notify_NetworkStructureDespawned(this);
 
@@ -187,70 +155,53 @@ namespace TeleCore
             {
                 networkPart.PostDestroy(mode, previousMap);
             }
-
-            base.PostDestroy(mode, previousMap);
         }
 
-        public override void CompTick()
-        {
-            base.CompTick();
-            var isPowered = IsPowered;
-            foreach (var networkPart in networkParts)
-            {
-                networkPart.NetworkCompTick(isPowered);
-                NetworkCompProcessor(networkPart, isPowered);
-            }
-            NetworkTickCustom(isPowered);
-        }
-
-        public override void ReceiveCompSignal(string signal)
-        {
-            base.ReceiveCompSignal(signal);
-        }
-
-        protected virtual void NetworkTickCustom(bool isPowered)
+        public virtual void NetworkPostTick(bool isPowered)
         {
 
         }
 
-        protected virtual void NetworkCompProcessor(NetworkComponent netComp, bool isPowered)
+        public virtual void NetworkPartProcessor(INetworkSubPart netPart)
         {
-        }
-
-        public virtual bool AcceptsValue(NetworkValueDef value)
-        {
-            return true;
         }
 
         public virtual void Notify_ReceivedValue()
         {
         }
 
-        //Data Notifiers
+        //
         public void Notify_StructureAdded(INetworkStructure other)
         {
-
             //structureSet.AddNewStructure(other);
         }
 
         public void Notify_StructureRemoved(INetworkStructure other)
         {
-
             //structureSet.RemoveStructure(other);
         }
 
-        public bool ConnectsTo(INetworkStructure other)
+        //
+        public virtual bool AcceptsValue(NetworkValueDef value)
         {
-            return ConnectionCells.Any(other.InnerConnectionCells.Contains);
+            return true;
         }
 
+        public bool CanConnectToOther(INetworkStructure other)
+        {
+            return GeneralIO.ConnectsTo(other.GeneralIO);
+        }
+
+        //UI
         public override void PostDraw()
         {
             base.PostDraw();
+
+            //   
             if (DebugConnectionCells && Find.Selector.IsSelected(parent))
             {
-                GenDraw.DrawFieldEdges(ConnectionCells.ToList(), Color.cyan);
-                GenDraw.DrawFieldEdges(InnerConnectionCells.ToList(), Color.green);
+                GenDraw.DrawFieldEdges(GeneralIO.ConnectionCells.ToList(), Color.cyan);
+                GenDraw.DrawFieldEdges(GeneralIO.InnerConnectionCells.ToList(), Color.green);
             }
 
             foreach (var networkPart in NetworkParts)
@@ -261,16 +212,23 @@ namespace TeleCore
 
         public override void PostPrintOnto(SectionLayer layer)
         {
+            base.PostPrintOnto(layer);
+
+            //
             foreach (var networkPart in NetworkParts)
             {
                 networkPart.NetworkDef.TransmitterGraphic?.Print(layer, Thing, 0);
             }
-            base.PostPrintOnto(layer);
         }
 
         public override string CompInspectStringExtra()
         {
             StringBuilder sb = new StringBuilder();
+            foreach (var networkSubPart in networkParts)
+            {
+                sb.AppendLine(networkSubPart.NetworkInspectString());
+            }
+
             /*TODO: ADD THIS TO COMPONENT DESC
             if (!Network.IsWorking)
                 sb.AppendLine("TR_MissingNetworkController".Translate());
@@ -292,7 +250,7 @@ namespace TeleCore
             /*
             foreach (var gizmo in networkParts.Select(c => c.SpecialNetworkDescription))
             {
-                yield return gizmo;
+            yield return gizmo;
             }
             */
 
@@ -326,10 +284,7 @@ namespace TeleCore
             yield return new Command_Action
             {
                 defaultLabel = "Draw Connections",
-                action = delegate
-                {
-                    DebugConnectionCells = !DebugConnectionCells;
-                }
+                action = delegate { DebugConnectionCells = !DebugConnectionCells; }
             };
         }
     }

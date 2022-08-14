@@ -15,9 +15,11 @@ namespace TeleCore
         Consumer = 8,
         Storage = 16,
         Requester = 32,
-        All = 64,
+        DirectionalControl = 64,
+        //All = 64,
 
-        AllContainers = Producer | Consumer | Storage,
+        AllContainers = Producer | Consumer | Storage | Requester,
+        AllFlag = Controller | Transmitter | DirectionalControl | AllContainers,
         //All = Transmitter | AllContainers,
     }
 }

@@ -63,7 +63,7 @@ namespace TeleCore
         }
 
         public Dictionary<NetworkValueDef, float> StoredValuesByType => StoredValues;
-        public NetworkValueStack ValueStack { get; private set; }
+        public DefValueStack<NetworkValueDef> ValueStack { get; private set; }
         public Color Color => colorInt;
 
         public Dictionary<NetworkValueDef, bool> Filter => TypeFilter;
@@ -81,7 +81,7 @@ namespace TeleCore
             this.totalCapacity = Props.maxStorage;
         }
 
-        public NetworkContainer(IContainerHolder parent, NetworkValueStack valueStack)
+        public NetworkContainer(IContainerHolder parent, DefValueStack<NetworkValueDef> valueStack)
         {
             this.parentHolder = parent;
             this.totalCapacity = Props.maxStorage;
@@ -130,13 +130,13 @@ namespace TeleCore
         }
 
         //
-        public void Parent_Destroyed(DestroyMode mode, Map previousMap)
+        public void Notify_ParentDestroyed(DestroyMode mode, Map previousMap)
         {
             if (Parent == null || TotalStored <= 0 || mode == DestroyMode.Vanish) return;
-            if ((mode is DestroyMode.Deconstruct or DestroyMode.Refund) && Props.leaveContainer && ParentStructure.NetworkComp.NetworkDef.portableContainerDef != null)
+            if ((mode is DestroyMode.Deconstruct or DestroyMode.Refund) && Props.leaveContainer && ParentStructure.NetworkPart.NetworkDef.portableContainerDef != null)
             {
-                PortableContainer container = (PortableContainer)ThingMaker.MakeThing(ParentStructure.NetworkComp.NetworkDef.portableContainerDef);
-                container.SetupProperties(ParentStructure.NetworkComp.NetworkDef, Copy(container), Props);
+                PortableContainer container = (PortableContainer)ThingMaker.MakeThing(ParentStructure.NetworkPart.NetworkDef.portableContainerDef);
+                container.SetupProperties(ParentStructure.NetworkPart.NetworkDef, Copy(container), Props);
                 GenSpawn.Spawn(container, Parent.Thing.Position, previousMap);
             }
 
@@ -218,7 +218,7 @@ namespace TeleCore
         public void Notify_AddedValue(NetworkValueDef valueType, float value)
         {
             totalStoredCache += value;
-            ParentStructure?.ContainerSet?.Notify_AddedValue(valueType, value, ParentStructure.NetworkComp);
+            ParentStructure?.ContainerSet?.Notify_AddedValue(valueType, value, ParentStructure.NetworkPart);
             AllStoredTypes.Add(valueType);
 
             //Update stack state
@@ -228,7 +228,7 @@ namespace TeleCore
         public void Notify_RemovedValue(NetworkValueDef valueType, float value)
         {
             totalStoredCache -= value;
-            ParentStructure?.ContainerSet?.Notify_RemovedValue(valueType, value, ParentStructure.NetworkComp);
+            ParentStructure?.ContainerSet?.Notify_RemovedValue(valueType, value, ParentStructure.NetworkPart);
             //TODO: Add value by role/
             if (AllStoredTypes.Contains(valueType) && ValueForType(valueType) <= 0)
                 AllStoredTypes.RemoveWhere(v => v == valueType);
@@ -237,12 +237,12 @@ namespace TeleCore
             UpdateContainerState();
         }
 
-        public void LoadFromStack(NetworkValueStack stack)
+        public void LoadFromStack(DefValueStack<NetworkValueDef> stack)
         {
             Clear();
-            foreach (var networkValue in stack.networkValues)
+            foreach (var networkValue in stack.values)
             {
-                TryAddValue(networkValue.valueDef, networkValue.valueF, out _);
+                TryAddValue(networkValue.Def, networkValue.Value, out _);
             }
         }
 
@@ -425,7 +425,7 @@ namespace TeleCore
         public void UpdateContainerState(bool updateMetaData = false)
         {
             //Set Stack
-            ValueStack = new NetworkValueStack(StoredValues);
+            ValueStack = new DefValueStack<NetworkValueDef>(StoredValues);
 
             //Update metadata
             if (updateMetaData)

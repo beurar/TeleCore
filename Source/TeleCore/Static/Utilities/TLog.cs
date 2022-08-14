@@ -34,5 +34,13 @@ namespace TeleCore
         {
             Log.Message($"{"[TELE]".Colorize(TColor.NiceBlue)} {msg}");
         }
+
+        public static void Debug(string msg, bool flag = true)
+        {
+            if (flag)
+            {
+                Log.Message($"{"[TELE-Debug]".Colorize(TColor.Green)} {msg}");
+            }
+        }
     }
 }

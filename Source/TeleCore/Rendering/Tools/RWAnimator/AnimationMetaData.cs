@@ -44,6 +44,7 @@ namespace TeleCore
             this.parentCanvas = parentCanvas;
             lastSelectedElementIndex = new (){ -1, -1, -1, -1 };
             lastSelectedAnimationIndex = new (){ -1, -1, -1, -1 };
+            //
             elementsByRotation = new List<UIElement>[4]
             {
                 new(), new(), new(), new(),
@@ -99,7 +100,7 @@ namespace TeleCore
             return animationSet;
         }
 
-        private void loadFromDef(AnimationDataDef dataDef)
+        private void LoadFromDef(AnimationDataDef dataDef)
         {
             defName = dataDef.defName;
             for (int i = 0; i < 4; i++)
@@ -169,7 +170,7 @@ namespace TeleCore
             Scribe_Collections.Look(ref lastSelectedAnimationIndex, "lastSelectedAnimationIndex");
 
             //GenDataFromDef
-            loadFromDef(internalDef);
+            LoadFromDef(internalDef);
 
             if (internalDef != null)
             {
@@ -180,6 +181,7 @@ namespace TeleCore
             Loading = false;
         }
 
+        //
         public void Notify_RemoveAnimationPart(int index)
         {
             CurrentAnimations.RemoveAt(index);
@@ -188,6 +190,8 @@ namespace TeleCore
             SetAnimationIndex(nextIndex);
             if (nextIndex >= 0)
                 _currentAnimation = CurrentAnimations[nextIndex];
+            else
+                _currentAnimation = null;
         }
 
         public AnimationPartValue Notify_CreateNewAnimationPart(string tag, float lengthSeconds)
@@ -254,6 +258,8 @@ namespace TeleCore
         }
 
         internal Dictionary<IKeyFramedElement, Dictionary<int, KeyFrame>> InternalFrames { get; }
+        private Dictionary<int, AnimationActionEventFlag> InternalActions { get; }
+
         internal bool InternalDifference => _internalSeconds.SecondsToTicks() != frames;
 
         public AnimationPartValue(string tag, float seconds)
@@ -264,6 +270,7 @@ namespace TeleCore
             ReplayBounds = new IntRange(0, frames);
 
             InternalFrames = new();
+            InternalActions = new();
         }
 
         public AnimationPartValue(List<UIElement> uiElements, AnimationPart animationPart)

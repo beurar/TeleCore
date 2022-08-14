@@ -29,7 +29,7 @@ namespace TeleCore
         {
             if (sync.isWriting)
             {
-                var netComp = (NetworkComponent)type.container.Parent;
+                var netComp = (NetworkSubPart)type.container.Parent;
                 var comp = (Comp_NetworkStructure)netComp.Parent;
                 sync.Write(comp);
                 sync.Write(netComp.NetworkDef);
