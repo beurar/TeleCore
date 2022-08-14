@@ -32,11 +32,11 @@ namespace TeleCore
         //Initial step of room update - setting known data
         public static void Notify_RoomUpdatePrefix(Map map)
         {
-            TLog.Message($"RoomComp Update Prefix on {map} | {map?.uniqueID}");
+            //TLog.Message($"RoomComp Update Prefix on {map} | {map?.uniqueID}");
             var roomInfo = map.GetMapInfo<RoomTrackerMapInfo>();
             ExistingTrackers.Clear();
 
-            TLog.Message($"RoomInfo?: {roomInfo != null} | {roomInfo.AllTrackers?.Values?.Count}");
+            //TLog.Message($"RoomInfo?: {roomInfo != null} | {roomInfo.AllTrackers?.Values?.Count}");
             ExistingTrackers.AddRange(roomInfo.AllTrackers.Values.ToList());
             roomInfo.ClearTrackers();
 

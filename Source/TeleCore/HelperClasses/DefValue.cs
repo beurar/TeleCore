@@ -24,6 +24,9 @@ namespace TeleCore
 
         public bool IsValid => def != null && value is float or int;
 
+        public static implicit operator DefValue<T, V>(DefValueDef<T, V> d) => new(d.Def, d.value);
+        public static explicit operator DefValueDef<T, V>(DefValue<T, V> d) => new (d.Def, d.Value);
+
         public DefValueDef() { }
 
         public DefValueDef(T def, V value)
