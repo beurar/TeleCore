@@ -37,6 +37,8 @@ namespace TeleCore
             this.startTick = startSeconds.SecondsToTicks();
             this.endTick = startTick + duration.SecondsToTicks();
             this.duration = duration.SecondsToTicks();
+
+            TLog.Message($"Making New ActionPart: {startTick} -> {endTick} | {this.duration}");
         }
 
         //Sound Only
@@ -46,6 +48,8 @@ namespace TeleCore
             this.startTick = time.SecondsToTicks();
             this.endTick = startTick + duration.SecondsToTicks();
             this.duration = duration.SecondsToTicks();
+
+            TLog.Message($"Making New ActionPart: {startTick} -> {endTick} | {this.duration}");
         }
 
         //Action & Sounds
@@ -56,16 +60,24 @@ namespace TeleCore
             this.startTick = time.SecondsToTicks();
             this.endTick = startTick + duration.SecondsToTicks();
             this.duration = duration.SecondsToTicks();
+
+            TLog.Message($"Making New ActionPart: {startTick} -> {endTick} | {this.duration}");
         }
 
         public bool CanBeDoneNow(int compositionTick)
         {
-            return startTick <= compositionTick && compositionTick <= endTick;
+            return startTick <= compositionTick && (compositionTick <= endTick);
+        }
+
+        public static void Tick(ref ActionPart part, int compositionTick, int partIndex = 0)
+        {
+            part.Tick(compositionTick, partIndex);
         }
 
         public void Tick(int compositionTick, int partIndex = 0)
         {
             if (Completed || !CanBeDoneNow(compositionTick)) return;
+
             //Play Sound Once - Always
             if (CurrentTick == 0)
             {
@@ -74,6 +86,7 @@ namespace TeleCore
 
             action?.Invoke(this);
             TryComplete(compositionTick, partIndex);
+
             curTick++;
         }
 
@@ -82,6 +95,7 @@ namespace TeleCore
             if (Instant || compositionTick == endTick)
             {
                 Completed = true;
+                TLog.Message($"Finishing actionpart[{startTick}]");
                 return true;
             }
             return false;

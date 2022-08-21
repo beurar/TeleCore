@@ -13,8 +13,8 @@ namespace TeleCore
     /// </summary>
     public class RoomOverlayRenderer
     {
-        private Material cachedMat;
-        private Mesh cachedMesh;
+        protected Material cachedMat;
+        protected Mesh cachedMesh;
 
         public static float MainAlpha = 0.8f;
 
@@ -29,7 +29,7 @@ namespace TeleCore
 
         protected virtual void UpdateShaderProps(Material material)
         {
-            cachedMat.SetFloat("_Tiling", Tiling);
+            material.SetFloat("_Tiling", Tiling);
         }
 
         public Material Material

@@ -10,12 +10,12 @@ namespace TeleCore
 {
     internal static class CustomNetworkRecipeReferences
     {
-        private static Dictionary<string, List<CustomRecipeRatioDef>> RatiosByTag = new();
-        private static Dictionary<string, List<CustomRecipePresetDef>> PresetsByTag = new();
+        private static readonly Dictionary<string, List<CustomRecipeRatioDef>> _ratiosByTag = new();
+        private static readonly Dictionary<string, List<CustomRecipePresetDef>> _presetsByTag = new();
 
         public static List<CustomRecipeRatioDef> TryGetRatiosOfTag(string tag)
         {
-            if (RatiosByTag.TryGetValue(tag, out var values))
+            if (_ratiosByTag.TryGetValue(tag, out var values))
             {
                 return values;
             }
@@ -25,7 +25,7 @@ namespace TeleCore
 
         public static List<CustomRecipePresetDef> TryGetPresetsOfTag(string tag)
         {
-            if (PresetsByTag.TryGetValue(tag, out var values))
+            if (_presetsByTag.TryGetValue(tag, out var values))
             {
                 return values;
             }
@@ -39,12 +39,12 @@ namespace TeleCore
             {
                 foreach (var ratioDefTag in ratioDef.tags)
                 {
-                    if (!RatiosByTag.ContainsKey(ratioDefTag))
+                    if (!_ratiosByTag.ContainsKey(ratioDefTag))
                     {
-                        RatiosByTag.Add(ratioDefTag, new List<CustomRecipeRatioDef>() { ratioDef });
+                        _ratiosByTag.Add(ratioDefTag, new List<CustomRecipeRatioDef>() { ratioDef });
                         return;
                     }
-                    RatiosByTag[ratioDefTag].Add(ratioDef);
+                    _ratiosByTag[ratioDefTag].Add(ratioDef);
                 }
             }
 
@@ -52,12 +52,12 @@ namespace TeleCore
             {
                 foreach (var presetDefTag in presetDef.tags)
                 {
-                    if (!PresetsByTag.ContainsKey(presetDefTag))
+                    if (!_presetsByTag.ContainsKey(presetDefTag))
                     {
-                        PresetsByTag.Add(presetDefTag, new List<CustomRecipePresetDef>() { presetDef });
+                        _presetsByTag.Add(presetDefTag, new List<CustomRecipePresetDef>() { presetDef });
                         return;
                     }
-                    PresetsByTag[presetDefTag].Add(presetDef);
+                    _presetsByTag[presetDefTag].Add(presetDef);
                 }
             }
         }

@@ -57,13 +57,13 @@ namespace TeleCore
 
         public override string ToString()
         {
-            return $"{def?.LabelCap}: {value}";
+            return $"{def?.defName}: {value}";
         }
 
         public string ToStringPercent()
         {
             if (value is not float f) return ToString();
-            return $"{def?.LabelCap}: ({f.ToStringPercent()})";
+            return $"{def?.defName}: ({f.ToStringPercent()})";
         }
     }
 

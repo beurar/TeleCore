@@ -59,6 +59,7 @@ namespace TeleCore
         {
             startTick = actionParts.First().StartTick;
             endTick = actionParts.Last().EndTick;
+            TLog.Message($"Init ActionComposition: {startTick} -> {endTick}");
             ActionCompositionHandler.InitComposition(this);
         }
 
@@ -75,10 +76,19 @@ namespace TeleCore
                 FinalizeComposition();
                 return;
             }
+
+            if (curTick >= endTick)
+            {
+                TLog.Warning("Force completing...");
+                FinalizeComposition();
+                return;
+            }
+
             for (var i = 0; i < actionParts.Count; i++)
             {
                 var part = actionParts[i];
-                part.Tick(curTick, i);
+                ActionPart.Tick(ref part, curTick, i);
+                actionParts[i] = part;
             }
             curTick++;
         }

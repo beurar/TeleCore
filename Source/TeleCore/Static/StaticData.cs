@@ -50,5 +50,10 @@ namespace TeleCore
             }
             return TeleMapComps[map.uniqueID];
         }
+
+        public static WorldComp_Tele WorldCompTele()
+        {
+            return Find.World.GetComponent<WorldComp_Tele>();
+        }
     }
 }
