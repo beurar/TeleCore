@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
+using TMPro;
 using UnityEngine;
 using Verse;
 
@@ -26,6 +28,11 @@ namespace TeleCore
             this.rot = rot;
             this.vec = vec;
         }
+
+        public override string ToString()
+        {
+            return $"{vec}[{rot.ToStringHuman()}]";
+        }
     }
 
     public class NetworkCellIO
@@ -41,7 +48,7 @@ namespace TeleCore
 
         //
         private readonly Thing thing;
-        private readonly string connectionPattern;
+        private string connectionPattern;
 
         //
         private IntVec3[] cachedInnerConnectionCells;
@@ -66,6 +73,7 @@ namespace TeleCore
             OuterCellsByTag = new Dictionary<char, IntVec3Rot[]>();
 
             //
+            TLog.Message($"Generating CellIO for {thing}...");
             GenerateIOCells();
         }
 
@@ -101,15 +109,21 @@ namespace TeleCore
             //Get Mode Key
             var modeChar = CharForMode(mode);
 
+            TLog.Debug($"[{mode}, {modeChar}]Adding {cell} to {forDict}");
+
             //Adjust existing arrays
             TValue[] newArr = null;
             if (forDict.TryGetValue(modeChar, out var arr))
             {
+                TLog.Debug($"Found arr for {modeChar}: {arr.Length}");
                 newArr = new TValue[arr.Length + 1];
-                for(int i = 0; i < arr.Length; i++)
+                for (int i = 0; i < arr.Length; i++)
+                {
                     newArr[i] = arr[i];
+                }
 
                 newArr[arr.Length] = cell;
+                TLog.Debug($"NewArr arr for {modeChar}: {newArr.Length}");
             }
         
             //Add Mode Key if not existant
@@ -126,10 +140,31 @@ namespace TeleCore
         {
             if (connectionPattern == null)
             {
-                var arr = thing.OccupiedRect().ToArray();
+                TLog.Message("Pattern is null, making generic");
+                int widthx = thing.RotatedSize.x;
+                int heighty = thing.RotatedSize.z;
+
+                var charArr = new char[widthx * heighty];
+                //Inner Connection Cells
+                for (int y = 0; y < widthx; y++)
+                {
+                    for (int x = 0; x < heighty; x++)
+                    {
+                        charArr[x + (y*widthx)] = _TwoWay;
+                    }
+                }
+
+                connectionPattern = charArr.ArrayToString();
+                TLog.Debug($"New Pattern: {connectionPattern}");
+                /*
+                var occRect = thing.OccupiedRect();
+                var arr = occRect.ToArray();
+                var arr2 = OuterCellsViaInner(thing, occRect.ToList());
                 cachedInnerConnectionCells = arr;
+                cachedConnectionCells = arr2.ToArray();
                 InnerCellsByTag.Add(_TwoWay, arr);
-                return;
+                */
+                //OuterCellsByTag.Add(_TwoWay, arr2.ToArray());
             }
 
             var pattern = PatternByRot(thing.Rotation, thing.def.size);
@@ -182,6 +217,12 @@ namespace TeleCore
 
             cachedInnerConnectionCells = cellsInner.ToArray();
             cachedConnectionCells = cellsOuter.ToArray();
+
+            TLog.Debug($"Keys: {OuterCellsByTag.Keys.ToStringSafeEnumerable()}");
+            TLog.Debug($"TWOWAY: {OuterCellsByTag.TryGetValue(_TwoWay, out var twoway)}: {twoway?.Length}");
+            TLog.Debug($"IN: {OuterCellsByTag.TryGetValue(_Input, out var input)}: {input?.Length}");
+            TLog.Debug($"OUT: {OuterCellsByTag.TryGetValue(_Output, out var output)}: {output?.Length}");
+            TLog.Debug($"EMPTY: {OuterCellsByTag.TryGetValue(_Empty, out var empty)}: {empty?.Length}");
         }
 
         private string PatternByRot(Rot4 rotation, IntVec2 size)
@@ -264,16 +305,33 @@ namespace TeleCore
         //
         public void DrawIO()
         {
-            foreach (var cell in OuterCellsByTag[_Output])
+            if (OuterCellsByTag.TryGetValue(_TwoWay, out var twoway))
             {
-                var drawPos = cell.IntVec.ToVector3Shifted();
-                GenDraw.DrawMeshNowOrLater(MeshPool.plane10, drawPos, cell.Rotation.AsQuat, TeleContent.IOArrow, true);
+                foreach (var cell in twoway)
+                {
+                    var drawPos = cell.IntVec.ToVector3Shifted();
+                    Graphics.DrawMesh(MeshPool.plane10, drawPos, cell.Rotation.AsQuat, BaseContent.BadMat, 0);
+                    //GenDraw.DrawMeshNowOrLater(MeshPool.plane10, drawPos, cell.Rotation.AsQuat, BaseContent.BadMat, true);
+                }
             }
 
-            foreach (var cell in OuterCellsByTag[_Input])
+            if (OuterCellsByTag.TryGetValue(_Output, out var output))
             {
-                var drawPos = cell.IntVec.ToVector3Shifted();
-                GenDraw.DrawMeshNowOrLater(MeshPool.plane10, drawPos, (cell.Rotation.AsAngle-180).ToQuat(), TeleContent.IOArrow, true);
+                foreach (var cell in output)
+                {
+                    var drawPos = cell.IntVec.ToVector3Shifted();
+                    Graphics.DrawMesh(MeshPool.plane10, drawPos, cell.Rotation.AsQuat, TeleContent.IOArrow, 0);
+                }
+            }
+
+            if (OuterCellsByTag.TryGetValue(_Input, out var input))
+            {
+                foreach (var cell in input)
+                {
+                    var drawPos = cell.IntVec.ToVector3Shifted();
+
+                    Graphics.DrawMesh(MeshPool.plane10, drawPos, (cell.Rotation.AsAngle - 180).ToQuat(), TeleContent.IOArrow, 0);
+                }
             }
         }
 

@@ -9,22 +9,35 @@ using Verse.Sound;
 
 namespace TeleCore
 {
-    public class ActionComposition
+    public class ActionComposition : IExposable
     {
         private List<ActionPart> actionParts = new ();
         private Action finalAction;
         private int curTick, startTick, endTick;
         public GlobalTargetInfo target;
 
-        private readonly string compositionName;
+        private string compositionName;
 
         public int CurrentTick => curTick;
         public int ActionCount => actionParts.Count;
+
+        public ActionComposition(){}
 
         public ActionComposition(string name)
         {
             compositionName = name;
 
+        }
+
+        public void ExposeData()
+        {
+            Scribe_Values.Look(ref curTick, nameof(curTick));
+            Scribe_Values.Look(ref startTick, nameof(startTick));
+            Scribe_Values.Look(ref endTick, nameof(endTick));
+            Scribe_Values.Look(ref compositionName, nameof(compositionName));
+            Scribe_TargetInfo.Look(ref target, "target");
+            //Scribe_Delegate.Look(ref finalAction, "finalAction");
+            Scribe_Collections.Look(ref actionParts, "actionParts", LookMode.Deep);
         }
 
         public void CacheMap(GlobalTargetInfo target)
@@ -37,22 +50,27 @@ namespace TeleCore
             finalAction = action;
         }
 
-        public void AddPart(Action<ActionPart> action, float atSecond, float duration = 0)
+        public void AddPart(Action<ActionPart> action, float? atSecond, float duration = 0)
         {
-            actionParts.Add(new ActionPart(action, atSecond, duration));
+            actionParts.Add(new ActionPart(action, StartTime(atSecond), duration));
             //TLog.Debug("[" + compositionName + "]Adding Action Part at " + time + " for " + playTime + "s");
         }
 
-        public void AddPart(Action<ActionPart> action, SoundDef sound, SoundInfo info, float atSecond, float duration = 0)
+        public void AddPart(Action<ActionPart> action, SoundDef sound, SoundInfo info, float? atSecond, float duration = 0)
         {
-            actionParts.Add(new ActionPart(action, sound, info, atSecond, duration));
+            actionParts.Add(new ActionPart(action, sound, info, StartTime(atSecond), duration));
             //TLog.Debug("[" + compositionName + "]Adding Action/Sound Part at " + time + " for " + playTime + "s");
         }
 
-        public void AddPart(SoundDef sound, SoundInfo info, float atSecond, float duration = 0)
+        public void AddPart(SoundDef sound, SoundInfo info, float? atSecond, float duration = 0)
         {
-            actionParts.Add(new ActionPart(null, sound, info, atSecond, duration));
+            actionParts.Add(new ActionPart(null, sound, info, StartTime(atSecond), duration));
             //TLog.Debug("[" + compositionName + "]Adding Sound Part at " + time + " for " + playTime + "s");
+        }
+
+        private float StartTime(float? atSecond)
+        {
+            return atSecond ?? actionParts.Last()?.EndTick.TicksToSeconds() ?? 0;
         }
 
         public void Init()
@@ -86,9 +104,7 @@ namespace TeleCore
 
             for (var i = 0; i < actionParts.Count; i++)
             {
-                var part = actionParts[i];
-                ActionPart.Tick(ref part, curTick, i);
-                actionParts[i] = part;
+                actionParts[i].Tick(curTick, i);
             }
             curTick++;
         }
@@ -97,5 +113,6 @@ namespace TeleCore
         {
             return $"ActionComp '{compositionName}'";
         }
+        
     }
 }

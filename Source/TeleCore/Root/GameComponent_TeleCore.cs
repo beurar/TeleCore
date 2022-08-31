@@ -10,8 +10,8 @@ namespace TeleCore
 {
     public class GameComponent_TeleCore : GameComponent
     {
-        private readonly ActionCompositionHandler actionCompositionHandler;
-        private readonly TeleUpdateManager updateManager;
+        private ActionCompositionHandler actionCompositionHandler;
+        private TeleUpdateManager updateManager;
 
         public static GameComponent_TeleCore Instance()
         {
@@ -28,6 +28,8 @@ namespace TeleCore
         public override void ExposeData()
         {
             base.ExposeData();
+            Scribe_Deep.Look(ref actionCompositionHandler, nameof(actionCompositionHandler));
+            //Scribe_Deep.Look(ref updateManager, nameof(updateManager));
         }
 
         public override void FinalizeInit()

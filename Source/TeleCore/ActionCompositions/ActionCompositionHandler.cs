@@ -3,10 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Verse;
 
 namespace TeleCore
 {
-    public class ActionCompositionHandler
+    public class ActionCompositionHandler : IExposable
     {
         private static ActionCompositionHandler instance;
 
@@ -17,6 +18,13 @@ namespace TeleCore
         {
             instance = this;
         }
+
+        public void ExposeData()
+        {
+            //TODO:
+            //Scribe_Collections.Look(ref currentCompositions, nameof(currentCompositions));
+        }
+
 
         //Static Accessors
         public static void InitComposition(ActionComposition composition)

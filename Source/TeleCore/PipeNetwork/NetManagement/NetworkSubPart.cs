@@ -464,6 +464,11 @@ namespace TeleCore
             {
                 GenDraw.DrawFieldEdges(Network.NetworkCells, Color.cyan);
             }
+
+            if (Find.Selector.IsSelected(Parent.Thing))
+            {
+                CellIO.DrawIO();
+            }
         }
 
         private void DrawNetworkInfo()

@@ -30,6 +30,7 @@ namespace TeleCore
     {
         public SubThingGroupDef groupDef;
         public SubThingCategory category;
+        public bool hidden;
 
         public void LoadDataFromXmlCustom(XmlNode xmlRoot)
         {

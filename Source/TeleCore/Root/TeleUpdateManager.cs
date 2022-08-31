@@ -10,7 +10,7 @@ namespace TeleCore
     /// <summary>
     /// 
     /// </summary>
-    public class TeleUpdateManager
+    public class TeleUpdateManager //: IExposable
     {
         private static TeleUpdateManager instance;
 

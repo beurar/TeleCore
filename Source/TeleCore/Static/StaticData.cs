@@ -55,5 +55,6 @@ namespace TeleCore
         {
             return Find.World.GetComponent<WorldComp_Tele>();
         }
+
     }
 }

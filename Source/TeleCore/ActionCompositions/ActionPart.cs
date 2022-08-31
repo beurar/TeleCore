@@ -1,18 +1,40 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.Serialization;
 using System.Text;
 using System.Threading.Tasks;
+using HarmonyLib;
 using Verse;
 using Verse.Sound;
 
 namespace TeleCore
 {
-    public struct ActionPart
+
+    public class ExposableAction<TDelegate> : IExposable where TDelegate : Delegate
+    {
+        private object _Target;
+        private TDelegate _Delegate;
+
+        public static implicit operator ExposableAction<TDelegate>(TDelegate del) => new()
+        {
+            _Delegate = del,
+            _Target = del.Target
+        };
+
+        public static explicit operator TDelegate(ExposableAction<TDelegate> e) => e._Delegate;
+
+        public void ExposeData()
+        {
+        }
+    }
+
+    public class ActionPart : IExposable
     {
         //
-        private readonly int startTick = 0, endTick = 0, duration = 0;
+        private int startTick = 0, endTick = 0, duration = 0;
         private int curTick = 0;
+        private bool completed = false;
 
         //
         public Action<ActionPart> action = null;
@@ -24,10 +46,31 @@ namespace TeleCore
 
         public int CurrentTick => curTick;
         public bool Instant => startTick == endTick;
-        public bool Completed { get; set; } = false;
+
+        public bool Completed
+        {
+            get => completed;
+            private set => completed = value;
+        }
 
         public ActionPart()
         {
+
+            //Sound
+
+        }
+
+        public void ExposeData()
+        {
+            //Ticks
+            Scribe_Values.Look(ref curTick, "curTick");
+            Scribe_Values.Look(ref startTick, "startTick");
+            Scribe_Values.Look(ref endTick, "endTick");
+            Scribe_Values.Look(ref duration, "duration");
+            Scribe_Values.Look(ref completed, "completed");
+
+            //Method
+            Scribe_Delegate.Look(ref action, $"partAction");
         }
 
         //Action Only
@@ -67,11 +110,6 @@ namespace TeleCore
         public bool CanBeDoneNow(int compositionTick)
         {
             return startTick <= compositionTick && (compositionTick <= endTick);
-        }
-
-        public static void Tick(ref ActionPart part, int compositionTick, int partIndex = 0)
-        {
-            part.Tick(compositionTick, partIndex);
         }
 
         public void Tick(int compositionTick, int partIndex = 0)

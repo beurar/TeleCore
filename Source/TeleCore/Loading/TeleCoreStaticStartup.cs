@@ -80,6 +80,7 @@ namespace TeleCore
                 }
             }
 
+            if (allInjectors == null) return;
             foreach (var injector in allInjectors)
             {
                 injector.Dispose();

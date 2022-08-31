@@ -43,14 +43,24 @@ namespace TeleCore
             return Categorized[faction].Any(d => HasUnDiscovered(faction, d.Key));
         }
 
-        public static bool HasUnDiscovered(SubThingGroupDef faction, SubThingCategory category)
+        public static bool IsActive(ThingDef def)
         {
-            return Categorized[faction][category].Any(d => !ConStructionOptionDiscovered(d) && d.IsResearchFinished);
+            return def.IsResearchFinished;
         }
 
-        internal static bool ConStructionOptionDiscovered(ThingDef def)
+        public static bool HasUnDiscovered(SubThingGroupDef faction, SubThingCategory category)
+        {
+            return Categorized[faction][category].Any(d => !ConstructionOptionDiscovered(d) && IsActive(d));
+        }
+
+        internal static bool ConstructionOptionDiscovered(ThingDef def)
         {
             return StaticData.WorldCompTele().discoveryTable.MenuOptionHasBeenSeen(def);
+        }
+
+        internal static void Discover_ConstructionOption(ThingDef def)
+        {
+            StaticData.WorldCompTele().discoveryTable.DiscoverInMenu(def);
         }
 
         public static void Add(ThingDef def, TeleDefExtension extension)
