@@ -265,7 +265,7 @@ namespace TeleCore
                     }
                     else
                     {
-                        TLog.Warning($"Two Pipe nets on the same cell {cell}");
+                        TLog.Warning($"Two Pipe nets on the same cell {cell}: {lookUpGrid[num].Def}[{lookUpGrid[num].ID}] instead of {newNetwork.Def}[{newNetwork.ID}]");
                     }
                 }
                 lookUpGrid[num] = newNetwork;

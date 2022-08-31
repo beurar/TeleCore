@@ -28,10 +28,12 @@ namespace TeleCore
             return newNet;
         }
 
+        //Spawn Node
+        //Check adjacent cells for nodes
+        //Otherwise check pipe connections
+
         public static void GenerateGraph(INetworkSubPart root, PipeNetwork forNetwork)
         {
-            TLog.Message($"Creating Graph from {root}");
-
             NetworkGraph newGraph = new NetworkGraph();
             newGraph.ParentNetwork = forNetwork;
             forNetwork.InternalGraph = newGraph;
@@ -57,6 +59,49 @@ namespace TeleCore
             InitGraphSearch(root, newGraph);
 
             _ClosedGlobalSet.Clear();
+        }
+
+        private static void InitGraphSearch(INetworkSubPart searchRoot, NetworkGraph forGraph, INetworkSubPart nodeToIgnore = null)
+        {
+            AddNetworkData(searchRoot, forGraph);
+            SplitSearch(searchRoot, forGraph, nodeToIgnore, null, searchRoot);
+        }
+
+        private static void AddNetworkData(INetworkSubPart newPart, NetworkGraph forGraph)
+        {
+            _ClosedGlobalSet.Add(newPart);
+            newPart.Network = forGraph.ParentNetwork;
+            forGraph.ParentNetwork.Notify_AddPart(newPart);
+        }
+
+        private static void SplitSearch(INetworkSubPart searchRoot, NetworkGraph forGraph, INetworkSubPart nodeToIgnore = null, int? splitOffLength = null, INetworkSubPart splitParent = null)
+        {
+            Action searchEvent = (() => {});
+            foreach (var cell in searchRoot.CellIO.ConnectionCells)
+            {
+                var newSearchRoot = GetFittingPartAt(searchRoot, cell, forGraph.ParentNetwork.ParentManager.Map);
+                if (newSearchRoot == null) continue;
+                
+                //If node directly available, then add and split from new node
+                if (newSearchRoot.IsNetworkNode)
+                {
+                    TLog.Message($"Trying to set direct conn from {searchRoot.Parent.Thing} to {newSearchRoot.Parent.Thing}", TColor.Purple);
+                    var newEdge = new NetEdge(searchRoot, newSearchRoot);
+                    if (TrySetEdge(newEdge, forGraph))
+                    {
+                        searchEvent += () => 
+                        {
+                            InitGraphSearch(newSearchRoot, forGraph, searchRoot);
+                        };
+                        continue;
+                    }
+                }
+                searchEvent += () =>
+                {
+                    TryGraphNodeSearch(newSearchRoot, forGraph, nodeToIgnore, splitOffLength, splitParent);
+                };
+            }
+            searchEvent.Invoke();
         }
 
         //Special search for next best node
@@ -91,7 +136,7 @@ namespace TeleCore
                                     return newPart;
                                 }
                                 //If Edge, continue search
-                                _OpenSubSet.Add(newPart);
+                                _OpenSubSet.Add(newPart); 
                                 _ClosedGlobalSet.Add(newPart);
                                 break;
                             }
@@ -101,6 +146,7 @@ namespace TeleCore
             }
             _CurrentSubSet.Clear();
             _OpenSubSet.Clear();
+            _ClosedGlobalSet.Clear();
             return null;
         }
 
@@ -114,30 +160,6 @@ namespace TeleCore
                 return true;
             }
             return false;
-        }
-
-        private static void AddNetworkData(INetworkSubPart newPart, NetworkGraph forGraph)
-        {
-            TLog.Message($"Setting network data for {newPart.Parent.Thing}");
-            _ClosedGlobalSet.Add(newPart);
-            newPart.Network = forGraph.ParentNetwork;
-            forGraph.ParentNetwork.Notify_AddPart(newPart);
-        }
-
-        private static void InitGraphSearch(INetworkSubPart searchRoot, NetworkGraph forGraph, INetworkSubPart nodeToIgnore = null)
-        {
-            AddNetworkData(searchRoot, forGraph);
-            SplitSearch(searchRoot, forGraph, nodeToIgnore, null, searchRoot);
-        }
-
-        private static void SplitSearch(INetworkSubPart searchRoot, NetworkGraph forGraph, INetworkSubPart nodeToIgnore = null, int? splitOffLength = null, INetworkSubPart splitParent = null)
-        {
-            foreach (var cell in searchRoot.CellIO.ConnectionCells)
-            {
-                var newSearchRoot = GetFittingPartAt(searchRoot, cell, forGraph.ParentNetwork.ParentManager.Map);
-                if (newSearchRoot == null || _ClosedGlobalSet.Contains(newSearchRoot)) continue;
-                TryGraphNodeSearch(newSearchRoot, forGraph, nodeToIgnore, splitOffLength, splitParent);
-            }
         }
 
         private static void TryGraphNodeSearch(INetworkSubPart searchNode, NetworkGraph forGraph, INetworkSubPart nodeToIgnore = null, int? splitOffLength = null, INetworkSubPart splitParent = null)
@@ -173,7 +195,18 @@ namespace TeleCore
                         {
                             if (!Fits(thing, part.NetworkDef, out INetworkSubPart newPart)) continue;
                             if (newPart == nodeToIgnore) continue;
-                            if (_ClosedGlobalSet.Contains(newPart)) continue;
+                            if (newPart == edgeParent) continue;
+
+                            if (_ClosedGlobalSet.Contains(newPart))
+                            {
+                                if (newPart.IsNetworkNode)
+                                {
+                                    var newEdge = new NetEdge(edgeParent, newPart, startCell, c, edgeLength);
+                                    if (!TrySetEdge(newEdge, forGraph)) continue;
+                                }
+                                else continue;
+                            }
+
                             if (newPart.ConnectsTo(part))
                             {
                                 //If Junction, split
@@ -189,6 +222,7 @@ namespace TeleCore
                                     return;
                                 }
                                 */
+
                                 //If Node - Quit current search
                                 if (newPart.IsNetworkNode)
                                 {
@@ -202,6 +236,7 @@ namespace TeleCore
                                     {
                                         if (TrySetEdge(newEdge, forGraph))
                                         {
+                                            //if(isPreviousNodeNeedConn) continue;
                                             InitGraphSearch(newPart, forGraph, edgeParent);
                                         }
                                     }
@@ -241,7 +276,6 @@ namespace TeleCore
                 if (_ClosedGlobalSet.Contains(newNodeResult)) continue;
 
                 //Select new node as result
-                TLog.Message($"{newNodeResult.Parent.Thing} connects to {forNode.Parent.Thing}: {newNodeResult.ConnectsTo(forNode)}");
                 if (newNodeResult != excludeNode && newNodeResult.ConnectsTo(forNode))
                 {
                     return newNodeResult;

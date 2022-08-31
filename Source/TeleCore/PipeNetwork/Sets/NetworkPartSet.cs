@@ -42,6 +42,7 @@ namespace TeleCore
         {
             foreach (INetworkSubPart part in fullSet)
             {
+                //Remove direct connection from neighboring parts
                 part.DirectPartSet.RemoveComponent(parent);
             }
         }
@@ -51,10 +52,12 @@ namespace TeleCore
         {
             if (part == null) return false;
             if (!AddComponent(part)) return false;
+            /*
             if (parent != null)
             {
                 part.DirectPartSet.AddComponent(parent);
             }
+            */
             return true;
         }
 

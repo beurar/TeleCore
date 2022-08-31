@@ -109,21 +109,16 @@ namespace TeleCore
             //Get Mode Key
             var modeChar = CharForMode(mode);
 
-            TLog.Debug($"[{mode}, {modeChar}]Adding {cell} to {forDict}");
-
             //Adjust existing arrays
             TValue[] newArr = null;
             if (forDict.TryGetValue(modeChar, out var arr))
             {
-                TLog.Debug($"Found arr for {modeChar}: {arr.Length}");
                 newArr = new TValue[arr.Length + 1];
                 for (int i = 0; i < arr.Length; i++)
                 {
                     newArr[i] = arr[i];
                 }
-
                 newArr[arr.Length] = cell;
-                TLog.Debug($"NewArr arr for {modeChar}: {newArr.Length}");
             }
         
             //Add Mode Key if not existant
@@ -140,7 +135,6 @@ namespace TeleCore
         {
             if (connectionPattern == null)
             {
-                TLog.Message("Pattern is null, making generic");
                 int widthx = thing.RotatedSize.x;
                 int heighty = thing.RotatedSize.z;
 
@@ -155,16 +149,6 @@ namespace TeleCore
                 }
 
                 connectionPattern = charArr.ArrayToString();
-                TLog.Debug($"New Pattern: {connectionPattern}");
-                /*
-                var occRect = thing.OccupiedRect();
-                var arr = occRect.ToArray();
-                var arr2 = OuterCellsViaInner(thing, occRect.ToList());
-                cachedInnerConnectionCells = arr;
-                cachedConnectionCells = arr2.ToArray();
-                InnerCellsByTag.Add(_TwoWay, arr);
-                */
-                //OuterCellsByTag.Add(_TwoWay, arr2.ToArray());
             }
 
             var pattern = PatternByRot(thing.Rotation, thing.def.size);
@@ -217,12 +201,6 @@ namespace TeleCore
 
             cachedInnerConnectionCells = cellsInner.ToArray();
             cachedConnectionCells = cellsOuter.ToArray();
-
-            TLog.Debug($"Keys: {OuterCellsByTag.Keys.ToStringSafeEnumerable()}");
-            TLog.Debug($"TWOWAY: {OuterCellsByTag.TryGetValue(_TwoWay, out var twoway)}: {twoway?.Length}");
-            TLog.Debug($"IN: {OuterCellsByTag.TryGetValue(_Input, out var input)}: {input?.Length}");
-            TLog.Debug($"OUT: {OuterCellsByTag.TryGetValue(_Output, out var output)}: {output?.Length}");
-            TLog.Debug($"EMPTY: {OuterCellsByTag.TryGetValue(_Empty, out var empty)}: {empty?.Length}");
         }
 
         private string PatternByRot(Rot4 rotation, IntVec2 size)

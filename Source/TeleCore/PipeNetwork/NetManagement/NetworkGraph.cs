@@ -69,6 +69,8 @@ namespace TeleCore
         public NetEdge Reverse => new(toNode, fromNode, toCell, fromCell, _weight);
         public static NetEdge Invalid => new(null, null, IntVec3.Invalid, IntVec3.Invalid, -1);
 
+        public bool IsDirect => _weight == 0 && fromCell == IntVec3.Invalid && toCell == IntVec3.Invalid;
+
         public NetEdge(INetworkSubPart fromNode, INetworkSubPart toNode, IntVec3 fromCell, IntVec3 toCell, int weight)
         {
             this.fromNode = fromNode;
@@ -76,6 +78,15 @@ namespace TeleCore
             this.fromCell = fromCell;
             this.toCell = toCell;
             this._weight = weight;
+        }
+
+        public NetEdge(INetworkSubPart fromNode, INetworkSubPart toNode)
+        {
+            this.fromNode = fromNode;
+            this.toNode = toNode;
+            this.fromCell = IntVec3.Invalid;
+            this.toCell = IntVec3.Invalid;
+            this._weight = 0;
         }
 
         public bool HasAnchorCell(IntVec3 cell)
@@ -175,7 +186,7 @@ namespace TeleCore
                 var thingA = subParts.Item1.Parent.Thing;
                 var thingB = subParts.Item2.Parent.Thing;
 
-                Widgets.DrawLine(PointFromVector(thingA.TrueCenter()), PointFromVector(thingB.TrueCenter()), Color.red, 2);
+                Widgets.DrawLine(ScreenPositionOf(thingA.TrueCenter()), ScreenPositionOf(thingB.TrueCenter()), Color.red, 2);
 
                 DrawBoxOnThing(thingA);
                 DrawBoxOnThing(thingB);
@@ -184,12 +195,12 @@ namespace TeleCore
 
         public void DrawBoxOnThing(Thing thing)
         {
-            var v = PointFromVector(thing.TrueCenter());
+            var v = ScreenPositionOf(thing.TrueCenter());
             var rect = new Rect(v.x-25, v.y-25, 50, 50);
             TWidgets.DrawColoredBox(rect, new Color(1, 1, 1, 0.125f), Color.white, 1);
         }
 
-        private Vector2 PointFromVector(Vector3 vec)
+        private Vector2 ScreenPositionOf(Vector3 vec)
         {
             Vector2 vector = Find.Camera.WorldToScreenPoint(vec) / Prefs.UIScale;
             vector.y = (float)UI.screenHeight - vector.y;

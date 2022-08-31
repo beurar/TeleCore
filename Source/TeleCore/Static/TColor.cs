@@ -38,6 +38,7 @@ namespace TeleCore
         public static readonly Color Blue = new ColorInt(38, 169, 224).ToColor;
         public static readonly Color Yellow = new ColorInt(249, 236, 49).ToColor;
         public static readonly Color Red = new ColorInt(190, 30, 45).ToColor;
+        public static readonly Color Purple = new ColorInt(128, 0, 128).ToColor;
         public static readonly Color Green = new ColorInt(41, 180, 115).ToColor;
         public static readonly Color Black = new ColorInt(15, 11, 12).ToColor;
 
@@ -54,6 +55,5 @@ namespace TeleCore
         public static readonly Color OptionSelectedBGBorderColor = OptionSelectedBGFillColor * 1.8f;
         public static readonly Color BlueHighlight = new ColorInt(0, 120, 200).ToColor;
         public static readonly Color BlueHighlight_Transparent = new ColorInt(0, 120, 200, 125).ToColor;
-
     }
 }

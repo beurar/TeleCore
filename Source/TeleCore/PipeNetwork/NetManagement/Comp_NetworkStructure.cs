@@ -139,7 +139,6 @@ namespace TeleCore
 
             //Check for neighbor intersections
 
-
             //Regen network after all data is set
             networkInfo.Notify_NewNetworkStructureSpawned(this);
         }
@@ -242,6 +241,7 @@ namespace TeleCore
                 }
             }
             */
+
             return sb.ToString().TrimStart().TrimEndNewlines();
         }
 

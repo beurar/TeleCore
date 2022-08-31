@@ -138,6 +138,7 @@ namespace TeleCore
                     if (PipeNetworkMaker.Fits(thingList[i], NetworkDef, out var subPart))
                     {
                         directPartSet.AddNewComponent(subPart);
+                        subPart.DirectPartSet.AddNewComponent(this);
                     }
                 }
             }
