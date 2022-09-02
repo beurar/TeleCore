@@ -21,8 +21,8 @@ namespace TeleCore
         public PipeNetworkManager ParentManager => parentManager;
 
         public NetworkGraph InternalGraph { get; internal set; }
-        public NetworkPartSet PartSet => partSet;
-        public NetworkContainerSet ContainerSet => containerSet;
+        private NetworkPartSet PartSet => partSet;
+        private NetworkContainerSet ContainerSet => containerSet;
 
         public INetworkStructure NetworkController => PartSet.Controller?.Parent;
         public List<IntVec3> NetworkCells { get; }

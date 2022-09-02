@@ -80,7 +80,8 @@ namespace TeleCore
         //Container
         public string ContainerTitle => "_Obsolete_";
         public ContainerProperties ContainerProps => Props.containerProps;
-        public NetworkContainerSet ContainerSet => Network.ContainerSet;
+        public NetworkContainerSet ContainerSet => null; //Network.ContainerSet;
+
         public NetworkContainer Container
         {
             get => container;
