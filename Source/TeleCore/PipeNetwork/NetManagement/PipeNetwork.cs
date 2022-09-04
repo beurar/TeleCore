@@ -20,8 +20,8 @@ namespace TeleCore
 
         public PipeNetworkManager ParentManager => parentManager;
 
-        public NetworkGraph InternalGraph { get; internal set; }
-        private NetworkPartSet PartSet => partSet;
+        public NetworkGraph Graph { get; internal set; }
+        internal NetworkPartSet PartSet => partSet;
         private NetworkContainerSet ContainerSet => containerSet;
 
         public INetworkStructure NetworkController => PartSet.Controller?.Parent;
@@ -68,7 +68,7 @@ namespace TeleCore
         public void DrawOnGUI()
         {
             if(DrawInternalGraph)
-                InternalGraph.DrawGraphOnUI();
+                Graph.DrawGraphOnUI();
         }
 
         //
@@ -116,6 +116,13 @@ namespace TeleCore
                 }
             }
             return true;
+        }
+
+        //
+        public bool TryGetNodePath(NetworkSubPart networkSubPart, NetworkRole storage)
+        {
+            
+            return false;
         }
 
         //Data Updates

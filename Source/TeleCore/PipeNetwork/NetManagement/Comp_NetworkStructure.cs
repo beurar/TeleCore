@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using RimWorld;
+using TeleCore.Static.Utilities;
 using UnityEngine;
 using Verse;
 
@@ -285,6 +286,30 @@ namespace TeleCore
             {
                 defaultLabel = "Draw Connections",
                 action = delegate { DebugConnectionCells = !DebugConnectionCells; }
+            };
+
+            yield return new Command_Action
+            {
+                defaultLabel = "Set Node Dirty",
+                action = delegate
+                {
+                    NetworkParts[0].Network.Graph.Notify_StateChanged(NetworkParts[0]);
+                }
+            };
+
+            yield return new Command_Target
+            {
+                defaultLabel = "Get Path",
+                targetingParams = TargetingParameters.ForBuilding(),
+                action = delegate (LocalTargetInfo target) {
+                    if (target.Thing is not ThingWithComps compThing) return;
+                    var netComp = compThing.TryGetComp<Comp_NetworkStructure>();
+                    var part = netComp[NetworkParts[0].NetworkDef];
+                    if (part == null) return;
+
+                    var path = part.Network.Graph.GetRequestPath(new NetworkGraphNodeRequest(networkParts[0], part)); //GenGraph.Dijkstra(part.Network.Graph, NetworkParts[0], (x) => x == part);
+                    TLog.Message($"{path.parts.ToStringSafeEnumerable()}");
+                }
             };
         }
     }

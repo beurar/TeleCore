@@ -297,7 +297,7 @@ namespace TeleCore
                 }
             }
 
-            //
+            //TODO
             foreach (var networkSubPart in deadNetwork.PartSet.FullSet)
             {
                 networkSubPart.Notify_NetworkDestroyed();

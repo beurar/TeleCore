@@ -236,6 +236,11 @@ namespace TeleCore
         {
             if (RequesterMode == RequesterMode.Automatic)
             {
+                if (Network.TryGetNodePath(this, NetworkRole.Storage))
+                {
+                    
+                }
+
                 //Resolve..
                 var maxVal = RequestedCapacityPercent * Container.Capacity;
                 foreach (var valType in Props.AllowedValuesByRole[NetworkRole.Requester])
@@ -433,6 +438,12 @@ namespace TeleCore
                     defaultLabel = $"Draw Graph",
                     action = delegate { Network.DrawInternalGraph = !Network.DrawInternalGraph; }
                 };
+
+                yield return new Command_Action
+                {
+                    defaultLabel = $"Draw AdjacencyList",
+                    action = delegate { DebugDrawGraphAdjacency = !DebugDrawGraphAdjacency; }
+                };
             }
         }
 
@@ -459,6 +470,8 @@ namespace TeleCore
             return sb.ToString();
         }
 
+        private static bool DebugDrawGraphAdjacency = false;
+
         public void Draw()
         {
             DrawNetworkInfo();
@@ -469,6 +482,10 @@ namespace TeleCore
 
             if (Find.Selector.IsSelected(Parent.Thing))
             {
+                if (DebugDrawGraphAdjacency)
+                {
+                    GenDraw.DrawFieldEdges(Network.Graph.AdjacencyLists[this].Select(c => c.Parent.Thing.Position).ToList(), Color.red);
+                }
                 CellIO.DrawIO();
             }
         }

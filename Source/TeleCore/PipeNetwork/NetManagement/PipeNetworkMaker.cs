@@ -36,7 +36,7 @@ namespace TeleCore
         {
             NetworkGraph newGraph = new NetworkGraph();
             newGraph.ParentNetwork = forNetwork;
-            forNetwork.InternalGraph = newGraph;
+            forNetwork.Graph = newGraph;
 
             //Generate Network and Graph
             _ClosedGlobalSet.Clear();

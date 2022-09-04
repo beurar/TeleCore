@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using RimWorld;
+using TeleCore.Static.Utilities;
 using UnityEngine;
 using Verse;
 
@@ -16,44 +17,6 @@ namespace TeleCore
         Output = 2,
         None = 3,
         TwoWay = Input & Output
-    }
-
-    public struct GraphNodeSearchPath
-    {
-        public readonly INetworkSubPart startNode;
-        public readonly IntVec3 startCell;
-
-        public readonly HashSet<IntVec3> knownCells;
-
-        public INetworkSubPart lastNode;
-        public IntVec3 lastCell;
-        public INetworkSubPart foundNode;
-
-        public GraphNodeSearchPath(INetworkSubPart node, IntVec3 cell)
-        {
-            startNode = node;
-            startCell = cell;
-            knownCells = new HashSet<IntVec3>();
-            foundNode = null;
-
-            //
-            lastNode = node;
-            lastCell = cell;
-        }
-
-        public bool IsValid => startNode != null;
-
-        public void AddCell(IntVec3 cell, INetworkSubPart ofNode)
-        {
-            lastNode = ofNode;
-            lastCell = cell;
-            knownCells.Add(cell);
-        }
-
-        public void Finish(INetworkSubPart foundNode)
-        {
-            this.foundNode = foundNode;
-        }
     }
 
     public struct NetEdge
@@ -105,34 +68,195 @@ namespace TeleCore
         }
     }
 
+    public struct NetworkGraphNodeRequest
+    {
+        private readonly INetworkSubPart _requster = null;
+        private readonly INetworkSubPart _target;
+        private readonly NetworkRole _role;
+
+        public INetworkSubPart Requester => _requster;
+
+        public NetworkGraphNodeRequest(INetworkSubPart requester, NetworkRole role)
+        {
+            _requster = requester;
+            _role = role;
+            _target = null;
+        }
+
+        public NetworkGraphNodeRequest(INetworkSubPart requester, INetworkSubPart target)
+        {
+            _requster = requester;
+            _target = target;
+            _role = 0;
+        }
+
+        public bool Fits(INetworkSubPart part)
+        {
+            if (_target != null && part != _target) return false;
+            if (_role > 0 && _role.AllFlags().All(part.NetworkRole.AllFlags().Contains)) return false;
+
+            return true;
+        }
+    }
+
+    public struct NetworkGraphRequestResult
+    {
+        public readonly NetworkGraphNodeRequest request;
+        public readonly INetworkSubPart[] parts;
+
+        public NetworkGraphRequestResult(NetworkGraphNodeRequest request, List<INetworkSubPart> result)
+        {
+            this.request = request;
+            this.parts = result.ToArray();
+        }
+    }
+
+    public class NetworkGraphRequestManager
+    {
+        private readonly NetworkGraph parent;
+
+        //Caching
+        private readonly Dictionary<NetworkGraphNodeRequest, NetworkGraphRequestResult> _cachedRequestResults;
+        private readonly Dictionary<INetworkSubPart, List<NetworkGraphNodeRequest>> _nodesOnCachedResult;
+        private readonly HashSet<NetworkGraphNodeRequest> _dirtyRequests;
+
+        public NetworkGraphRequestManager(NetworkGraph graph)
+        {
+            parent = graph;
+            _cachedRequestResults = new();
+            _nodesOnCachedResult = new();
+            _dirtyRequests = new();
+        }
+
+        public void Notify_NodeStateChanged(INetworkSubPart part)
+        {
+            if (_nodesOnCachedResult.TryGetValue(part, out var requests))
+            {
+                _dirtyRequests.AddRange(requests);
+            }
+        }
+
+        private void CheckRequestDirty(NetworkGraphNodeRequest request)
+        {
+            if (_dirtyRequests.Contains(request))
+            {
+                TLog.Debug("Request is dirty.. removing");
+                //If request has been cached
+                if (_cachedRequestResults.TryGetValue(request, out var cachedResult))
+                {
+                    //Remove request from all nodes associated
+                    foreach (var var in cachedResult.parts)
+                    {
+                        var list = _nodesOnCachedResult[var];
+                        list.Remove(request);
+                        
+                        
+                        //
+                        if (list.Count == 0)
+                        {
+                            TLog.Debug($"Clearing last request binding from {var}");
+                            _nodesOnCachedResult.Remove(var);
+                        }
+                    }
+
+                    _cachedRequestResults.Remove(request);
+                    _dirtyRequests.Remove(request);
+                }
+            }
+        }
+
+        private NetworkGraphRequestResult CreateAndCacheRequest(NetworkGraphNodeRequest request)
+        {
+            TLog.Debug("Processing new request...");
+
+            List<INetworkSubPart> result = GenGraph.Dijkstra(parent, request);
+            var requestResult = new NetworkGraphRequestResult(request, result);
+            _cachedRequestResults.Add(request, requestResult);
+
+            //
+            foreach (var part in result)
+            {
+                if (!_nodesOnCachedResult.TryGetValue(part, out var list))
+                {
+                    list = new List<NetworkGraphNodeRequest>() { request };
+                    _nodesOnCachedResult.Add(part, list);
+                }
+
+                list.Add(request);
+            }
+
+            return requestResult;
+        }
+
+        public INetworkSubPart RequestPart(NetworkGraphNodeRequest request)
+        {
+            return RequestPath(request).parts.Last();
+        }
+
+        public NetworkGraphRequestResult RequestPath(NetworkGraphNodeRequest request)
+        {
+            //Check dirty result
+            CheckRequestDirty(request);
+
+            //Get existing result
+            if (_cachedRequestResults.TryGetValue(request, out var value))
+            {
+                TLog.Debug("Found cached request... returning");
+                return value;
+            }
+
+            //
+            return CreateAndCacheRequest(request);
+        }
+    }
+
     public class NetworkGraph
     {
+        private NetworkGraphRequestManager _requestManager;
+
         //Graph Data
+        private readonly List<INetworkSubPart> _allNodes;
         private readonly Dictionary<INetworkSubPart, LinkedList<INetworkSubPart>> _adjacencyLists;
         private readonly Dictionary<(INetworkSubPart, INetworkSubPart), NetEdge> _edges;
-        
-        //
+
+        //Props
         public int NodeCount => _adjacencyLists.Count;
         public int EdgeCount => _edges.Count;
+
+        public List<INetworkSubPart> AllNodes => _allNodes;
+        public Dictionary<INetworkSubPart, LinkedList<INetworkSubPart>> AdjacencyLists => _adjacencyLists;
 
         public PipeNetwork ParentNetwork { get; internal set; }
 
         public NetworkGraph()
         {
-            _adjacencyLists = new();
-            _edges = new();
+            _allNodes = new List<INetworkSubPart>();
+            _adjacencyLists = new Dictionary<INetworkSubPart, LinkedList<INetworkSubPart>>();
+            _edges = new Dictionary<(INetworkSubPart, INetworkSubPart), NetEdge>();
+
+            _requestManager = new NetworkGraphRequestManager(this);
         }
 
+        public void Notify_StateChanged(INetworkSubPart part)
+        {
+            _requestManager.Notify_NodeStateChanged(part);
+        }
+
+        public INetworkSubPart GetPart(NetworkGraphNodeRequest request)
+        {
+            return _requestManager.RequestPart(request);
+        }
+
+        public NetworkGraphRequestResult GetRequestPath(NetworkGraphNodeRequest request)
+        {
+            return _requestManager.RequestPath(request);
+        }
+
+        //
         public void AddNode(INetworkSubPart node)
         {
+            _allNodes.Add(node);
             _adjacencyLists.Add(node, new LinkedList<INetworkSubPart>());
-        }
-
-        public NetEdge AddEdge(INetworkSubPart source, INetworkSubPart dest, GraphNodeSearchPath searchPath)
-        {
-            var newEdge = new NetEdge(source, dest, searchPath.startCell, searchPath.lastCell, searchPath.knownCells.Count);
-            AddEdge(newEdge);
-            return newEdge;
         }
 
         public bool AddEdge(NetEdge newEdge)
@@ -149,24 +273,20 @@ namespace TeleCore
                 AddNode(newEdge.fromNode);
                 listSource = _adjacencyLists[newEdge.fromNode];
             }
-            listSource.AddFirst(newEdge.toNode);
+            if (!_adjacencyLists.TryGetValue(newEdge.toNode, out var listSource2))
+            {
+                AddNode(newEdge.toNode);
+                listSource2 = _adjacencyLists[newEdge.toNode];
+            }
+            listSource?.AddFirst(newEdge.toNode);
+            listSource2?.AddFirst(newEdge.fromNode);
             return true;
         }
 
         //
-        public IEnumerable<INetworkSubPart> GetAdjacentNodes(INetworkSubPart node)
-        {
-            return _adjacencyLists[node];
-        }
-
         public bool TryGetEdge(INetworkSubPart source, INetworkSubPart dest, out NetEdge value)
         {
-            return _edges.TryGetValue((source, dest), out value);
-        }
-
-        public void AddNodeFrom(INetworkSubPart comp)
-        {
-            AddNode(comp);
+            return _edges.TryGetValue((source, dest), out value) || _edges.TryGetValue((dest, source), out value);
         }
 
         public IEnumerable<NetEdge> EdgesFor(INetworkSubPart startNode)
@@ -178,6 +298,7 @@ namespace TeleCore
             }
         }
 
+        //
         public void DrawGraphOnUI()
         {
             foreach (var netEdge in _edges)
