@@ -181,7 +181,6 @@ namespace TeleCore
                     list = new List<NetworkGraphNodeRequest>() { request };
                     _nodesOnCachedResult.Add(part, list);
                 }
-
                 list.Add(request);
             }
 

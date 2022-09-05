@@ -212,7 +212,7 @@ namespace TeleCore
 
         protected virtual void ProducerTick()
         {
-            TransferToOthers(NetworkRole.Producer, NetworkRole.Storage, false);
+            TransferToOthers(NetworkRole.Producer, NetworkRole.Storage);
         }
 
         protected virtual void StorageTick()
@@ -223,9 +223,9 @@ namespace TeleCore
             }
             if (ContainerProps.storeEvenly)
             {
-                TransferToOthers(NetworkRole.Storage, NetworkRole.Storage, true);
+                TransferToOthers(NetworkRole.Storage, NetworkRole.Storage);
             }
-            TransferToOthers(NetworkRole.Storage, NetworkRole.Consumer, false);
+            TransferToOthers(NetworkRole.Storage, NetworkRole.Consumer);
         }
 
         protected virtual void ConsumerTick()
@@ -236,11 +236,6 @@ namespace TeleCore
         {
             if (RequesterMode == RequesterMode.Automatic)
             {
-                if (Network.TryGetNodePath(this, NetworkRole.Storage))
-                {
-                    
-                }
-
                 //Resolve..
                 var maxVal = RequestedCapacityPercent * Container.Capacity;
                 foreach (var valType in Props.AllowedValuesByRole[NetworkRole.Requester])
@@ -264,6 +259,51 @@ namespace TeleCore
                 if (!requestedType.Value.Item1) continue;
                 if (Container.ValueForType(requestedType.Key) < requestedType.Value.Item2)
                 {
+                    DoNetworkAction(this, null, NetworkRole.Storage, part =>
+                    {
+                        var container = part.Container;
+                        if (container.Empty) return;
+                        if (container.ValueForType(requestedType.Key) <= 0) return;
+                        if (container.TryTransferTo(Container, requestedType.Key, 1))
+                        {
+                            Notify_ReceivedValue();
+                        }
+                    }, (_) => true);
+                }
+            }
+
+            /*
+            if (RequesterMode == RequesterMode.Automatic)
+            {
+                if (Network.TryGetNodePath(this, NetworkRole.Storage))
+                {
+
+                }
+
+                //Resolve..
+                var maxVal = RequestedCapacityPercent * Container.Capacity;
+                foreach (var valType in Props.AllowedValuesByRole[NetworkRole.Requester])
+                {
+                    var valTypeValue = Container.ValueForType(valType) + Network.TotalValueFor(valType, NetworkRole.Storage);
+                    if (valTypeValue > 0)
+                    {
+                        var setValue = Mathf.Min(maxVal, valTypeValue);
+                        var tempVal = requestedTypes[valType];
+                        tempVal.Item2 = setValue;
+                        RequestedTypes[valType] = tempVal;
+                        maxVal = Mathf.Clamp(maxVal - setValue, 0, maxVal);
+                    }
+                }
+            }
+
+
+            if (Container.StoredPercent >= RequestedCapacityPercent) return;
+            foreach (var requestedType in RequestedTypes)
+            {
+                //If not requested, skip
+                if (!requestedType.Value.Item1) continue;
+                if (Container.ValueForType(requestedType.Key) < requestedType.Value.Item2)
+                {
                     foreach (var component in Network.PartSet[NetworkRole.Storage])
                     {
                         var container = component.Container;
@@ -276,13 +316,75 @@ namespace TeleCore
                     }
                 }
             }
+            */
+        }
+
+        private void DoNetworkAction(INetworkSubPart fromPart, INetworkSubPart previous, NetworkRole ofRole, Action<INetworkSubPart> funcOnPart, Predicate<INetworkSubPart> validator)
+        {
+            foreach (var subPart in fromPart.Network.Graph.AdjacencyLists[this])
+            {
+                if (subPart == previous) continue;
+
+                if (subPart.IsJunction)
+                {
+                    DoNetworkAction(subPart, fromPart, ofRole, funcOnPart, validator);
+                    continue;
+                }
+
+                if (!subPart.NetworkRole.HasFlag(ofRole)) continue;
+                if(!validator(subPart)) continue;
+                funcOnPart(subPart);
+            }
         }
 
         //
-        private void TransferToOthers(NetworkRole fromRole, NetworkRole ofRole, bool evenly)
+        private void SubTransfer(INetworkSubPart previousPart, INetworkSubPart part, List<NetworkValueDef> usedTypes, NetworkRole ofRole)
+        {
+            foreach (var subPart in part.Network.Graph.AdjacencyLists[this])
+            {
+                if(subPart == previousPart) continue;
+                
+                if (subPart.IsJunction)
+                {
+                    SubTransfer(part, subPart, usedTypes, ofRole);
+                    continue;
+                }
+
+                if (!subPart.NetworkRole.HasFlag(ofRole)) continue;
+                if (Container.Empty || subPart.Container.Full) continue;
+                for (int i = usedTypes.Count - 1; i >= 0; i--)
+                {
+                    var type = usedTypes[i];
+                    if (!subPart.NeedsValue(type, ofRole)) continue;
+                    if (Container.TryTransferTo(subPart.Container, type, 1))
+                    {
+                        subPart.Notify_ReceivedValue();
+                    }
+                }
+            }
+        }
+
+        private void TransferToOthers(NetworkRole fromRole, NetworkRole ofRole)
         {
             if (Container.Empty) return;
             var usedTypes = Props.AllowedValuesByRole[fromRole];
+            DoNetworkAction(this, null, ofRole, part =>
+            {
+                for (int i = usedTypes.Count - 1; i >= 0; i--)
+                {
+                    var type = usedTypes[i];
+                    if (!part.NeedsValue(type, ofRole)) continue;
+                    if (Container.TryTransferTo(part.Container, type, 1))
+                    {
+                        part.Notify_ReceivedValue();
+                    }
+                }
+            }, part => !part.Container.Full && !Container.Empty);
+
+            //var path = Network.Graph.GetRequestPath(new NetworkGraphNodeRequest(this, ofRole));
+            //SubTransfer(null, this, usedTypes, ofRole);
+
+            /*
             foreach (var component in Network.PartSet[ofRole])
             {
                 if (Container.Empty || component.Container.Full) continue;
@@ -298,6 +400,7 @@ namespace TeleCore
                     }
                 }
             }
+            */
         }
 
         private void ClearForbiddenTypes()
