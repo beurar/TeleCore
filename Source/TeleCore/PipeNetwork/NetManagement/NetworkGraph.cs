@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -73,14 +74,16 @@ namespace TeleCore
         private readonly INetworkSubPart _requster = null;
         private readonly INetworkSubPart _target;
         private readonly NetworkRole _role;
+        private readonly Predicate<INetworkSubPart> _validator;
 
         public INetworkSubPart Requester => _requster;
 
-        public NetworkGraphNodeRequest(INetworkSubPart requester, NetworkRole role)
+        public NetworkGraphNodeRequest(INetworkSubPart requester, NetworkRole role, Predicate<INetworkSubPart> validator)
         {
             _requster = requester;
             _role = role;
             _target = null;
+            _validator = validator;
         }
 
         public NetworkGraphNodeRequest(INetworkSubPart requester, INetworkSubPart target)
@@ -88,13 +91,14 @@ namespace TeleCore
             _requster = requester;
             _target = target;
             _role = 0;
+            _validator = null;
         }
 
         public bool Fits(INetworkSubPart part)
         {
             if (_target != null && part != _target) return false;
+            if (_validator != null && !_validator(part)) return false;
             if (_role > 0 && _role.AllFlags().All(part.NetworkRole.AllFlags().Contains)) return false;
-
             return true;
         }
     }
@@ -102,12 +106,26 @@ namespace TeleCore
     public struct NetworkGraphRequestResult
     {
         public readonly NetworkGraphNodeRequest request;
-        public readonly INetworkSubPart[] parts;
+        public readonly INetworkSubPart[][] allPaths;
+        public readonly HashSet<INetworkSubPart> allPartsUnique;
+        
+        //
+        public readonly HashSet<INetworkSubPart> allTargets;
+        
+        public bool IsValid => allTargets.Any();
 
-        public NetworkGraphRequestResult(NetworkGraphNodeRequest request, List<INetworkSubPart> result)
+        public NetworkGraphRequestResult(NetworkGraphNodeRequest request, List<List<INetworkSubPart>> allResults)
         {
             this.request = request;
-            this.parts = result.ToArray();
+            allPaths = new INetworkSubPart[allResults.Count][];
+            allPartsUnique = new();
+            allTargets = new HashSet<INetworkSubPart>();
+            for (var i = 0; i < allResults.Count; i++)
+            {
+                allPaths[i] = allResults[i].ToArray();
+                allPartsUnique.AddRange(allPaths[i]);
+                allTargets.Add(allPaths[i].Last());
+            }
         }
     }
 
@@ -145,7 +163,7 @@ namespace TeleCore
                 if (_cachedRequestResults.TryGetValue(request, out var cachedResult))
                 {
                     //Remove request from all nodes associated
-                    foreach (var var in cachedResult.parts)
+                    foreach (var var in cachedResult.allPartsUnique)
                     {
                         var list = _nodesOnCachedResult[var];
                         list.Remove(request);
@@ -169,12 +187,12 @@ namespace TeleCore
         {
             TLog.Debug("Processing new request...");
 
-            List<INetworkSubPart> result = GenGraph.Dijkstra(parent, request);
+            List<List<INetworkSubPart>> result = GenGraph.Dijkstra(parent, request);
             var requestResult = new NetworkGraphRequestResult(request, result);
             _cachedRequestResults.Add(request, requestResult);
 
             //
-            foreach (var part in result)
+            foreach (var part in requestResult.allPartsUnique)
             {
                 if (!_nodesOnCachedResult.TryGetValue(part, out var list))
                 {
@@ -187,12 +205,7 @@ namespace TeleCore
             return requestResult;
         }
 
-        public INetworkSubPart RequestPart(NetworkGraphNodeRequest request)
-        {
-            return RequestPath(request).parts.Last();
-        }
-
-        public NetworkGraphRequestResult RequestPath(NetworkGraphNodeRequest request)
+        public NetworkGraphRequestResult ProcessRequest(NetworkGraphNodeRequest request)
         {
             //Check dirty result
             CheckRequestDirty(request);
@@ -241,14 +254,9 @@ namespace TeleCore
             _requestManager.Notify_NodeStateChanged(part);
         }
 
-        public INetworkSubPart GetPart(NetworkGraphNodeRequest request)
+        public NetworkGraphRequestResult ProcessRequest(NetworkGraphNodeRequest request)
         {
-            return _requestManager.RequestPart(request);
-        }
-
-        public NetworkGraphRequestResult GetRequestPath(NetworkGraphNodeRequest request)
-        {
-            return _requestManager.RequestPath(request);
+            return _requestManager.ProcessRequest(request);
         }
 
         //

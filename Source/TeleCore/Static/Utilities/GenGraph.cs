@@ -48,12 +48,12 @@ namespace TeleCore.Static.Utilities
         private static Dictionary<INetworkSubPart, int> _Distances = new();
         private static Dictionary<INetworkSubPart, INetworkSubPart> _PreviousOf = new();
 
-        public static List<INetworkSubPart> Dijkstra(NetworkGraph graph, NetworkGraphNodeRequest request)
+        public static List<List<INetworkSubPart>> Dijkstra(NetworkGraph graph, NetworkGraphNodeRequest request)
         {
             return Dijkstra(graph, request.Requester, request.Fits);
         }
 
-        public static List<INetworkSubPart> Dijkstra(NetworkGraph graph, INetworkSubPart source, Predicate<INetworkSubPart> partValidator)
+        public static List<List<INetworkSubPart>> Dijkstra(NetworkGraph graph, INetworkSubPart source, Predicate<INetworkSubPart> partValidator)
         {
             //
             _WorkingList.Clear();
@@ -61,7 +61,8 @@ namespace TeleCore.Static.Utilities
             _PreviousOf.Clear();
 
             List<INetworkSubPart> validParts = new List<INetworkSubPart>();
-
+            List<List<INetworkSubPart>> allPaths = new List<List<INetworkSubPart>>();
+            
             //
             for (var k = 0; k < graph.AllNodes.Count; k++)
             {
@@ -81,7 +82,7 @@ namespace TeleCore.Static.Utilities
                 }
                 _Distances.Add(node, int.MaxValue);
             }
-
+            
             while (_WorkingList.Count > 0)
             {
                 //
@@ -104,21 +105,15 @@ namespace TeleCore.Static.Utilities
                             _WorkingList.Clear();
                             _Distances.Clear();
                             _PreviousOf.Clear();
-                            return pathResult;
+                            allPaths.Add(pathResult);
                         }
                     }
+                    if(allPaths.Count == validParts.Count)
+                        return allPaths;
                 }
 
                 //
                 part = _WorkingList.MinBy(v => _Distances[v]);
-                
-                //
-                /*
-                if (partValidator(part))
-                {
-
-                }
-                */
 
                 _WorkingList.Remove(part);
                 foreach (var neighbor in graph.AdjacencyLists[part])
@@ -140,7 +135,7 @@ namespace TeleCore.Static.Utilities
             _WorkingList.Clear();
             _Distances.Clear();
             _PreviousOf.Clear();
-            return null;
+            return allPaths.Count > 0 ? allPaths : null;
         }
     }
 }

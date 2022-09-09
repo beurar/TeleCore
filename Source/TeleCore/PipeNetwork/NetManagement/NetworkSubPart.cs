@@ -259,7 +259,7 @@ namespace TeleCore
                 if (!requestedType.Value.Item1) continue;
                 if (Container.ValueForType(requestedType.Key) < requestedType.Value.Item2)
                 {
-                    DoNetworkAction(this, null, NetworkRole.Storage, part =>
+                    DoNetworkAction(this, NetworkRole.Storage, part =>
                     {
                         var container = part.Container;
                         if (container.Empty) return;
@@ -319,6 +319,30 @@ namespace TeleCore
             */
         }
 
+        private void DoNetworkAction(INetworkSubPart fromPart, NetworkRole forRole, Action<INetworkSubPart> funcOnPart, Predicate<INetworkSubPart> validator)
+        {
+            var requestResult = Network.Graph.ProcessRequest(new NetworkGraphNodeRequest(fromPart, forRole, validator));
+            if (!requestResult.IsValid) return;
+            foreach (var path in requestResult.allTargets)
+            {
+                funcOnPart.Invoke(path);
+            }
+            
+            /*
+            foreach (var subPart in Network.PartSet[forRole])
+            {
+                if (validator(subPart))
+                {
+                    var result = Network.Graph.GetPart(new NetworkGraphNodeRequest(fromPart, subPart));
+                    if (result == subPart)
+                    {
+                        funcOnPart.Invoke(subPart);
+                    }
+                }
+            }
+            */
+        }
+
         private void DoNetworkAction(INetworkSubPart fromPart, INetworkSubPart previous, NetworkRole ofRole, Action<INetworkSubPart> funcOnPart, Predicate<INetworkSubPart> validator)
         {
             foreach (var subPart in fromPart.Network.Graph.AdjacencyLists[this])
@@ -330,7 +354,7 @@ namespace TeleCore
                     DoNetworkAction(subPart, fromPart, ofRole, funcOnPart, validator);
                     continue;
                 }
-
+                
                 if (!subPart.NetworkRole.HasFlag(ofRole)) continue;
                 if(!validator(subPart)) continue;
                 funcOnPart(subPart);
@@ -368,7 +392,7 @@ namespace TeleCore
         {
             if (Container.Empty) return;
             var usedTypes = Props.AllowedValuesByRole[fromRole];
-            DoNetworkAction(this, null, ofRole, part =>
+            DoNetworkAction(this, ofRole, part =>
             {
                 for (int i = usedTypes.Count - 1; i >= 0; i--)
                 {
