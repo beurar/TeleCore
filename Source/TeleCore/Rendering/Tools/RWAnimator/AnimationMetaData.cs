@@ -87,13 +87,7 @@ namespace TeleCore
                 animationSet.animations = new List<AnimationPart>(animationsByRotation[rot].Count);
                 foreach (var partValue in animationsByRotation[rot])
                 {
-                    animationSet.animations.Add(new AnimationPart()
-                    {
-                        tag = partValue.tag,
-                        frames = partValue.frames,
-                        bounds = partValue.ReplayBounds,
-                        keyFrames = partValue.KeyFramesList(animationSet.textureParts),
-                    });
+                    animationSet.animations.Add(partValue.ToAnimationPart(animationSet.textureParts));
                 }
             }
 
@@ -258,7 +252,7 @@ namespace TeleCore
         }
 
         internal Dictionary<IKeyFramedElement, Dictionary<int, KeyFrame>> InternalFrames { get; }
-        private Dictionary<int, AnimationActionEventFlag> InternalActions { get; }
+        internal Dictionary<int, AnimationActionEventFlag> InternalEventFlags { get; }
 
         internal bool InternalDifference => _internalSeconds.SecondsToTicks() != frames;
 
@@ -270,7 +264,7 @@ namespace TeleCore
             ReplayBounds = new IntRange(0, frames);
 
             InternalFrames = new();
-            InternalActions = new();
+            InternalEventFlags = new();
         }
 
         public AnimationPartValue(List<UIElement> uiElements, AnimationPart animationPart)
@@ -309,6 +303,18 @@ namespace TeleCore
                 .OrderByDescending((x) => (orderBy.Count - 1) - orderBy.IndexOf((x.Key as TextureElement).GetData()))
                 .Select(parentDict => new ScribeList<KeyFrame>(parentDict.Value.Select(keyFrameDict => keyFrameDict.Value).ToList(), LookMode.Deep))
                 .ToList();
+        }
+
+        public AnimationPart ToAnimationPart(List<TextureData> orderBy)
+        {
+            return new AnimationPart()
+            {
+                tag = tag,
+                frames = frames,
+                bounds = ReplayBounds,
+                keyFrames = KeyFramesList(orderBy),
+                eventFlags = InternalEventFlags.OrderByDescending(t => frames- t.Key).Select(t => t.Value).ToList(),
+            };
         }
     }
 }

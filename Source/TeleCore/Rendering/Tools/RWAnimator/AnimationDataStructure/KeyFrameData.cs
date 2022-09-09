@@ -98,6 +98,8 @@ namespace TeleCore
                 return;
             }
             */
+
+            //
             Scribe_Values.Look(ref rotation, nameof(rotation), forceSave: true);
             Scribe_Values.Look(ref position, nameof(position), forceSave: true);
             Scribe_Rect.Look(ref texCoordsData, nameof(texCoordsData), new Rect(0, 0, 1, 1));

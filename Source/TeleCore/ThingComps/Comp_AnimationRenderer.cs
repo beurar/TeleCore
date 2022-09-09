@@ -234,8 +234,8 @@ namespace TeleCore
 
         private Vector3 PixelToCellOffset(Vector2 pixelOffset, Vector2 drawSize)
         {
-            float width = (pixelOffset.x / TextureCanvas._TileSize) * drawSize.x;
-            float height = -((pixelOffset.y / TextureCanvas._TileSize) * drawSize.y);
+            float width = (pixelOffset.x / BasicCanvas._TileSize) * drawSize.x;
+            float height = -((pixelOffset.y / BasicCanvas._TileSize) * drawSize.y);
             return new Vector3(width, 0, height);
         }
 

@@ -69,7 +69,7 @@ namespace TeleCore
             {
                 browser.ToggleOpen();
             }));
-
+            
             buttonMenus.Add(new TopBarButtonMenu("View", viewOptions));
 
             //Help
@@ -82,7 +82,6 @@ namespace TeleCore
             {
                 parentWindow.Close();
             });
-
         }
 
         public void Notify_Reopened()

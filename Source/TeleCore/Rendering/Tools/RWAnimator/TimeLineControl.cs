@@ -24,6 +24,8 @@ namespace TeleCore
         //
         private const int _PixelsPerTick = 4;
 
+        private static int EventFlagCounter = 0;
+        
         //TimeLineSettings
         private int currentFrameInt;
         private bool isPaused = true;
@@ -44,7 +46,7 @@ namespace TeleCore
         public AnimationPartValue CurrentPart => Canvas.CurrentAnimationPart;
         public int AnimationLength => CurrentPart.frames;
         public Dictionary<IKeyFramedElement, Dictionary<int, KeyFrame>> AnimationPartFrames => CurrentPart.InternalFrames;
-
+        
         //Canvas Elements
         public List<UIElement> Elements => Canvas.ChildElements;
         public IEnumerable<IKeyFramedElement> KeyFramedElements => Canvas.ChildElements.Select(t => (IKeyFramedElement) t);
@@ -122,6 +124,15 @@ namespace TeleCore
         {
             TLog.Message($"Setting New KeyFrame for {element}");
             UpdateKeyframeFor(element, GetDataFor(element));
+        }
+
+        public void SetEventFlag()
+        {
+            if (CurrentPart.InternalEventFlags.ContainsKey(CurrentFrame))
+            {
+                return;
+            }
+            CurrentPart.InternalEventFlags.Add(CurrentFrame, new AnimationActionEventFlag(CurrentFrame, $"newFlag_{EventFlagCounter++}"));
         }
 
         //Removing - Remove known keyframe at current frame
@@ -321,6 +332,7 @@ namespace TeleCore
             Widgets.BeginScrollView(RightRect, ref timeLineScrollPos, timelineViewRect, false);
             {
                 DrawTimeSelector(timeLineSelectorRect, timelineViewRect.height);
+                DrawEventFlags(timeLineSelectorRect, timelineBotViewRect.height);
             }
             Widgets.EndScrollView();
 
@@ -338,6 +350,23 @@ namespace TeleCore
             GUI.EndScrollView();
 
             TWidgets.DrawBox(RightRect, TColor.MenuSectionBGBorderColor, 1);
+        }
+
+        private void DrawEventFlags(Rect rect, float height)
+        {
+            foreach (var eventFlag in CurrentPart.InternalEventFlags)
+            {
+                var flagValue = eventFlag.Value;
+                float valX = rect.x + (eventFlag.Key * PixelPerTickAdjusted);
+                Rect selectorRect = new Rect(valX-12, rect.y, 25, 25);
+                
+                GUI.color = TColor.Orange;
+                Widgets.DrawLineVertical(valX, selectorRect.yMax - 5, height);
+                GUI.color = Color.white;
+
+                Vector2 textSize = Text.CalcSize(flagValue.EventTag);
+                TWidgets.DoTinyLabel(new Rect(valX, selectorRect.yMin - 5,textSize.x,0), flagValue.EventTag);
+            }
         }
 
         private void DrawTimeSelector(Rect timeBar, float totalHeight)
@@ -656,6 +685,13 @@ namespace TeleCore
             row.Gap(8);
             row.Label($"[{CurrentFrame}][{Math.Round(CurrentFrame.TicksToSeconds(),2)}s]");
             row.Init(0, Rect.height - 16, UIDirection.LeftThenUp);
+            
+            //Add Animation Event
+            if (row.ButtonIcon(TeleContent.AddKeyFrame, backgroundColor:Color.magenta))
+            {
+                SetEventFlag();
+            }
+            
             Widgets.EndGroup();
         }
 

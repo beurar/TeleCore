@@ -12,6 +12,7 @@ namespace TeleCore
         public string tag;
         public int frames;
         public List<ScribeList<KeyFrame>> keyFrames;
+        public List<AnimationActionEventFlag> eventFlags;
         public IntRange bounds;
 
         //Loading
@@ -21,6 +22,7 @@ namespace TeleCore
             Scribe_Values.Look(ref frames, nameof(frames), 0, true);
             Scribe_Values.Look(ref bounds, nameof(bounds), new IntRange(0, frames), true);
             Scribe_Collections.Look(ref keyFrames, nameof(keyFrames), LookMode.Deep);
+            Scribe_Collections.Look(ref eventFlags, nameof(eventFlags), LookMode.Deep);
         }
     }
 }
