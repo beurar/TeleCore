@@ -10,25 +10,6 @@ using Verse.Sound;
 
 namespace TeleCore
 {
-
-    public class ExposableAction<TDelegate> : IExposable where TDelegate : Delegate
-    {
-        private object _Target;
-        private TDelegate _Delegate;
-
-        public static implicit operator ExposableAction<TDelegate>(TDelegate del) => new()
-        {
-            _Delegate = del,
-            _Target = del.Target
-        };
-
-        public static explicit operator TDelegate(ExposableAction<TDelegate> e) => e._Delegate;
-
-        public void ExposeData()
-        {
-        }
-    }
-
     public class ActionPart : IExposable
     {
         //
@@ -72,9 +53,11 @@ namespace TeleCore
             Scribe_Values.Look(ref completed, "completed");
 
             //Method
-            if(Scribe.mode == LoadSaveMode.Saving)
+            if (Scribe.mode == LoadSaveMode.Saving)
+            {
                 _ScribedDelegate = new ScribeDelegate<Action<ActionPart>>(action);
-            
+            }
+
             Scribe_Deep.Look(ref _ScribedDelegate, "partAction");
 
             if (Scribe.mode == LoadSaveMode.PostLoadInit)

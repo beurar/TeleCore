@@ -394,6 +394,11 @@ namespace TeleCore
             var usedTypes = Props.AllowedValuesByRole[fromRole];
             DoNetworkAction(this, ofRole, part =>
             {
+                if (part == null)
+                {
+                    TLog.Warning("Part: Null");
+                    return;
+                }
                 for (int i = usedTypes.Count - 1; i >= 0; i--)
                 {
                     var type = usedTypes[i];

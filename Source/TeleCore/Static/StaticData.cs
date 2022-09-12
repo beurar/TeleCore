@@ -29,6 +29,7 @@ namespace TeleCore
             TLog.Message("Clearing StaticData!");
             TeleMapComps = new Dictionary<int, MapComponent_TeleCore>();
             CachedDesignators = new Dictionary<ThingDef, Designator>();
+            ActionComposition._ID = 0;
         }
 
         internal static void Notify_ClearingMapAndWorld()

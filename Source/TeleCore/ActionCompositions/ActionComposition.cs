@@ -9,8 +9,10 @@ using Verse.Sound;
 
 namespace TeleCore
 {
-    public class ActionComposition : IExposable
-    {
+    public class ActionComposition : IExposable, ILoadReferenceable
+    {        
+        internal static int _ID = 0;
+        
         private List<ActionPart> actionParts = new ();
         private Action finalAction;
         private int curTick, startTick, endTick;
@@ -21,16 +23,20 @@ namespace TeleCore
         public int CurrentTick => curTick;
         public int ActionCount => actionParts.Count;
 
-        public ActionComposition(){}
+        public ActionComposition()
+        {
+            _ID += 1;
+        }
 
         public ActionComposition(string name)
         {
+            _ID += 1;
             compositionName = name;
-
         }
 
         public void ExposeData()
         {
+            TLog.Message($"Scribing {GetUniqueLoadID()}");
             Scribe_Values.Look(ref curTick, nameof(curTick));
             Scribe_Values.Look(ref startTick, nameof(startTick));
             Scribe_Values.Look(ref endTick, nameof(endTick));
@@ -113,6 +119,10 @@ namespace TeleCore
         {
             return $"ActionComp '{compositionName}'";
         }
-        
+
+        public string GetUniqueLoadID()
+        {
+            return $"ActionComposition_{_ID}";
+        }
     }
 }
