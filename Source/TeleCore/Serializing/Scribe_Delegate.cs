@@ -28,9 +28,17 @@ namespace TeleCore
         public void ExposeData()
         {
             var isSaving = Scribe.mode == LoadSaveMode.Saving;
-            
-            if (isSaving && @delegate.Target is ILoadReferenceable referenceable)
-                targetID = referenceable.GetUniqueLoadID();
+
+            //ILoadReferenceable referenceable = null;
+            if (isSaving)
+            {
+                if (@delegate.Target is not ILoadReferenceable referenceable)
+                {
+                    TLog.Error($"{@delegate.Method.Name}'s target does not inherit {nameof(ILoadReferenceable)}");
+                    return;
+                }
+                targetID = referenceable?.GetUniqueLoadID();
+            }
 
             Scribe_Values.Look(ref targetID, nameof(targetID));
             
