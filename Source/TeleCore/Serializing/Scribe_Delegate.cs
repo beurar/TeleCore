@@ -12,130 +12,77 @@ using Verse;
 
 namespace TeleCore
 {
-    public static class Scribe_Delegate
+    public class ScribeDelegate<TDelegate> : IExposable where TDelegate : Delegate
     {
+        public TDelegate @delegate;
+        public string targetID;
         private static byte[] _TempBytes;
-        public static void Look<TDelegate>(ref TDelegate @delegate, string name) where TDelegate : Delegate
+
+        public ScribeDelegate(TDelegate action)
         {
-            if (Scribe.mode == LoadSaveMode.Saving)
+            this.@delegate = action;
+        }
+
+        public object Target => @delegate.Target;
+        
+        public void ExposeData()
+        {
+            var isSaving = Scribe.mode == LoadSaveMode.Saving;
+            
+            if (isSaving && @delegate.Target is ILoadReferenceable referenceable)
+                targetID = referenceable.GetUniqueLoadID();
+
+            Scribe_Values.Look(ref targetID, nameof(targetID));
+            
+            if (isSaving)
             {
                 TLog.Debug($"Saving delegate... ToTarget: {@delegate.Target.GetType()}");
                 _TempBytes = MethodConstructor.Serialize(@delegate);
-                DataExposeUtility.ByteArray(ref _TempBytes, name);
+                DataExposeUtility.ByteArray(ref _TempBytes, "delegateBytes");
             }
-
+            
             if (Scribe.mode == LoadSaveMode.LoadingVars)
             {
-                DataExposeUtility.ByteArray(ref _TempBytes, name);
+                DataExposeUtility.ByteArray(ref _TempBytes, "delegateBytes");
                 @delegate = MethodConstructor.Deserialize<TDelegate>(_TempBytes);
                 _TempBytes = null;
             }
-        }
 
-        private sealed class MethodConstructor
-        {
-            public static byte[] Serialize(Delegate d)
+            if (Scribe.mode == LoadSaveMode.PostLoadInit)
             {
-                TLog.Debug($"Serializing: {d}");
-                return Serialize(d.Method);
-            }
-
-            public static byte[] Serialize(MethodInfo method)
-            {
-                using MemoryStream stream = new MemoryStream();
-                new BinaryFormatter().Serialize(stream, method);
-                stream.Seek(0, SeekOrigin.Begin);
-                return stream.ToArray();
-            }
-
-            public static MethodInfo Deserialize(byte[] data)
-            {
-                using MemoryStream stream = new MemoryStream(data);
-                var method = (MethodInfo)new BinaryFormatter().Deserialize(stream);
-                return method;
-            }
-
-            public static TDelegate Deserialize<TDelegate>(byte[] data) where TDelegate : class
-            {
-                var method = Deserialize(data);
-                TLog.Message($"{method.DeclaringType.DeclaringType}");
-                return method.CreateDelegate(typeof(TDelegate), Activator.CreateInstance(method.DeclaringType)) as TDelegate;
+                Scribe.loader.crossRefs.loadedObjectDirectory.ObjectWithLoadID<object>(targetID);
             }
         }
     }
-
-    [Serializable]
-    class SerializableDelegate<T> where T : class
+    
+    internal sealed class MethodConstructor
     {
-        [SerializeField]
-        private object _target;
-        [SerializeField]
-        private string _methodName = "";
-        [SerializeField]
-        private byte[] _serialData = { };
-
-        static SerializableDelegate()
+        public static byte[] Serialize(Delegate d)
         {
-            if (!typeof(T).IsSubclassOf(typeof(Delegate)))
-            {
-                throw new InvalidOperationException(typeof(T).Name + " is not a delegate type.");
-            }
+            TLog.Debug($"Serializing: {d}");
+            return Serialize(d.Method);
         }
 
-        public void SetDelegate(T action)
+        public static byte[] Serialize(MethodInfo method)
         {
-            if (action == null)
-            {
-                _target = null;
-                _methodName = "";
-                _serialData = new byte[] { };
-                return;
-            }
-
-            var delAction = action as Delegate;
-            if (delAction == null)
-            {
-                throw new InvalidOperationException(typeof(T).Name + " is not a delegate type.");
-            }
-
-
-            _target = delAction.Target as UnityEngine.Object;
-
-            if (_target != null)
-            {
-                _methodName = delAction.Method.Name;
-                _serialData = null;
-            }
-            else
-            {
-                //Serialize the data to a binary stream
-                using (var stream = new MemoryStream())
-                {
-                    (new BinaryFormatter()).Serialize(stream, action);
-                    stream.Flush();
-                    _serialData = stream.ToArray();
-                }
-                _methodName = null;
-            }
+            using MemoryStream stream = new MemoryStream();
+            new BinaryFormatter().Serialize(stream, method);
+            stream.Seek(0, SeekOrigin.Begin);
+            return stream.ToArray();
         }
 
-        public T CreateDelegate()
+        public static MethodInfo Deserialize(byte[] data)
         {
-            if (_serialData.Length == 0 && _methodName == "")
-            {
-                return null;
-            }
+            using MemoryStream stream = new MemoryStream(data);
+            var method = (MethodInfo)new BinaryFormatter().Deserialize(stream);
+            return method;
+        }
 
-            if (_target != null)
-            {
-                return Delegate.CreateDelegate(typeof(T), _target, _methodName) as T;
-            }
-
-            using (var stream = new MemoryStream(_serialData))
-            {
-                return (new BinaryFormatter()).Deserialize(stream) as T;
-            }
+        public static TDelegate Deserialize<TDelegate>(byte[] data) where TDelegate : class
+        {
+            var method = Deserialize(data);
+            TLog.Message($"{method.DeclaringType.DeclaringType}");
+            return method.CreateDelegate(typeof(TDelegate), Activator.CreateInstance(method.DeclaringType)) as TDelegate;
         }
     }
-
 }

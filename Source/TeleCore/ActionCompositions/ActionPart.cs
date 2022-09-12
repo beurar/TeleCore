@@ -60,6 +60,8 @@ namespace TeleCore
 
         }
 
+        private ScribeDelegate<Action<ActionPart>> _ScribedDelegate;
+
         public void ExposeData()
         {
             //Ticks
@@ -70,7 +72,15 @@ namespace TeleCore
             Scribe_Values.Look(ref completed, "completed");
 
             //Method
-            Scribe_Delegate.Look(ref action, $"partAction");
+            if(Scribe.mode == LoadSaveMode.Saving)
+                _ScribedDelegate = new ScribeDelegate<Action<ActionPart>>(action);
+            
+            Scribe_Deep.Look(ref _ScribedDelegate, "partAction");
+
+            if (Scribe.mode == LoadSaveMode.PostLoadInit)
+            {
+                action = _ScribedDelegate.@delegate;
+            }
         }
 
         //Action Only
@@ -80,6 +90,11 @@ namespace TeleCore
             this.startTick = startSeconds.SecondsToTicks();
             this.endTick = startTick + duration.SecondsToTicks();
             this.duration = duration.SecondsToTicks();
+
+            if(action.Target is not ILoadReferenceable referencable)
+                TLog.Error("Delegate target not the same as scribable reference.");
+            
+            
 
             TLog.Message($"Making New ActionPart: {startTick} -> {endTick} | {this.duration}");
         }
