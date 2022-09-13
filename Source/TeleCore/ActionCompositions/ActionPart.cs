@@ -36,7 +36,6 @@ namespace TeleCore
 
         public ActionPart()
         {
-
             //Sound
 
         }
@@ -73,11 +72,6 @@ namespace TeleCore
             this.startTick = startSeconds.SecondsToTicks();
             this.endTick = startTick + duration.SecondsToTicks();
             this.duration = duration.SecondsToTicks();
-
-            if(action.Target is not ILoadReferenceable referencable)
-                TLog.Error("Delegate target not the same as scribable reference.");
-            
-            
 
             TLog.Message($"Making New ActionPart: {startTick} -> {endTick} | {this.duration}");
         }

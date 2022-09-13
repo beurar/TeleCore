@@ -53,6 +53,89 @@ namespace TeleCore.Static.Utilities
             return Dijkstra(graph, request.Requester, request.Fits);
         }
 
+        public static List<INetworkSubPart> Djikstra_Single(NetworkGraph graph, INetworkSubPart source, Predicate<INetworkSubPart> validator)
+        {
+            //
+            _WorkingList.Clear();
+            _Distances.Clear();
+            _PreviousOf.Clear();
+
+            //Current
+            List<INetworkSubPart> validParts = new List<INetworkSubPart>();
+            
+            //Setup
+            for (var k = 0; k < graph.AllNodes.Count; k++)
+            {
+                var node = graph.AllNodes[k];
+                _WorkingList.Add(node);
+                _PreviousOf.Add(node, null);
+                if (validator(node))
+                {
+                    validParts.Add(node);
+                }
+
+                if (node == source)
+                {
+                    _Distances.Add(node, 0);
+                    continue;
+                }
+
+                _Distances.Add(node, int.MaxValue);
+            }
+
+            //Traverse Until Valid Part Found
+            while (_WorkingList.Count > 0)
+            {
+                //Check current state for end
+                INetworkSubPart part = null;
+                if (validParts.Any())
+                {
+                    foreach (var toPart in validParts)
+                    {
+                        part = toPart;
+                        if (_PreviousOf[part] != null || part == source)
+                        {
+                            List<INetworkSubPart> pathResult = new List<INetworkSubPart>();
+                            while (part != null)
+                            {
+                                pathResult.Insert(0, part);
+                                part = _PreviousOf[part];
+                            }
+                            //
+                            _WorkingList.Clear();
+                            _Distances.Clear();
+                            _PreviousOf.Clear();
+                            return pathResult;
+                        }
+                    }
+                }
+
+                //
+                part = _WorkingList.MinBy(v => _Distances[v]);
+
+                _WorkingList.Remove(part);
+                foreach (var neighbor in graph.AdjacencyLists[part])
+                {
+                    if (!_WorkingList.Contains(neighbor)) continue;
+                    if (graph.TryGetEdge(part, neighbor, out var edge))
+                    {
+                        var alt = _Distances[part] + edge._weight;
+                        if (alt < _Distances[neighbor])
+                        {
+                            _Distances[neighbor] = alt;
+                            _PreviousOf[neighbor] = part;
+                        }
+                    }
+                }
+            }
+
+            //
+            _WorkingList.Clear();
+            _Distances.Clear();
+            _PreviousOf.Clear();
+            return null;
+        }
+
         public static List<List<INetworkSubPart>> Dijkstra(NetworkGraph graph, INetworkSubPart source, Predicate<INetworkSubPart> partValidator)
         {
             //
@@ -102,9 +185,6 @@ namespace TeleCore.Static.Utilities
                             }
 
                             //
-                            _WorkingList.Clear();
-                            _Distances.Clear();
-                            _PreviousOf.Clear();
                             allPaths.Add(pathResult);
                         }
                     }

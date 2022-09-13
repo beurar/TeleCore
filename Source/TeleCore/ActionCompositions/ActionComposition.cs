@@ -76,7 +76,12 @@ namespace TeleCore
 
         private float StartTime(float? atSecond)
         {
-            return atSecond ?? actionParts.Last()?.EndTick.TicksToSeconds() ?? 0;
+            if (atSecond != null) return atSecond.Value;
+            if (actionParts.Any())
+            {
+                return actionParts.Last().EndTick.TicksToSeconds();
+            }
+            return 0;
         }
 
         public void Init()

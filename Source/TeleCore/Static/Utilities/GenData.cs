@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Xml;
 using RimWorld;
@@ -43,6 +45,21 @@ namespace TeleCore
                 return true;
             }
             return false;
+        }
+
+        public static bool CheckIfAnonymousType(this Type type, out bool isDisplayClass)
+        {
+            if (type == null)
+                throw new ArgumentNullException(nameof(type));
+
+            bool hasCompilerGeneratedAttribute = Attribute.IsDefined(type, typeof(CompilerGeneratedAttribute), false);
+            //bool isGeneric = type.IsGenericType;
+            bool hasCompilerStrings = (type.Name.StartsWith("<>") || type.Name.StartsWith("VB$"));
+            bool hasFlags = type.Attributes.HasFlag(TypeAttributes.NotPublic);
+            
+            TLog.Debug($"{hasCompilerGeneratedAttribute} && {hasCompilerStrings} && {hasFlags} || {type.Name.Contains("DisplayClass")} | {type.IsGenericType}");
+            isDisplayClass = type.Name.Contains("DisplayClass");;
+            return hasCompilerGeneratedAttribute && hasCompilerStrings && hasFlags;
         }
 
         /// <summary>

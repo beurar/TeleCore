@@ -118,6 +118,11 @@ namespace TeleCore
         public override Vector2 InitialSize => new(400, 550);
         public override float Margin => 8;
 
+        public SubBuildMenu()
+        {
+            //Setup();
+        }
+        
         public SubBuildMenu(SubBuildMenuDef menuDef)
         {
             this.menuDef = menuDef;
@@ -150,26 +155,40 @@ namespace TeleCore
             base.PostOpen();
         }
 
+        private ActionComposition _ac;
+        
+        private void ActionTickMethod(ActionPart p)
+        {
+            TLog.Message($"Ticking apart[{p?.StartTick}|{p?.Duration}] {_ac?.CurrentTick}");
+        }
+
         public override void DoWindowContents(Rect inRect)
         {
             if (Widgets.ButtonImage(new Rect(inRect.x + 4, inRect.y + 4, 18f, 18f), TexButton.CloseXSmall))
             {
-                Close();
+                Close(); 
                 ActionComposition ac = new ActionComposition("Test");
+                //_ac ??= ac;
                 //ac.AddPart((_) => { Messages.Message("Starting ActionComp", null);},0,0);
 
                 ac.AddPart((p) =>
                 {
-                    TLog.Message($"Ticking apart[{p?.StartTick}|{p?.Duration}] {ac?.CurrentTick}");
-                },0,5);
+                    TLog.Message("Simple empty count :)");
+                    //TLog.Message($"Ticking apart[{p?.StartTick}|{p?.Duration}] {ac?.CurrentTick}");
+                },0,15);
+                
+                /*
                 ac.AddPart((p) =>
                 {
-                    TLog.Message($"Ticking apart[{p.StartTick}|{p.Duration}] {ac?.CurrentTick}");
+                    
+                    TLog.Message($"Ticking apart[{p?.StartTick}|{p?.Duration}] {ac?.CurrentTick}");
                 }, null, 10);
                 ac.AddPart((p) =>
                 {
-                    TLog.Message($"Ticking apart[{p.StartTick}|{p.Duration}] {ac?.CurrentTick}");
+                    
+                    TLog.Message($"Ticking apart[{p?.StartTick}|{p?.Duration}] {ac?.CurrentTick}");
                 }, null, 20);
+                */
                 ac.Init();
                 return;
             }
@@ -449,7 +468,7 @@ namespace TeleCore
             //cachedSelection[SelectedFaction] = def.TRCategory;
         }
 
-        private static Dictionary<SubBuildMenuDef, Window> windowsByDef = new();
+        internal static Dictionary<SubBuildMenuDef, Window> windowsByDef = new();
 
         public static void ToggleOpen(SubBuildMenuDef subMenuDef)
         {

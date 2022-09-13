@@ -30,6 +30,7 @@ namespace TeleCore
         {
             base.ExposeData();
             Scribe_Collections.Look(ref allMapInfos, "mapInfos", LookMode.Deep, map);
+
             FillMapInformations();
         }
 

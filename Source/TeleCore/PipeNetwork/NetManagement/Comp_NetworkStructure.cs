@@ -93,12 +93,6 @@ namespace TeleCore
                 if (networkParts.NullOrEmpty())
                 {
                     TLog.Warning($"Could not load network parts for {parent}... Correcting.");
-                    return;
-                }
-                foreach (var newComponent in networkParts)
-                {
-                    networkPartByDef.Add(newComponent.NetworkDef, newComponent);
-                    newComponent.SubPartSetup(true);
                 }
             }
         }
@@ -106,44 +100,51 @@ namespace TeleCore
         //Init Construction
         public override void PostSpawnSetup(bool respawningAfterLoad)
         {
+            //
             base.PostSpawnSetup(respawningAfterLoad);
 
+            //
             CompPower = parent.TryGetComp<CompPowerTrader>();
             CompFlick = parent.TryGetComp<CompFlickable>();
             CompFX = parent.TryGetComp<CompFX>();
 
-            cellIO = new NetworkCellIO(Props.generalIOPattern, parent);
-
             //
+            cellIO = new NetworkCellIO(Props.generalIOPattern, parent);
             networkInfo = parent.Map.TeleCore().NetworkInfo;
 
             //Create NetworkComponents
-            if (!respawningAfterLoad || networkParts.NullOrEmpty())
+            if (respawningAfterLoad && (networkParts.Count != Props.networks.Count))
             {
-                if (respawningAfterLoad && networkParts.NullOrEmpty())
-                {
-                    TLog.Warning($"Spawning {parent} after load with null parts... Correcting.");
-                }
-
-                //
-                networkParts = new List<NetworkSubPart>(Props.networks.Count);
-                networkPartByDef = new Dictionary<NetworkDef, NetworkSubPart>(Props.networks.Count);
-                for (var i = 0; i < Props.networks.Count; i++)
-                {
-                    var compProps = Props.networks[i];
-                    var newComponent = (NetworkSubPart)Activator.CreateInstance(compProps.workerType, args: new object[] { this, compProps}); //new NetworkComponent(this, compProps, i);
-                    networkParts.Add(newComponent);
-                    networkPartByDef.Add(compProps.networkDef, newComponent);
-                    newComponent.SubPartSetup(respawningAfterLoad);
-                }
+                TLog.Warning($"Spawning {parent} after load with missing parts... Correcting.");
             }
+            
+            //
+            if(!respawningAfterLoad)
+                networkParts = new List<NetworkSubPart>(Props.networks.Count);
+            
+            networkPartByDef = new Dictionary<NetworkDef, NetworkSubPart>(Props.networks.Count);
+            for (var i = 0; i < Props.networks.Count; i++)
+            {
+                var compProps = Props.networks[i];
+                NetworkSubPart subPart = null;
+                if (!networkParts.Any(p => p.NetworkDef == compProps.networkDef))
+                {
+                    subPart = (NetworkSubPart) Activator.CreateInstance(compProps.workerType, args: new object[] {this, compProps});
+                    networkParts.Add(subPart);
+                }
 
+                if (subPart == null)
+                    subPart = networkParts[i];
+
+                networkPartByDef.Add(compProps.networkDef, subPart);
+                subPart.SubPartSetup(respawningAfterLoad);
+            }
+            
             //Check for neighbor intersections
-
             //Regen network after all data is set
             networkInfo.Notify_NewNetworkStructureSpawned(this);
         }
-
+        
         //Deconstruction
         public override void PostDestroy(DestroyMode mode, Map previousMap)
         {

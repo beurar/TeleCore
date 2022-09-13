@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Dynamic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -17,7 +18,8 @@ namespace TeleCore
     public class ScribeDelegate<TDelegate> : IExposable where TDelegate : Delegate
     {
         public TDelegate @delegate;
-        private static byte[] _TempBytes;
+
+        public object Target => @delegate.Target;
         
         public static explicit operator TDelegate(ScribeDelegate<TDelegate> e) => e.@delegate;
 
@@ -25,130 +27,166 @@ namespace TeleCore
 
         public ScribeDelegate(TDelegate action)
         {
-            this.@delegate = action;
+            @delegate = action;
         }
 
-        public object Target => @delegate.Target;
+        //Temp Scribe Data
+        private static byte[] _TempBytes;
 
-        private object[] _universal;
-        private List<LookMode> _lookModes = null;
-        private List<Type> _types = null;
+        private object[] universal;
+        private List<LookMode> lookModes;
+        private List<Type> types;
 
-        private MethodInfo _method;
-        
+        private MethodInfo loadedMethod;
+
         public void ExposeData()
         {
             var isSaving = Scribe.mode == LoadSaveMode.Saving;
             var isLoading = Scribe.mode == LoadSaveMode.LoadingVars;
+            var isCrossRef = Scribe.mode == LoadSaveMode.ResolvingCrossRefs;
+            var isPostLoad = Scribe.mode == LoadSaveMode.PostLoadInit;
 
-            Type declaringType = null;
-            FieldInfo[] fields = null;
+            MethodInfo scribeTimeMethod = loadedMethod;
             
-            //
-
-            if (Scribe.mode == LoadSaveMode.Saving)
+            //## LoadSaving Method
+            if (isSaving)
             {
-                TLog.Debug("SAVING DELEGATE");
-                
-                //
-                TLog.Debug($"Saving delegate... ToTarget: {@delegate.Target.GetType()}");
+                //Save delegate MethodInfo into serialized bytes
                 _TempBytes = MethodConstructor.Serialize(@delegate);
                 DataExposeUtility.ByteArray(ref _TempBytes, "delegateBytes");
-                
+
                 //
-                declaringType = @delegate.Method.DeclaringType;
-                fields = declaringType.GetFields();
-                _universal = new object[fields.Length];
-                TLog.Debug($"Saving Type: {declaringType} with fields: {fields.ToStringSafeEnumerable()}");
-                
-                //
-                var typesLooks = LookModes(@delegate.Target, fields);
-                _lookModes = typesLooks.Item2;
-                _types = typesLooks.Item1;
-                Scribe_Collections.Look(ref _lookModes, "lookModes", LookMode.Value);
-                Scribe_Collections.Look(ref _types, "types", LookMode.Value);
-             
-                //
-                for (var i = 0; i < fields.Length; i++)
-                {
-                    var field = fields[i];
-                    Type unType = _types[i];
-                    
-                    object val =  field.GetValue(@delegate.Target);
-                    TryScribe(ref val, ref unType, field, _lookModes[i]);
-                }
+                scribeTimeMethod = @delegate.Method;
             }
 
-            if (Scribe.mode == LoadSaveMode.LoadingVars)
+            if (isLoading)
             {
-                TLog.Debug("LOADING DELEGATE");
-                
                 //
                 DataExposeUtility.ByteArray(ref _TempBytes, "delegateBytes");
-                _method = MethodConstructor.Deserialize(_TempBytes);
-                _TempBytes = null;
-                
-                //
-                declaringType = _method.DeclaringType;
-                fields = declaringType.GetFields();
-                _universal = new object[fields.Length];
-                TLog.Debug($"Loading Type: {declaringType} with fields: {fields.ToStringSafeEnumerable()}");
-                
-                //
-                Scribe_Collections.Look(ref _lookModes, "lookModes", LookMode.Value);
-                Scribe_Collections.Look(ref _types, "types", LookMode.Value);
-                TLog.Debug($"Got lookModes: {_lookModes.ToStringSafeEnumerable()}");
-                
-                //
-                for (var i = 0; i < fields.Length; i++)
-                {
-                    var field = fields[i];
-                    Type unType = _types[i];
-                    
-                    object val = null;
-                    TryScribe(ref val, ref unType, field, _lookModes[i]);
-                    _universal[i] = val;
-                }
-            }
-
-            if (Scribe.mode == LoadSaveMode.ResolvingCrossRefs)
-            {
-                TLog.Debug("RESOLVING DELEGATE");
-                
-                declaringType = _method.DeclaringType;
-                fields = declaringType.GetFields();
-
-                for (var i = 0; i < fields.Length; i++)
-                {
-                    var field = fields[i];
-                    Type unType = _types[i];
-                    
-                    object val = _universal[i];
-                    TryScribe(ref val, ref unType, field, _lookModes[i]);
-                    _universal[i] = val;
-                }
+                scribeTimeMethod = loadedMethod = MethodConstructor.Deserialize(_TempBytes);
             }
             
-            if (Scribe.mode == LoadSaveMode.PostLoadInit)
-            {
-                TLog.Debug("POSTLOADING DELEGATE");
-                
-                declaringType =_method.DeclaringType;
-                fields = declaringType.GetFields();
+            //## Load Method Target
+            Type usedDeclaringType = scribeTimeMethod.DeclaringType;
+            FieldInfo[] declaringTypeFields = usedDeclaringType.GetFields();
 
-                object newObj = Activator.CreateInstance(_method.DeclaringType);
-                for (var s = 0; s < fields.Length; s++)
+            //If anonymous class - save internal fields
+            var isAnonymousType = usedDeclaringType.CheckIfAnonymousType(out bool isDisplayClass);
+            if (isAnonymousType && isDisplayClass)
+            {
+                if (isSaving)
                 {
-                    var field = fields[s];
-                    field.SetValue(newObj, _universal[s]);
-                    TLog.Debug($"Setting value while loading: {field.Name}: {_universal[s]}");
+                    string fieldString = "";
+                    foreach (var typeField in declaringTypeFields)
+                    {
+                        fieldString += typeField + "\n";
+                    }
+
+                    //Save LookModes for internal 
+                    var typesLooks = LookModes(@delegate.Target, declaringTypeFields);
+                    lookModes = typesLooks.Item2;
+                    types = typesLooks.Item1;
+
+                    //
+                    for (var i = 0; i < declaringTypeFields.Length; i++)
+                    {
+                        var field = declaringTypeFields[i];
+                        var unType = types[i];
+                    
+                        var val =  field.GetValue(@delegate.Target);
+                        TryScribe(ref val, ref unType, field, lookModes[i]);
+                    }
+                }
+
+                if (isSaving || isLoading)
+                {
+                    Scribe_Collections.Look(ref lookModes, "lookModes", LookMode.Value);
+                    Scribe_Collections.Look(ref types, "types", LookMode.Value);
                 }
                 
-                @delegate = _method.CreateDelegate(typeof(TDelegate), newObj) as TDelegate;
+                if (isLoading)
+                {
+                    universal = new object[declaringTypeFields.Length];
+                    
+                    //
+                    for (var i = 0; i < declaringTypeFields.Length; i++)
+                    {
+                        var field = declaringTypeFields[i];
+                        Type unType = types[i];
+                    
+                        object val = null;
+                        TryScribe(ref val, ref unType, field, lookModes[i]);
+                        universal[i] = val;
+                    }
+                }
+                
+                if (isCrossRef)
+                {
+                    for (var i = 0; i < declaringTypeFields.Length; i++)
+                    {
+                        var unType = types[i];
+                        var val = universal[i];
+                    
+                        TryScribe(ref val, ref unType, declaringTypeFields[i], lookModes[i]);
+                        universal[i] = val;
+                    }
+                }
+                
+                if (isPostLoad)
+                {
+                    var methodTarget = Activator.CreateInstance(usedDeclaringType);
+                    for (var s = 0; s < declaringTypeFields.Length; s++)
+                    {
+                        var field = declaringTypeFields[s];
+                        field.SetValue(methodTarget, universal[s]);
+                    }
+                    @delegate = scribeTimeMethod.CreateDelegate(typeof(TDelegate), methodTarget) as TDelegate;
+                }
+            }
+            else
+            {
+                ILoadReferenceable loadReferencable = null;
+                if (isSaving || isLoading || isCrossRef)
+                {
+                    if (isSaving)
+                    {
+                        loadReferencable = @delegate.Target as ILoadReferenceable;
+                    }
 
-                //
-                _types = null;
-                _lookModes = null;
+                    if (loadReferencable != null)
+                    {
+                        Scribe_References.Look(ref loadReferencable, "referencable");
+                    }
+                }
+
+                if (isPostLoad)
+                {
+                    if (loadReferencable == null)
+                    {
+                        if (isAnonymousType)
+                        {
+                            @delegate = scribeTimeMethod.CreateDelegate(typeof(TDelegate), null) as TDelegate;;   
+                        }
+                        else
+                        {
+                            TLog.Error($"Could not load a reference of type {usedDeclaringType} for method {scribeTimeMethod.Name}. Add an {nameof(ILoadReferenceable)} interface.");
+                        }
+                    }
+                    else
+                    {
+                        @delegate = scribeTimeMethod.CreateDelegate<TDelegate>(loadReferencable);
+                    }
+                }
+            }
+
+            TLog.Debug($"Loaded Action: {@delegate?.Method.Name} in {@delegate?.Target}");
+            if (Scribe.mode == LoadSaveMode.PostLoadInit)
+            {
+                universal = null;
+                lookModes = null;
+                types = null;
+                loadedMethod = null;
+                _TempBytes = null;
             }
         }
 

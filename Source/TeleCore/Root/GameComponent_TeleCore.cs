@@ -28,6 +28,7 @@ namespace TeleCore
         public override void ExposeData()
         {
             base.ExposeData();
+            
             Scribe_Deep.Look(ref actionCompositionHandler, nameof(actionCompositionHandler));
             //Scribe_Deep.Look(ref updateManager, nameof(updateManager));
         }

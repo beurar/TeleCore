@@ -20,6 +20,8 @@ namespace TeleCore
         protected NetworkPartSet directPartSet;
         protected AdjacentNodePartSet adjacencySet;
 
+        private NetworkDef internalDef;
+        
         //
         private int lastReceivedTick;
         private int receivingTicks;
@@ -36,10 +38,10 @@ namespace TeleCore
         protected bool DebugNetworkCells = false;
 
         //
-        public NetworkSubPartProperties Props { get; }
+        public NetworkSubPartProperties Props { get; private set; }
         public Thing Thing => Parent.Thing;
-
-        public NetworkDef NetworkDef => Props.networkDef;
+        
+        public NetworkDef NetworkDef => internalDef;
         public NetworkRole NetworkRole => Props.NetworkRole;
         public PipeNetwork Network { get; set; }
         public INetworkStructure Parent { get; private set; }
@@ -103,14 +105,27 @@ namespace TeleCore
             set => requesterMode = value;
         }
 
+        public NetworkSubPart(){}
+
+        public NetworkSubPart(INetworkStructure parent)
+        {
+            Parent = parent;
+        }
+        
         public NetworkSubPart(INetworkStructure parent, NetworkSubPartProperties properties)
         {
             Parent = parent;
             Props = properties;
+            internalDef = properties.networkDef;
         }
 
         public virtual void ExposeData()
         {
+            Scribe_Defs.Look(ref internalDef, "internalDef");
+            if (Scribe.mode == LoadSaveMode.LoadingVars)
+            {
+                Props = ((Comp_NetworkStructure) Parent).Props.networks.Find(p => p.networkDef == internalDef);
+            }
             Scribe_Values.Look(ref requestedCapacityPercent, "requesterPercent");
             Scribe_Deep.Look(ref container, "container", this, Props.AllowedValues);
         }
@@ -326,6 +341,7 @@ namespace TeleCore
             foreach (var path in requestResult.allTargets)
             {
                 funcOnPart.Invoke(path);
+                FleckMaker.ThrowDustPuff(path.Parent.Thing.TrueCenter(), Find.CurrentMap, 1);
             }
             
             /*
@@ -408,7 +424,7 @@ namespace TeleCore
                         part.Notify_ReceivedValue();
                     }
                 }
-            }, part => !part.Container.Full && !Container.Empty);
+            }, part => part.HasContainer && !part.Container.Full && !Container.Empty);
 
             //var path = Network.Graph.GetRequestPath(new NetworkGraphNodeRequest(this, ofRole));
             //SubTransfer(null, this, usedTypes, ofRole);
@@ -504,8 +520,11 @@ namespace TeleCore
 
         public bool NeedsValue(NetworkValueDef value, NetworkRole forRole)
         {
-            if (!Props.AllowedValuesByRole[forRole].Contains(value)) return false;
-            return Parent.AcceptsValue(value);
+            if (Props.AllowedValuesByRole.TryGetValue(forRole, out var values) && values.Contains(value))
+            {
+                return Parent.AcceptsValue(value);
+            }
+            return false;
         }
 
         //Gizmos
