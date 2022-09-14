@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices.WindowsRuntime;
 using System.Text;
 using System.Threading.Tasks;
 using RimWorld;
@@ -239,6 +240,7 @@ namespace TeleCore
             if (ContainerProps.storeEvenly)
             {
                 TransferToOthers(NetworkRole.Storage, NetworkRole.Storage);
+                return;
             }
             TransferToOthers(NetworkRole.Storage, NetworkRole.Consumer);
         }
@@ -405,27 +407,35 @@ namespace TeleCore
             }
         }
 
+        private bool Validator_Transfer(INetworkSubPart part)
+        {
+            return part.HasContainer && !part.Container.Full && !Container.Empty;
+        }
+        
+        private void Processor_Transfer(INetworkSubPart part, NetworkRole fromRole, NetworkRole ofRole)
+        {
+            if (part == null)
+            {
+                TLog.Warning("Part: Null");
+                return;
+            }
+            
+            var usedTypes = Props.AllowedValuesByRole[fromRole];
+            for (int i = usedTypes.Count - 1; i >= 0; i--)
+            {
+                var type = usedTypes[i];
+                if (!part.NeedsValue(type, ofRole)) continue;
+                if (Container.TryTransferTo(part.Container, type, 1))
+                {
+                    part.Notify_ReceivedValue();
+                }
+            }
+        }
+        
         private void TransferToOthers(NetworkRole fromRole, NetworkRole ofRole)
         {
             if (Container.Empty) return;
-            var usedTypes = Props.AllowedValuesByRole[fromRole];
-            DoNetworkAction(this, ofRole, part =>
-            {
-                if (part == null)
-                {
-                    TLog.Warning("Part: Null");
-                    return;
-                }
-                for (int i = usedTypes.Count - 1; i >= 0; i--)
-                {
-                    var type = usedTypes[i];
-                    if (!part.NeedsValue(type, ofRole)) continue;
-                    if (Container.TryTransferTo(part.Container, type, 1))
-                    {
-                        part.Notify_ReceivedValue();
-                    }
-                }
-            }, part => part.HasContainer && !part.Container.Full && !Container.Empty);
+            DoNetworkAction(this, ofRole, (p) => Processor_Transfer(p, fromRole, ofRole), Validator_Transfer);
 
             //var path = Network.Graph.GetRequestPath(new NetworkGraphNodeRequest(this, ofRole));
             //SubTransfer(null, this, usedTypes, ofRole);

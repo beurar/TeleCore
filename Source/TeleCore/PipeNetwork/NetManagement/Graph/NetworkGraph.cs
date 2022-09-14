@@ -67,7 +67,7 @@ namespace TeleCore
 
         private NetworkGraphRequestResult CreateAndCacheRequest(NetworkGraphNodeRequest request)
         {
-            TLog.Debug("Processing new request...");
+            TLog.Debug($"Processing new request...\n{request}");
 
             List<List<INetworkSubPart>> result = GenGraph.Dijkstra(parent, request);
             var requestResult = new NetworkGraphRequestResult(request, result);

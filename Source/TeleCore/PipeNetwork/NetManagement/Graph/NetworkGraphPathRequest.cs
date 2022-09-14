@@ -35,4 +35,27 @@ public struct NetworkGraphNodeRequest
         if (_role > 0 && _role.AllFlags().All(part.NetworkRole.AllFlags().Contains)) return false;
         return true;
     }
+
+    public override string ToString()
+    {
+        return $"Hash: {GetHashCode()}\n" +
+               $"Requester: {_requster}" + 
+               $"Role: {_role}" + 
+               $"Target: {_target}" + 
+               $"Validator: {_validator} | {_validator?.GetHashCode()}";
+        return base.ToString();
+    }
+
+    //TODO: check validator for methodinfo rather than object reference equality
+    public override bool Equals(object obj)
+    {
+        if (obj is NetworkGraphNodeRequest request)
+        {
+            return request._requster == _requster &&
+                   request._target == _target &&
+                   request._role == _role &&
+                   (request._validator?.Equals(_validator) ?? false);
+        }
+        return false;
+    }
 }
