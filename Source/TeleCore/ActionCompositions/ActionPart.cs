@@ -18,8 +18,8 @@ namespace TeleCore
         private bool completed = false;
 
         //
-        public Action<ActionPart> action = null;
-        public SoundPart sound = SoundPart.Empty;
+        private Action<ActionPart> action = null;
+        private SoundPart sound = SoundPart.Empty;
 
         public int StartTick => startTick;
         public int EndTick => endTick;

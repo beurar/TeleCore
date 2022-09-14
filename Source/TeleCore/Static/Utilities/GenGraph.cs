@@ -136,7 +136,7 @@ namespace TeleCore.Static.Utilities
             return null;
         }
 
-        public static List<List<INetworkSubPart>> Dijkstra(NetworkGraph graph, INetworkSubPart source, Predicate<INetworkSubPart> partValidator)
+        public static List<List<INetworkSubPart>> Dijkstra(NetworkGraph graph, INetworkSubPart source, Predicate<INetworkSubPart> partValidator, int depth = int.MaxValue)
         {
             //
             _WorkingList.Clear();
@@ -186,6 +186,9 @@ namespace TeleCore.Static.Utilities
 
                             //
                             allPaths.Add(pathResult);
+                            
+                            //
+                            //_WorkingList.Remove(toPart);
                         }
                     }
                     if(allPaths.Count == validParts.Count)

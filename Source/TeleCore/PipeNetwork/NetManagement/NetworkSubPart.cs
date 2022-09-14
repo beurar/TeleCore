@@ -338,10 +338,11 @@ namespace TeleCore
         {
             var requestResult = Network.Graph.ProcessRequest(new NetworkGraphNodeRequest(fromPart, forRole, validator));
             if (!requestResult.IsValid) return;
-            foreach (var path in requestResult.allTargets)
+            foreach (var targetPart in requestResult.allTargets)
             {
-                funcOnPart.Invoke(path);
-                FleckMaker.ThrowDustPuff(path.Parent.Thing.TrueCenter(), Find.CurrentMap, 1);
+                funcOnPart.Invoke(targetPart);
+                FleckMaker.ThrowDustPuff(targetPart.Parent.Thing.TrueCenter(), Find.CurrentMap, 1);
+                TLog.Message($"Trying to manipulate {targetPart} from {fromPart}");
             }
             
             /*
