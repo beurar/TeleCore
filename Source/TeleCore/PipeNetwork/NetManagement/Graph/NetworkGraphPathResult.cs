@@ -14,10 +14,11 @@ public struct NetworkGraphPathResult
     //
     public readonly INetworkSubPart[] singlePath;
  
-    public bool IsValid => allTargets.Any();
+    public bool IsValid => allTargets != null && allTargets.Any();
 
     public NetworkGraphPathResult(NetworkGraphPathRequest request, List<List<INetworkSubPart>> allResults)
     {
+        TLog.Debug($"Request - {allResults.Count}");
         this.request = request;
         allPaths = new INetworkSubPart[allResults.Count][];
         allPartsUnique = new();

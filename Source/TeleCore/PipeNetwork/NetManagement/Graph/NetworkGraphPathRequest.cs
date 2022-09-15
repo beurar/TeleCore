@@ -78,18 +78,17 @@ public struct NetworkGraphPathRequest
     {
         if (_target != null && part != _target) return false;
         if (_validator.IsValid && !_validator.Invoke(part)) return false;
-        if (_role > 0 && _role.AllFlags().All(part.NetworkRole.AllFlags().Contains)) return false;
+        if (_role > 0 && !part.NetworkRole.HasFlag(_role)) return false;
+
         return true;
     }
 
     public override string ToString()
     {
         return $"Hash: {GetHashCode()}\n" +
-               $"Requester: {_requster}" + 
-               $"Role: {_role}" + 
-               $"Target: {_target}" + 
-               $"Validator: {_validator} | {_validator.GetHashCode()}";
-        return base.ToString();
+               $" |Requester: {_requster}" +
+               $" |Role: {_role}" +
+               $" |Target: {_target}";
     }
     
     public override bool Equals(object obj)

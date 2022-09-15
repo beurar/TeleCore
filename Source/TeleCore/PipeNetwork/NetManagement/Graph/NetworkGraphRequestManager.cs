@@ -63,6 +63,11 @@ public class NetworkGraphRequestManager
         TLog.Debug($"Processing new request...\n{request}");
 
         List<List<INetworkSubPart>> result = GenGraph.Dijkstra(parent, request);
+        if (result == null)
+        {
+            TLog.Warning($"Found no valid path for request: {request}");
+            return new NetworkGraphPathResult();
+        }
         var requestResult = new NetworkGraphPathResult(request, result);
         _cachedRequestResults.Add(request, requestResult);
 

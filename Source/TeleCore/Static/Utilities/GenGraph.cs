@@ -83,6 +83,9 @@ namespace TeleCore.Static.Utilities
                 _Distances.Add(node, int.MaxValue);
             }
 
+            //If no targets
+            if (validParts.Count <= 0) return null;
+
             //Traverse Until Valid Part Found
             while (_WorkingList.Count > 0)
             {

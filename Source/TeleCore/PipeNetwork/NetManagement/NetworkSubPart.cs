@@ -274,10 +274,12 @@ namespace TeleCore
             foreach (var requestedType in RequestedTypes)
             {
                 //If not requested, skip
-                TLog.Debug($"Requesting: {requestedType.Value.Item1}: {requestedType.Value.Item2}");
                 if (!requestedType.Value.Item1) continue;
-                if (Container.ValueForType(requestedType.Key) < requestedType.Value.Item2)
+                TLog.Debug($"Requesting: {requestedType.Value.Item1}: {requestedType.Value.Item2}");
+                TLog.Debug($"--: {Container.PercentOf(requestedType.Key)} < {requestedType.Value.Item2} ");
+                if (Container.PercentOf(requestedType.Key) < requestedType.Value.Item2)
                 {
+                    TLog.Debug("Executing actual request... ");
                     DoNetworkAction(this, NetworkRole.Storage, part =>
                     {
                         var container = part.Container;

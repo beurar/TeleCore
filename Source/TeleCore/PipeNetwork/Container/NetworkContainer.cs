@@ -386,6 +386,11 @@ namespace TeleCore
         }
 
         //Value
+        public float PercentOf(NetworkValueDef type)
+        {
+            return ValueForType(type) / Capacity;
+        }
+        
         public float ValueForTypes(List<NetworkValueDef> types)
         {
             float value = 0;
