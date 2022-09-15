@@ -308,7 +308,7 @@ namespace TeleCore
                     var part = netComp[NetworkParts[0].NetworkDef];
                     if (part == null) return;
 
-                    var path = part.Network.Graph.ProcessRequest(new NetworkGraphNodeRequest(networkParts[0], part)); //GenGraph.Dijkstra(part.Network.Graph, NetworkParts[0], (x) => x == part);
+                    var path = part.Network.Graph.ProcessRequest(new NetworkGraphPathRequest(networkParts[0], part)); //GenGraph.Dijkstra(part.Network.Graph, NetworkParts[0], (x) => x == part);
                     TLog.Message($"{path.allTargets.ToStringSafeEnumerable()}");
                 }
             };

@@ -25,7 +25,7 @@ namespace TeleCore
         //
         public EffecterDef impactEffecter;
         public ExplosionProperties impactExplosion;
-        public FilthSpewerProperties impactFilth;
+        public FilthSpawnerProperties impactFilth;
 
         //Graphical
         public string beamTexturePath;

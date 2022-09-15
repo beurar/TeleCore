@@ -4,9 +4,9 @@ using Verse;
 
 namespace TeleCore;
 
-public struct NetworkGraphRequestResult
+public struct NetworkGraphPathResult
 {
-    public readonly NetworkGraphNodeRequest request;
+    public readonly NetworkGraphPathRequest request;
     public readonly INetworkSubPart[][] allPaths;
     public readonly HashSet<INetworkSubPart> allPartsUnique;
     public readonly HashSet<INetworkSubPart> allTargets;
@@ -16,7 +16,7 @@ public struct NetworkGraphRequestResult
  
     public bool IsValid => allTargets.Any();
 
-    public NetworkGraphRequestResult(NetworkGraphNodeRequest request, List<List<INetworkSubPart>> allResults)
+    public NetworkGraphPathResult(NetworkGraphPathRequest request, List<List<INetworkSubPart>> allResults)
     {
         this.request = request;
         allPaths = new INetworkSubPart[allResults.Count][];
@@ -31,7 +31,7 @@ public struct NetworkGraphRequestResult
         }
     }
 
-    public NetworkGraphRequestResult(NetworkGraphNodeRequest request, List<INetworkSubPart> result)
+    public NetworkGraphPathResult(NetworkGraphPathRequest request, List<INetworkSubPart> result)
     {
         this.request = request;
         singlePath = result.ToArray();

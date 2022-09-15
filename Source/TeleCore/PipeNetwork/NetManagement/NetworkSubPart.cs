@@ -338,7 +338,7 @@ namespace TeleCore
 
         private void DoNetworkAction(INetworkSubPart fromPart, NetworkRole forRole, Action<INetworkSubPart> funcOnPart, Predicate<INetworkSubPart> validator)
         {
-            var requestResult = Network.Graph.ProcessRequest(new NetworkGraphNodeRequest(fromPart, forRole, validator));
+            var requestResult = Network.Graph.ProcessRequest(new NetworkGraphPathRequest(fromPart, forRole, validator, 1));
             if (!requestResult.IsValid) return;
             foreach (var targetPart in requestResult.allTargets)
             {
@@ -406,17 +406,12 @@ namespace TeleCore
                 }
             }
         }
-
-        private bool Validator_Transfer(INetworkSubPart part)
-        {
-            return part.HasContainer && !part.Container.Full && !Container.Empty;
-        }
         
         private void Processor_Transfer(INetworkSubPart part, NetworkRole fromRole, NetworkRole ofRole)
         {
             if (part == null)
             {
-                TLog.Warning("Part: Null");
+                TLog.Warning("Target part of path is null");
                 return;
             }
             
@@ -435,7 +430,25 @@ namespace TeleCore
         private void TransferToOthers(NetworkRole fromRole, NetworkRole ofRole)
         {
             if (Container.Empty) return;
-            DoNetworkAction(this, ofRole, (p) => Processor_Transfer(p, fromRole, ofRole), Validator_Transfer);
+            DoNetworkAction(this, ofRole, (part) =>
+            {
+                if (part == null)
+                {
+                    TLog.Warning("Target part of path is null");
+                    return;
+                }
+            
+                var usedTypes = Props.AllowedValuesByRole[fromRole];
+                for (int i = usedTypes.Count - 1; i >= 0; i--)
+                {
+                    var type = usedTypes[i];
+                    if (!part.NeedsValue(type, ofRole)) continue;
+                    if (Container.TryTransferTo(part.Container, type, 1))
+                    {
+                        part.Notify_ReceivedValue();
+                    }
+                }
+            }, (part) => part.HasContainer && !part.Container.Full && !Container.Empty);
 
             //var path = Network.Graph.GetRequestPath(new NetworkGraphNodeRequest(this, ofRole));
             //SubTransfer(null, this, usedTypes, ofRole);

@@ -48,12 +48,12 @@ namespace TeleCore.Static.Utilities
         private static Dictionary<INetworkSubPart, int> _Distances = new();
         private static Dictionary<INetworkSubPart, INetworkSubPart> _PreviousOf = new();
 
-        public static List<List<INetworkSubPart>> Dijkstra(NetworkGraph graph, NetworkGraphNodeRequest request)
+        public static List<List<INetworkSubPart>> Dijkstra(NetworkGraph graph, NetworkGraphPathRequest request)
         {
-            return Dijkstra(graph, request.Requester, request.Fits);
+            return Dijkstra(graph, request.Requester, request.Fits, request.Depth);
         }
 
-        public static List<INetworkSubPart> Djikstra_Single(NetworkGraph graph, INetworkSubPart source, Predicate<INetworkSubPart> validator)
+        public static List<INetworkSubPart> Djikstra_Single(NetworkGraph graph, INetworkSubPart source, Predicate<INetworkSubPart> validator, int maxDepth = int.MaxValue)
         {
             //
             _WorkingList.Clear();
@@ -96,17 +96,27 @@ namespace TeleCore.Static.Utilities
                         if (_PreviousOf[part] != null || part == source)
                         {
                             List<INetworkSubPart> pathResult = new List<INetworkSubPart>();
+                            var depthCount = 0;
                             while (part != null)
                             {
                                 pathResult.Insert(0, part);
                                 part = _PreviousOf[part];
+                                depthCount++;
+                                if (depthCount > maxDepth)
+                                {
+                                    goto _ExitLoop;
+                                }
                             }
+                            
                             //
                             _WorkingList.Clear();
                             _Distances.Clear();
                             _PreviousOf.Clear();
                             return pathResult;
                         }
+                        
+                        //
+                        _ExitLoop: ;
                     }
                 }
 
@@ -136,13 +146,14 @@ namespace TeleCore.Static.Utilities
             return null;
         }
 
-        public static List<List<INetworkSubPart>> Dijkstra(NetworkGraph graph, INetworkSubPart source, Predicate<INetworkSubPart> partValidator, int depth = int.MaxValue)
+        public static List<List<INetworkSubPart>> Dijkstra(NetworkGraph graph, INetworkSubPart source, Predicate<INetworkSubPart> partValidator, int maxDepth = int.MaxValue)
         {
             //
             _WorkingList.Clear();
             _Distances.Clear();
             _PreviousOf.Clear();
 
+            //
             List<INetworkSubPart> validParts = new List<INetworkSubPart>();
             List<List<INetworkSubPart>> allPaths = new List<List<INetworkSubPart>>();
             
@@ -178,18 +189,29 @@ namespace TeleCore.Static.Utilities
                         if (_PreviousOf[part] != null || part == source)
                         {
                             List<INetworkSubPart> pathResult = new List<INetworkSubPart>();
+                            var depthCount = 0;
                             while (part != null)
                             {
+                                if(partValidator(part))
+                                    depthCount++;
+                                
                                 pathResult.Insert(0, part);
                                 part = _PreviousOf[part];
+                                
+                                if (depthCount > maxDepth)
+                                {
+                                    goto _ExitLoop;
+                                }
                             }
-
+                            
                             //
                             allPaths.Add(pathResult);
                             
                             //
                             //_WorkingList.Remove(toPart);
                         }
+                        
+                        _ExitLoop: ;
                     }
                     if(allPaths.Count == validParts.Count)
                         return allPaths;

@@ -4,7 +4,7 @@ using Verse;
 
 namespace TeleCore
 {
-    public class FilthSpewerProperties
+    public class FilthSpawnerProperties
     {
         public List<DefCount<ThingDef>> filths;
         public float spreadRadius = 1.9f;
