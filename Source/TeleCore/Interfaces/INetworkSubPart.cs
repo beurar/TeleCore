@@ -35,6 +35,7 @@ namespace TeleCore
         void Notify_NetworkDestroyed();
 
         bool ConnectsTo(INetworkSubPart otherPart);
+        bool CanTransmit();
         bool NeedsValue(NetworkValueDef value, NetworkRole forRole);
     }
 }

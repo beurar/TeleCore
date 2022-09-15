@@ -269,10 +269,12 @@ namespace TeleCore
                 }
             }
 
+            TLog.Debug($"Doing requester tick for {this}: {Container.StoredPercent} > {RequestedCapacityPercent}");
             if (Container.StoredPercent >= RequestedCapacityPercent) return;
             foreach (var requestedType in RequestedTypes)
             {
                 //If not requested, skip
+                TLog.Debug($"Requesting: {requestedType.Value.Item1}: {requestedType.Value.Item2}");
                 if (!requestedType.Value.Item1) continue;
                 if (Container.ValueForType(requestedType.Key) < requestedType.Value.Item2)
                 {
@@ -541,7 +543,13 @@ namespace TeleCore
             return other.Network.NetworkRank == Network.NetworkRank;
         }
         */
-
+        public bool CanTransmit()
+        {
+            //TODO:
+            //NetworkRole.GraphTransmitter;
+            return NetworkRole.HasFlag(NetworkRole.Transmitter);
+        }
+        
         public bool NeedsValue(NetworkValueDef value, NetworkRole forRole)
         {
             if (Props.AllowedValuesByRole.TryGetValue(forRole, out var values) && values.Contains(value))

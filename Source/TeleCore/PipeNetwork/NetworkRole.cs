@@ -16,6 +16,7 @@ namespace TeleCore
         Storage = 16,
         Requester = 32,
         DirectionalControl = 64,
+        GraphTransmitter = 128,
         //All = 64,
 
         AllContainers = Producer | Consumer | Storage | Requester,

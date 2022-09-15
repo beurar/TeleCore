@@ -126,6 +126,7 @@ namespace TeleCore.Static.Utilities
                 _WorkingList.Remove(part);
                 foreach (var neighbor in graph.AdjacencyLists[part])
                 {
+                    if (!neighbor.CanTransmit()) continue;
                     if (!_WorkingList.Contains(neighbor)) continue;
                     if (graph.TryGetEdge(part, neighbor, out var edge))
                     {
