@@ -201,8 +201,8 @@ namespace TeleCore
             //   
             if (DebugConnectionCells && Find.Selector.IsSelected(parent))
             {
-                GenDraw.DrawFieldEdges(GeneralIO.ConnectionCells.ToList(), Color.cyan);
-                GenDraw.DrawFieldEdges(GeneralIO.InnerConnectionCells.ToList(), Color.green);
+                GenDraw.DrawFieldEdges(GeneralIO.OuterConnnectionCells.ToList(), Color.cyan);
+                GenDraw.DrawFieldEdges(GeneralIO.InnerConnnectionCells.ToList(), Color.green);
             }
 
             foreach (var networkPart in NetworkParts)

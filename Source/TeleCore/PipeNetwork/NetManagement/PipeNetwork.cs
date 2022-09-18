@@ -21,8 +21,8 @@ namespace TeleCore
         public PipeNetworkManager ParentManager => parentManager;
 
         public NetworkGraph Graph { get; internal set; }
-        internal NetworkPartSet PartSet => partSet;
-        private NetworkContainerSet ContainerSet => containerSet;
+        public NetworkPartSet PartSet => partSet;
+        public NetworkContainerSet ContainerSet => containerSet;
 
         public INetworkStructure NetworkController => PartSet.Controller?.Parent;
         public List<IntVec3> NetworkCells { get; }
@@ -132,7 +132,7 @@ namespace TeleCore
 
             //
             if (PartSet.AddNewComponent(part))
-                NetworkCells.AddRange(part.CellIO.InnerConnectionCells);
+                NetworkCells.AddRange(part.CellIO.InnerConnnectionCells);
 
             ContainerSet.AddNewContainerFrom(part);
         }
@@ -144,7 +144,7 @@ namespace TeleCore
             //
             PartSet.RemoveComponent(part);
             containerSet.RemoveContainerFrom(part);
-            foreach (var cell in part.CellIO.InnerConnectionCells)
+            foreach (var cell in part.CellIO.InnerConnnectionCells)
             {
                 NetworkCells.Remove(cell);
             }

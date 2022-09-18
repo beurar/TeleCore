@@ -142,7 +142,7 @@ namespace TeleCore
                     Widgets.Label(dirSelRect, $"{subDir.Name}");
                     
                     Widgets.DrawHighlightIfMouseover(dirSelRect);
-                    if (Widgets.ButtonInvisible(dirSelRect))
+                    if (Widgets.ButtonInvisible(dirSelRect, false))
                     {
                         currentDir = subDir;
                     }

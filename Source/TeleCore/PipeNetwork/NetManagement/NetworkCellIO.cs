@@ -33,6 +33,15 @@ namespace TeleCore
         {
             return $"{vec}[{rot.ToStringHuman()}]";
         }
+
+        public override bool Equals(object obj)
+        {
+            if (obj is IntVec3 otherVec)
+            {
+                return vec.Equals(otherVec);
+            }
+            return base.Equals(obj);
+        }
     }
 
     public class NetworkCellIO
@@ -54,14 +63,8 @@ namespace TeleCore
         private IntVec3[] cachedInnerConnectionCells;
         private IntVec3[] cachedConnectionCells;
 
-        public Dictionary<char, IntVec3[]> InnerCellsByTag;
-        public Dictionary<char, IntVec3Rot[]> OuterCellsByTag;
-
-        private string testString = "..I.." +
-                                    "..+.." +
-                                    "O+++I" +
-                                    "..+.." +
-                                    "..I..";
+        private Dictionary<char, IntVec3[]> InnerCellsByTag;
+        private Dictionary<char, IntVec3Rot[]> OuterCellsByTag;
 
         public NetworkCellIO(string pattern, Thing thing)
         {
@@ -77,17 +80,28 @@ namespace TeleCore
             GenerateIOCells();
         }
 
-        public NetworkIOMode ModeFor(IntVec3 cell)
+        public NetworkIOMode InnerModeFor(IntVec3 cell)
         {
             if (InnerCellsByTag.TryGetValue(_TwoWay, out var cells) && cells.Contains(cell)) return NetworkIOMode.TwoWay;
             if (InnerCellsByTag.TryGetValue(_Input, out cells) && cells.Contains(cell)) return NetworkIOMode.Input;
             if (InnerCellsByTag.TryGetValue(_Output, out cells) && cells.Contains(cell)) return NetworkIOMode.Output;
             return NetworkIOMode.None;
         }
+        
+        public NetworkIOMode OuterModeFor(IntVec3 cell)
+        {
+            if (OuterCellsByTag.TryGetValue(_TwoWay, out var cells) && cells.Any(c => c.IntVec == cell)) return NetworkIOMode.TwoWay;
+            if (OuterCellsByTag.TryGetValue(_Input, out cells) && cells.Any(c => c.IntVec == cell)) return NetworkIOMode.Input;
+            if (OuterCellsByTag.TryGetValue(_Output, out cells) && cells.Any(c => c.IntVec == cell)) return NetworkIOMode.Output;
+            return NetworkIOMode.None;
+        }
 
-        public IntVec3[] InnerConnectionCells => cachedInnerConnectionCells;
+        public IntVec3[] InnerConnnectionCells => cachedInnerConnectionCells;
+        public IntVec3[] OuterConnnectionCells => cachedConnectionCells;
 
-        public IntVec3[] ConnectionCells => cachedConnectionCells;
+        public IntVec3Rot[] InputCells => OuterCellsByTag.TryGetValue(_Input, Array.Empty<IntVec3Rot>());
+        public IntVec3Rot[] OutputCells => OuterCellsByTag.TryGetValue(_Output, Array.Empty<IntVec3Rot>());
+        public IntVec3Rot[] TwoWayCells => OuterCellsByTag.TryGetValue(_TwoWay, Array.Empty<IntVec3Rot>());
 
         private char CharForMode(NetworkIOMode mode)
         {
@@ -173,7 +187,11 @@ namespace TeleCore
                     if(c != _Empty)
                         cellsInner.Add(cell);
                     if (c == _TwoWay)
+                    {
                         AddIOCell(InnerCellsByTag, NetworkIOMode.TwoWay, cell);
+                        AddIOCell(InnerCellsByTag, NetworkIOMode.Input, cell);
+                        AddIOCell(InnerCellsByTag, NetworkIOMode.Output, cell);
+                    }
                     if (c == _Input)
                         AddIOCell(InnerCellsByTag, NetworkIOMode.Input, cell);
                     if (c == _Output)
@@ -189,11 +207,15 @@ namespace TeleCore
                     if (edgeCell.AdjacentToCardinal(inner))
                     {
                         cellsOuter.Add(edgeCell);
-                        if(ModeFor(inner) == NetworkIOMode.TwoWay)
+                        if (InnerModeFor(inner) == NetworkIOMode.TwoWay)
+                        {
                             AddIOCell(OuterCellsByTag, NetworkIOMode.TwoWay, new IntVec3Rot(edgeCell, edgeCell.Rot4Relative(inner)));
-                        if (ModeFor(inner) == NetworkIOMode.Input)
                             AddIOCell(OuterCellsByTag, NetworkIOMode.Input, new IntVec3Rot(edgeCell, edgeCell.Rot4Relative(inner)));
-                        if (ModeFor(inner) == NetworkIOMode.Output)
+                            AddIOCell(OuterCellsByTag, NetworkIOMode.Output, new IntVec3Rot(edgeCell, edgeCell.Rot4Relative(inner)));
+                        }
+                        if (InnerModeFor(inner) == NetworkIOMode.Input)
+                            AddIOCell(OuterCellsByTag, NetworkIOMode.Input, new IntVec3Rot(edgeCell, edgeCell.Rot4Relative(inner)));
+                        if (InnerModeFor(inner) == NetworkIOMode.Output)
                             AddIOCell(OuterCellsByTag, NetworkIOMode.Output, new IntVec3Rot(edgeCell, edgeCell.Rot4Relative(inner)));
                     }
                 }
@@ -313,14 +335,57 @@ namespace TeleCore
             }
         }
 
+        public void PrintIO(SectionLayer layer)
+        {
+            if (OuterCellsByTag.TryGetValue(_TwoWay, out var twoway))
+            {
+                foreach (var cell in twoway)
+                {
+                    var drawPos = cell.IntVec.ToVector3Shifted();
+                    TDrawing.PrintBasic(layer, drawPos, Vector2.one, BaseContent.BadMat, 0, false);
+                }
+            }
+
+            if (OuterCellsByTag.TryGetValue(_Output, out var output))
+            {
+                foreach (var cell in output)
+                {
+                    var drawPos = cell.IntVec.ToVector3Shifted();
+                    TDrawing.PrintBasic(layer, drawPos, Vector2.one, TeleContent.IOArrow, cell.Rotation.AsAngle, false);
+                }
+            }
+
+            if (OuterCellsByTag.TryGetValue(_Input, out var input))
+            {
+                foreach (var cell in input)
+                {
+                    var drawPos = cell.IntVec.ToVector3Shifted();
+                    TDrawing.PrintBasic(layer, drawPos, Vector2.one, TeleContent.IOArrow, (cell.Rotation.AsAngle - 180), false);
+                }
+            }
+        }
+
         public bool ConnectsTo(NetworkCellIO otherGeneralIO)
         {
-            return ConnectionCells.Any(otherGeneralIO.InnerConnectionCells.Contains);
+            return  
+                OuterConnnectionCells.Where(otherGeneralIO.InnerConnnectionCells.Contains)
+                .Any(m => Matches(otherGeneralIO.InnerModeFor(m), OuterModeFor(m)));
+        }
+
+        private bool Matches(NetworkIOMode innerMode, NetworkIOMode outerMode)
+        {
+            var innerInput = (innerMode | NetworkIOMode.Input) == NetworkIOMode.Input;
+            var outerInput = (outerMode | NetworkIOMode.Input) == NetworkIOMode.Input;
+            
+            var innerOutput = (innerMode | NetworkIOMode.Output) == NetworkIOMode.Output;
+            var outerOutput = (outerMode | NetworkIOMode.Output) == NetworkIOMode.Output;
+            
+            return (innerInput && outerOutput) || (outerInput && innerOutput);
         }
 
         public bool Contains(IntVec3 cell)
         {
-            return InnerConnectionCells.Contains(cell);
+            return InnerConnnectionCells.Contains(cell);
         }
     }
 }

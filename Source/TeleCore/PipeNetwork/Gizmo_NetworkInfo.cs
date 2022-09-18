@@ -362,8 +362,9 @@ namespace TeleCore
                         var previousBool = previous.Item1;
 
                         //
-                        var newValue = TWidgets.VerticalSlider(typeSliderSetting, previousValue, 0, Container.Capacity, 0.01f);
+                        var newValue = TWidgets.VerticalSlider(typeSliderSetting, previousValue, 0, 1f, 0.01f, parentComp.RequesterMode == RequesterMode.Manual);
                         Widgets.Checkbox(typeFilterRect.position, ref previousBool, 10);
+                        TooltipHandler.TipRegion(typeSliderSetting, $"Value: {newValue}");
 
                         parentComp.RequestedTypes[type] = (previousBool, newValue);
 

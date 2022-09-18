@@ -89,6 +89,7 @@ namespace TeleCore
         //Value Data
         public void Notify_AddedValue(NetworkValueDef type, float value, INetworkSubPart part)
         {
+            TLog.Debug($"Adding networkvalue to container set: {type}, {value}");
             //Increment total value
             totalNetworkValue += value;
 
@@ -113,6 +114,7 @@ namespace TeleCore
 
         public void Notify_RemovedValue(NetworkValueDef type, float value, INetworkSubPart part)
         {
+            TLog.Debug($"Removing networkvalue to container set: {type}, {value}");
             totalNetworkValue -= value;
 
             //
@@ -154,6 +156,7 @@ namespace TeleCore
         //Container Data
         public bool AddNewContainerFrom(INetworkSubPart part)
         {
+            TLog.Debug($"Adding new container to set from {part}");
             if (!part.HasContainer) return false;
 
             //
@@ -178,6 +181,7 @@ namespace TeleCore
 
         public void RemoveContainerFrom(INetworkSubPart part)
         {
+            TLog.Debug($"Removing container from set from {part}");
             if (allContainers.Remove(part.Container))
             {
                 foreach (var @enum in part.NetworkRole.AllFlags())

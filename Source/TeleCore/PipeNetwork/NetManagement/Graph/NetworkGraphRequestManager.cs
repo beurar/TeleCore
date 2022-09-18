@@ -57,16 +57,17 @@ public class NetworkGraphRequestManager
             }
         }
     }
-    
+
+    private Dictionary<NetworkGraphPathRequest, int> _TimeOutCache = new Dictionary<NetworkGraphPathRequest, int>();
+
     private NetworkGraphPathResult CreateAndCacheRequest(NetworkGraphPathRequest request)
     {
-        TLog.Debug($"Processing new request...\n{request}");
-
         List<List<INetworkSubPart>> result = GenGraph.Dijkstra(parent, request);
         if (result == null)
         {
-            TLog.Warning($"Found no valid path for request: {request}");
-            return new NetworkGraphPathResult();
+            //Add Time-Out
+            _TimeOutCache.Add(request, 60);
+            return NetworkGraphPathResult.Invalid;
         }
         var requestResult = new NetworkGraphPathResult(request, result);
         _cachedRequestResults.Add(request, requestResult);
@@ -87,6 +88,17 @@ public class NetworkGraphRequestManager
 
     public NetworkGraphPathResult ProcessRequest(NetworkGraphPathRequest request)
     {
+        //Check TimeOut
+        if (_TimeOutCache.TryGetValue(request, out int ticks))
+        {
+            if (ticks > 0)
+            {
+                _TimeOutCache[request] = ticks - 1;
+                return NetworkGraphPathResult.Invalid;
+            }
+            _TimeOutCache.Remove(request);
+        }
+        
         //Check dirty result
         CheckRequestDirty(request);
 

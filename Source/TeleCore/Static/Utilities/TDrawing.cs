@@ -16,6 +16,11 @@ namespace TeleCore
             Graphics.DrawMesh(drawMesh, drawPos, rotation?.ToQuat() ?? exactRotation.ToQuat(), drawMat, 0);
         }
 
+        public static void PrintBasic(SectionLayer layer, Vector3 drawPos, Vector2 drawSize, Material drawMat, float exactRotation, bool flipUV)
+        {
+            Printer_Plane.PrintPlane(layer, drawPos, drawSize, drawMat, exactRotation, flipUV, null, null, 0.01f, 0f);
+        }
+
         public static void Print(SectionLayer layer, Graphic graphic, ThingWithComps thing, ThingDef def, FXDefExtension extension = null)
         {
             if (graphic is Graphic_Linked || graphic is Graphic_Appearances)

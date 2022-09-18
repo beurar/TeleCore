@@ -50,8 +50,10 @@ namespace TeleCore
             GUI.matrix = matrix;
         }
 
-        public static float VerticalSlider(Rect rect, float value, float min, float max, float roundTo = -1f)
+        public static float VerticalSlider(Rect rect, float value, float min, float max, float roundTo = -1f, bool enabled = true)
         {
+            var tempEnabled = GUI.enabled;
+            GUI.enabled = enabled;
             float num = GUI.VerticalSlider(rect, value, max, min);
             if (roundTo > 0f)
             {
@@ -61,6 +63,7 @@ namespace TeleCore
             {
                 SoundDefOf.DragSlider.PlayOneShotOnCamera(null);
             }
+            GUI.enabled = tempEnabled;
             return num;
         }
 

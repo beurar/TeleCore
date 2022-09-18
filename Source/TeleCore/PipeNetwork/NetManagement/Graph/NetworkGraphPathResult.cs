@@ -10,11 +10,15 @@ public struct NetworkGraphPathResult
     public readonly INetworkSubPart[][] allPaths;
     public readonly HashSet<INetworkSubPart> allPartsUnique;
     public readonly HashSet<INetworkSubPart> allTargets;
-    
+
     //
     public readonly INetworkSubPart[] singlePath;
  
     public bool IsValid => allTargets != null && allTargets.Any();
+
+    public static NetworkGraphPathResult Invalid => new NetworkGraphPathResult()
+    {
+    };
 
     public NetworkGraphPathResult(NetworkGraphPathRequest request, List<List<INetworkSubPart>> allResults)
     {

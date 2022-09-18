@@ -30,12 +30,13 @@ namespace TeleCore
         void NetworkTick();
 
         void Notify_ReceivedValue();
+        void Notify_StateChanged(string signal);
 
         void Notify_SetConnection(INetworkSubPart otherPart, NetEdge withEdge);
         void Notify_NetworkDestroyed();
 
         bool ConnectsTo(INetworkSubPart otherPart);
-        bool CanTransmit();
+        bool CanTransmit(NetEdge netEdge);
         bool NeedsValue(NetworkValueDef value, NetworkRole forRole);
     }
 }

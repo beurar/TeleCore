@@ -77,7 +77,7 @@ namespace TeleCore
         private static void SplitSearch(INetworkSubPart searchRoot, NetworkGraph forGraph, INetworkSubPart nodeToIgnore = null, int? splitOffLength = null, INetworkSubPart splitParent = null)
         {
             Action searchEvent = (() => {});
-            foreach (var cell in searchRoot.CellIO.ConnectionCells)
+            foreach (var cell in searchRoot.CellIO.OutputCells)
             {
                 var newSearchRoot = GetFittingPartAt(searchRoot, cell, forGraph.ParentNetwork.ParentManager.Map);
                 if (newSearchRoot == null) continue;
@@ -117,10 +117,10 @@ namespace TeleCore
                 _OpenSubSet.Clear();
                 foreach (INetworkSubPart part in _CurrentSubSet)
                 {
-                    for (var i = 0; i < part.CellIO.ConnectionCells.Length; i++)
+                    TLog.Debug($"Output Cells: {part.CellIO.OutputCells.Length}");
+                    foreach (var output in part.CellIO.OutputCells)
                     {
-                        IntVec3 c = part.CellIO.ConnectionCells[i];
-                        List<Thing> thingList = c.GetThingList(rootEdge.Parent.Thing.Map);
+                        List<Thing> thingList = output.IntVec.GetThingList(rootEdge.Parent.Thing.Map);
                         foreach (var thing in thingList)
                         {
                             if (!Fits(thing, part.NetworkDef, out INetworkSubPart newPart)) continue;
@@ -187,10 +187,9 @@ namespace TeleCore
                 _OpenSubSet.Clear();
                 foreach (INetworkSubPart part in _CurrentSubSet)
                 {
-                    for (var i = 0; i < part.CellIO.ConnectionCells.Length; i++)
+                    foreach (var output in part.CellIO.OutputCells)
                     {
-                        IntVec3 c = part.CellIO.ConnectionCells[i];
-                        List<Thing> thingList = c.GetThingList(forGraph.ParentNetwork.ParentManager.Map);
+                        List<Thing> thingList = output.IntVec.GetThingList(forGraph.ParentNetwork.ParentManager.Map);
                         foreach (var thing in thingList)
                         {
                             if (!Fits(thing, part.NetworkDef, out INetworkSubPart newPart)) continue;
@@ -201,7 +200,7 @@ namespace TeleCore
                             {
                                 if (newPart.IsNetworkNode)
                                 {
-                                    var newEdge = new NetEdge(edgeParent, newPart, startCell, c, edgeLength);
+                                    var newEdge = new NetEdge(edgeParent, newPart, startCell, output, edgeLength);
                                     if (!TrySetEdge(newEdge, forGraph)) continue;
                                 }
                                 else continue;
@@ -229,7 +228,7 @@ namespace TeleCore
                                     _CurrentSubSet.Clear();
                                     _OpenSubSet.Clear();
                                     TLog.Message($"Found {"Node".Colorize(Color.cyan)}: '{newPart.Parent.Thing}' - Setting Edge [{edgeParent.Parent.Thing} -- {newPart.Parent.Thing}]");
-                                    var newEdge = new NetEdge(edgeParent, newPart, startCell, c, edgeLength);
+                                    var newEdge = new NetEdge(edgeParent, newPart, startCell, output, edgeLength);
                                     
                                     //Found Node for edge, create edge and start search for more nodes
                                     if (newEdge.toNode != null && newEdge.toNode != edgeParent)
@@ -288,8 +287,7 @@ namespace TeleCore
         internal static bool Fits(Thing thing, NetworkDef forNetwork, out INetworkSubPart part)
         {
             //component = thing as INetworkStructure;
-            Comp_NetworkStructure structure =
-                (Comp_NetworkStructure) (thing as ThingWithComps)?.AllComps.Find(t => t is Comp_NetworkStructure);
+            Comp_NetworkStructure structure = (Comp_NetworkStructure) (thing as ThingWithComps)?.AllComps.Find(t => t is Comp_NetworkStructure);
             part = structure?[forNetwork];
             return part != null;
         }

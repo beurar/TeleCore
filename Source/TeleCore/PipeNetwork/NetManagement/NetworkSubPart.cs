@@ -83,7 +83,7 @@ namespace TeleCore
         //Container
         public string ContainerTitle => "_Obsolete_";
         public ContainerProperties ContainerProps => Props.containerProps;
-        public NetworkContainerSet ContainerSet => null; //Network.ContainerSet;
+        public NetworkContainerSet ContainerSet => Network.ContainerSet;
 
         public NetworkContainer Container
         {
@@ -146,9 +146,9 @@ namespace TeleCore
 
         private void GetDirectlyAjdacentNetworkParts()
         {
-            for (var c = 0; c < CellIO.ConnectionCells.Length; c++)
+            for (var c = 0; c < CellIO.OuterConnnectionCells.Length; c++)
             {
-                var connectionCell = CellIO.ConnectionCells[c];
+                var connectionCell = CellIO.OuterConnnectionCells[c];
                 List<Thing> thingList = connectionCell.GetThingList(Thing.Map);
                 for (int i = 0; i < thingList.Count; i++)
                 {
@@ -184,7 +184,8 @@ namespace TeleCore
         //
         public void NetworkTick()
         {
-            var isPowered = Parent.IsPowered;
+            var parent = Parent;
+            var isPowered = parent.IsPowered;
             if (isPowered)
             {
                 if (receivingTicks > 0 && lastReceivedTick < Find.TickManager.TicksGame)
@@ -192,10 +193,10 @@ namespace TeleCore
 
                 if (!IsActive) return;
                 ProcessValues();
-                Parent.NetworkPartProcessor(this);
+                parent.NetworkPartProcessor(this);
             }
 
-            Parent.NetworkPostTick(isPowered);
+            parent.NetworkPostTick(isPowered);
         }
 
         //Network 
@@ -254,32 +255,36 @@ namespace TeleCore
             if (RequesterMode == RequesterMode.Automatic)
             {
                 //Resolve..
-                var maxVal = RequestedCapacityPercent * Container.Capacity;
+                //var maxVal = RequestedCapacityPercent * Container.Capacity;
+                var maxPercent = requestedCapacityPercent;
+                TLog.Debug($"Resolving requester with {maxPercent}");
                 foreach (var valType in Props.AllowedValuesByRole[NetworkRole.Requester])
                 {
-                    var valTypeValue = Container.ValueForType(valType) + Network.TotalValueFor(valType, NetworkRole.Storage);
-                    if (valTypeValue > 0)
+                    var requestedTypeValue = container.ValueForType(valType);
+                    var requestedTypeNetworkValue = Network.TotalValueFor(valType, NetworkRole.Storage);
+                    //var valTypeValue = Container.ValueForType(valType) + Network.TotalValueFor(valType, NetworkRole.Storage);
+                    TLog.Debug($"Adjusting {valType}: {requestedTypeValue} <- {requestedTypeNetworkValue} * {RequestedTypes[valType]}");
+                    if(requestedTypeNetworkValue > 0)
                     {
-                        var setValue = Mathf.Min(maxVal, valTypeValue);
-                        var tempVal = requestedTypes[valType];
+                        var setValue = Mathf.Min(maxPercent, requestedTypeNetworkValue/Container.Capacity);
+                        var tempVal = RequestedTypes[valType];
+                        
+                        TLog.Debug($"Setting: {setValue} on {tempVal.Item2}: {maxPercent-setValue}");
                         tempVal.Item2 = setValue;
                         RequestedTypes[valType] = tempVal;
-                        maxVal = Mathf.Clamp(maxVal - setValue, 0, maxVal);
+                        maxPercent = Mathf.Clamp(maxPercent - setValue, 0, maxPercent);
                     }
                 }
             }
 
-            TLog.Debug($"Doing requester tick for {this}: {Container.StoredPercent} > {RequestedCapacityPercent}");
+            //
             if (Container.StoredPercent >= RequestedCapacityPercent) return;
             foreach (var requestedType in RequestedTypes)
             {
                 //If not requested, skip
                 if (!requestedType.Value.Item1) continue;
-                TLog.Debug($"Requesting: {requestedType.Value.Item1}: {requestedType.Value.Item2}");
-                TLog.Debug($"--: {Container.PercentOf(requestedType.Key)} < {requestedType.Value.Item2} ");
                 if (Container.PercentOf(requestedType.Key) < requestedType.Value.Item2)
                 {
-                    TLog.Debug("Executing actual request... ");
                     DoNetworkAction(this, NetworkRole.Storage, part =>
                     {
                         var container = part.Container;
@@ -339,11 +344,14 @@ namespace TeleCore
             }
             */
         }
-
+        
         private void DoNetworkAction(INetworkSubPart fromPart, NetworkRole forRole, Action<INetworkSubPart> funcOnPart, Predicate<INetworkSubPart> validator)
         {
             var requestResult = Network.Graph.ProcessRequest(new NetworkGraphPathRequest(fromPart, forRole, validator, 1));
-            if (!requestResult.IsValid) return;
+            if (!requestResult.IsValid)
+            {
+                return;
+            }
             foreach (var targetPart in requestResult.allTargets)
             {
                 funcOnPart.Invoke(targetPart);
@@ -511,6 +519,14 @@ namespace TeleCore
             Parent.Notify_ReceivedValue();
         }
 
+        public void Notify_StateChanged(string signal)
+        {
+            if (signal is "FlickedOn" or "FlickedOff")
+            {
+                //...
+            }
+        }
+
         public void Notify_SetConnection(INetworkSubPart otherPart, NetEdge withEdge)
         {
             AdjacencySet.Notify_SetEdge(otherPart, withEdge);
@@ -545,8 +561,9 @@ namespace TeleCore
             return other.Network.NetworkRank == Network.NetworkRank;
         }
         */
-        public bool CanTransmit()
+        public bool CanTransmit(NetEdge netEdge)
         {
+            
             //TODO:
             //NetworkRole.GraphTransmitter;
             return NetworkRole.HasFlag(NetworkRole.Transmitter);
