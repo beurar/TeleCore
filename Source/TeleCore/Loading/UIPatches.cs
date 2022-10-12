@@ -113,45 +113,49 @@ namespace TeleCore
 
         //Dialogs
         [HarmonyPatch(typeof(Dialog_BillConfig))]
-        [HarmonyPatch("DoWindowContents")]
+        [HarmonyPatch(nameof(Dialog_BillConfig.DoWindowContents))]
         internal static class Dialog_BillConfigDoWindowContentsPatch
         {
             static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
             {
-                MethodInfo methodFinder = AccessTools.Method(typeof(StringBuilder), nameof(StringBuilder.AppendLine));
-                MethodInfo helper = AccessTools.Method(typeof(Dialog_BillConfigDoWindowContentsPatch),
-                    nameof(WriteNetworkCost));
+                //MethodInfo methodFinder = AccessTools.Method(typeof(StringBuilder), nameof(StringBuilder.AppendLine));
+                MethodInfo methodFinder_ToString = AccessTools.Method(typeof(object), nameof(object.ToString));
+                MethodInfo helper = AccessTools.Method(typeof(Dialog_BillConfigDoWindowContentsPatch), nameof(WriteNetworkCost));
 
-                bool continuedToPop = false, finalPatched = false;
-                int i = 0;
+                CodeInstruction lastInstruction = null;
+
+                bool finalPatched = false;
                 foreach (var code in instructions)
                 {
-                    if (i < 2 && code.opcode == OpCodes.Callvirt && code.operand.Equals(methodFinder))
+                    if (code is {operand: { }})
                     {
-                        i++;
+                        //Finds StringBuilder.ToString
+                        var lastOperand = (lastInstruction?.operand as LocalBuilder)?.LocalType == typeof(StringBuilder);
+                        var codeOperand = code.operand.Equals(methodFinder_ToString);
+                        if (codeOperand && lastOperand)
+                        {
+                            if (!finalPatched)
+                            {
+                                //Current Stack: StringBuilder local field
+                                //Loads Instance Local Field Onto Stack
+                                yield return new CodeInstruction(OpCodes.Ldarg_0);
+                                
+                                //Calls WriteNetworkCost(stringbuilder, instance)
+                                yield return new CodeInstruction(OpCodes.Call, helper);
+                                
+                                //Re-return stringbuilder onto stack
+                                yield return lastInstruction.Clone();
+                                finalPatched = true;
+                            }
+                        }
                     }
-
+                    
+                    lastInstruction = code;
                     yield return code;
-                    if (i != 2) continue;
-
-                    if (!continuedToPop)
-                    {
-                        continuedToPop = true;
-                        continue;
-                    }
-
-                    if (!finalPatched)
-                    {
-                        yield return new CodeInstruction(OpCodes.Ldarg_0);
-                        yield return new CodeInstruction(OpCodes.Ldloc_S, 34);
-                        yield return new CodeInstruction(OpCodes.Call, helper);
-                        finalPatched = true;
-                    }
                 }
-
             }
 
-            static void WriteNetworkCost(Dialog_BillConfig instance, StringBuilder stringBuilder)
+            static void WriteNetworkCost(StringBuilder stringBuilder, Dialog_BillConfig instance)
             {
                 if (instance.bill is Bill_Production_Network tBill)
                 {

@@ -7,7 +7,7 @@ using Verse;
 
 namespace TeleCore
 {
-    public class TurretDefExtension
+    public class TurretDefExtension : DefModExtension
     {
         //
         public TurretHubProperties hub;

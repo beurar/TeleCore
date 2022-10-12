@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using HarmonyLib;
+using HotSwap;
 using UnityEngine;
 using Verse;
 
@@ -17,6 +18,12 @@ namespace TeleCore
         Resize,
         Rotate,
         PivotDrag
+    }
+
+    public enum TexStretchMode
+    {
+        Normal,
+        StretchToFit,
     }
 
     public enum TexCoordAnchor
@@ -32,6 +39,7 @@ namespace TeleCore
         BottomRight,
     }
 
+    [HotSwappable]
     internal class TextureElement : UIElement, IKeyFramedElement, IReorderableElement
     {
         //
@@ -120,6 +128,12 @@ namespace TeleCore
             set => texture.TexCoordAnchor = value;
         }
 
+        public TexStretchMode StretchMode
+        {
+            get => texture.StretchMode;
+            set => texture.StretchMode = value;
+        }
+        
         public bool AttachScript
         {
             get => texture.AttachScript; 
@@ -489,12 +503,9 @@ namespace TeleCore
         protected override void DrawContentsBeforeRelations(Rect inRect)
         {
             if (!Visibility) return;
-
-            Material.SetTextureOffset("_MainTex", TexCoords.position);
-            Material.SetTextureScale("_MainTex", TexCoords.size);
-
-            TWidgets.DrawRotatedMaterial(TWidgets.RectFitted(TextureRect, TexCoords.size, TexCoordAnchor), RenderPivot, TRotation, Material, TexCoords);
-
+            
+            TWidgets.DrawRotatedMaterial(TWidgets.RectFitted(TextureRect, TexCoords.size, Texture.Size(), TexCoordAnchor, StretchMode), RenderPivot, TRotation, Material, TexCoords);
+            
             if (TRotation != 0 && IsSelected)
             {
                 var matrix = GUI.matrix;
@@ -534,7 +545,7 @@ namespace TeleCore
         public void DrawElementInScroller(Rect inRect)
         {
             var mat = Material;
-            TWidgets.DrawRotatedMaterial(TWidgets.RectFitted(inRect, TexCoords.size, TexCoordAnchor), Vector2.zero, 0, mat, TexCoords);
+            TWidgets.DrawRotatedMaterial(TWidgets.RectFitted(inRect, TexCoords.size, Texture.Size(), TexCoordAnchor, StretchMode), Vector2.zero, 0, mat, TexCoords);
 
             Text.Anchor = TextAnchor.LowerLeft;
             TWidgets.DoTinyLabel(inRect, LayerTag);

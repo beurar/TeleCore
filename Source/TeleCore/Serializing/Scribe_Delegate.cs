@@ -76,12 +76,6 @@ namespace TeleCore
             {
                 if (isSaving)
                 {
-                    string fieldString = "";
-                    foreach (var typeField in declaringTypeFields)
-                    {
-                        fieldString += typeField + "\n";
-                    }
-
                     //Save LookModes for internal 
                     var typesLooks = LookModes(@delegate.Target, declaringTypeFields);
                     lookModes = typesLooks.Item2;
@@ -202,18 +196,16 @@ namespace TeleCore
                 {
                     looks[l] = LookMode.Reference;
                 }
-
                 if (val is Def)
                 {
                     looks[l] = LookMode.Def;
                 }
-
                 if (types[l].IsValueType)
                 {
                     looks[l] = LookMode.Value;
                 }
             }
-            return (types.ToList(),looks.ToList());
+            return (types.ToList(), looks.ToList());
         }
         
         private void TryScribe(ref object val, ref Type valType, FieldInfo field, LookMode mode)

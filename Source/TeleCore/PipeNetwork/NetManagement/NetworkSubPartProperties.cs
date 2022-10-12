@@ -11,7 +11,7 @@ namespace TeleCore
     public class NetworkSubPartProperties
     {
         //Cached Data
-        private NetworkRole? networkRole;
+        private NetworkRole networkRole;
         private List<NetworkValueDef> allowedValuesInt;
         private Dictionary<NetworkRole, List<NetworkValueDef>> allowedValuesByRoleInt;
 
@@ -74,7 +74,7 @@ namespace TeleCore
             get
             {
                 
-                if (networkRole == null)
+                if (networkRole == 0x0000)
                 {
                     networkRole = NetworkRole.Transmitter;
                     foreach (var role in networkRoles)
@@ -82,7 +82,7 @@ namespace TeleCore
                         networkRole |= role;
                     }
                 }
-                return networkRole.Value;
+                return networkRole;
             }
         }
     }

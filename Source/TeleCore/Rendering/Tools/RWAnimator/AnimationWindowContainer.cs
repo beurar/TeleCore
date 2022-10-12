@@ -21,6 +21,8 @@ namespace TeleCore
         //
         private readonly AnimationFileSaveLoader fileSaveLoaderWindow;
 
+        private bool keepProject = false;
+        
         public AnimationWindowContainer(Window parent, Rect rect, UIElementMode mode) : base(rect, mode)
         {
             //
@@ -80,12 +82,33 @@ namespace TeleCore
             topBar = new UITopBar(buttonMenus);
             topBar.AddCloseButton(() =>
             {
-                parentWindow.Close();
+                keepProject = false;
+                if (canvas.Initialized)
+                {
+                    var msgBox = new Dialog_MessageBox("Do you want to keep the current project open after closing?",
+                        buttonAText: "Yes keep it",
+                        buttonBAction: () =>
+                        {
+                            keepProject = true;
+                            parentWindow.Close();
+                        },
+                        buttonBText: "No just close it",
+                        buttonAAction: () => { parentWindow.Close(); },
+                        cancelAction: () => { return; },
+                        layer: WindowLayer.Super
+                    );
+                    Find.WindowStack.Add(msgBox);
+                }
+                else
+                {
+                    parentWindow.Close();
+                }
             });
         }
 
         public void Notify_Reopened()
         {
+            if (keepProject) return;
             canvas?.Reset();
             timeLine?.Reset();
         }

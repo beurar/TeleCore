@@ -25,6 +25,7 @@
     <FileVersion></FileVersion>
     <Version>1.2.5</Version>
     <SignAssembly>False</SignAssembly>
+    <PackageVersion>1.4.1</PackageVersion>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
@@ -51,13 +52,29 @@
 	</ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Krafs.Rimworld.Ref" Version="*" GeneratePathProperty="true" />
-    <PackageReference Include="Lib.Harmony" Version="*" ExcludeAssets="runtime" />
-    <PackageReference Include="TaskPubliciser" Version="1.0.3" />
+    <PackageReference Include="Krafs.Rimworld.Ref" Version="1.4.3510-beta" GeneratePathProperty="true">
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    
+    <PackageReference Include="Lib.Harmony" Version="2.2.2" ExcludeAssets="runtime">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>compile; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
 
+    <PackageReference Include="TaskPubliciser" Version="1.0.3">
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <!--
     <PackageReference Include="Microsoft.NETCore.Platforms" Version="*" />
-    <PackageReference Include="UnlimitedHugs.Rimworld.HugsLib" Version="*" ExcludeAssets="runtime" />
-    <PackageReference Include="RimWorld.MultiplayerAPI" Version="*" ExcludeAssets="runtime" />
+    -->
+    <PackageReference Include="UnlimitedHugs.Rimworld.HugsLib" Version="9.0.1" ExcludeAssets="runtime">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>compile; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="RimWorld.MultiplayerAPI" Version="0.4.0" ExcludeAssets="runtime">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>compile; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
   </ItemGroup>
 
   <ItemGroup>
@@ -65,6 +82,12 @@
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>
     </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="HotSwap">
+      <HintPath>..\..\..\HotSwap\Assemblies\HotSwap.dll</HintPath>
+    </Reference>
   </ItemGroup>
 
   <Target Name="MyCode" BeforeTargets="UpdateReferences">

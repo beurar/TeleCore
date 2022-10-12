@@ -141,23 +141,34 @@ namespace TeleCore
         }
 
         //Utility
-        public static Rect RectFitted(Rect inRect, Vector2 texProportions, TexCoordAnchor texCoordAnchor, float scale = 1)
+        public static Rect RectFitted(Rect outerRect, Vector2 uvScale, Vector2 textureSize, TexCoordAnchor texCoordAnchor, TexStretchMode stretchMode, float scale = 1)
+        {
+            var size = uvScale;
+            if (stretchMode == TexStretchMode.Normal)
+                size = textureSize;
+            
+            Rect rect = RectFitted(outerRect, scale, size);
+            return GenTransform.OffSetByCoordAnchor(outerRect, rect, texCoordAnchor);
+        }
+
+        private static Rect RectFitted(Rect outerRect, float scale, Vector2 texProportions)
         {
             Rect rect = new Rect(0f, 0f, texProportions.x, texProportions.y);
             float num;
-            if (rect.width / rect.height < inRect.width / inRect.height)
+            if (rect.width / rect.height < outerRect.width / outerRect.height)
             {
-                num = inRect.height / rect.height;
+                num = outerRect.height / rect.height;
             }
             else
             {
-                num = inRect.width / rect.width;
+                num = outerRect.width / rect.width;
             }
-
             num *= scale;
             rect.width *= num;
             rect.height *= num;
-            return GenTransform.OffSetByCoordAnchor(inRect, rect, texCoordAnchor);
+            rect.x = outerRect.x + outerRect.width / 2f - rect.width / 2f;
+            rect.y = outerRect.y + outerRect.height / 2f - rect.height / 2f;
+            return rect;
         }
 
         public static Vector2 Size(this Texture texture)
@@ -274,6 +285,11 @@ namespace TeleCore
         //Texturea/Materials
         public static void DrawRotatedMaterial(Rect rect, Vector2 pivot, float angle, Material material, Rect texCoords = default(Rect))
         {
+            if (Event.current.type != EventType.Repaint)
+            {
+                return;
+            }
+            
             Matrix4x4 matrix = Matrix4x4.identity;
             if (angle != 0f)
             {

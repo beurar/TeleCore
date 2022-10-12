@@ -55,16 +55,15 @@ namespace TeleCore
             foreach (var def in DefDatabase<ThingDef>.AllDefsListForReading)
             {
                 //
+                //Sub Menu
+                if (def.HasSubMenuExtension(out var extension))
+                {
+                    SubMenuThingDefList.Add(def, extension);
+                }
+                
                 if (allInjectors == null) continue;
                 foreach (var injector in allInjectors)
                 {
-                    //Sub Menu
-                    if (def.HasTeleExtension(out var extension))
-                    {
-                        if(extension.subMenuDesignation != null)
-                            SubMenuThingDefList.Add(def, extension);
-                    }
-
                     //Injections
                     injector.OnThingDefInject(def);
 
@@ -74,7 +73,6 @@ namespace TeleCore
                     if (!thingClass.IsSubclassOf(typeof(Pawn)) && thingClass != typeof(Pawn)) continue;
                     if (def.comps == null)
                         def.comps = new List<CompProperties>();
-
 
                     injector.OnPawnInject(def);
                 }

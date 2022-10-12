@@ -45,7 +45,20 @@ namespace TeleCore
         {
             Constructor(map, factory);
         }
+        
+        /*TODO:TEST MANUAL DISPOSE
+        ~ComputeGrid()
+        {
+            Dispose();
+        }
 
+        public void Dispose()
+        {
+            buffer.Dispose();
+        }
+        */
+        
+        //
         public void ThreadSafeInit()
         {
             isReady = true;
@@ -55,6 +68,13 @@ namespace TeleCore
 
         private void Constructor(Map map, Func<int, T> factory)
         {
+            //
+            ApplicationQuitUtility.RegisterQuitEvent(delegate
+            {
+                buffer.Dispose();
+            });
+            
+            //
             this.map = map;
             grid = new T[map.cellIndices.NumGridCells];
             for (int i = 0; i < grid.Length; i++)

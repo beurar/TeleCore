@@ -102,7 +102,7 @@ namespace TeleCore
             refuelComp = GetComp<CompRefuelable>();
             networkComp = GetComp<Comp_NetworkStructure>();
 
-            defExtension = def.Tele().turret;
+            defExtension = def.TurretExtension();
             turretSet = new TurretGunSet(defExtension, this);
             //
             canForceTarget = defExtension.turrets.Any(t => t.canForceTarget);

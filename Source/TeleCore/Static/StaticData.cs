@@ -14,10 +14,11 @@ namespace TeleCore
         public const float DeltaTime = 1f / 60f;
 
         //
-        internal static Dictionary<int, MapComponent_TeleCore> TeleMapComps;
-        internal static Dictionary<ThingDef, Designator> CachedDesignators;
+        internal static Dictionary<SubBuildMenuDef, Window> windowsByDef;
+        internal static Dictionary<int, MapComponent_TeleCore> teleMapComps;
+        internal static Dictionary<ThingDef, Designator> cachedDesignators;
 
-        internal static MapComponent_TeleCore TeleMapComp(int mapInt) => TeleMapComps[mapInt];
+        public static MapComponent_TeleCore TeleMapComp(int mapInt) => teleMapComps[mapInt];
 
         static StaticData()
         {
@@ -27,8 +28,9 @@ namespace TeleCore
         internal static void Notify_Reload()
         {
             TLog.Message("Clearing StaticData!");
-            TeleMapComps = new Dictionary<int, MapComponent_TeleCore>();
-            CachedDesignators = new Dictionary<ThingDef, Designator>();
+            teleMapComps = new Dictionary<int, MapComponent_TeleCore>();
+            cachedDesignators = new Dictionary<ThingDef, Designator>();
+            windowsByDef = new Dictionary<SubBuildMenuDef, Window>();
             ActionComposition._ID = 0;
         }
 
@@ -39,17 +41,17 @@ namespace TeleCore
 
         internal static void Notify_NewTibMapComp(MapComponent_TeleCore mapComp)
         {
-            TeleMapComps[mapComp.map.uniqueID] = mapComp;
+            teleMapComps[mapComp.map.uniqueID] = mapComp;
         }
 
-        internal static MapComponent_TeleCore TeleCore(this Map map)
+        public static MapComponent_TeleCore TeleCore(this Map map)
         {
             if (map == null)
             {
                 TLog.Warning("Map is null for TeleCore MapComp getter");
                 return null;
             }
-            return TeleMapComps[map.uniqueID];
+            return teleMapComps[map.uniqueID];
         }
 
         public static WorldComp_Tele WorldCompTele()

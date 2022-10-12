@@ -9,7 +9,9 @@ namespace TeleCore
 {
     public class Comp_AnimationRenderer : ThingComp
     {
-        private List<Material>[] MaterialsBySide;
+        private List<Material>[] materialsBySide;
+        private readonly List<KeyFrameData> currentKeyFramesBySide = new ();
+        
         private Dictionary<string, AnimationPart>[] TaggedAnimationsBySide;
         private Dictionary<string, Dictionary<Material, List<KeyFrame>>>[] TaggedAnimationFramesBySide;
 
@@ -17,16 +19,20 @@ namespace TeleCore
         private int currentFrame;
         private int finalFrame;
 
-        private bool sustain = false;
+        private bool shouldSustain = false;
+
+        public Comp_AnimationRenderer()
+        {
+        }
 
         public int CurrentFrame => currentFrame;
 
         public CompProperties_AnimationRenderer Props => (CompProperties_AnimationRenderer) props;
 
-        private Dictionary<Material, TextureData> DataByMat = new();
+        private Dictionary<Material, TextureData> DataByMat { get; } = new();
         private Dictionary<string, AnimationPart> CurrentAnimations => TaggedAnimationsBySide[UsedRotation];
         private Dictionary<string, Dictionary<Material, List<KeyFrame>>> CurrentKeyFrames => TaggedAnimationFramesBySide[UsedRotation];
-        private List<Material> CurrentMaterials => MaterialsBySide[UsedRotation];
+        private List<Material> CurrentMaterials => materialsBySide[UsedRotation];
 
         private bool CurrentFlipped => parent.Rotation == Rot4.West;
         private int UsedRotation
@@ -63,6 +69,7 @@ namespace TeleCore
             }
         }
 
+        //
         public void Start(string tag, bool sustain = false)
         {
             if (!CurrentAnimations.ContainsKey(tag))
@@ -74,7 +81,7 @@ namespace TeleCore
             currentFrame = 0;
             currentAnim = tag;
             finalFrame = CurrentAnimations[tag].frames;
-            this.sustain = sustain;
+            this.shouldSustain = sustain;
         }
 
         public void Stop()
@@ -82,7 +89,7 @@ namespace TeleCore
             currentAnim = null;
             currentFrame = 0;
             finalFrame = 0;
-            sustain = false;
+            shouldSustain = false;
 
             if (Props.defaultAnimationTag != null)
             {
@@ -90,18 +97,23 @@ namespace TeleCore
             }
         }
 
+        //
         private void Ticker()
         {
             if (currentAnim == null) return;
             if (currentFrame < finalFrame)
             {
-               // GetDataFor();
                 currentFrame++;
+                currentKeyFramesBySide.Clear();
+                foreach (var material in CurrentMaterials)
+                {
+                    currentKeyFramesBySide.Add(GetCurrentDataFor(material));
+                }
             }
 
             if (currentFrame >= finalFrame)
             {
-                if (sustain)
+                if (shouldSustain)
                 {
                     currentFrame = 0;
                     return;
@@ -116,7 +128,7 @@ namespace TeleCore
             if (Props.animationDef == null) return;
             
             //
-            MaterialsBySide = new List<Material>[4] {new(), new(), new(), new()};
+            materialsBySide = new List<Material>[4] {new(), new(), new(), new()};
             TaggedAnimationFramesBySide = new Dictionary<string, Dictionary<Material, List<KeyFrame>>>[4] {new(), new(), new(), new()};
             TaggedAnimationsBySide = new Dictionary<string, AnimationPart>[4]{new(), new(), new(), new()};
 
@@ -127,7 +139,7 @@ namespace TeleCore
                 if (!(set.HasAnimations && set.HasTextures)) continue;
                 foreach (var textureData in set.textureParts)
                 {
-                    MaterialsBySide[i].Add(textureData.Material);
+                    materialsBySide[i].Add(textureData.Material);
                     DataByMat.Add(textureData.Material, textureData);
                 }
 
@@ -140,7 +152,7 @@ namespace TeleCore
                         {
                             var frameSet = animation.keyFrames[k];
                             var list = frameSet?.savedList ?? new List<KeyFrame>();
-                            frames.Add(MaterialsBySide[i][k], list);
+                            frames.Add(materialsBySide[i][k], list);
                         }
                     }
                     TaggedAnimationsBySide[i].Add(animation.tag, animation);
@@ -158,7 +170,7 @@ namespace TeleCore
             }
         }
 
-        private bool GetKeyFrames(Material material, out KeyFrame? frame1, out KeyFrame? frame2, out float dist)
+        private bool GetCurrentKeyFrames(Material material, out KeyFrame? frame1, out KeyFrame? frame2, out float dist)
         {
             frame1 = frame2 = null;
             var frames = CurrentKeyFrames[currentAnim][material];
@@ -174,9 +186,9 @@ namespace TeleCore
             return frame1 != null && frame2 != null;
         }
 
-        private KeyFrameData GetDataFor(Material material)
+        private KeyFrameData GetCurrentDataFor(Material material)
         {
-            if (GetKeyFrames(material, out var frame1, out var frame2, out var lerpVal))
+            if (GetCurrentKeyFrames(material, out var frame1, out var frame2, out var lerpVal))
                 return frame1.Value.Data.Interpolated(frame2.Value.Data, lerpVal);
 
             if (frame1.HasValue)
@@ -199,7 +211,7 @@ namespace TeleCore
             for (var i = 0; i < CurrentMaterials.Count; i++)
             {
                 var material = CurrentMaterials[i];
-                var keyFrame = GetDataFor(material);
+                var keyFrame = currentKeyFramesBySide[i];
                 var data = DataByMat[material];
 
                 var drawOffset = PixelToCellOffset(keyFrame.TPosition, drawSize);

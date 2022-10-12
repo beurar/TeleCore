@@ -16,6 +16,7 @@ namespace TeleCore
         private bool attachScript = false;
         private string layerTag = null;
         private TexCoordAnchor anchor = TexCoordAnchor.Center;
+        private TexStretchMode stretchMode = TexStretchMode.Normal;
         private int layerIndex = 0;
 
         //
@@ -41,6 +42,12 @@ namespace TeleCore
 
         public Rect TexCoordReference => texCoordsReference;
 
+        public TexStretchMode StretchMode
+        {
+            get => stretchMode;
+            set => stretchMode = value;
+        }
+        
         public TexCoordAnchor TexCoordAnchor
         {
             get => anchor;

@@ -283,12 +283,12 @@ namespace TeleCore
             TWidgets.DrawBoxHighlight(UILayout["BuildOptionsRect"]);
             var controllDesignator = GenData.GetDesignatorFor<Designator_Build>(parentComp.NetworkDef.controllerDef);
             var pipeDesignator = GenData.GetDesignatorFor<Designator_Build>(parentComp.NetworkDef.transmitterDef);
-            if (Widgets.ButtonImage(UILayout["ControllerOptionRect"], controllDesignator.icon))
+            if (Widgets.ButtonImage(UILayout["ControllerOptionRect"], controllDesignator.icon as Texture2D))
             {
                 controllDesignator.ProcessInput(Event.current);
             }
 
-            if (Widgets.ButtonImage(UILayout["PipeOptionRect"], pipeDesignator.icon))
+            if (Widgets.ButtonImage(UILayout["PipeOptionRect"], pipeDesignator.icon as Texture2D))
             {
                 pipeDesignator.ProcessInput(Event.current);
             }

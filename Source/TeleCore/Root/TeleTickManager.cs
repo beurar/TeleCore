@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Threading;
 using UnityEngine;
 using Verse;
 
@@ -50,7 +51,7 @@ namespace TeleCore
         {
             TLog.Message("Starting TeleTickManager!");
         }
-
+        
         public void Update()
         {
             if (Paused) return;
@@ -81,7 +82,7 @@ namespace TeleCore
                 //
                 realTimeToTickThrough -= curTimePerTick;
                 num++;
-
+                
                 if (Paused || (float)clock.ElapsedMilliseconds > 1000f / 30f)
                 {
                     break;

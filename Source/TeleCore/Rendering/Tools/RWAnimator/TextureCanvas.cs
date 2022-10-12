@@ -178,13 +178,15 @@ namespace TeleCore
                 if (!CanWork)
                 {
                     var workingRect = InRect.AtZero().center.RectOnPos(new Vector2(260, 130)).Rounded();
+                    TWidgets.DrawColoredBox(workingRect, TColor.BGDarker, TColor.MenuSectionBGBorderColor, 1);
+                    
                     Text.Anchor = TextAnchor.MiddleCenter;
                     Widgets.Label(workingRect, "Missing Animation Parts");
                     Text.Anchor = default;
                     return;
                 }
             }
-            else
+            else //Draw Animation Init
             {
                 var workingRect = Origin.RectOnPos(new Vector2(260, 130)).Rounded();
                 TWidgets.DrawColoredBox(workingRect, TColor.BGDarker, TColor.MenuSectionBGBorderColor, 1);
@@ -192,14 +194,16 @@ namespace TeleCore
                 Listing_Standard listing = new Listing_Standard();
                 listing.Begin(workingRect);
 
-                listing.Label("New Animation Set");
+                listing.Label("TC_NewAnim".Translate());
                 listing.GapLine();
-                listing.TextFieldLabeled("DefName:", ref animationMetaData.defName, anchor: TextAnchor.MiddleLeft);
+                listing.TextFieldLabeled("TC_NewAnim_Defname".Translate() + ": ", ref animationMetaData.defName, anchor: TextAnchor.MiddleLeft);
 
-                if (listing.ButtonText("Init"))
+                if (listing.ButtonText("TC_NewAnim_Init".Translate()))
                 {
-                    if(animationMetaData.defName.Length > 0)
-                        AnimationData.Notify_Init();
+                    if (animationMetaData.defName?.Length <= 0)
+                        animationMetaData.defName = "NewAnim";
+                    
+                    AnimationData.Notify_Init();
                 }
 
                 listing.End();
@@ -326,7 +330,7 @@ namespace TeleCore
             Widgets.EndScrollView();
             if (Widgets.ButtonText(animationButtonRect, "Add Part"))
             {
-                var animation = AnimationData.Notify_CreateNewAnimationPart("Undefined", 1);
+                var animation = AnimationData.Notify_CreateNewAnimationPart("NewPart", 1);
                 foreach (var element in ChildElements)
                 {
                     TextureElement texElement = (TextureElement)element;
@@ -450,7 +454,7 @@ namespace TeleCore
 
             listing.CheckboxLabeled("Attach Script: ", ref attachScript);
 
-            if (listing.ButtonTextLabeled("TextAnchor: ", $"{tex.TexCoordAnchor}"))
+            if (listing.ButtonTextLabeled("TexAnchor: ", $"{tex.TexCoordAnchor}"))
             {
                 var floatOptions = new List<FloatMenuOption>();
                 foreach (var value in Enum.GetValues(typeof(TexCoordAnchor)))
@@ -462,6 +466,20 @@ namespace TeleCore
                 }
                 Find.WindowStack.Add(new FloatMenu(floatOptions));
             }
+            
+            if (listing.ButtonTextLabeled("StretchMode: ", $"{tex.StretchMode}"))
+            {
+                var floatOptions = new List<FloatMenuOption>();
+                foreach (var value in Enum.GetValues(typeof(TexStretchMode)))
+                {
+                    floatOptions.Add(new FloatMenuOption($"{value}", delegate
+                    {
+                        tex.StretchMode = (TexStretchMode)value;
+                    }));
+                }
+                Find.WindowStack.Add(new FloatMenu(floatOptions));
+            }
+            
 
             listing.GapLine();
             listing.Label($"View".Bold());

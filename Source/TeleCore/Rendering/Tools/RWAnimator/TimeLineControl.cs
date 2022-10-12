@@ -354,6 +354,8 @@ namespace TeleCore
 
         private void DrawEventFlags(Rect rect, float height)
         {
+            if (CurrentPart?.InternalEventFlags == null) return;
+            
             foreach (var eventFlag in CurrentPart.InternalEventFlags)
             {
                 var flagValue = eventFlag.Value;

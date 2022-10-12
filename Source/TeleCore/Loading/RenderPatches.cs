@@ -14,7 +14,8 @@ namespace TeleCore
     {
         //Equipment Size Fix
         //Draw Equipment Size Fix
-        [HarmonyPatch(typeof(PawnRenderer)), HarmonyPatch("DrawEquipmentAiming")]
+        /*
+        [HarmonyPatch(typeof(PawnRenderer)), HarmonyPatch(nameof(PawnRenderer.DrawEquipmentAiming))]
         public static class DrawEquipmentAimingPatch
         {
             static readonly MethodInfo injection = AccessTools.Method(typeof(DrawEquipmentAimingPatch), nameof(RenderInjection));
@@ -42,6 +43,7 @@ namespace TeleCore
                 Graphics.DrawMesh(mesh, Matrix4x4.TRS(drawLoc, quat, new Vector3(size.x, 1, size.y)), mat, layer);
             }
         }
+        */
 
         /*
         //Fix pipe designator drawghost

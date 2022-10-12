@@ -12,33 +12,40 @@ namespace TeleCore
 {
     public class TeleDefExtension : DefModExtension
     {
-        public SubMenuDesignation subMenuDesignation;
-
         //
-        public List<ThingGroupDef> thingGroups = new List<ThingGroupDef>(){ThingGroupDefOf.All};
-
+        public ThingGroupCollection thingGroups = new ThingGroupCollection();
         public List<GraphicData> extraGraphics;
-
-        public FXDefExtension graphics;
         public TurretDefExtension turret;
         public ProjectileDefExtension projectile;
-
-
     }
 
-    public class SubMenuDesignation
+    public class SubMenuExtension : DefModExtension
     {
-        public SubThingGroupDef groupDef;
-        public SubThingCategory category;
+        public SubMenuGroupDef groupDef;
+        public SubMenuCategoryDef category;
         public bool hidden;
+    }
+    
+    //
+    public class ThingGroupCollection
+    {
+        public List<ThingGroupDef> groups = new List<ThingGroupDef>(){ThingGroupDefOf.All};
 
+        /*TODO: Add listed items to list
         public void LoadDataFromXmlCustom(XmlNode xmlRoot)
         {
+            if (xmlRoot.FirstChild?.Name == "<li>")
+            {
+                return;
+            }
             var innerValue = xmlRoot.InnerText;
             string s = Regex.Replace(innerValue, @"\s+", "");
-            string[] array = s.Split(',');
-            DirectXmlCrossRefLoader.RegisterObjectWantsCrossRef(this, $"{nameof(groupDef)}", array[0]);
-            DirectXmlCrossRefLoader.RegisterObjectWantsCrossRef(this, $"{nameof(category)}", array[1]);
+            string[] array = s.Split('|');
+            for (var i = 0; i < array.Length; i++)
+            {
+                var groupDefname = array[i];
+            }
         }
+        */
     }
 }

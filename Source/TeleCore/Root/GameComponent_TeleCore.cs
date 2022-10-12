@@ -47,11 +47,13 @@ namespace TeleCore
         public override void GameComponentUpdate()
         {
             base.GameComponentUpdate();
+            updateManager.Update();
         }
 
         public override void GameComponentOnGUI()
         {
             base.GameComponentOnGUI();
+            updateManager.OnGUI();
         }
     }
 }

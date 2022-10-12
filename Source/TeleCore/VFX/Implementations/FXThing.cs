@@ -14,7 +14,7 @@ namespace TeleCore
     /// </summary>
     public class FXThing : ThingWithComps, IFXObject
     {
-        public FXDefExtension Extension => def.Tele().graphics;
+        public FXDefExtension Extension => def.FXExtension();
         public CompFX FXComp => this.GetComp<CompFX>();
 
         public virtual bool IsMain => true;

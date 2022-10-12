@@ -38,7 +38,8 @@
 			<Flammability>0</Flammability>
 			<DeteriorationRate>0.25</DeteriorationRate>
 		</statBases>
-		<smeltable>true</smeltable>
+		<tradeability>Sellable</tradeability>
+		<smeltable>false</smeltable>
 		<intricate>true</intricate>
 		<thingCategories>
 			<li>Manufactured</li>
@@ -46,7 +47,9 @@
 		<modExtensions>
 			<li Class="TeleCore.TeleDefExtension">
 				<thingGroups>
-					<li>NetworkPortableContainers</li>
+					<groups>
+						<li>NetworkPortableContainers</li>
+					</groups>
 				</thingGroups>
 			</li>
 		</modExtensions>

@@ -69,9 +69,17 @@ namespace TeleCore
                 {
                     yield return $"controllerDef {controllerDef} has no networks defined!";
                 }
-                else if (!compProps.networks.Find(n => n.networkDef == this).NetworkRole.HasFlag(NetworkRole.Controller))
+                else
                 {
-                    yield return $"controllerDef {controllerDef} does not have the Controller NetworkRole assigned!";
+                    var networkDef = compProps.networks.Find(n => n.networkDef == this);
+                    if (networkDef == null)
+                    {
+                        yield return $"Cannot find {nameof(NetworkSubPartProperties)} with networkDef '{this}'.";
+                    }
+                    else if(!networkDef.NetworkRole.HasFlag(NetworkRole.Controller))
+                    {
+                        yield return $"controllerDef {controllerDef} does not have the Controller NetworkRole assigned!";
+                    }
                 }
             }
         }

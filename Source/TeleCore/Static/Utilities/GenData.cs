@@ -13,6 +13,11 @@ namespace TeleCore
 {
     public static class GenData
     {
+        public static bool IsIncendiary(this Verb verb)
+        {
+            return verb.IsIncendiary_Melee() || verb.IsIncendiary_Ranged();
+        }
+        
         public static string Location(this Texture texture)
         {
             if (texture is not Texture2D tx2D)
@@ -70,6 +75,14 @@ namespace TeleCore
             TeleUpdateManager.Notify_AddNewTickAction(action);
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        public static void AddTaggedAction(this Action action, TeleUpdateManager.TaggedActionType type, string tag)
+        {
+            TeleUpdateManager.Notify_AddTaggedAction(type, action, tag);
+        }
+        
         /// <summary>
         /// Enqueues an action to be run once on the main thread when available.
         /// </summary>
@@ -161,14 +174,14 @@ namespace TeleCore
         /// </summary>
         public static T GetDesignatorFor<T>(ThingDef def) where T : Designator
         {
-            if (StaticData.CachedDesignators.TryGetValue(def, out var des))
+            if (StaticData.cachedDesignators.TryGetValue(def, out var des))
             {
                 return (T)des;
             }
 
             des = (Designator)Activator.CreateInstance(typeof(T), def);
             des.icon = def.uiIcon;
-            StaticData.CachedDesignators.Add(def, des);
+            StaticData.cachedDesignators.Add(def, des);
             return (T)des;
         }
 

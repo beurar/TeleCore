@@ -10,24 +10,24 @@ namespace TeleCore
 {
     internal static class SubMenuThingDefList
     {
-        public static Dictionary<SubThingGroupDef, Dictionary<SubThingCategory, List<ThingDef>>> Categorized = new();
-        public static List<SubThingGroupDef> AllSubGroupDefs = new List<SubThingGroupDef>();
+        public static Dictionary<SubMenuGroupDef, Dictionary<SubMenuCategoryDef, List<ThingDef>>> Categorized = new();
+        public static List<SubMenuGroupDef> AllSubGroupDefs = new List<SubMenuGroupDef>();
 
 
-        public static Dictionary<SubThingGroupDef, Dictionary<SubThingCategory, List<Designator>>> ResolvedDesignators = new();
+        public static Dictionary<SubMenuGroupDef, Dictionary<SubMenuCategoryDef, List<Designator>>> ResolvedDesignators = new();
 
         static SubMenuThingDefList()
         {
-            var list1 = DefDatabase<SubThingGroupDef>.AllDefs;
-            var list2 = DefDatabase<SubThingCategory>.AllDefs;
+            var list1 = DefDatabase<SubMenuGroupDef>.AllDefs;
+            var list2 = DefDatabase<SubMenuCategoryDef>.AllDefs;
             for (int i = 0; i < list1.Count(); i++)
             {
-                SubThingGroupDef des = list1.ElementAt(i);
-                var dict = new Dictionary<SubThingCategory, List<ThingDef>>();
-                var designatorDict = new Dictionary<SubThingCategory, List<Designator>>();
+                SubMenuGroupDef des = list1.ElementAt(i);
+                var dict = new Dictionary<SubMenuCategoryDef, List<ThingDef>>();
+                var designatorDict = new Dictionary<SubMenuCategoryDef, List<Designator>>();
                 for (int j = 0; j < list2.Count(); j++)
                 {
-                    SubThingCategory cat = list2.ElementAt(j);
+                    SubMenuCategoryDef cat = list2.ElementAt(j);
                     dict.Add(cat, new List<ThingDef>());
                     designatorDict.Add(cat, new List<Designator>());
                 }
@@ -38,9 +38,9 @@ namespace TeleCore
         }
 
         //Discovery
-        public static bool HasUnDiscovered(SubThingGroupDef faction)
+        public static bool HasUnDiscovered(SubMenuGroupDef group)
         {
-            return Categorized[faction].Any(d => HasUnDiscovered(faction, d.Key));
+            return Categorized[group].Any(d => HasUnDiscovered(group, d.Key));
         }
 
         public static bool IsActive(ThingDef def)
@@ -48,9 +48,9 @@ namespace TeleCore
             return def.IsResearchFinished;
         }
 
-        public static bool HasUnDiscovered(SubThingGroupDef faction, SubThingCategory category)
+        public static bool HasUnDiscovered(SubMenuGroupDef group, SubMenuCategoryDef categoryDef)
         {
-            return Categorized[faction][category].Any(d => !ConstructionOptionDiscovered(d) && IsActive(d));
+            return Categorized[group][categoryDef].Any(d => !ConstructionOptionDiscovered(d) && IsActive(d));
         }
 
         internal static bool ConstructionOptionDiscovered(ThingDef def)
@@ -63,14 +63,15 @@ namespace TeleCore
             StaticData.WorldCompTele().discoveryTable.DiscoverInMenu(def);
         }
 
-        public static void Add(ThingDef def, TeleDefExtension extension)
+        public static void Add(ThingDef def, SubMenuExtension extension)
         {
             //AllDefs.Add(def);
-            var groupDef = extension.subMenuDesignation.groupDef;
-            var category = extension.subMenuDesignation.category;
+            TLog.Message($"Adding SubMenu for {def}");
+            var groupDef = extension.groupDef;
+            var category = extension.category;
             if (groupDef == null || category == null)
             {
-                TLog.Error($"Error at {def} in 'subMenuDesignation': {(groupDef == null ? "groupDef missing.": "")} {(category == null ? "category missing." : "")}");
+                TLog.Error($"Error at {def} in 'subMenuDesignation': [{groupDef}, {category}, {extension.hidden}] {(groupDef == null ? "groupDef missing.": "")} {(category == null ? "category missing." : "")}");
                 return;
             }
             if (!Categorized[groupDef][category].Contains(def))

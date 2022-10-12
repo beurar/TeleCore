@@ -121,7 +121,7 @@ namespace TeleCore
         {
             if (thing.def.HasTeleExtension(out var extension))
             {
-                foreach (var group in extension.thingGroups)
+                foreach (var group in extension.thingGroups.groups)
                 {
                     ThingCacheInfo.RegisterPart(group, thing);
                 }
@@ -132,7 +132,7 @@ namespace TeleCore
         {
             if (thing.def.HasTeleExtension(out var extension))
             {
-                foreach (var group in extension.thingGroups)
+                foreach (var group in extension.thingGroups.groups)
                 {
                     ThingCacheInfo.DeregisterPart(group, thing);
                 }

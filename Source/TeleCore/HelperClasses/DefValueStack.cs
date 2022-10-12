@@ -100,13 +100,9 @@ namespace TeleCore
         public static DefValueStack<T> operator +(DefValueStack<T> a, DefValueStack<T> b)
         {
             if (a.values == null)
-            {
                 return b;
-            }
-            else if (b.values == null)
-            {
+            if (b.values == null)
                 return a;
-            }
 
             for (var i = 0; i < a.values.Length; i++)
             {

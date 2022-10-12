@@ -9,7 +9,6 @@ namespace TeleCore
     /// </summary>
     public class TeleRoot : MonoBehaviour
     {
-        //
         public TeleTickManager TickManager { get; private set; }
 
         public virtual void Start()
@@ -20,7 +19,7 @@ namespace TeleCore
             }
             catch (Exception arg)
             {
-                Log.Error("Error in TiberiumRoot.Start(): " + arg);
+                TLog.Error("Error in TiberiumRoot.Start(): " + arg);
             }
         }
 
@@ -32,8 +31,13 @@ namespace TeleCore
             }
             catch (Exception arg)
             {
-                Log.Error("Error in TiberiumRoot.Update(): " + arg);
+                TLog.Error("Error in TiberiumRoot.Update(): " + arg);
             }
+        }
+
+        private void OnApplicationQuit()
+        {
+            ApplicationQuitUtility.ApplicationQuitEvent.Invoke();
         }
     }
 }

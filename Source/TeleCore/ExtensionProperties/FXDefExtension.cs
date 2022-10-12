@@ -8,7 +8,7 @@ using Verse;
 
 namespace TeleCore
 {
-    public class FXDefExtension
+    public class FXDefExtension : DefModExtension
     {
         public bool rotateDrawSize = true;
         public bool alignToBottom = false;

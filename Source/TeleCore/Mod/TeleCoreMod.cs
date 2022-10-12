@@ -18,7 +18,14 @@ namespace TeleCore
         private static Harmony teleCore;
 
         public static TeleCoreMod Mod => modInt;
-        public static Harmony TeleCore => teleCore ??= new Harmony("telefonmast.telecore");
+        public static Harmony TeleCore
+        {
+            get
+            {
+                Harmony.DEBUG = true;
+                return teleCore ??= new Harmony("telefonmast.telecore");
+            }
+        }
 
         public static TeleCoreSettings Settings => (TeleCoreSettings)modInt.modSettings;
 

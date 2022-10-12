@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 namespace TeleCore
 {
     [Flags]
-    public enum NetworkRole
+    public enum NetworkRole : int
     {
         Controller = 1,
         Transmitter = 2,

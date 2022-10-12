@@ -37,7 +37,7 @@ namespace TeleCore
         public CompPowerTrader CompPower => MainParent == null ? parent.TryGetComp<CompPowerTrader>() : (MainParent.ForcedPowerComp == null ? parent.TryGetComp<CompPowerTrader>() : (CompPowerTrader)MainParent.ForcedPowerComp);
         public CompPowerPlant CompPowerPlant => parent.TryGetComp<CompPowerPlant>();
 
-        public FXDefExtension GraphicExtension => extensionInt ??= parent.def.Tele()?.graphics;
+        public FXDefExtension GraphicExtension => extensionInt ??= parent.def.FXExtension();
 
         public IFXObject MainParent => internalMainFXParent;
         public IFXObject IParentThing => parentFXThing;

@@ -105,7 +105,6 @@ public class NetworkGraphRequestManager
         //Get existing result
         if (_cachedRequestResults.TryGetValue(request, out var value))
         {
-            TLog.Debug("Found cached request... returning");
             return value;
         }
 

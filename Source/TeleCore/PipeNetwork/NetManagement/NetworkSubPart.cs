@@ -50,9 +50,10 @@ namespace TeleCore
 
         //States
         public bool IsMainController => Network?.NetworkController == Parent;
-        public bool IsNetworkNode => NetworkRole != NetworkRole.Transmitter || IsJunction;
+        public bool IsNetworkNode => NetworkRole != NetworkRole.Transmitter || IsJunction || IsPipeEndPoint;
         public bool IsNetworkEdge => !IsNetworkNode;
         public bool IsJunction => DirectPartSet[NetworkRole.Transmitter]?.Count > 2;
+        public bool IsPipeEndPoint => DirectPartSet[NetworkRole.Transmitter]?.Count == 1;
         public bool IsActive => Network.IsWorking;
 
         public bool IsReceiving => receivingTicks > 0;
@@ -257,19 +258,15 @@ namespace TeleCore
                 //Resolve..
                 //var maxVal = RequestedCapacityPercent * Container.Capacity;
                 var maxPercent = requestedCapacityPercent;
-                TLog.Debug($"Resolving requester with {maxPercent}");
                 foreach (var valType in Props.AllowedValuesByRole[NetworkRole.Requester])
                 {
-                    var requestedTypeValue = container.ValueForType(valType);
+                    //var requestedTypeValue = container.ValueForType(valType);
                     var requestedTypeNetworkValue = Network.TotalValueFor(valType, NetworkRole.Storage);
-                    //var valTypeValue = Container.ValueForType(valType) + Network.TotalValueFor(valType, NetworkRole.Storage);
-                    TLog.Debug($"Adjusting {valType}: {requestedTypeValue} <- {requestedTypeNetworkValue} * {RequestedTypes[valType]}");
                     if(requestedTypeNetworkValue > 0)
                     {
                         var setValue = Mathf.Min(maxPercent, requestedTypeNetworkValue/Container.Capacity);
                         var tempVal = RequestedTypes[valType];
                         
-                        TLog.Debug($"Setting: {setValue} on {tempVal.Item2}: {maxPercent-setValue}");
                         tempVal.Item2 = setValue;
                         RequestedTypes[valType] = tempVal;
                         maxPercent = Mathf.Clamp(maxPercent - setValue, 0, maxPercent);

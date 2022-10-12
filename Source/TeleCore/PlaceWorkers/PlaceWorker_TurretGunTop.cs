@@ -16,7 +16,7 @@ namespace TeleCore
     {
         public override void DrawGhost(ThingDef def, IntVec3 center, Rot4 rot, Color ghostCol, Thing thing = null)
         {
-            var extension = def.Tele().turret;
+            var extension = def.TurretExtension();
             foreach (TurretProperties turret in extension.turrets)
             {
                 Graphic graphic = GhostUtility.GhostGraphicFor(turret.turretTop.topGraphic.Graphic, def, ghostCol);
