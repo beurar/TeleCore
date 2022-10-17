@@ -329,6 +329,7 @@ namespace TeleCore
                                 }
                                 continue;
                             }
+                            if(IsOutside) continue;
                             if (uniqueContainedThingsSet.Add(item))
                             {
                                 Notify_RegisterThing(item);

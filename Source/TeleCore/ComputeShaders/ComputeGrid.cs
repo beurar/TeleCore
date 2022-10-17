@@ -10,7 +10,7 @@ using Verse;
 
 namespace TeleCore
 {
-    public class ComputeGrid<T> : IExposable where T : struct
+    public class ComputeGrid<T> : IExposable, IDisposable where T : struct
     {
         private ComputeBuffer buffer;
         private Map map;
@@ -18,6 +18,7 @@ namespace TeleCore
         private bool isReady = false;
 
         public T[] Grid => grid;
+        
         public int Length => grid.Length;
         public bool IsReady => isReady;
 
@@ -46,21 +47,33 @@ namespace TeleCore
             Constructor(map, factory);
         }
         
-        /*TODO:TEST MANUAL DISPOSE
         ~ComputeGrid()
         {
+            TLog.Warning("Disposing ComputeGrid by GC, make sure to dispose it manually!");
             Dispose();
         }
 
+        /// <summary>
+        /// Clear internal <see cref="ComputeBuffer"/>
+        /// </summary>
         public void Dispose()
         {
+            if (!UnityData.IsInMainThread)
+            {
+                TLog.Warning("ComputeGrid must be disposed on the main thread!");
+                return;
+            }
             buffer.Dispose();
         }
-        */
         
         //
         public void ThreadSafeInit()
         {
+            if (!UnityData.IsInMainThread)
+            {
+                TLog.Warning("ComputeGrid must be initialized on the main thread!");
+                return;
+            }
             isReady = true;
             buffer = new ComputeBuffer(grid.Length, Marshal.SizeOf(typeof(T)));
             buffer.SetData(grid);
@@ -85,7 +98,7 @@ namespace TeleCore
 
         public void UpdateCPUData()
         {
-            if (!IsReady) return;
+            if (CheckReadyState()) return;
             TFind.TeleRoot.StartCoroutine(UpdateData_Internal());
         }
 
@@ -98,6 +111,8 @@ namespace TeleCore
 
         public void SetValues(IEnumerable<IntVec3> positions, Func<IntVec3, T> valueGetter)
         {
+            if (CheckReadyState()) return;
+            
             foreach (var c in positions)
             {
                 this[c] = valueGetter.Invoke(c);
@@ -108,6 +123,8 @@ namespace TeleCore
 
         public void SetValue(IntVec3 c, T t)
         {
+            if (CheckReadyState()) return;
+            
             this[c] = t;
             if (!IsReady) return;
             buffer.SetData(grid);
@@ -115,6 +132,8 @@ namespace TeleCore
 
         public void ResetValues(IEnumerable<IntVec3> positions, T toVal = default)
         {
+            if (CheckReadyState()) return;
+            
             foreach (var c in positions)
             {
                 this[c] = toVal;
@@ -124,11 +143,21 @@ namespace TeleCore
 
         public void ResetValue(IntVec3 c, T toVal = default)
         {
+            if (CheckReadyState()) return;
+            
             this[c] = toVal;
             if (!IsReady) return;
             buffer.SetData(grid);
         }
 
+        private bool CheckReadyState()
+        {
+            if (IsReady) return true;
+            
+            TLog.Warning("Cannot use ComputeGrid until it is safely initialized!");
+            return false;
+        }
+        
         public void ExposeData()
         {
             

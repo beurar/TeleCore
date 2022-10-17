@@ -54,6 +54,12 @@ namespace TeleCore
         
         public void Update()
         {
+            UpdateTick();
+            UpdateDrawMap();
+        }
+
+        private void UpdateTick()
+        {
             if (Paused) return;
             float curTimePerTick = CurTimePerTick;
             if (Mathf.Abs(Time.deltaTime - curTimePerTick) < curTimePerTick * 0.1f)
@@ -88,6 +94,14 @@ namespace TeleCore
                     break;
                 }
             }
+        }
+
+        private void UpdateDrawMap()
+        {
+            var map = Find.CurrentMap;
+            if (map == null) return;
+
+            map.TeleCore().CustomMapUpdate();
         }
 
         public void ClearGameTickers()

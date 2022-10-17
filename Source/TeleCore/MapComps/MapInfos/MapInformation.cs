@@ -74,5 +74,13 @@ namespace TeleCore
         public virtual void Update()
         {
         }
+
+        /// <summary>
+        /// Runs a custom map render update method on a new GameObject
+        /// </summary>
+        public virtual void CustomUpdate()
+        {
+            
+        }
     }
 }

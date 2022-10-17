@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using HarmonyLib;
+using RimWorld;
 using UnityEngine;
 using Verse;
 
@@ -17,10 +18,10 @@ namespace TeleCore
         {
             public static void Postfix(Thing __instance)
             {
-                var TeleCore = __instance.MapHeld.TeleCore();
+                var teleCore = __instance.MapHeld.TeleCore();
 
                 //Register For DataBase
-                TeleCore.Notify_ThingSpawned(__instance);
+                teleCore.Notify_ThingSpawned(__instance);
             }
         }
 
@@ -30,11 +31,37 @@ namespace TeleCore
         {
             public static bool Prefix(Thing __instance)
             {
-                var TeleCore = __instance.MapHeld.TeleCore();
+                var teleCore = __instance.MapHeld.TeleCore();
 
                 //Register For DataBase
-                TeleCore.Notify_DespawnedThing(__instance);
+                teleCore.Notify_DespawnedThing(__instance);
                 return true;
+            }
+        }
+        
+        [HarmonyPatch(typeof(ThingWithComps))]
+        [HarmonyPatch(nameof(ThingWithComps.BroadcastCompSignal))]
+        public static class ThingWithComps_BroadcastCompSignalPatch
+        {
+            public static void Postfix(Thing __instance, string signal)
+            {
+                var teleCore = __instance.MapHeld.TeleCore();
+
+                //
+                teleCore.Notify_ThingSentSignal(__instance, signal);
+            }
+        }
+        
+        //Door state changed
+        [HarmonyPatch(typeof(Building_Door))]
+        [HarmonyPatch(nameof(Building_Door.CheckClearReachabilityCacheBecauseOpenedOrClosed))]
+        public static class Building_Door_CheckClearReachabilityCacheBecauseOpenedOrClosed_Patch
+        {
+            public static void Postfix(Building_Door __instance)
+            {
+                var teleCore = __instance.MapHeld.TeleCore();
+
+                teleCore.Notify_ThingSentSignal(__instance, __instance.Open ? "DoorOpened" : "DoorClosed");
             }
         }
 

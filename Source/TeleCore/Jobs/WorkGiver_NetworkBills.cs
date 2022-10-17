@@ -29,7 +29,7 @@ namespace TeleCore
 
         public IEnumerable<Thing> Targets(Map map)
         {
-            return map.TeleCore().ThingCacheInfo.ThingsOfGroup(ThingGroupDefOf.NetworkBillCrafters);
+            return map.TeleCore().ThingGroupCacheInfo.ThingsOfGroup(ThingGroupDefOf.NetworkBillCrafters);
         }
 
         public override IEnumerable<Thing> PotentialWorkThingsGlobal(Pawn pawn)

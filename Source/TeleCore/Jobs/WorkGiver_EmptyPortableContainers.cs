@@ -16,7 +16,7 @@ namespace TeleCore
 
         public override IEnumerable<Thing> PotentialWorkThingsGlobal(Pawn pawn)
         {
-            return pawn.Map.TeleCore().ThingCacheInfo.ThingsOfGroup(TeleDefOf.NetworkPortableContainers);
+            return pawn.Map.TeleCore().ThingGroupCacheInfo.ThingsOfGroup(TeleDefOf.NetworkPortableContainers);
         }
 
         public override bool ShouldSkip(Pawn pawn, bool forced = false)
