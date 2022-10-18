@@ -19,7 +19,7 @@ namespace TeleCore
         
         public MapComponent_TeleCore(Map map) : base(map)
         {
-            StaticData.Notify_NewTibMapComp(this);
+            StaticData.Notify_NewTeleMapComp(this);
             FillMapInformations();
             
             //
@@ -124,12 +124,20 @@ namespace TeleCore
             }
         }
         
-        public void CustomMapUpdate()
+        internal void TeleMapSingleTick()
         { 
             for (var i = 0; i < allMapInfos.Count; i++)
             {
-                var info = allMapInfos[i];
-                info.CustomUpdate();
+                allMapInfos[i].TeleTick();
+            }
+        }
+
+        
+        internal void TeleMapUpdate()
+        { 
+            for (var i = 0; i < allMapInfos.Count; i++)
+            {
+                allMapInfos[i].TeleUpdate();
             }
         }
 

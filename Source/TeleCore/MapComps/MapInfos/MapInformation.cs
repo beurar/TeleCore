@@ -54,6 +54,14 @@ namespace TeleCore
         }
 
         /// <summary>
+        /// This tick is called by the TeleRoot Monobehaviour, offloading work from the RW Root.
+        /// </summary>
+        public virtual void TeleTick()
+        {
+            
+        }
+
+        /// <summary>
         /// Allows to run code on each cell on a map, similar to GameConditions.
         /// </summary>
         /// <param name="c">Affected Celll</param>
@@ -76,9 +84,9 @@ namespace TeleCore
         }
 
         /// <summary>
-        /// Runs a custom map render update method on a new GameObject
+        /// This update is called from the TeleRoot Monobehaviour, offloading rendering from the RW Root.
         /// </summary>
-        public virtual void CustomUpdate()
+        public virtual void TeleUpdate()
         {
             
         }

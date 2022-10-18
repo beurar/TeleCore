@@ -5,30 +5,36 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
+using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using UnityEngine;
+using UnityEngine.Rendering;
 using Verse;
 
 namespace TeleCore
 {
-    public class ComputeGrid<T> : IExposable, IDisposable where T : struct
+    public unsafe class ComputeGrid<T> : IExposable, IDisposable where T : unmanaged
     {
         private ComputeBuffer buffer;
         private Map map;
-        private T[] grid;
+        private NativeArray<T> gridArray;
+        private T* gridPtr;
+        
         private bool isReady = false;
 
-        public T[] Grid => grid;
+        public NativeArray<T> Grid => gridArray;
         
-        public int Length => grid.Length;
+        public int Length => gridArray.Length;
         public bool IsReady => isReady;
 
-        public Array DataArray => grid;
+        //public Array DataArray => gridArray.ToArray(;
         public ComputeBuffer DataBuffer => buffer;
 
+        /*
         public T this[int i]
         {
-            get => grid[i];
-            private set => grid[i] = value;
+            get => gridArray[i];
+            private set => gridArray[i] = value;
         }
 
         public T this[IntVec3 c]
@@ -36,6 +42,7 @@ namespace TeleCore
             get => grid[c.Index(map)];
             private set => grid[c.Index(map)] = value;
         }
+        */
 
         public ComputeGrid(Map map)
         {
@@ -75,13 +82,13 @@ namespace TeleCore
                 return;
             }
             isReady = true;
-            buffer = new ComputeBuffer(grid.Length, Marshal.SizeOf(typeof(T)));
-            buffer.SetData(grid);
+            buffer = new ComputeBuffer(Length, Marshal.SizeOf(typeof(T)));
+            UpdateBuffer();
         }
 
         private void Constructor(Map map, Func<int, T> factory)
         {
-            //
+            //Clear buffer on quit
             ApplicationQuitUtility.RegisterQuitEvent(delegate
             {
                 buffer.Dispose();
@@ -89,72 +96,135 @@ namespace TeleCore
             
             //
             this.map = map;
-            grid = new T[map.cellIndices.NumGridCells];
-            for (int i = 0; i < grid.Length; i++)
+            
+            //
+            gridArray = new NativeArray<T>(map.cellIndices.NumGridCells, Allocator.Persistent);
+            gridPtr = (T*)gridArray.GetUnsafePtr();
+            
+            for (int i = 0; i < gridArray.Length; i++)
             {
-                grid[i] = factory.Invoke(i);
+                gridPtr[i] = factory.Invoke(i);
             }
         }
 
-        public void UpdateCPUData()
+        public void PullBufferFromGPU()
         {
-            if (CheckReadyState()) return;
-            TFind.TeleRoot.StartCoroutine(UpdateData_Internal());
+            if (CheckReadyState(ReadyStateMode.UpdateCPU)) return;
+            TLog.Debug("Requesting GPU Data---");
+            AsyncGPUReadback.RequestIntoNativeArray(ref gridArray, DataBuffer, UpdateInternalCallBack);
+            
+            //TFind.TeleRoot.StartCoroutine(UpdateData_Internal());
+        }
+
+        public void UpdateBuffer()
+        {
+            if (CheckReadyState(ReadyStateMode.UpdateBuffer)) return;
+            buffer.SetData(gridArray);
         }
 
         private IEnumerator UpdateData_Internal()
         {
             yield return null;
-            DataBuffer.GetData(grid);
             yield return null;
         }
 
+        private unsafe void GetPtr()
+        {
+            AsyncGPUReadback.RequestIntoNativeArray(ref gridArray, DataBuffer, UpdateInternalCallBack);
+            //(T*) DataBuffer.GetNativeBufferPtr();
+            //DataBuffer.GetData(gridArray);
+            //gridPtr = (T*) DataBuffer.GetNativeBufferPtr();
+        }
+
+        private void UpdateInternalCallBack(AsyncGPUReadbackRequest request)
+        {
+            TLog.Message($"Received Data From GPU: {!request.hasError}");
+        }
+        
+        private enum ReadyStateMode
+        {
+            UpdateCPU,
+            UpdateBuffer,
+            Setter,
+        }
+        
         public void SetValues(IEnumerable<IntVec3> positions, Func<IntVec3, T> valueGetter)
         {
-            if (CheckReadyState()) return;
+            if (CheckReadyState(ReadyStateMode.Setter)) return;
             
+            //
             foreach (var c in positions)
             {
-                this[c] = valueGetter.Invoke(c);
+                gridPtr[c.Index(map)] = valueGetter.Invoke(c);
             }
-            if (!IsReady) return;
-            buffer.SetData(grid);
+            buffer.SetData(gridArray);
         }
 
         public void SetValue(IntVec3 c, T t)
         {
-            if (CheckReadyState()) return;
+            if (CheckReadyState(ReadyStateMode.Setter)) return;
             
-            this[c] = t;
-            if (!IsReady) return;
-            buffer.SetData(grid);
+            //
+            gridPtr[c.Index(map)] = t;
+            buffer.SetData(gridArray);
         }
 
+        /// <summary>
+        /// Sets data to the grid array and does not invoke the ComputeBuffer update.
+        /// </summary>
+        public void SetValues_Array(IEnumerable<IntVec3> positions, Func<IntVec3, T> valueGetter)
+        {
+            foreach (var c in positions)
+            {
+                gridPtr[c.Index(map)] = valueGetter.Invoke(c);
+            }
+        }
+        
+        /// <summary>
+        /// Sets data to the grid array and does not invoke the ComputeBuffer update.
+        /// </summary>
+        public void SetValue_Array(IntVec3 c, T t)
+        {
+            gridPtr[c.Index(map)] = t;
+        }
+        
         public void ResetValues(IEnumerable<IntVec3> positions, T toVal = default)
         {
-            if (CheckReadyState()) return;
+            if (CheckReadyState(ReadyStateMode.Setter)) return;
             
             foreach (var c in positions)
             {
-                this[c] = toVal;
+                gridPtr[c.Index(map)] = toVal;
             }
-            buffer.SetData(grid);
+            buffer.SetData(gridArray);
         }
 
         public void ResetValue(IntVec3 c, T toVal = default)
         {
-            if (CheckReadyState()) return;
+            if (CheckReadyState(ReadyStateMode.Setter)) return;
             
-            this[c] = toVal;
+            gridPtr[c.Index(map)] = toVal;
             if (!IsReady) return;
-            buffer.SetData(grid);
+            buffer.SetData(gridArray);
         }
 
-        private bool CheckReadyState()
+        private bool CheckReadyState(ReadyStateMode mode)
         {
             if (IsReady) return true;
-            
-            TLog.Warning("Cannot use ComputeGrid until it is safely initialized!");
+
+            string msg = "";
+            switch (mode)
+            {
+                case ReadyStateMode.UpdateCPU:
+                    msg = "Tried updating the current Grid-Array from GPU data.";
+                    break;
+                case ReadyStateMode.Setter:
+                    msg = "Tried setting new data into buffer - Try setting values in the grid first and updating later.";
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(mode), mode, null);
+            }
+            TLog.Warning($"Cannot access Compute-Data without safely initializing first!\n{msg}");
             return false;
         }
         

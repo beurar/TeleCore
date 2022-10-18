@@ -13,18 +13,21 @@ namespace TeleCore
         private float realTimeToTickThrough;
         private bool isPaused = false;
 
+        private const float _FPSLimiter = 45.4545441f;
+        
         private Action UITickers;
         private Action GameUITickers;
         private Action GameTickers;
 
-        private int timeControlTicks;
+        private int internalTicks;
+        private int internalMapTicks;
 
         public bool Paused => isPaused;
 
-        public bool GameActive => Current.Game != null && Current.ProgramState == ProgramState.Playing;
+        public static bool GameActive => Current.Game != null && Current.ProgramState == ProgramState.Playing;
         public bool GamePaused => !GameActive || Find.TickManager.Paused;
 
-        public int CurrentTick => timeControlTicks;
+        public int CurrentTick => internalTicks;
 
         private float ReusedTickRateMultiplier
         {
@@ -35,17 +38,7 @@ namespace TeleCore
             }
         }
 
-        private float CurTimePerTick
-        {
-            get
-            {
-                if (!GameActive) return 1f / (60f);
-
-                if (ReusedTickRateMultiplier == 0f) return 0f;
-
-                return 1f / (60f * ReusedTickRateMultiplier);
-            }
-        }
+        private float CurTimePerTick => 0.016666668F;
 
         public TeleTickManager()
         {
@@ -54,13 +47,56 @@ namespace TeleCore
         
         public void Update()
         {
-            UpdateTick();
-            UpdateDrawMap();
+            if (GameActive)
+            {
+                UpdateTick();
+                for (var i = 0; i < Current.Game.maps.Count; i++)
+                {
+                    var map = Current.Game.maps[i].TeleCore();
+                    UpdateMapTick(map);
+                    UpdateDrawMap(map);
+                }  
+            }
         }
 
+        private int ticksThisFrame = 0;
+        private void UpdateMapTick(MapComponent_TeleCore map)
+        {
+            var timePerMapTick = Find.TickManager.CurTimePerTick;
+            //
+            if (Mathf.Abs(Time.deltaTime - timePerMapTick) < timePerMapTick * 0.1f)
+                realTimeToTickThrough += timePerMapTick;
+            else
+                realTimeToTickThrough += Time.deltaTime;
+
+            var tickRate = Find.TickManager.TickRateMultiplier;
+            ticksThisFrame = 0;
+            clock.Reset();
+            clock.Start();
+            while (realTimeToTickThrough > 0f && ticksThisFrame < tickRate * 2f)
+            {
+                map.TeleMapSingleTick();
+                
+                //
+                realTimeToTickThrough -= timePerMapTick;
+                ticksThisFrame++;
+                internalMapTicks++;
+                if (Find.TickManager.Paused || clock.ElapsedMilliseconds > 45.4545441f)
+                {
+                    break;
+                }
+            }
+            
+            //
+            realTimeToTickThrough = 0;
+        }
+        
+        private int ticksThisFrameNormal = 0;
         private void UpdateTick()
         {
             if (Paused) return;
+            
+            //
             float curTimePerTick = CurTimePerTick;
             if (Mathf.Abs(Time.deltaTime - curTimePerTick) < curTimePerTick * 0.1f)
             {
@@ -71,37 +107,37 @@ namespace TeleCore
                 realTimeToTickThrough += Time.deltaTime;
             }
 
-            int num = 0;
+            ticksThisFrameNormal = 0;
             clock.Reset();
             clock.Start();
-            while (realTimeToTickThrough > 0f && (float)num < 2)
+            while (realTimeToTickThrough > 0f && ticksThisFrameNormal < 2)
             {
-                //Ticking
-                timeControlTicks++;
-
                 if (!GamePaused)
+                {
                     GameTickers?.Invoke();
+                }
 
                 UITickers?.Invoke();
                 GameUITickers?.Invoke();
 
                 //
                 realTimeToTickThrough -= curTimePerTick;
-                num++;
+                ticksThisFrameNormal++;
+                internalTicks++;
                 
-                if (Paused || (float)clock.ElapsedMilliseconds > 1000f / 30f)
+                if (Paused || clock.ElapsedMilliseconds > _FPSLimiter)
                 {
                     break;
                 }
             }
+
+            //
+            realTimeToTickThrough = 0;
         }
 
-        private void UpdateDrawMap()
+        private void UpdateDrawMap(MapComponent_TeleCore map)
         {
-            var map = Find.CurrentMap;
-            if (map == null) return;
-
-            map.TeleCore().CustomMapUpdate();
+            map?.TeleMapUpdate();
         }
 
         public void ClearGameTickers()

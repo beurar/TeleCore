@@ -39,25 +39,22 @@ namespace TeleCore
             TFind.TickManager.ClearGameTickers();
         }
 
-        internal static void Notify_NewTibMapComp(MapComponent_TeleCore mapComp)
+        internal static void Notify_NewTeleMapComp(MapComponent_TeleCore mapComp)
         {
             teleMapComps[mapComp.map.uniqueID] = mapComp;
         }
 
         public static MapComponent_TeleCore TeleCore(this Map map)
         {
-            if (map == null)
-            {
-                TLog.Warning("Map is null for TeleCore MapComp getter");
-                return null;
-            }
-            return teleMapComps[map.uniqueID];
+            if (map != null) return teleMapComps[map.uniqueID];
+            
+            TLog.Warning("Map is null for TeleCore MapComp getter");
+            return null;
         }
 
         public static WorldComp_Tele WorldCompTele()
         {
             return Find.World.GetComponent<WorldComp_Tele>();
         }
-
     }
 }
