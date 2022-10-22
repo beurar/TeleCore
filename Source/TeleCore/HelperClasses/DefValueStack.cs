@@ -16,11 +16,11 @@ namespace TeleCore
     public struct DefValueStack<T> where T : Def
     {
         public DefValue<T, float>[] values;
-        public HashSet<T> knownTypes;
-        public float totalValue = 0;
+        public readonly HashSet<T> knownTypes;
+        private float totalValue = 0;
 
         public bool IsValid => values != null || knownTypes != null;
-        public bool Empty => totalValue == 0;
+        public bool Empty => totalValue == 0f;
 
         public float TotalValue => totalValue;
         public IEnumerable<T> AllTypes => knownTypes;

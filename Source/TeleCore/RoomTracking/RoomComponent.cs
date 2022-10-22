@@ -10,8 +10,12 @@ namespace TeleCore
     public abstract class RoomComponent
     {
         private RoomTracker parent;
+        private List<RoomComponent> adjacentComps;
 
         public RoomTracker Parent => parent;
+        public List<RoomComponent> AdjacentComps => adjacentComps;
+        
+        //
         public Map Map => Parent.Map;
         public Room Room => Parent.Room;
 
@@ -19,9 +23,17 @@ namespace TeleCore
 
         public bool Disbanded => Parent.IsDisbanded;
 
+        public bool IsDoorway => Room.IsDoorway;
+        
         public virtual void Create(RoomTracker parent)
         {
             this.parent = parent;
+            adjacentComps = new List<RoomComponent>();
+        }
+
+        internal void AddAdjacent<T>(T comp) where T : RoomComponent
+        {
+            adjacentComps.Add(comp);
         }
 
         public virtual void Disband(RoomTracker parent, Map map) { }

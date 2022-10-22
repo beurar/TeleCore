@@ -69,6 +69,7 @@ namespace TeleCore
         //Materials
         public static readonly Material ForcedTargetLineMat = MaterialPool.MatFrom(GenDraw.LineTexPath, ShaderDatabase.Transparent, new Color(1f, 0.5f, 0.5f));
         public static readonly Material IOArrow = MaterialPool.MatFrom("Buildings/IOArrow", ShaderDatabase.Transparent);
+        public static readonly Material IOArrowRed = MaterialPool.MatFrom("Buildings/IOArrow", ShaderDatabase.Transparent, Color.red);
 
         public static readonly Material WorldTerrain = MaterialPool.MatFrom("World/Tile/Terrain", ShaderDatabase.WorldOverlayCutout, 3500);
     }

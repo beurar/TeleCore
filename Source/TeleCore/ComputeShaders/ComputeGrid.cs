@@ -29,8 +29,7 @@ namespace TeleCore
 
         //public Array DataArray => gridArray.ToArray(;
         public ComputeBuffer DataBuffer => buffer;
-
-        /*
+        
         public T this[int i]
         {
             get => gridArray[i];
@@ -39,10 +38,9 @@ namespace TeleCore
 
         public T this[IntVec3 c]
         {
-            get => grid[c.Index(map)];
-            private set => grid[c.Index(map)] = value;
+            get => gridArray[c.Index(map)];
+            private set => gridArray[c.Index(map)] = value;
         }
-        */
 
         public ComputeGrid(Map map)
         {
@@ -58,6 +56,11 @@ namespace TeleCore
         {
             TLog.Warning("Disposing ComputeGrid by GC, make sure to dispose it manually!");
             Dispose();
+        }
+
+        public T GetValueByPtr(int idx)
+        {
+            return gridPtr[idx];
         }
 
         /// <summary>

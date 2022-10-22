@@ -72,13 +72,20 @@ namespace TeleCore
 
             static void AdjustList(List<ListableOption> optList)
             {
-                var label = "Options".Translate();
-                var idx = optList.FirstIndexOf(opt => opt.label == label);
-                if (idx > 0 && idx < optList.Count) optList.Insert(idx + 1, new ListableOption_Tele(StringCache.TeleTools, delegate ()
+                try
                 {
-                    Find.WindowStack.Add(new Dialog_ToolSelection());
-                }, null));
-                OptionList = optList;
+                    var label = "Options".Translate();
+                    var idx = optList.FirstIndexOf(opt => opt.label == label);
+                    if (idx > 0 && idx < optList.Count)
+                        optList.Insert(idx + 1,
+                            new ListableOption_Tele(StringCache.TeleTools,
+                                delegate() { Find.WindowStack.Add(new Dialog_ToolSelection()); }, null));
+                    OptionList = optList;
+                }
+                catch (Exception ex)
+                {
+                    TLog.Message($"{ex}");
+                }
             }
 
             static bool Prefix(ref Rect rect, bool anyMapFiles)

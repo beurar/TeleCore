@@ -13,6 +13,8 @@ public struct NetEdge
     public readonly IntVec3 fromCell;
     public readonly IntVec3 toCell;
 
+    public readonly Rot4 fromToDir;
+
     public NetEdge Reverse => new(toNode, fromNode, toCell, fromCell, _weight);
     public static NetEdge Invalid => new(null, null, IntVec3.Invalid, IntVec3.Invalid, -1);
 
@@ -25,6 +27,8 @@ public struct NetEdge
         this.fromCell = fromCell;
         this.toCell = toCell;
         this._weight = weight;
+
+        fromToDir = fromCell.Rot4Relative(toCell);
     }
 
     public NetEdge(INetworkSubPart fromNode, INetworkSubPart toNode)
@@ -34,6 +38,7 @@ public struct NetEdge
         this.fromCell = IntVec3.Invalid;
         this.toCell = IntVec3.Invalid;
         this._weight = 0;
+        this.fromToDir = Rot4.Invalid;
     }
 
     public bool HasAnchorCell(IntVec3 cell)

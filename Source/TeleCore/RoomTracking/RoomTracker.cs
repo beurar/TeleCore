@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using HarmonyLib;
+using RimWorld;
 using UnityEngine;
 using Verse;
 
@@ -14,14 +16,16 @@ namespace TeleCore
 
         private Dictionary<Type, RoomComponent> compsByType = new();
         private List<RoomComponent> comps = new List<RoomComponent>();
+        private List<RoomTracker> adjacentTrackers;
+        private List<RoomPortal> roomPortals;
 
         //Shared Room Data
         private readonly HashSet<Thing> uniqueContainedThingsSet = new HashSet<Thing>();
         protected ListerThings listerThings;
         protected ListerThings borderListerThings;
 
-        private IntVec3[] borderCells = new IntVec3[] { };
-        private IntVec3[] thinRoofCells = new IntVec3[] { };
+        private HashSet<IntVec3> borderCells = new HashSet<IntVec3>();
+        private HashSet<IntVec3> thinRoofCells = new HashSet<IntVec3>();
 
         private IntVec3[] cornerCells = new IntVec3[4];
         private IntVec3 minVec;
@@ -46,10 +50,13 @@ namespace TeleCore
         public ListerThings BorderListerThings => borderListerThings;
         public List<Thing> ContainedPawns => listerThings.ThingsInGroup(ThingRequestGroup.Pawn);
 
+        public List<RoomTracker> AdjacentTrackers => adjacentTrackers;
+        public List<RoomPortal> RoomPortals => roomPortals;
+
         public RegionType RegionTypes => regionTypes;
 
-        public IntVec3[] BorderCellsNoCorners => borderCells;
-        public IntVec3[] ThinRoofCells => thinRoofCells;
+        public HashSet<IntVec3> BorderCellsNoCorners => borderCells;
+        public HashSet<IntVec3> ThinRoofCells => thinRoofCells;
 
         public IntVec3[] MinMaxCorners => cornerCells;
         public IntVec3 MinVec => minVec;
@@ -62,7 +69,11 @@ namespace TeleCore
             Room = room;
             listerThings = new ListerThings(ListerThingsUse.Region);
             borderListerThings = new ListerThings(ListerThingsUse.Region);
-
+            
+            //
+            adjacentTrackers = new List<RoomTracker>();
+            roomPortals = new List<RoomPortal>();
+            
             //Get Group Data
             UpdateGroupData();
             foreach (var type in typeof(RoomComponent).AllSubclassesNonAbstract())
@@ -86,6 +97,9 @@ namespace TeleCore
 
         public void Disband(Map onMap)
         {
+            adjacentTrackers.Clear();
+            roomPortals.Clear();
+            
             foreach (var comp in comps)
             {
                 comp.Disband(this, onMap);
@@ -110,10 +124,25 @@ namespace TeleCore
 
         public void Notify_RegisterBorderThing(Thing thing)
         {
+            //Register Portals
+            if (thing is Building_Door door)
+            {
+                var otherRoom = door.NeighborRoomOf(Room);
+                if (otherRoom == null) return;
+                var otherTracker = otherRoom.RoomTracker();
+                    
+                var portal = new RoomPortal(door, this, otherTracker, door.GetRoom().RoomTracker());
+                adjacentTrackers.Add(otherTracker);
+                roomPortals.Add(portal);
+            }
+            
             borderListerThings.Add(thing);
             foreach (var comp in comps)
             {
                 comp.Notify_BorderThingAdded(thing);
+                
+                //
+                adjacentTrackers.Do(a => comp.AddAdjacent(a.compsByType[comp.GetType()]));
             }
         }
 
@@ -168,6 +197,10 @@ namespace TeleCore
         //
         public void Reset()
         {
+            adjacentTrackers.Clear();
+            roomPortals.Clear();
+            
+            //
             foreach (var comp in comps)
             {
                 comp.Reset();
@@ -176,6 +209,7 @@ namespace TeleCore
 
         public void Notify_Reused()
         {
+            //
             RegenerateData(true);
             foreach (var comp in comps)
             {
@@ -363,8 +397,8 @@ namespace TeleCore
                     }
                 }
             }
-            borderCells = bCells.ToArray();
-            thinRoofCells = tCells.ToArray();
+            borderCells = bCells;
+            thinRoofCells = tCells;
         }
 
         private void UpdateGroupData()

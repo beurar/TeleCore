@@ -4,6 +4,7 @@ using System.Linq;
 using System.Runtime.InteropServices.WindowsRuntime;
 using System.Text;
 using System.Threading.Tasks;
+using HarmonyLib;
 using RimWorld;
 using UnityEngine;
 using Verse;
@@ -353,7 +354,12 @@ namespace TeleCore
             {
                 funcOnPart.Invoke(targetPart);
                 FleckMaker.ThrowDustPuff(targetPart.Parent.Thing.TrueCenter(), Find.CurrentMap, 1);
-                TLog.Message($"Trying to manipulate {targetPart} from {fromPart}");
+                //TLog.Message($"Trying to manipulate {targetPart} from {fromPart}");
+            }
+
+            foreach (var path in requestResult.edges)
+            {
+                path.Do(p => ((NetworkSubPart)p.fromNode).SetFlowDir(p.toNode));
             }
             
             /*
@@ -560,7 +566,6 @@ namespace TeleCore
         */
         public bool CanTransmit(NetEdge netEdge)
         {
-            
             //TODO:
             //NetworkRole.GraphTransmitter;
             return NetworkRole.HasFlag(NetworkRole.Transmitter);
@@ -643,6 +648,13 @@ namespace TeleCore
                     defaultLabel = $"Draw AdjacencyList",
                     action = delegate { DebugDrawGraphAdjacency = !DebugDrawGraphAdjacency; }
                 };
+                
+                
+                yield return new Command_Action
+                {
+                    defaultLabel = $"Draw FlowDirections",
+                    action = delegate { Debug_DrawFlowDir = !Debug_DrawFlowDir; }
+                };
             }
         }
 
@@ -669,8 +681,24 @@ namespace TeleCore
             return sb.ToString();
         }
 
-        private static bool DebugDrawGraphAdjacency = false;
+        internal static bool DebugDrawGraphAdjacency = false;
+        internal static bool Debug_DrawFlowDir = false;
 
+
+        private Rot4 FlowDir
+        {
+            get;
+            set;
+        } = Rot4.Invalid;
+        
+        internal void SetFlowDir(INetworkSubPart other)
+        {
+            if (Network.Graph.TryGetEdge(this, other, out var edge))
+            {
+                FlowDir = edge.fromToDir;
+            }
+        }
+        
         public void Draw()
         {
             DrawNetworkInfo();
@@ -686,6 +714,14 @@ namespace TeleCore
                     GenDraw.DrawFieldEdges(Network.Graph.AdjacencyLists[this].Select(c => c.Parent.Thing.Position).ToList(), Color.red);
                 }
                 CellIO.DrawIO();
+            }
+            
+            //Render Flow Debug
+            if (Debug_DrawFlowDir && FlowDir != Rot4.Invalid)
+            {
+                var matrix = new Matrix4x4();
+                matrix.SetTRS(Parent.Thing.DrawPos, 0f.ToQuat(), new Vector3(1, AltitudeLayer.MetaOverlays.AltitudeFor(), 1));
+                Graphics.DrawMesh(MeshPool.plane10, matrix, TeleContent.IOArrowRed, 0);
             }
         }
 
