@@ -103,6 +103,7 @@ namespace TeleCore
             networkComp = GetComp<Comp_NetworkStructure>();
 
             defExtension = def.TurretExtension();
+            
             turretSet = new TurretGunSet(defExtension, this);
             //
             canForceTarget = defExtension.turrets.Any(t => t.canForceTarget);

@@ -13,7 +13,7 @@ namespace TeleCore
     {
         public override AcceptanceReport AllowsPlacing(BuildableDef checkingDef, IntVec3 loc, Rot4 rot, Map map, Thing thingToIgnore = null, Thing thing = null)
         {
-            if (checkingDef is ThingDef def && def.HasTeleExtension(out var extension) && extension.turret.hub != null)
+            if (checkingDef is ThingDef def && def.HasTurretExtension(out var extension) && extension.hub != null)
             {
                 var nearbyHub = FindClosestTurretHub(def, loc, map);
                 if (nearbyHub == null)
@@ -33,10 +33,10 @@ namespace TeleCore
 
         public override void DrawGhost(ThingDef def, IntVec3 center, Rot4 rot, Color ghostCol, Thing thing = null)
         {
-            if (!def.HasTeleExtension(out var extension)) return;
-            if (extension.turret.hub?.hubDef != null)
+            if (!def.HasTurretExtension(out var extension)) return;
+            if (extension.hub?.hubDef != null)
             {
-                var allHubs = Find.CurrentMap.listerBuildings.AllBuildingsColonistOfDef(extension.turret.hub.hubDef);
+                var allHubs = Find.CurrentMap.listerBuildings.AllBuildingsColonistOfDef(extension.hub.hubDef);
                 foreach (var building in allHubs)
                 {
                     if (!(building is Building_TurretHubCore turretHub)) continue;
@@ -54,13 +54,13 @@ namespace TeleCore
         //
         public static Building_TurretHubCore FindClosestTurretHub(ThingDef turretDef, IntVec3 origin, Map map)
         {
-            _ = turretDef.HasTeleExtension(out var extension);
-            var numCells = GenRadial.NumCellsInRadius(extension.turret.hub.connectRadius);
+            _ = turretDef.HasTurretExtension(out var extension);
+            var numCells = GenRadial.NumCellsInRadius(extension.hub.connectRadius);
             for (int i = 0; i < numCells; i++)
             {
                 IntVec3 cell = GenRadial.RadialPattern[i] + origin;
                 if (!cell.InBounds(map)) continue;
-                Building_TurretHubCore hub = (Building_TurretHubCore)cell.GetFirstThing(map, extension.turret.hub.hubDef);
+                Building_TurretHubCore hub = (Building_TurretHubCore)cell.GetFirstThing(map, extension.hub.hubDef);
                 if (hub != null && hub.AcceptsTurrets)
                 {
                     return hub;

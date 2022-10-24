@@ -82,15 +82,22 @@ namespace TeleCore
             TWidgets.DrawColoredBox(menuRect, TColor.BlueHueBG, TColor.MenuSectionBGBorderColor, 1);
             Widgets.BeginGroup(menuRect);
             {
-                var curY = 0f;
-                foreach (var barButtonOption in optionList)
+                try
                 {
-                    var height = barButtonOption.OptionHeight + (2 * optionMargin);
-                    var optionRect = new Rect(0, curY, menuWidth, height).ContractedBy(optionMargin);
-                    if(barButtonOption.DoGUI(optionRect))
-                        Close();
+                    var curY = 0f;
+                    foreach (var barButtonOption in optionList)
+                    {
+                        var height = barButtonOption.OptionHeight + (2 * optionMargin);
+                        var optionRect = new Rect(0, curY, menuWidth, height).ContractedBy(optionMargin);
+                        if (barButtonOption.DoGUI(optionRect))
+                            Close();
 
-                    curY += height;
+                        curY += height;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    TLog.Error($"Some crap is happening in UI: {ex}");
                 }
             }
             Widgets.EndGroup();

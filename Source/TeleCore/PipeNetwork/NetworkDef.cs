@@ -74,7 +74,7 @@ namespace TeleCore
                     var networkDef = compProps.networks.Find(n => n.networkDef == this);
                     if (networkDef == null)
                     {
-                        yield return $"Cannot find {nameof(NetworkSubPartProperties)} with networkDef '{this}'.";
+                        yield return $"Network seems unused: Cannot find any {nameof(NetworkSubPartProperties)} using this network.";
                     }
                     else if(!networkDef.NetworkRole.HasFlag(NetworkRole.Controller))
                     {

@@ -35,6 +35,7 @@ namespace TeleCore
 
         public TurretGunSet(TurretDefExtension holderProps, ITurretHolder parent)
         {
+            TLog.Message($"Holder[{parent?.HolderThing}]: {holderProps != null} | {holderProps?.turrets?.Count}");
             this.parent = parent;
             turrets = new List<TurretGun>(holderProps.turrets.Count);
             var set = this;

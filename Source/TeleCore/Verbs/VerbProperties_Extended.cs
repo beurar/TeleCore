@@ -35,5 +35,10 @@ namespace TeleCore
         public MuzzleFlashProperties muzzleFlash;
         public List<Vector3> originOffsets;
         public Vector3 originOffset;
+
+        public void PostLoad()
+        {
+            beamProps?.SetParent(this);
+        }
     }
 }

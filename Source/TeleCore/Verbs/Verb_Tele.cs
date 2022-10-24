@@ -63,7 +63,7 @@ namespace TeleCore
             }
         }
 
-        protected Vector3 ShotOrigin
+        protected virtual Vector3 ShotOrigin
         {
             get
             {
@@ -208,7 +208,7 @@ namespace TeleCore
 
             return IsAvailable();
         }
-
+        
         public sealed override bool TryCastShot()
         {
             var flag = TryCastAttack();
@@ -223,6 +223,20 @@ namespace TeleCore
             //Did Shot
             Notify_SingleShot();
 
+            if (EquipmentSource != null)
+            {
+                CompChangeableProjectile comp = EquipmentSource.GetComp<CompChangeableProjectile>();
+                if (comp != null)
+                {
+                    comp.Notify_ProjectileLaunched();
+                }
+                CompReloadable comp2 = EquipmentSource.GetComp<CompReloadable>();
+                if (comp2 != null)
+                {
+                    comp2.UsedOnce();
+                }
+            }
+            
             if (verbProps.consumeFuelPerShot > 0f)
             {
                 turretGun?.RefuelComp?.ConsumeFuel(verbProps.consumeFuelPerShot);

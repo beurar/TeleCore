@@ -17,11 +17,7 @@ namespace TeleCore
         static TeleCoreStaticStartup()
         {
             TLog.Message("Startup Init");
-
-            //Manual C# XML-Def Patches
-            //TiberiumRimMod.mod.PatchPawnDefs();
-
-
+            
             //MP Hook
             TLog.Message($"Multiplayer: {(MP.enabled ? "Enabled - Adding MP hooks..." : "Disabled")}");
             if (MP.enabled)
@@ -30,7 +26,6 @@ namespace TeleCore
             }
 
             //
-            TLog.Message("PostLoad Def Changes:");
             ApplyDefChangesPostLoad();
         }
 

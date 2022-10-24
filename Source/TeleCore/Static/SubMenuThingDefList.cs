@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using RimWorld;
+using UnityEngine;
 using Verse;
 
 namespace TeleCore
@@ -38,19 +39,19 @@ namespace TeleCore
         }
 
         //Discovery
-        public static bool HasUnDiscovered(SubMenuGroupDef group)
+        public static bool HasUnDiscovered(SubBuildMenuDef inMenu, SubMenuGroupDef group)
         {
-            return Categorized[group].Any(d => HasUnDiscovered(group, d.Key));
+            return Categorized[group].Any(d => HasUnDiscovered(inMenu, group, d.Key));
         }
 
-        public static bool IsActive(ThingDef def)
+        public static bool IsActive(SubBuildMenuDef inMenu, ThingDef def)
         {
-            return def.IsResearchFinished;
+            return DebugSettings.godMode || inMenu.AllowWorker.IsAllowed(def) && !def.SubMenuExtension().devObject;
         }
 
-        public static bool HasUnDiscovered(SubMenuGroupDef group, SubMenuCategoryDef categoryDef)
+        public static bool HasUnDiscovered(SubBuildMenuDef inMenu, SubMenuGroupDef group, SubMenuCategoryDef categoryDef)
         {
-            return Categorized[group][categoryDef].Any(d => !ConstructionOptionDiscovered(d) && IsActive(d));
+            return Categorized[group][categoryDef].Any(d => !ConstructionOptionDiscovered(d) && IsActive(inMenu, d));
         }
 
         internal static bool ConstructionOptionDiscovered(ThingDef def)
@@ -65,8 +66,6 @@ namespace TeleCore
 
         public static void Add(ThingDef def, SubMenuExtension extension)
         {
-            //AllDefs.Add(def);
-            TLog.Message($"Adding SubMenu for {def}");
             var groupDef = extension.groupDef;
             var category = extension.category;
             if (groupDef == null || category == null)
@@ -79,8 +78,6 @@ namespace TeleCore
                 Categorized[groupDef][category].Add(def);
                 ResolvedDesignators[groupDef][category].Add(new Designator_Build(def));
             }
-            //if (!props.menuHidden)
-            //Log.Error(props +  " should have menuHidden");
         }
     }
 }

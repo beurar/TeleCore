@@ -15,17 +15,9 @@ namespace TeleCore
         //
         public ThingGroupCollection thingGroups = new ThingGroupCollection();
         public List<GraphicData> extraGraphics;
-        public TurretDefExtension turret;
         public ProjectileDefExtension projectile;
     }
 
-    public class SubMenuExtension : DefModExtension
-    {
-        public SubMenuGroupDef groupDef;
-        public SubMenuCategoryDef category;
-        public bool hidden;
-    }
-    
     //
     public class ThingGroupCollection
     {

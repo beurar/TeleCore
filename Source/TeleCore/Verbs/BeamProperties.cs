@@ -11,8 +11,8 @@ namespace TeleCore
 {
     public class BeamProperties
     {
-        [Unsaved]
-        private Material cachedBeamMat;
+        [Unsaved] 
+        private VerbProperties_Extended parent;
 
         //
         public DamageDef damageDef;
@@ -26,15 +26,17 @@ namespace TeleCore
         public EffecterDef impactEffecter;
         public ExplosionProperties impactExplosion;
         public FilthSpawnerProperties impactFilth;
+        
+        public ThingDef BeamMoteDef => parent.beamMoteDef;
+        public FleckDef BeamGroundFleckDef => parent.beamGroundFleckDef;
+        public float BeamWidth => parent.beamWidth;
+        public float BeamMaxDeviation => parent.beamMaxDeviation;
+        
 
-        //Graphical
-        public string beamTexturePath;
-        //public FloatRange scratchRange = new FloatRange(3, 4);
-
-        public float fadeInTime = 0.25f;
-        public float solidTime = 0.25f;
-        public float fadeOutTime = 0.85f;
-
-        public Material BeamMat => cachedBeamMat ??= MaterialPool.MatFrom(beamTexturePath, ShaderDatabase.MoteGlow);
+        //public Material BeamMat => cachedBeamMat ??= MaterialPool.MatFrom(beamTexturePath, ShaderDatabase.MoteGlow);
+        public void SetParent(VerbProperties_Extended verbprops)
+        {
+            this.parent = verbprops;
+        }
     }
 }

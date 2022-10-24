@@ -14,7 +14,7 @@ namespace TeleCore
         public const float DeltaTime = 1f / 60f;
 
         //
-        internal static Dictionary<SubBuildMenuDef, Window> windowsByDef;
+        internal static Dictionary<SubBuildMenuDef, SubBuildMenu> windowsByDef;
         internal static Dictionary<int, MapComponent_TeleCore> teleMapComps;
         internal static Dictionary<ThingDef, Designator> cachedDesignators;
 
@@ -30,7 +30,7 @@ namespace TeleCore
             TLog.Message("Clearing StaticData!");
             teleMapComps = new Dictionary<int, MapComponent_TeleCore>();
             cachedDesignators = new Dictionary<ThingDef, Designator>();
-            windowsByDef = new Dictionary<SubBuildMenuDef, Window>();
+            windowsByDef = new Dictionary<SubBuildMenuDef, SubBuildMenu>();
             ActionComposition._ID = 0;
         }
 

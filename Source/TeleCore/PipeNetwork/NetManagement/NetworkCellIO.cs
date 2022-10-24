@@ -76,7 +76,6 @@ namespace TeleCore
             OuterCellsByTag = new Dictionary<char, IntVec3Rot[]>();
 
             //
-            TLog.Message($"Generating CellIO for {thing}...");
             GenerateIOCells();
         }
 

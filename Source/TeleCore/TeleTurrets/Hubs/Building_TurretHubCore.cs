@@ -29,8 +29,8 @@ namespace TeleCore
                 {
                     var position = anticipatingPositions[i];
                     var thing = position.GetThingList(Map).Find(t =>
-                           (t is Blueprint_Build b && b.def.entityDefToBuild.HasTeleExtension(out var extension) && extension.turret.hub.hubDef == this.def)
-                        || (t is Frame f && f.def.entityDefToBuild.HasTeleExtension(out var extension2) && extension2.turret.hub.hubDef == this.def));
+                           (t is Blueprint_Build b && b.def.entityDefToBuild.HasTurretExtension(out var extension) && extension.hub.hubDef == this.def)
+                        || (t is Frame f && f.def.entityDefToBuild.HasTurretExtension(out var extension2) && extension2.hub.hubDef == this.def));
                     if (thing != null)
                     {
                         things.Add(thing);

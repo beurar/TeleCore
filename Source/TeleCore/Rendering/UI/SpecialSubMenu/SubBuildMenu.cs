@@ -10,55 +10,7 @@ using Verse;
 
 namespace TeleCore
 {
-    public class DesignationTexturePack
-    {
-        private static string DefaultPackPath = "Menu/SubBuildMenu";
-        
-        //
-        public Texture2D backGround;
-        public Texture2D tab;
-        public Texture2D tabSelected;
-        public Texture2D designator;
-        public Texture2D designatorSelected;
-
-        //TODO:Document
-        public DesignationTexturePack(string packPath, Def fromDef)
-        {
-            packPath ??= DefaultPackPath;
-            backGround = ContentFinder<Texture2D>.Get(packPath + "/BuildMenu");
-            tab = ContentFinder<Texture2D>.Get(packPath + "/Tab");
-            tabSelected = ContentFinder<Texture2D>.Get(packPath + "/Tab_Sel");
-            designator = ContentFinder<Texture2D>.Get(packPath + "/Des");
-            designatorSelected = ContentFinder<Texture2D>.Get(packPath + "/Des_Sel");
-        }
-    }
-
     public class SubMenuCategoryDef : Def{}
-
-    public class Designator_SubBuildMenu : Designator
-    {
-        private SubBuildMenuDef subMenuDef;
-
-        public Designator_SubBuildMenu(SubBuildMenuDef menuDef)
-        {
-            //defaultLabel = "Menu";
-            //defaultDesc = "MenuDesc";
-            order = -1;
-            
-            TLog.Message($"Created {nameof(Designator_SubBuildMenu)} with {menuDef}");
-            subMenuDef = menuDef;
-        }
-
-        public void Toggle_Menu()
-        {
-            SubBuildMenu.ToggleOpen(subMenuDef);
-        }
-
-        public override AcceptanceReport CanDesignateCell(IntVec3 loc)
-        {
-            return AcceptanceReport.WasRejected;
-        }
-    }
 
     public class SubBuildMenu : Window
     {
@@ -75,6 +27,8 @@ namespace TeleCore
         private Gizmo mouseOverGizmo;
         private ThingDef inactiveDef;
 
+        private Vector2 lastPos;
+        
         //
         private Dictionary<SubMenuGroupDef, SubMenuCategoryDef> cachedSelection = new ();
         //private Dictionary<SubMenuGroupDef, DesignationTexturePack> texturePacks = new ();
@@ -113,6 +67,9 @@ namespace TeleCore
             //Menu Settings
             SelectedGroup = menuDef.subMenus.First();
 
+            //
+            lastPos = new Vector2(UI.screenWidth/2f, UI.screenHeight/2f);
+            
             //Generate
             foreach (SubMenuGroupDef def in menuDef.subMenus)
             {
@@ -152,7 +109,7 @@ namespace TeleCore
                             ? CurrentTexturePack.tabSelected
                             : CurrentTexturePack.tab;
                         Widgets.DrawTextureFitted(tabRect, tex, 1f);
-                        if (SubMenuThingDefList.HasUnDiscovered(SelectedGroup, cat))
+                        if (SubMenuThingDefList.HasUnDiscovered(menuDef, SelectedGroup, cat))
                         {
                             TWidgets.DrawTextureInCorner(tabRect, TeleContent.Undiscovered, 7, TextAnchor.UpperRight, new Vector2(-6, 3));
                             //DrawUndiscovered(tabRect, new Vector2(-6, 3));
@@ -179,7 +136,7 @@ namespace TeleCore
                         }
                     }
                     //
-                    XYEndCheck(ref curXY, tabSize.y, tabSize.x * 3);
+                    XYEndCheck(ref curXY, tabSize.y, tabSize.x * 3, subCats.Count);
                     DrawSubThingGroup(new Rect(0f, curXY.y, DesignatorRect.width, DesignatorRect.height - curXY.y), SelectedGroup, SelectedCategoryDef);
                 }
                 Widgets.EndGroup();
@@ -210,7 +167,7 @@ namespace TeleCore
                         {
                             if (!DebugSettings.godMode &&
                                 (def.HasSubMenuExtension(out var subMenu) && subMenu.hidden)) continue;
-                            if (SubMenuThingDefList.IsActive(def))
+                            if (SubMenuThingDefList.IsActive(menuDef, def))
                             {
                                 Designator(def, main, size, ref curXY);
                             }
@@ -226,7 +183,7 @@ namespace TeleCore
 
         private List<ThingDef> ItemsBySearch(string searchText)
         {
-            return SubMenuThingDefList.Categorized[SelectedGroup].SelectMany(cat => cat.Value).Where(d => SubMenuThingDefList.IsActive(d) && d.label.ToLower().Contains(searchText.ToLower())).ToList();
+            return SubMenuThingDefList.Categorized[SelectedGroup].SelectMany(cat => cat.Value).Where(d => SubMenuThingDefList.IsActive(menuDef, d) && d.label.ToLower().Contains(searchText.ToLower())).ToList();
         }
 
 
@@ -269,7 +226,7 @@ namespace TeleCore
                     SubMenuThingDefList.Discover_ConstructionOption(def);
                 }
 
-                mouseOverGizmo = /*def.devObject ? StaticData.GetDesignatorFor<Designator_BuildGodMode>(def) :*/ GenData.GetDesignatorFor<Designator_Build>(def);
+                mouseOverGizmo = def.SubMenuExtension().devObject ? GenData.GetDesignatorFor<Designator_BuildGodMode>(def) : GenData.GetDesignatorFor<Designator_Build>(def);
                 Text.Anchor = TextAnchor.UpperCenter;
                 Widgets.Label(rect, def.LabelCap);
                 Text.Anchor = 0;
@@ -315,7 +272,7 @@ namespace TeleCore
                 GUI.color = sel ? Color.white : new Color(1f, 1f, 1f, 0.4f);
                 Widgets.DrawTextureFitted(partRect, IconForGroup(des), 1f);
                 GUI.color = Color.white;
-                if (SubMenuThingDefList.HasUnDiscovered(des))
+                if (SubMenuThingDefList.HasUnDiscovered(menuDef, des))
                 {
                     TWidgets.DrawTextureInCorner(partRect, TeleContent.Undiscovered, 8, TextAnchor.UpperRight);
                     //DrawUndiscovered(partRect);
@@ -364,13 +321,12 @@ namespace TeleCore
             {
                 XY.x += xIncrement;
             }
-
         }
 
-        private void XYEndCheck(ref Vector2 XY, float yIncrement, float maxWidth)
+        private void XYEndCheck(ref Vector2 XY, float yIncrement, float maxWidth, int itemCount)
         {
             //
-            if (XY.y < yIncrement && (XY.x <= maxWidth))
+            if (XY.x != 0)
             {
                 XY.y += yIncrement;
             }
@@ -395,15 +351,31 @@ namespace TeleCore
         //Data
         public static void ToggleOpen(SubBuildMenuDef subMenuDef)
         {
-            if (!StaticData.windowsByDef.TryGetValue(subMenuDef, out Window window))
+            if (!StaticData.windowsByDef.TryGetValue(subMenuDef, out SubBuildMenu window))
             {
                 window = new SubBuildMenu(subMenuDef);
                 StaticData.windowsByDef.Add(subMenuDef, window);
             }
 
-            if (window.IsOpen) 
+            if (window.IsOpen)
+            {
+                window.lastPos = window.windowRect.center;// GUI.wind.center; //window.;
                 window.Close();
-            else Find.WindowStack.Add(window);
+            }
+            else
+            {
+                Find.WindowStack.Add(window);
+                window.windowRect.center = window.lastPos;
+            }
+        }
+
+        public static void ResetMenuWindow(SubBuildMenuDef subMenuDef)
+        {
+            TLog.Message($"Resetting: {subMenuDef}");
+            if (StaticData.windowsByDef.TryGetValue(subMenuDef, out SubBuildMenu window))
+            {
+                window.windowRect.center = new Vector2(UI.screenWidth/2f, UI.screenHeight/2f);
+            }
         }
     }
 }

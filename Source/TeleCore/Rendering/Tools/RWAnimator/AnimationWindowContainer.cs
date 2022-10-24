@@ -87,13 +87,16 @@ namespace TeleCore
                 {
                     var msgBox = new Dialog_MessageBox("Do you want to keep the current project open after closing?",
                         buttonAText: "Yes keep it",
+                        buttonBText: "No just close it",
+                        buttonAAction: () => 
+                        { 
+                            keepProject = true;
+                            parentWindow.Close(); 
+                        },
                         buttonBAction: () =>
                         {
-                            keepProject = true;
                             parentWindow.Close();
                         },
-                        buttonBText: "No just close it",
-                        buttonAAction: () => { parentWindow.Close(); },
                         cancelAction: () => { return; },
                         layer: WindowLayer.Super
                     );

@@ -25,7 +25,7 @@
     <FileVersion></FileVersion>
     <Version>1.2.5</Version>
     <SignAssembly>False</SignAssembly>
-    <PackageVersion>1.5.1</PackageVersion>
+    <PackageVersion>1.5.4</PackageVersion>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
@@ -52,7 +52,7 @@
 	</ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Krafs.Rimworld.Ref" Version="1.4.3523-beta" GeneratePathProperty="true">
+    <PackageReference Include="Krafs.Rimworld.Ref" Version="1.4.3525" GeneratePathProperty="true">
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
     
@@ -67,7 +67,7 @@
     <!--
     <PackageReference Include="Microsoft.NETCore.Platforms" Version="*" />
     -->
-    <PackageReference Include="UnlimitedHugs.Rimworld.HugsLib" Version="9.0.1" ExcludeAssets="runtime">
+    <PackageReference Include="UnlimitedHugs.Rimworld.HugsLib" Version="10.0.1" ExcludeAssets="runtime">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>compile; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
