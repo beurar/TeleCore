@@ -46,7 +46,7 @@ namespace TeleCore
 
         public static bool IsActive(SubBuildMenuDef inMenu, ThingDef def)
         {
-            return DebugSettings.godMode || inMenu.AllowWorker.IsAllowed(def) && !def.SubMenuExtension().devObject;
+            return DebugSettings.godMode || (inMenu.AllowWorker?.IsAllowed(def) ?? true);
         }
 
         public static bool HasUnDiscovered(SubBuildMenuDef inMenu, SubMenuGroupDef group, SubMenuCategoryDef categoryDef)
@@ -70,7 +70,7 @@ namespace TeleCore
             var category = extension.category;
             if (groupDef == null || category == null)
             {
-                TLog.Error($"Error at {def} in 'subMenuDesignation': [{groupDef}, {category}, {extension.hidden}] {(groupDef == null ? "groupDef missing.": "")} {(category == null ? "category missing." : "")}");
+                TLog.Error($"Error at {def} in 'subMenuDesignation': [{groupDef}, {category}, {extension.isDevOption}] {(groupDef == null ? "groupDef missing.": "")} {(category == null ? "category missing." : "")}");
                 return;
             }
             if (!Categorized[groupDef][category].Contains(def))

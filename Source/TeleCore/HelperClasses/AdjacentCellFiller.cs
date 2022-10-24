@@ -11,7 +11,6 @@ public static class AdjacentCellFiller
 
     public static void FillAdjacentCellsAround(IntVec3 root, Map map, int cellCount, Action<IntVec3> fillAction, Predicate<IntVec3> fillValidator, Predicate<IntVec3> cellToSkipValidator)
     {
-        TLog.Message($"Filling adjacent cells from {root} with cells {cellCount}");
         if (cellCount > 0 && fillValidator(root))
         {
             fillAction(root);
@@ -28,7 +27,6 @@ public static class AdjacentCellFiller
             tempFilledCells.Add(x);
         });
         
-        TLog.Message($"Added {tempFilledCells.Count} from flood filler");
         if (tempFilledCells.Count == 0) return;
 
         //
@@ -43,8 +41,7 @@ public static class AdjacentCellFiller
                 }
             }
         }
-        TLog.Message($"Added {tempFilledCells.Count} from temp workable filler");
-        
+
         tempFilledCells.Clear();
         while (cellCount > 0 && tempWorkableCells.Count > 0)
         {
@@ -63,10 +60,10 @@ public static class AdjacentCellFiller
         //
         IEnumerable<IntVec3> GetAdjacentFillableCells(IntVec3 c, Map m)
         {
-            foreach (var t in GenAdj.CardinalDirections)
+            for (var i = 0; i < GenAdj.CardinalDirections.Length; i++)
             {
-                IntVec3 adjacentCell = c + t;
-                if (adjacentCell.InBounds(map) && cellToSkipValidator(adjacentCell))
+                IntVec3 adjacentCell = c + GenAdj.CardinalDirections[i];
+                if (adjacentCell.InBounds(map) && fillValidator(adjacentCell))
                 {
                     yield return adjacentCell;
                 }

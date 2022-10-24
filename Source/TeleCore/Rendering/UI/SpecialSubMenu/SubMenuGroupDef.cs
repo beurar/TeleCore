@@ -14,6 +14,8 @@ public class SubMenuGroupDef : Def
     //Pack Def | BuildMenu | Des | Des_Sel | Tab | Tab_Sel
     public string subPackPath;
 
+    public bool isDevGroup = false;
+    
     public DesignationTexturePack TexturePack => _textures;
 
     public override void PostLoad()

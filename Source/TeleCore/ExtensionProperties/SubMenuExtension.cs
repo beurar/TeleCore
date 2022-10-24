@@ -7,8 +7,7 @@ public class SubMenuExtension : DefModExtension
 {
     public SubMenuGroupDef groupDef;
     public SubMenuCategoryDef category;
-    public bool hidden;
-    public bool devObject;
+    public bool isDevOption;
 
     public override IEnumerable<string> ConfigErrors()
     {

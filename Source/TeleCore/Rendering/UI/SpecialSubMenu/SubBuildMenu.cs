@@ -10,7 +10,10 @@ using Verse;
 
 namespace TeleCore
 {
-    public class SubMenuCategoryDef : Def{}
+    public class SubMenuCategoryDef : Def
+    {
+        public bool isDevCategory = false;
+    }
 
     public class SubBuildMenu : Window
     {
@@ -103,6 +106,8 @@ namespace TeleCore
                     Vector2 curXY = Vector2.zero;
                     foreach (var cat in subCats)
                     {
+                        if(cat.isDevCategory && !DebugSettings.godMode) continue;
+                        
                         Rect tabRect = new Rect(curXY, tabSize);
                         Rect clickRect = new Rect(tabRect.x + 5, tabRect.y, tabRect.width - (10), tabRect.height);
                         Texture2D tex = cat == SelectedCategoryDef || Mouse.IsOver(clickRect)
@@ -165,8 +170,7 @@ namespace TeleCore
                         inactiveDef = null;
                         foreach (var def in things)
                         {
-                            if (!DebugSettings.godMode &&
-                                (def.HasSubMenuExtension(out var subMenu) && subMenu.hidden)) continue;
+                            if (!DebugSettings.godMode && (def.HasSubMenuExtension(out var subMenu) && subMenu.isDevOption)) continue;
                             if (SubMenuThingDefList.IsActive(menuDef, def))
                             {
                                 Designator(def, main, size, ref curXY);
@@ -197,11 +201,13 @@ namespace TeleCore
             GUI.color = mouseOver ? new Color(1, 1, 1, 0.45f) : Color.white;
             Widgets.DrawTextureFitted(rect.ContractedBy(2), def.uiIcon, 1);
             GUI.color = Color.white;
-            if (def.HasSubMenuExtension(out var subMenu) && subMenu.hidden)
+            if (def.HasSubMenuExtension(out var subMenu) && subMenu.isDevOption)
             {
                 Text.Font = GameFont.Medium;
                 Text.Anchor = TextAnchor.MiddleCenter;
+                GUI.color = TColor.White025;
                 Widgets.Label(rect, "DEV");
+                GUI.color = Color.white;
                 Text.Anchor = default;
                 Text.Font = GameFont.Small;
             }
@@ -226,7 +232,7 @@ namespace TeleCore
                     SubMenuThingDefList.Discover_ConstructionOption(def);
                 }
 
-                mouseOverGizmo = def.SubMenuExtension().devObject ? GenData.GetDesignatorFor<Designator_BuildGodMode>(def) : GenData.GetDesignatorFor<Designator_Build>(def);
+                mouseOverGizmo = def.SubMenuExtension().isDevOption ? GenData.GetDesignatorFor<Designator_BuildGodMode>(def) : GenData.GetDesignatorFor<Designator_Build>(def);
                 Text.Anchor = TextAnchor.UpperCenter;
                 Widgets.Label(rect, def.LabelCap);
                 Text.Anchor = 0;
@@ -266,13 +272,15 @@ namespace TeleCore
             List<SubMenuGroupDef> list = menuDef.subMenus;
             for (int i = 0; i < list.Count; i++)
             {
-                SubMenuGroupDef des = list[i];
+                SubMenuGroupDef groupDef = list[i];
+                if(groupDef.isDevGroup && !DebugSettings.godMode) continue;
+
                 Rect partRect = new Rect(0f, yPos + ((iconSize + 6) * i), iconSize, iconSize);
-                bool sel = Mouse.IsOver(partRect) || SelectedGroup == des;
+                bool sel = Mouse.IsOver(partRect) || SelectedGroup == groupDef;
                 GUI.color = sel ? Color.white : new Color(1f, 1f, 1f, 0.4f);
-                Widgets.DrawTextureFitted(partRect, IconForGroup(des), 1f);
+                Widgets.DrawTextureFitted(partRect, IconForGroup(groupDef), 1f);
                 GUI.color = Color.white;
-                if (SubMenuThingDefList.HasUnDiscovered(menuDef, des))
+                if (SubMenuThingDefList.HasUnDiscovered(menuDef, groupDef))
                 {
                     TWidgets.DrawTextureInCorner(partRect, TeleContent.Undiscovered, 8, TextAnchor.UpperRight);
                     //DrawUndiscovered(partRect);
@@ -281,7 +289,7 @@ namespace TeleCore
                 if (Widgets.ButtonInvisible(partRect))
                 {
                     searchText = "";
-                    SelectedGroup = des;
+                    SelectedGroup = groupDef;
                 }
             }
         }
