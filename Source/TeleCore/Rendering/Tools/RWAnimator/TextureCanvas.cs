@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using RimWorld;
+using TeleCore.Static;
 using UnityEngine;
 using Verse;
 
@@ -181,7 +182,7 @@ namespace TeleCore
                     TWidgets.DrawColoredBox(workingRect, TColor.BGDarker, TColor.MenuSectionBGBorderColor, 1);
                     
                     Text.Anchor = TextAnchor.MiddleCenter;
-                    Widgets.Label(workingRect, "Missing Animation Parts");
+                    Widgets.Label(workingRect, TranslationUtil.AnimationStrings.MissingParts);
                     Text.Anchor = default;
                     return;
                 }
@@ -194,11 +195,11 @@ namespace TeleCore
                 Listing_Standard listing = new Listing_Standard();
                 listing.Begin(workingRect);
 
-                listing.Label("TC_NewAnim".Translate());
+                listing.Label(TranslationUtil.AnimationStrings.NewAnimation);
                 listing.GapLine();
-                listing.TextFieldLabeled("TC_NewAnim_Defname".Translate() + ": ", ref animationMetaData.defName, anchor: TextAnchor.MiddleLeft);
+                listing.TextFieldLabeled(TranslationUtil.AnimationStrings.DefName + ": ", ref animationMetaData.defName, anchor: TextAnchor.MiddleLeft);
 
-                if (listing.ButtonText("TC_NewAnim_Init".Translate()))
+                if (listing.ButtonText(TranslationUtil.AnimationStrings.Init))
                 {
                     if (animationMetaData.defName?.Length <= 0)
                         animationMetaData.defName = "NewAnim";
@@ -263,11 +264,11 @@ namespace TeleCore
             Listing_Standard listing = new Listing_Standard();
             listing.Begin(leftContracted);
 
-            listing.Label($"Animation Settings");
+            listing.Label(TranslationUtil.AnimationStrings.Settings);
             listing.GapLine();
 
             Text.Anchor = TextAnchor.MiddleLeft;
-            listing.TextFieldLabeled("DefName: ", ref animationMetaData.defName, TextAnchor.MiddleLeft);
+            listing.TextFieldLabeled($"{TranslationUtil.AnimationStrings.DefName}: ", ref animationMetaData.defName, TextAnchor.MiddleLeft);
             Text.Anchor = default;
 
             listing.End();
@@ -295,7 +296,7 @@ namespace TeleCore
                 partListing.End();
             }
 
-            Widgets.Label(animationLabelRect, "Animations");
+            Widgets.Label(animationLabelRect, TranslationUtil.AnimationStrings.SettingsAnimations);
             var partsViewRect = new Rect(animationListingRect.x, animationListingRect.y, animationListingRect.width, animationMetaData.CurrentAnimations.Count * 20);
             TWidgets.DrawColoredBox(animationListingRect, TColor.BlueHueBG, Color.gray, 1);
             Widgets.BeginScrollView(animationListingRect, ref partListingScrollPos, partsViewRect, false);
@@ -328,7 +329,7 @@ namespace TeleCore
                 }
             }
             Widgets.EndScrollView();
-            if (Widgets.ButtonText(animationButtonRect, "Add Part"))
+            if (Widgets.ButtonText(animationButtonRect,  TranslationUtil.AnimationStrings.SettingsAddPart))
             {
                 var animation = AnimationData.Notify_CreateNewAnimationPart("NewPart", 1);
                 foreach (var element in ChildElements)
@@ -340,7 +341,7 @@ namespace TeleCore
                 AnimationData.Notify_PostCreateAnimation();
             }
 
-            Widgets.Label(availableSetsLabelRect, "Available Sets");
+            Widgets.Label(availableSetsLabelRect,  TranslationUtil.AnimationStrings.SettingsSets);
             TWidgets.DrawColoredBox(availableSetsListingRect, TColor.BlueHueBG, Color.gray, 1);
             float curYNew = availableSetsListingRect.y;
             for (int i = 0; i < 4; i++)
@@ -360,7 +361,7 @@ namespace TeleCore
                     curYNew += 20;
                 }
             }
-            if (Widgets.ButtonText(availableSetsButtonRect, "Add Side"))
+            if (Widgets.ButtonText(availableSetsButtonRect,  TranslationUtil.AnimationStrings.SettingsAddSide))
             {
                 Find.WindowStack.Add(new FloatMenu(RotationOptions().ToList()));
             }

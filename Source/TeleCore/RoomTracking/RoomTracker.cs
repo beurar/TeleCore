@@ -237,12 +237,12 @@ namespace TeleCore
         public void Notify_RoofChanged()
         {
             RegenerateData(true, false, false);
-
             //Check if room closed
             if (wasOutSide && !IsOutside)
             {
                 RoofClosed();
             }
+
             if (!wasOutSide && IsOutside)
             {
                 RoofOpened();
@@ -333,7 +333,7 @@ namespace TeleCore
                 actualCenter = extents.CenterVector3; //new Vector3(minX + (size.x / 2f), 0, minZ + (size.z / 2f));
                 drawPos = new Vector3(minX, AltitudeLayer.FogOfWar.AltitudeFor(), minZ);
             }
-
+            
             //Get Roof and Border Cells
             if (regenCellData)
             {

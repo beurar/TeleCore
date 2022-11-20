@@ -1,36 +1,42 @@
 ﻿using System;
 using System.Linq;
 using Mono.Unix.Native;
+using TeleCore.Static.Utilities;
 
 namespace TeleCore;
 
 public struct NetworkGraphPathRequest
 {
     private readonly int _depth;
-    private readonly INetworkSubPart _requster = null;
+    private readonly INetworkSubPart _requester = null;
     private readonly INetworkSubPart _target;
     private readonly NetworkRole _role;
     private readonly RequestValidator _validator;
-
-    public INetworkSubPart Requester => _requster;
+    internal readonly Predicate<INetworkSubPart> _dirtyChecker;
+    
+    public INetworkSubPart Requester => _requester;
     public int Depth => _depth;
 
-    public NetworkGraphPathRequest(INetworkSubPart requester, NetworkRole role, Predicate<INetworkSubPart> validator, int maxDepth = int.MaxValue)
+    public NetworkGraphPathRequest(NetworkTransactionUtility.TransactionRequest transactionRequest)
     {
-        _depth = maxDepth;
-        _requster = requester;
-        _role = role;
+        _depth = transactionRequest.maxDepth;
+        _requester = transactionRequest.requester;
+        _role = transactionRequest.requestedRole;
+        _validator = (RequestValidator)transactionRequest.partValidator;
+        _dirtyChecker = transactionRequest.dirtyChecker;
+     
+        //
         _target = null;
-        _validator = (RequestValidator)validator;
     }
 
     public NetworkGraphPathRequest(INetworkSubPart requester, INetworkSubPart target)
     {
         _depth = int.MaxValue;
-        _requster = requester;
+        _requester = requester;
         _target = target;
         _role = 0;
         _validator = RequestValidator.Invalid;
+        _dirtyChecker = null;
     }
 
     public struct RequestValidator
@@ -51,12 +57,12 @@ public struct NetworkGraphPathRequest
 
         public readonly bool Invoke(INetworkSubPart obj)
         {
-            return _validator.Invoke(obj);
+            return _validator?.Invoke(obj) ?? false;
         }
         
         public override int GetHashCode()
         {
-            return _validator.Method.GetHashCode();
+            return _validator?.Method?.GetHashCode() ?? 0;
         }
 
         public override bool Equals(object obj)
@@ -77,8 +83,8 @@ public struct NetworkGraphPathRequest
     public bool Fits(INetworkSubPart part)
     {
         if (_target != null && part != _target) return false;
-        if (_validator.IsValid && !_validator.Invoke(part)) return false;
         if (_role > 0 && !part.NetworkRole.HasFlag(_role)) return false;
+        if (_validator.IsValid && !_validator.Invoke(part)) return false;
 
         return true;
     }
@@ -86,7 +92,7 @@ public struct NetworkGraphPathRequest
     public override string ToString()
     {
         return $"Hash: {GetHashCode()}\n" +
-               $" |Requester: {_requster}" +
+               $" |Requester: {_requester}" +
                $" |Role: {_role}" +
                $" |Target: {_target}";
     }
@@ -95,7 +101,7 @@ public struct NetworkGraphPathRequest
     {
         if (obj is NetworkGraphPathRequest request)
         {
-            return request._requster == _requster &&
+            return request._requester == _requester &&
                    request._target == _target &&
                    request._role == _role &&
                    request._validator.Equals(_validator);
@@ -105,14 +111,14 @@ public struct NetworkGraphPathRequest
 
     public bool Equals(NetworkGraphPathRequest other)
     {
-        return Equals(_requster, other._requster) && Equals(_target, other._target) && _role == other._role && _validator.Equals(other._validator);
+        return Equals(_requester, other._requester) && Equals(_target, other._target) && _role == other._role && _validator.Equals(other._validator);
     }
 
     public override int GetHashCode()
     {
         unchecked
         {
-            var hashCode = (_requster != null ? _requster.GetHashCode() : 0);
+            var hashCode = (_requester != null ? _requester.GetHashCode() : 0);
             hashCode = (hashCode * 397) ^ (_target != null ? _target.GetHashCode() : 0);
             hashCode = (hashCode * 397) ^ (int)_role;
             hashCode = (hashCode * 397) ^ _validator.GetHashCode();

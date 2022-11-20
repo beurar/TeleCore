@@ -32,7 +32,7 @@ namespace TeleCore
         //Structure Ruleset
         public ThingDef controllerDef;
         public ThingDef transmitterDef;
-        
+
         public bool UsesController => controllerDef != null;
         public List<NetworkValueDef> NetworkValueDefs => belongingValueDefs;
 
@@ -87,6 +87,13 @@ namespace TeleCore
         internal void Notify_ResolvedNetworkValueDef(NetworkValueDef networkValueDef)
         {
             belongingValueDefs.Add(networkValueDef);
+        }
+
+        //TODO: Evaluate necessity
+        public bool CanWorkWith(NetworkDef otherNetworkDef)
+        {
+            if (this == otherNetworkDef) return true;
+            return false;
         }
     }
 }

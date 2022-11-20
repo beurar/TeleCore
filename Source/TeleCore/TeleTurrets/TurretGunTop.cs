@@ -86,7 +86,14 @@ namespace TeleCore
                 barrels[index].Notify_TurretShot();
             }
         }
-
+        
+        public void Notify_AimAngleChanged(float? angle)
+        {
+            if(angle.HasValue)
+                rotation = angle.Value;
+        }
+        
+        //
         public void TurretTopTick()
         {
             //Tick Barrels

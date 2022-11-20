@@ -15,7 +15,7 @@ namespace TeleCore
         public bool isDevCategory = false;
     }
 
-    public class SubBuildMenu : Window
+    public class SubBuildMenu : Window, IExposable
     {
         private static Vector2 tabSize = new Vector2(118, 30);
         private static Vector2 searchBarSize = new Vector2(125, 25);
@@ -34,13 +34,17 @@ namespace TeleCore
         
         //
         private Dictionary<SubMenuGroupDef, SubMenuCategoryDef> cachedSelection = new ();
+        private List<ThingDef> favoriteOptions = new List<ThingDef>();
+        private bool favoriteMenuActive = false;
+        
         //private Dictionary<SubMenuGroupDef, DesignationTexturePack> texturePacks = new ();
         
         private SubMenuGroupDef SelectedGroup { get; set; }
         private SubMenuCategoryDef SelectedCategoryDef => cachedSelection[SelectedGroup];
         private Designator CurrentDesignator => (Designator)(mouseOverGizmo ?? Find.DesignatorManager.SelectedDesignator);
         private HashSet<ThingDef> HighLightOptions = new HashSet<ThingDef>();
-
+        
+        
         public DesignationTexturePack CurrentTexturePack => SelectedGroup.TexturePack ?? menuDef.TexturePack;
         
         //
@@ -49,7 +53,15 @@ namespace TeleCore
 
         public SubBuildMenu()
         {
-            //Setup();
+            draggable = true;
+            preventCameraMotion = false;
+            doCloseX = true;
+
+            windowRect.x = 5f;
+            windowRect.y = 5f;
+            doWindowBackground = false;
+            doCloseButton = false;
+            doCloseX = false;
         }
         
         public SubBuildMenu(SubBuildMenuDef menuDef)
@@ -67,6 +79,11 @@ namespace TeleCore
             doCloseButton = false;
             doCloseX = false;
 
+            Setup(menuDef);
+        }
+
+        private void Setup(SubBuildMenuDef menuDef)
+        {
             //Menu Settings
             SelectedGroup = menuDef.subMenus.First();
 
@@ -82,11 +99,29 @@ namespace TeleCore
             }
         }
 
+        public void ExposeData()
+        {
+            Scribe_Defs.Look(ref menuDef, nameof(menuDef));
+            Scribe_Collections.Look(ref favoriteOptions, nameof(favoriteOptions));
+            if (Scribe.mode == LoadSaveMode.PostLoadInit)
+            {
+                Setup(menuDef);
+            }
+        }
+        
         public override void DoWindowContents(Rect inRect)
         {
             //
             Rect searchBar = new Rect(new Vector2(inRect.xMax - searchBarSize.x, 0f), searchBarSize);
+            Rect favoritesRect = new Rect(searchBar.x - (searchBarSize.y + 4), searchBar.y, searchBarSize.y, searchBarSize.y).ContractedBy(2).Rounded();
             DoSearchBar(searchBar);
+            
+            //Favorited
+            if (Widgets.ButtonImage(favoritesRect, TeleContent.Favorite_Filled))
+            {
+                favoriteMenuActive = !favoriteMenuActive;
+            }
+            
             //SetupBG
             Rect menuRect = new Rect(0f, searchBarSize.y, windowRect.width, 526f);
             Widgets.DrawTextureRotated(menuRect, CurrentTexturePack.backGround, 0f);
@@ -102,47 +137,80 @@ namespace TeleCore
                 Rect DesignatorRect = new Rect(iconSize + sideMargin, 0f, menuRect.width - (iconSize + sideMargin), menuRect.height);
                 Widgets.BeginGroup(DesignatorRect);
                 {
-                    var subCats = SelectedGroup.subCategories;
-                    Vector2 curXY = Vector2.zero;
-                    foreach (var cat in subCats)
+                    if (favoriteMenuActive)
                     {
-                        if(cat.isDevCategory && !DebugSettings.godMode) continue;
+                        Vector2 size = new Vector2(80, 80);
+                        Vector2 curXY = new Vector2(5f, 5f);
+
+                        //
+                        Rect favoriteTabLabelRect = new Rect(curXY, new Vector2(DesignatorRect.width, 32));
+                        curXY.y += favoriteTabLabelRect.y;
                         
-                        Rect tabRect = new Rect(curXY, tabSize);
-                        Rect clickRect = new Rect(tabRect.x + 5, tabRect.y, tabRect.width - (10), tabRect.height);
-                        Texture2D tex = cat == SelectedCategoryDef || Mouse.IsOver(clickRect)
-                            ? CurrentTexturePack.tabSelected
-                            : CurrentTexturePack.tab;
-                        Widgets.DrawTextureFitted(tabRect, tex, 1f);
-                        if (SubMenuThingDefList.HasUnDiscovered(menuDef, SelectedGroup, cat))
+                        //
+                        Widgets.Label(favoriteTabLabelRect, "Favorites");
+                        curXY.y += TWidgets.GapLine(curXY.x, curXY.y, DesignatorRect.width, 4, 0);
+                        
+                        //
+                        var main = new Rect(0f, curXY.y, DesignatorRect.width, DesignatorRect.height - curXY.y);
+                        for (var i = favoriteOptions.Count - 1; i >= 0; i--)
                         {
-                            TWidgets.DrawTextureInCorner(tabRect, TeleContent.Undiscovered, 7, TextAnchor.UpperRight, new Vector2(-6, 3));
-                            //DrawUndiscovered(tabRect, new Vector2(-6, 3));
-                            //Widgets.DrawTextureFitted(tabRect, TiberiumContent.Tab_Undisc, 1f);
-                        }
-
-                        Text.Anchor = TextAnchor.MiddleCenter;
-                        Text.Font = GameFont.Small;
-                        string catLabel = cat.LabelCap;
-                        if (Text.CalcSize(catLabel).y > tabRect.width)
-                        {
-                            Text.Font = GameFont.Tiny;
-                        }
-
-                        Widgets.Label(tabRect, catLabel);
-                        Text.Font = GameFont.Tiny;
-                        Text.Anchor = 0;
-
-                        AdjustXY(ref curXY, tabSize.x - 10f, tabSize.y, tabSize.x * 3);
-                        if (Widgets.ButtonInvisible(clickRect))
-                        {
-                            searchText = "";
-                            SetSelectedCat(cat);
+                            var def = favoriteOptions[i];
+                            if (!DebugSettings.godMode &&
+                                (def.HasSubMenuExtension(out var subMenu) && subMenu.isDevOption)) continue;
+                            if (SubMenuThingDefList.IsActive(menuDef, def))
+                            {
+                                Designator(def, main, size, ref curXY);
+                            }
+                            else
+                                InactiveDesignator(def, main, size, ref curXY);
                         }
                     }
-                    //
-                    XYEndCheck(ref curXY, tabSize.y, tabSize.x * 3, subCats.Count);
-                    DrawSubThingGroup(new Rect(0f, curXY.y, DesignatorRect.width, DesignatorRect.height - curXY.y), SelectedGroup, SelectedCategoryDef);
+                    else
+                    {
+                        var subCats = SelectedGroup.subCategories;
+                        Vector2 curXY = Vector2.zero;
+                        foreach (var cat in subCats)
+                        {
+                            if (cat.isDevCategory && !DebugSettings.godMode) continue;
+
+                            Rect tabRect = new Rect(curXY, tabSize);
+                            Rect clickRect = new Rect(tabRect.x + 5, tabRect.y, tabRect.width - (10), tabRect.height);
+                            Texture2D tex = cat == SelectedCategoryDef || Mouse.IsOver(clickRect)
+                                ? CurrentTexturePack.tabSelected
+                                : CurrentTexturePack.tab;
+                            Widgets.DrawTextureFitted(tabRect, tex, 1f);
+                            if (SubMenuThingDefList.HasUnDiscovered(menuDef, SelectedGroup, cat))
+                            {
+                                TWidgets.DrawTextureInCorner(tabRect, TeleContent.Undiscovered, 7,
+                                    TextAnchor.UpperRight, new Vector2(-6, 3));
+                                //DrawUndiscovered(tabRect, new Vector2(-6, 3));
+                                //Widgets.DrawTextureFitted(tabRect, TiberiumContent.Tab_Undisc, 1f);
+                            }
+
+                            Text.Anchor = TextAnchor.MiddleCenter;
+                            Text.Font = GameFont.Small;
+                            string catLabel = cat.LabelCap;
+                            if (Text.CalcSize(catLabel).y > tabRect.width)
+                            {
+                                Text.Font = GameFont.Tiny;
+                            }
+
+                            Widgets.Label(tabRect, catLabel);
+                            Text.Font = GameFont.Tiny;
+                            Text.Anchor = 0;
+
+                            AdjustXY(ref curXY, tabSize.x - 10f, tabSize.y, tabSize.x * 3);
+                            if (Widgets.ButtonInvisible(clickRect))
+                            {
+                                searchText = "";
+                                SetSelectedCat(cat);
+                            }
+                        }
+
+                        //
+                        XYEndCheck(ref curXY, tabSize.y, tabSize.x * 3, subCats.Count);
+                        DrawSubThingGroup(new Rect(0f, curXY.y, DesignatorRect.width, DesignatorRect.height - curXY.y), SelectedGroup, SelectedCategoryDef);
+                    }
                 }
                 Widgets.EndGroup();
             }
@@ -190,7 +258,6 @@ namespace TeleCore
             return SubMenuThingDefList.Categorized[SelectedGroup].SelectMany(cat => cat.Value).Where(d => SubMenuThingDefList.IsActive(menuDef, d) && d.label.ToLower().Contains(searchText.ToLower())).ToList();
         }
 
-
         private void Designator(ThingDef def, Rect main, Vector2 size, ref Vector2 XY)
         {
             Rect rect = new Rect(new Vector2(XY.x, XY.y), size);
@@ -205,7 +272,7 @@ namespace TeleCore
             {
                 Text.Font = GameFont.Medium;
                 Text.Anchor = TextAnchor.MiddleCenter;
-                GUI.color = TColor.White025;
+                GUI.color = TColor.White075;
                 Widgets.Label(rect, "DEV");
                 GUI.color = Color.white;
                 Text.Anchor = default;
@@ -224,6 +291,20 @@ namespace TeleCore
                 //DrawUndiscovered(rect, new Vector2(-5, 5));
                 //Widgets.DrawTextureFitted(rect, TiberiumContent.Des_Undisc, 1f);
             }
+
+            var favorited = SubMenuThingDefList.IsFavorited(def);
+            var favTex = favorited ? TeleContent.Favorite_Filled : TeleContent.Favorite_Unfilled;
+            TWidgets.DrawTextureInCorner(rect, favTex, 16, TextAnchor.UpperLeft, new Vector2(5, 5), ()=>
+            {
+                if (SubMenuThingDefList.ToggleFavorite(def))
+                {
+                    favoriteOptions.Add(def);
+                }
+                else
+                {
+                    favoriteOptions.Remove(def);
+                }
+            });
 
             if (mouseOver)
             {
@@ -357,7 +438,7 @@ namespace TeleCore
         }
 
         //Data
-        public static void ToggleOpen(SubBuildMenuDef subMenuDef)
+        public static void ToggleOpen(SubBuildMenuDef subMenuDef, bool opening)
         {
             if (!StaticData.windowsByDef.TryGetValue(subMenuDef, out SubBuildMenu window))
             {
@@ -365,7 +446,7 @@ namespace TeleCore
                 StaticData.windowsByDef.Add(subMenuDef, window);
             }
 
-            if (window.IsOpen)
+            if (window.IsOpen && !opening)
             {
                 window.lastPos = window.windowRect.center;// GUI.wind.center; //window.;
                 window.Close();

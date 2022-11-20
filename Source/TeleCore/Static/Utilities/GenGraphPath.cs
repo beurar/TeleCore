@@ -7,7 +7,7 @@ using Verse;
 
 namespace TeleCore.Static.Utilities
 {
-    internal class GenGraph
+    internal class GenGraphPath
     {
         public List<INetworkSubPart> ShortestPathFunction(NetworkGraph graph, INetworkSubPart start, INetworkSubPart end)
         {
@@ -150,8 +150,17 @@ namespace TeleCore.Static.Utilities
             return null;
         }
 
-        public static List<List<INetworkSubPart>> Dijkstra(NetworkGraph graph, INetworkSubPart source, Predicate<INetworkSubPart> partValidator, int maxDepth = int.MaxValue)
+
+        public static List<INetworkSubPart> GetPaths()
         {
+            return null;
+        }
+
+
+        public static List<List<INetworkSubPart>> Dijkstra(NetworkGraph graph, INetworkSubPart source, Predicate<INetworkSubPart> validator, int maxDepth = int.MaxValue)
+        {
+            TLog.Message($"Doing Dijkstra for {source}");
+            
             //
             _WorkingList.Clear();
             _Distances.Clear();
@@ -160,7 +169,9 @@ namespace TeleCore.Static.Utilities
             //
             List<INetworkSubPart> validParts = new List<INetworkSubPart>();
             List<List<INetworkSubPart>> allPaths = new List<List<INetworkSubPart>>();
-            
+
+            bool Validator(INetworkSubPart part) => validator(part) && part != source;
+
             //
             for (var k = 0; k < graph.AllNodes.Count; k++)
             {
@@ -168,7 +179,7 @@ namespace TeleCore.Static.Utilities
                 _WorkingList.Add(node);
                 _PreviousOf.Add(node, null);
 
-                if (partValidator(node))
+                if (Validator(node))
                 {
                     validParts.Add(node);
                 }
@@ -180,6 +191,10 @@ namespace TeleCore.Static.Utilities
                 }
                 _Distances.Add(node, int.MaxValue);
             }
+            
+            TLog.Debug($"WorkingList: {_WorkingList.ToStringSafeEnumerable()}");
+            TLog.Debug($"PreviousOf: {_PreviousOf.ToStringSafeEnumerable()}");
+            TLog.Debug($"Distances: {_Distances.ToStringSafeEnumerable()}");
             
             while (_WorkingList.Count > 0)
             {
@@ -196,7 +211,7 @@ namespace TeleCore.Static.Utilities
                             var depthCount = 0;
                             while (part != null)
                             {
-                                if(partValidator(part))
+                                if(Validator(part))
                                     depthCount++;
                                 
                                 pathResult.Insert(0, part);

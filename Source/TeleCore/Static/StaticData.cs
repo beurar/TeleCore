@@ -25,6 +25,11 @@ namespace TeleCore
             Notify_Reload();
         }
 
+        internal static void ExposeStaticData()
+        {
+            Scribe_Collections.Look(ref windowsByDef, "windowsByDef", LookMode.Def, LookMode.Deep);
+        }
+        
         internal static void Notify_Reload()
         {
             TLog.Message("Clearing StaticData!");

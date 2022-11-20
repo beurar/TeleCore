@@ -13,10 +13,23 @@ namespace TeleCore
     public class TeleDefExtension : DefModExtension
     {
         //
+        private GraphicAlternateWorker _graphicAltWorkerInt;
+        
+        //
         public ThingGroupCollection thingGroups = new ThingGroupCollection();
         public List<GraphicData> extraGraphics;
         public ProjectileDefExtension projectile;
+        public Type graphicAlternateWorkerType;
+
+        public GraphicAlternateWorker GraphicAltWorker
+        {
+            get
+            {
+                return _graphicAltWorkerInt ??= (GraphicAlternateWorker)Activator.CreateInstance(graphicAlternateWorkerType);
+            }
+        }
     }
+    
 
     //
     public class ThingGroupCollection

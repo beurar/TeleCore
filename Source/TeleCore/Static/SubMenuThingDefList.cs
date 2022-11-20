@@ -38,6 +38,18 @@ namespace TeleCore
             }
         }
 
+        //Favorited
+        public static bool IsFavorited(ThingDef def)
+        {
+            return StaticData.WorldCompTele().thingDataCache.MenuOptionIsFavorited(def);
+        }
+
+        public static bool ToggleFavorite(ThingDef def)
+        {
+            StaticData.WorldCompTele().thingDataCache.ToggleMenuOptionFavorite(def);
+            return IsFavorited(def);
+        }
+
         //Discovery
         public static bool HasUnDiscovered(SubBuildMenuDef inMenu, SubMenuGroupDef group)
         {
@@ -56,12 +68,12 @@ namespace TeleCore
 
         internal static bool ConstructionOptionDiscovered(ThingDef def)
         {
-            return StaticData.WorldCompTele().discoveryTable.MenuOptionHasBeenSeen(def);
+            return StaticData.WorldCompTele().thingDataCache.MenuOptionHasBeenSeen(def);
         }
 
         internal static void Discover_ConstructionOption(ThingDef def)
         {
-            StaticData.WorldCompTele().discoveryTable.DiscoverInMenu(def);
+            StaticData.WorldCompTele().thingDataCache.DiscoverInMenu(def);
         }
 
         public static void Add(ThingDef def, SubMenuExtension extension)

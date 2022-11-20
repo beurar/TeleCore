@@ -1,8 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using RimWorld;
 using TeleCore.Static;
 using UnityEngine;
@@ -13,51 +10,85 @@ namespace TeleCore
 {
 	public class Verb_Beam : Verb_Tele
     {
-	    //
-	    private Vector3 initialTargetPosition;
-	    private List<Vector3> path = new List<Vector3>();
-	    private int ticksToNextPathStep;
+	    //Target
+	    private Vector3 currentTargetTruePos;
+	    private List<Vector3> beamHitLocations = new List<Vector3>();
+	    private int ticksToNextLocation;
 
-	    private MoteDualAttached beamMote;
-	    private Effecter endEffecter;
+	    //Angle
+	    private float aimAnglDamper;
+	    private Vector3? currentAimOverrideTarget;
+	    private float rotationSpeed;
+	    
+	    //Effects
+	    private MoteDualAttached movingBeamMote;
+	    private Effecter movingEndEffecter;
 	    private Sustainer sustainer;
 
-	    protected BeamProperties BeamProps => Props.beamProps;
+	    //
+	    public BeamProperties BeamProps => Props.beamProps;
+	    public bool IsStatic => BeamProps.isStatic;
 	    
 	    //
-	    public override DamageDef DamageDef => BeamProps.damageDef;
+	    public override DamageDef DamageDef => BeamProps.damageDef ?? verbProps.beamDamageDef;
 	    protected override float ExplosionOnTargetSize => BeamProps.impactExplosion?.explosionRadius ?? 0;
+	    
+	    //Beam Moving Mechanic
+        private float ShotProgress => ticksToNextLocation / (float) verbProps.ticksBetweenBurstShots;
 
-        
-        protected override BattleLogEntry_RangedFire EntryOnWarmupComplete()
+        private Vector3 InterpolatedPosition
         {
-            return new BattleLogEntry_RangedFire(caster, currentTarget.HasThing ? currentTarget.Thing : null, EquipmentSource != null ? EquipmentSource.def : null, null, ShotsPerBurst > 1);
+	        get
+	        { 
+		        if (IsStatic)
+		        {
+			        return beamHitLocations[burstShotsLeft];
+		        }
+		        return Vector3.Lerp(beamHitLocations[burstShotsLeft], beamHitLocations[Mathf.Min(burstShotsLeft + 1, beamHitLocations.Count - 1)], ShotProgress) + (CurrentTarget.CenterVector3 - currentTargetTruePos);
+	        }
         }
         
-        //Beam Moving Mechanic
-        private float ShotProgress => ticksToNextPathStep / (float) verbProps.ticksBetweenBurstShots;
-
-        private Vector3 InterpolatedPosition => Vector3.Lerp(path[burstShotsLeft], path[Mathf.Min(burstShotsLeft + 1, path.Count - 1)], ShotProgress) 
-                                                + (CurrentTarget.CenterVector3 - initialTargetPosition);
-
         public override float? AimAngleOverride
         {
 	        get
 	        {
-		        if (state != VerbState.Bursting) return null;
-		        return (InterpolatedPosition - caster.DrawPos).AngleFlat();
+		        if (state != VerbState.Bursting && currentAimOverrideTarget == null) 
+			        return DesiredAimAngle;
+		        return aimAnglDamper;
+	        }
+        }
+
+        private void SetAimAngle(Vector3 newAimTarget)
+        {
+	        currentAimOverrideTarget = newAimTarget;
+	        aimAnglDamper = (currentAimOverrideTarget - CurrentStartPos).Value.AngleFlat();
+	        turretGun?.Top?.Notify_AimAngleChanged(AimAngleOverride);
+        }
+
+        public override void PostVerbTick()
+        {
+	        if (currentAimOverrideTarget != null)
+	        {
+		        if (state != VerbState.Bursting)
+		        {
+			        aimAnglDamper = Mathf.SmoothDampAngle(aimAnglDamper, DesiredAimAngle, ref rotationSpeed, 0.01f, 8, 0.01666f);
+		        }
+		        if (Math.Abs(aimAnglDamper - DesiredAimAngle) < 0.015625f)
+		        {
+			        currentAimOverrideTarget = null;
+		        }
 	        }
         }
         
         public override void ExposeData()
         {
 	        base.ExposeData();
-	        Scribe_Collections.Look(ref path, "path", LookMode.Value, Array.Empty<object>());
-	        Scribe_Values.Look(ref ticksToNextPathStep, "ticksToNextPathStep");
-	        Scribe_Values.Look(ref initialTargetPosition, "initialTargetPosition");
-	        if (Scribe.mode == LoadSaveMode.PostLoadInit && path == null)
+	        Scribe_Collections.Look(ref beamHitLocations, "path", LookMode.Value, Array.Empty<object>());
+	        Scribe_Values.Look(ref ticksToNextLocation, "ticksToNextPathStep");
+	        Scribe_Values.Look(ref currentTargetTruePos, "initialTargetPosition");
+	        if (Scribe.mode == LoadSaveMode.PostLoadInit && beamHitLocations == null)
 	        {
-		        path = new List<Vector3>();
+		        beamHitLocations = new List<Vector3>();
 	        }
         }
 
@@ -65,171 +96,369 @@ namespace TeleCore
         {
             return IsBeam;
         }
-        
+
+        private MoteDualAttached MakeBeamMote(IntVec3 targetLoc)
+        {
+	        return MoteMaker.MakeInteractionOverlay(verbProps.beamMoteDef, caster, new TargetInfo(targetLoc, caster.Map));
+        }
+
+        //Prepare Beam Hit Target Cells
         public override void WarmupComplete()
         {
+	        beamHitLocations.Clear();
 	        burstShotsLeft = ShotsPerBurst;
 	        state = VerbState.Bursting;
-	        initialTargetPosition = currentTarget.CenterVector3;
-	        path.Clear();
-	        var rangeDiff = (currentTarget.CenterVector3 - ShotOrigin.Yto0());
-	        var magnitude = rangeDiff.magnitude;
-	        var normalized = rangeDiff.normalized;
-	        var a = normalized.RotatedBy(-90f);
-	        var num = verbProps.beamFullWidthRange > 0f ? Mathf.Min(magnitude / verbProps.beamFullWidthRange, 1f) : 1f;
-	        var d = (verbProps.beamWidth + 1f) * num / ShotsPerBurst;
-	        var vector2 = currentTarget.CenterVector3.Yto0() - a * verbProps.beamWidth * 0.5f * num;
-	        path.Add(vector2);
+	        currentTargetTruePos = currentTarget.CenterVector3.Yto0();
 	        
 	        //
-	        for (var i = 0; i < ShotsPerBurst; i++)
-	        {
-		        var a2 = normalized * (Rand.Value * verbProps.beamMaxDeviation) - normalized * 0.5f;
-		        var b = Mathf.Sin((i / (float) ShotsPerBurst + 0.5f) * Mathf.PI * 57.29578f) * verbProps.beamCurvature * -normalized - normalized * verbProps.beamMaxDeviation * 0.5f;
-		        path.Add(vector2 + (a2 + b) * num);
-		        vector2 += a * d;
-	        }
+	        var rangeDiff = (currentTargetTruePos - CurrentStartPos.Yto0());
+	        var magnitude = rangeDiff.magnitude;
+	        var normalized = rangeDiff.normalized;
 
-	        //Set BeamMote
-	        if (verbProps.beamMoteDef != null)
+	        //
+	        if (IsStatic)
 	        {
-		        beamMote = MoteMaker.MakeInteractionOverlay(verbProps.beamMoteDef, caster, new TargetInfo(path[0].ToIntVec3(), caster.Map));
+		        SetupStaticTargets();
+	        }
+	        else
+	        {
+		        SetupBeamLineTargets(normalized, magnitude);
 	        }
 
 	        TryCastNextBurstShot();
 	        
-	        ticksToNextPathStep = verbProps.ticksBetweenBurstShots;
-	        endEffecter?.Cleanup();
+	        ticksToNextLocation = verbProps.ticksBetweenBurstShots;
+	        movingEndEffecter?.Cleanup();
 	        if (verbProps.soundCastBeam != null)
 	        {
 		        sustainer = verbProps.soundCastBeam.TrySpawnSustainer(SoundInfo.InMap(caster, MaintenanceType.PerTick));
 	        }
         }
+        
+        private void SetupBeamLineTargets(Vector3 normalVec, float magnitude)
+        {
+	        var normalRotated = normalVec.RotatedBy(-90f);
+	        var fullWidthRangeFactor = verbProps.beamFullWidthRange > 0f ? Mathf.Min(magnitude / verbProps.beamFullWidthRange, 1f) : 1f;
+	        var beamWidthStep = (verbProps.beamWidth + 1f) * fullWidthRangeFactor / ShotsPerBurst;
+	        var finalMovingBeamTarget = currentTargetTruePos - normalRotated * verbProps.beamWidth / 2f * fullWidthRangeFactor;
+	        Vector3 a2 = normalVec * (Rand.Value * verbProps.beamMaxDeviation) - normalVec / 2f;
+		        
+	        //
+	        for (var i = 0; i <= ShotsPerBurst; i++)
+	        {
+		        //
+		        Vector3 b = Mathf.Sin((i / (float)ShotsPerBurst + 0.5f) * Mathf.PI * Mathf.Rad2Deg) * verbProps.beamCurvature * -normalVec - normalVec * verbProps.beamMaxDeviation / 2f;
+		        beamHitLocations.Add(finalMovingBeamTarget + (a2 + b) * fullWidthRangeFactor);
+		        finalMovingBeamTarget += normalRotated * beamWidthStep;
+	        }
+	        
+	        //Get Beam Instance
+	        if (verbProps.beamMoteDef != null && !BeamProps.spawnMotePerBeam)
+	        {
+		        movingBeamMote = MakeBeamMote(beamHitLocations[0].ToIntVec3());
+	        }
+	        
+	        //
+	        if (movingEndEffecter == null && verbProps.beamEndEffecterDef != null)
+	        {
+		        movingEndEffecter = verbProps.beamEndEffecterDef.Spawn(caster.Position, caster.Map);
+	        }
+        }
+        
+        private void SetupStaticTargets()
+        {
+	        for (var i = 0; i <= ShotsPerBurst; i++)
+	        {
+		        //
+		        _ = TryFindShootLineFromTo(caster.Position, currentTarget, out var shootLine);
+		        ShotReport shotReport = ShotReport.HitReportFor(caster, this, currentTarget);
+		        Thing randomCoverToMissInto = shotReport.GetRandomCoverToMissInto();
+		        Vector3 finalStaticShotTarget = currentTargetTruePos;
+		        if (verbProps.canGoWild && !Rand.Chance(shotReport.AimOnTargetChance_IgnoringPosture))
+		        {
+			        shootLine.ChangeDestToMissWild(shotReport.AimOnTargetChance_StandardTarget);
+			        finalStaticShotTarget = shootLine.Dest.ToVector3Shifted().Yto0();
+		        }
+		        if (currentTarget.Thing != null && currentTarget.Thing.def.CanBenefitFromCover && !Rand.Chance(shotReport.PassCoverChance))
+		        {
+			        finalStaticShotTarget = randomCoverToMissInto.TrueCenter().Yto0();
+		        }
+		        beamHitLocations.Add(finalStaticShotTarget);
+	        }
+        }
 
-        //Does the wandering
+        //
         public override void BurstingTick()
         {
 	        //Enter next step
-			ticksToNextPathStep--;
-			var curPos = InterpolatedPosition;
+	        ticksToNextLocation--;
+	        
+	        if (IsStatic) return;
+	        var curPos = InterpolatedPosition;
 			var curPosIntVec = curPos.ToIntVec3();
-			var rangeDiff = InterpolatedPosition - ShotOrigin;
-			var magnitude = rangeDiff.MagnitudeHorizontal();
-			var normalized = rangeDiff.Yto0().normalized;
-			var b = GenSight.LastPointOnLineOfSight(caster.Position, curPosIntVec, c => c.CanBeSeenOverFast(caster.Map), true);
+			var curRangeDiff = InterpolatedPosition - CurrentStartPos;
+			var normalized = curRangeDiff.Yto0().normalized;
+			var magnitude = curRangeDiff.MagnitudeHorizontal();
+			var LOSInterjection = CellGen.LastPointOnLineOfSightWithHeight(ShotOriginLOS, curPos.Yto0(), Props.minHitHeight, c => c.CanBeSeenOverFast(caster.Map), true);
 
-			if (b.IsValid)
+			//Adjust Target By LOS Interjection
+			if (LOSInterjection.IsValid)
 			{
 				//Have valid target pos
-				magnitude -= (curPosIntVec - b).LengthHorizontal;
-				curPos = caster.Position.ToVector3Shifted() + normalized * magnitude;
+				magnitude -= (curPosIntVec - LOSInterjection).LengthHorizontal;
+				curPos = CurrentStartPos + normalized * magnitude;
 				curPosIntVec = curPos.ToIntVec3();
 			}
-			Vector3 offsetA = normalized * verbProps.beamStartOffset;
-			Vector3 vector3 = curPos - curPosIntVec.ToVector3Shifted();
-			if (beamMote != null)
-			{
-				beamMote.UpdateTargets(new TargetInfo(caster.Position, caster.Map), new TargetInfo(curPosIntVec, caster.Map), offsetA + CurrentShotOffset, vector3);
-				beamMote.Maintain();
-			}
-
-			if (verbProps.beamGroundFleckDef != null && Rand.Chance(verbProps.beamFleckChancePerTick))
-			{
-				FleckMaker.Static(curPos, caster.Map, verbProps.beamGroundFleckDef);
-			}
-
-			if (endEffecter == null && verbProps.beamEndEffecterDef != null)
-			{
-				endEffecter = verbProps.beamEndEffecterDef.Spawn(curPosIntVec, caster.Map, vector3);
-			}
-
-			//Do endeffecter
-			if (endEffecter != null)
-			{
-				endEffecter.offset = vector3;
-				endEffecter.EffectTick(new TargetInfo(curPosIntVec, caster.Map), TargetInfo.Invalid);
-				endEffecter.ticksLeft--;
-			}
-
-			//Spawn impact fleck
-			if (verbProps.beamLineFleckDef != null)
-			{
-				var num2 = 1f * magnitude;
-				var num3 = 0;
-				while (num3 < num2)
-				{
-					if (Rand.Chance(verbProps.beamLineFleckChanceCurve.Evaluate(num3 / num2)))
-					{
-						var b2 = num3 * normalized - normalized * Rand.Value + normalized / 2f;
-						FleckMaker.Static(caster.Position.ToVector3Shifted() + b2, caster.Map,
-							verbProps.beamLineFleckDef);
-					}
-					num3++;
-				}
-			}
-
+			
 			//
-			sustainer?.Maintain();
+			BurstTickEffects(curPos, curPosIntVec, normalized, magnitude);
+        }
+
+        private void BurstTickEffects(Vector3 targetVec3, IntVec3 targetIntVec, Vector3 normalVec, float magnitude)
+        {
+	        Vector3 targetCellToRealOffset = targetVec3 - targetIntVec.ToVector3Shifted();
+	        Vector3 startRealOffset = (normalVec * verbProps.beamStartOffset) + CurrentDrawOffset;
+	        
+	        //Spawn Fleck On Ground
+	        if (verbProps.beamGroundFleckDef != null && Rand.Chance(verbProps.beamFleckChancePerTick))
+	        {
+		        FleckMaker.Static(targetVec3, caster.Map, verbProps.beamGroundFleckDef);
+	        }
+	        
+	        //Draw Moving Beam Mote
+	        if (movingBeamMote != null)
+	        {
+		        movingBeamMote.UpdateTargets(new TargetInfo(caster.Position, caster.Map), new TargetInfo(targetIntVec, caster.Map), startRealOffset, targetCellToRealOffset);
+		        movingBeamMote.Maintain();
+		        SetAimAngle(targetVec3);
+	        }
+			
+	        //Do Moving Endeffecter
+	        if (movingEndEffecter != null)
+	        {
+		        movingEndEffecter.offset = targetCellToRealOffset;
+		        movingEndEffecter.EffectTick(new TargetInfo(targetIntVec, caster.Map), TargetInfo.Invalid);
+		        movingEndEffecter.ticksLeft--;
+	        }
+
+	        //
+			SpawnFlecksOnBeam(CurrentStartPos, normalVec, magnitude);
+	        
+	        //Do Sound Sustainer
+	        sustainer?.Maintain();
+        }
+
+        private void SpawnFlecksOnBeam(Vector3 startPos, Vector3 normalVec, float magnitude)
+        {
+	        //Spawn Effects along beam line
+	        if (verbProps.beamLineFleckDef != null)
+	        {
+		        var targetRange = magnitude;
+		        var curRange = 0;
+		        while (curRange < targetRange)
+		        {
+			        if (Rand.Chance(verbProps.beamLineFleckChanceCurve.Evaluate(curRange / targetRange)))
+			        {
+				        var curPos = curRange * normalVec;
+				        var randPos = normalVec * Rand.Value;
+				        var b2 = curPos - randPos + (normalVec * 0.5f);
+				        FleckMaker.Static(startPos + b2, caster.Map, verbProps.beamLineFleckDef);
+			        }
+			        curRange++;
+		        }
+	        }
         }
         
+        private void StaticTargetEffects(Vector3 startPos, Vector3 staticVec3, IntVec3 staticTarget) //, Vector3 rangeDiff, Vector3 normalVec
+        {
+	        var rangeDiff = staticVec3 - startPos;
+	        var normalVec = rangeDiff.Yto0().normalized;
+
+	        Vector3 targetCellToRealOffset = staticVec3 - staticTarget.ToVector3Shifted();
+	        var curOff = CurrentDrawOffset;
+	        Vector3 startRealOffset = curOff + (normalVec * verbProps.beamStartOffset);
+
+	        //Setup static mote on target
+	        if (BeamProps.spawnMotePerBeam)
+	        {
+		        TLog.Message($"Index[{base.OffsetIndex}]: {curOff} => {startRealOffset}");
+		        var newBeam = MakeBeamMote(staticTarget);
+		        newBeam.UpdateTargets(new TargetInfo(caster.Position, caster.Map), new TargetInfo(staticTarget, caster.Map), startRealOffset, targetCellToRealOffset);
+		        newBeam.Maintain();
+		        SetAimAngle(staticVec3);
+	        }
+	        
+	        if (verbProps.beamLineFleckDef != null)
+	        {
+		        var normalized = normalVec;
+		        var num2 = 1f * rangeDiff.MagnitudeHorizontal();
+		        var num3 = 0;
+		        while (num3 < num2)
+		        {
+			        for (int k = 0; k < 4; k++)
+			        {
+				        if (Rand.Chance(verbProps.beamLineFleckChanceCurve.Evaluate(num3 / num2)))
+				        {
+					        var b2 = num3 * normalized - normalized * Rand.Value + normalized / 2f;
+					        FleckMaker.Static(caster.Position.ToVector3Shifted() + b2, caster.Map, verbProps.beamLineFleckDef);
+				        }
+			        }
+			        num3++;
+		        }
+	        }
+	        
+	        /*
+	        if (verbProps.burstShotCount <= 1)
+	        {
+		        if (movingBeamMote != null)
+		        {
+			        movingBeamMote.UpdateTargets(new TargetInfo(caster.Position, caster.Map), new TargetInfo(staticTarget, caster.Map), (CurrentRangeDiffNormalized * verbProps.beamStartOffset) + GraphicalShotOffset, desiredVec - finalPos.ToVector3Shifted());
+			        movingBeamMote.Maintain();
+		        }
+
+		        if (verbProps.beamLineFleckDef != null)
+		        {
+			        var normalized = CurrentRangeDiffNormalized;
+			        var num2 = 1f * CurrentRangeDiff.MagnitudeHorizontal();
+			        var num3 = 0;
+			        while (num3 < num2)
+			        {
+				        for (int k = 0; k < 4; k++)
+				        {
+					        if (Rand.Chance(verbProps.beamLineFleckChanceCurve.Evaluate(num3 / num2)))
+					        {
+						        var b2 = num3 * normalized - normalized * Rand.Value + normalized / 2f;
+						        FleckMaker.Static(caster.Position.ToVector3Shifted() + b2, caster.Map, verbProps.beamLineFleckDef);
+					        }
+				        }
+				        num3++;
+			        }
+		        }
+	        }
+	        */
+        }
         
         protected override bool TryCastAttack()
         {
 	        if (currentTarget.HasThing && currentTarget.Thing.Map != caster.Map) return false;
 	        if (verbProps.stopBurstWithoutLos && !TryFindShootLineFromTo(caster.Position, currentTarget, out _)) return false;
-	        
-	        
+
 	        lastShotTick = Find.TickManager.TicksGame;
-	        ticksToNextPathStep = verbProps.ticksBetweenBurstShots;
-	        var desiredRange = InterpolatedPosition.Yto0().ToIntVec3();
-	        var rangePos = GenSight.LastPointOnLineOfSight(caster.Position, desiredRange, c => c.CanBeSeenOverFast(caster.Map), true);
-	       
-	        HitCell(rangePos.IsValid ? rangePos : desiredRange);
+	        ticksToNextLocation = verbProps.ticksBetweenBurstShots;
+	        var desiredVec = InterpolatedPosition.Yto0();
+	        var desiredRange = desiredVec.ToIntVec3();
+	        var rangePos = CellGen.LastPointOnLineOfSightWithHeight(ShotOriginLOS, desiredVec, 1, c => c.CanBeSeenOverFast(caster.Map), true);
+
+	        var finalPos = rangePos.IsValid ? rangePos : desiredRange;
+
+	        //
+	        if (IsStatic)
+	        {
+		        StaticTargetEffects(CurrentStartPos, finalPos.ToVector3Shifted(), finalPos);
+	        }
+
+	        HitCell(finalPos);
 	        return true;
+        }
+
+        //Hit Logic
+        private bool CanHit(Thing thing)
+        {
+	        return thing.Spawned && !CoverUtility.ThingCovered(thing, caster.Map);
+        }
+
+        private void HitCell(IntVec3 cell)
+        {
+	        //Do impact effects
+	        Props.beamProps.impactEffecter?.Spawn(cell, caster.Map);
+	        Props.beamProps.impactExplosion?.DoExplosion(cell, caster.Map, Caster);
+	        Props.beamProps.impactFilth?.SpawnFilth(cell, caster.Map);
+	        ApplyDamage(VerbUtility.ThingsToHit(cell, caster.Map, CanHit).RandomElementWithFallback());
+        }
+
+        private void ApplyDamage(Thing thing)
+        {
+	        if (thing == null || DamageDef == null) return;
+
+	        IntVec3 intVec = thing.Position;
+	        var intVec2 = CellGen.LastPointOnLineOfSightWithHeight(ShotOriginLOS, intVec.ToVector3(), 1, c => c.CanBeSeenOverFast(caster.Map), true);
+	        if (intVec2.IsValid)
+	        {
+		        intVec = intVec2;
+	        }
 	        
-	        /*
+	        var angleFlat = (currentTarget.Cell - caster.Position).AngleFlat;
+	        var log = new BattleLogEntry_RangedImpact(EquipmentSource, thing, currentTarget.Thing, EquipmentSource.def, null, null);
+
+	        var damageBase = BeamProps.damageBaseOverride ?? DamageDef.defaultDamage;
+	        var armorPen = BeamProps.armorPenetrationOverride ?? DamageDef.defaultArmorPenetration;
+	        var stoppingPower = BeamProps.stoppingPowerOverride ?? DamageDef.defaultStoppingPower;
+
+	        var dinfo = new DamageInfo(DamageDef, damageBase, armorPen, angleFlat, caster, null, GunDef, DamageInfo.SourceCategory.ThingOrUnknown, currentTarget.Thing);
+	        thing.TakeDamage(dinfo).AssociateWithLog(log);
+
+	        var hitPawn = thing as Pawn;
+	        if (hitPawn?.stances != null && hitPawn.BodySize <= stoppingPower + 0.001f)
+	        {
+		        hitPawn.stances.stagger.StaggerFor(BeamProps.staggerTime.SecondsToTicks());
+	        }
+
+	        if (thing.CanEverAttachFire())
+	        {
+		        if (Rand.Chance(verbProps.beamChanceToAttachFire))
+			        thing.TryAttachFire(verbProps.beamFireSizeRange.RandomInRange);
+	        }
+	        else if (Rand.Chance(verbProps.beamChanceToStartFire))
+	        {
+		        FireUtility.TryStartFireIn(intVec, caster.Map, verbProps.beamFireSizeRange.RandomInRange);
+	        }
+        }
+        
+        protected override BattleLogEntry_RangedFire EntryOnWarmupComplete()
+        {
+	        return new BattleLogEntry_RangedFire(caster, currentTarget.HasThing ? currentTarget.Thing : null, EquipmentSource != null ? EquipmentSource.def : null, null, ShotsPerBurst > 1);
+        }
+
+        public bool OldTryCast()
+        {
+	                
             //If no target, abort
             if (currentTarget.HasThing && currentTarget.Thing.Map != caster.Map) return false;
-
             //If cant get a shootline to target, abort
             ShootLine shootLine = new ShootLine(caster.Position, currentTarget.Cell);
             if (verbProps.stopBurstWithoutLos && !TryFindShootLineFromTo(caster.Position, currentTarget, out shootLine)) return false;
-
             //Get target with offset...
             LocalTargetInfo adjustedTarget = AdjustedTarget(currentTarget, ref shootLine, out ProjectileHitFlags flags);
             var beamProps = Props.beamProps;
             DamageDef damage = beamProps.damageDef ?? DamageDefOf.Burn;
             if (adjustedTarget.HasThing)
             {
-                adjustedTarget.Thing.TakeDamage(new DamageInfo(damage, beamProps.damageBase, beamProps.armorPenetration, -1, caster, null, GunDef, DamageInfo.SourceCategory.ThingOrUnknown, currentTarget.Thing));
+                adjustedTarget.Thing.TakeDamage(new DamageInfo(damage, beamProps.damageBaseOverride ?? 0, beamProps.armorPenetrationOverride ?? 0, -1, caster, null, GunDef, DamageInfo.SourceCategory.ThingOrUnknown, currentTarget.Thing));
                 Pawn hitPawn = adjustedTarget.Thing as Pawn;
-                if (hitPawn?.stances != null && hitPawn.BodySize <= beamProps.stoppingPower + 0.001f)
+                if (hitPawn?.stances != null && hitPawn.BodySize <= beamProps.stoppingPowerOverride + 0.001f)
                 {
                     hitPawn.stances.StaggerFor(beamProps.staggerTime.SecondsToTicks());
                 }
             }
-
             //Do Visual Effects
-            Vector3 origin = ShotOrigin;
+            Vector3 origin = CurrentStartPos;
             Vector3 targetPos = adjustedTarget.Cell.ToVector3Shifted();
-
             //Do impact effects
             Props.beamProps.impactEffecter?.Spawn(adjustedTarget.Cell, caster.Map);
             Props.beamProps.impactExplosion?.DoExplosion(adjustedTarget.Cell, caster.Map, Caster);
             Props.beamProps.impactFilth?.SpawnFilth(adjustedTarget.Cell, caster.Map);
-
             //Spawn beam effect
             Mote_Beam beam = (Mote_Beam)ThingMaker.MakeThing(TeleDefOf.Mote_Beam);
-            beam.solidTimeOverride = beamProps.solidTime;
-            beam.fadeInTimeOverride = beamProps.fadeInTime;
-            beam.fadeOutTimeOverride = beamProps.fadeOutTime;
-            beam.AttachMaterial(beamProps.BeamMat, Color.white);
+            beam.solidTimeOverride = 1;//beamProps.solidTime;
+            beam.fadeInTimeOverride = 1;//beamProps.fadeInTime;
+            beam.fadeOutTimeOverride = 1;//beamProps.fadeOutTime;
+            beam.AttachMaterial(MaterialPool.MatFrom(BaseContent.BadTex), Color.white);
             beam.SetConnections(origin, targetPos);
             beam.Attach(caster);
-            GenSpawn.Spawn(beam, caster.Position, caster.Map, WipeMode.Vanish);
-
+            GenSpawn.Spawn(beam, caster.Position, caster.Map);
             //Add extra glow to origin, if exists
             
+            /*
             if (beamProps.glow != null)
             {
                 //TODO: Replace motes with more fine-tuned settings (eg. fade-in and -out time)
@@ -242,47 +471,11 @@ namespace TeleCore
                 glow.SetVelocity(0, 0);
                 GenSpawn.Spawn(glow, caster.Position + IntVec3.East, caster.Map);
             }
-            
+            */
             Find.BattleLog.Add(new BattleLogEntry_RangedFire(this.caster, (!this.currentTarget.HasThing) ? null : this.currentTarget.Thing, (base.EquipmentSource == null) ? null : base.EquipmentSource.def, null, false));
             return true;
-            */
+            
         }
         
-        //Hit Logic
-        private bool CanHit(Thing thing)
-        {
-	        return thing.Spawned && !CoverUtility.ThingCovered(thing, caster.Map);
-        }
-
-        private void HitCell(IntVec3 cell)
-        {
-	        ApplyDamage(VerbUtility.ThingsToHit(cell, caster.Map, CanHit).RandomElementWithFallback());
-        }
-        
-        private void ApplyDamage(Thing thing)
-        {
-	        var intVec = InterpolatedPosition.Yto0().ToIntVec3();
-	        var intVec2 = GenSight.LastPointOnLineOfSight(caster.Position, intVec, c => c.CanBeSeenOverFast(caster.Map), true);
-	        if (intVec2.IsValid)
-	        {
-		        intVec = intVec2;
-	        }
-	        if (thing != null && verbProps.beamDamageDef != null)
-	        {
-		        var angleFlat = (currentTarget.Cell - caster.Position).AngleFlat;
-		        var log = new BattleLogEntry_RangedImpact(EquipmentSource, thing, currentTarget.Thing, EquipmentSource.def, null, null);
-		        var dinfo = new DamageInfo(verbProps.beamDamageDef, BeamProps.damageBase, verbProps.beamDamageDef.defaultArmorPenetration, angleFlat, EquipmentSource, null, EquipmentSource.def, DamageInfo.SourceCategory.ThingOrUnknown, currentTarget.Thing);
-		        thing.TakeDamage(dinfo).AssociateWithLog(log);
-		        if (thing.CanEverAttachFire())
-		        {
-			        if (Rand.Chance(verbProps.beamChanceToAttachFire))
-				        thing.TryAttachFire(verbProps.beamFireSizeRange.RandomInRange);
-		        }
-		        else if (Rand.Chance(verbProps.beamChanceToStartFire))
-		        {
-			        FireUtility.TryStartFireIn(intVec, caster.Map, verbProps.beamFireSizeRange.RandomInRange);
-		        }
-	        }
-        }
     }
 }

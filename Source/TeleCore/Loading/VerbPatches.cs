@@ -1,15 +1,43 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using HarmonyLib;
+﻿using HarmonyLib;
 using Verse;
 
 namespace TeleCore
 {
     internal static class VerbPatches
     {
+        [HarmonyPatch(typeof(PawnRenderer), nameof(PawnRenderer.DrawEquipment))]
+        internal static class PawnRenderer_DrawEquipmentPatch
+        {
+            private static void Postfix(PawnRenderer __instance)
+            {
+                if (__instance.pawn?.CurrentEffectiveVerb is Verb_Tele teleVerb)
+                {
+                    teleVerb.DrawVerb();
+                }
+            }
+        }
+        
+        [HarmonyPatch(typeof(Verb), nameof(Verb.VerbTick))]
+        internal static class Verb_VerbTickPatch
+        {
+            private static bool Prefix(Verb __instance)
+            {
+                if (__instance is Verb_Tele teleVerb)
+                {
+                    teleVerb.PreVerbTick();
+                }
+                return true;
+            }
+            
+            private static void Postfix(Verb __instance)
+            {
+                if (__instance is Verb_Tele teleVerb)
+                {
+                    teleVerb.PostVerbTick();
+                }
+            }
+        }
+        
         [HarmonyPatch(typeof(VerbTracker), nameof(VerbTracker.CreateVerbTargetCommand))]
         internal static class CreateVerbTargetCommandPatch
         {

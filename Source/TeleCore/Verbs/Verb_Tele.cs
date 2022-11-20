@@ -1,11 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
 using RimWorld;
 using UnityEngine;
 using Verse;
+using Verse.AI;
 
 namespace TeleCore
 {
@@ -46,75 +43,133 @@ namespace TeleCore
         public override int ShotsPerBurst => verbProps.burstShotCount;
 
         //Origin Offsetting
-        private int OffsetIndex => turretGun?.ShotIndex ?? currentOffsetIndex;
-        protected Vector3 DrawPos => turretGun?.DrawPos ?? caster.DrawPos;
+        protected int OffsetIndex => turretGun?.ShotIndex ?? currentOffsetIndex;
+        private readonly List<Vector3> drawOffsets = new List<Vector3>();
 
-        protected Vector3 CurrentShotOffset
+        //Angles and Deviles
+        public float DesiredAimAngle
         {
             get
             {
-                if (Props.originOffset != Vector3.zero)
+                if (turretGun != null)
                 {
-                    return Props.originOffset;
-                }
-                if (!Props.originOffsets.NullOrEmpty())
-                    return Props.originOffsets[OffsetIndex];
-                return Vector3.zero;
-            }
-        }
-
-        protected virtual Vector3 ShotOrigin
-        {
-            get
-            {
-                Vector3 offset = Vector3.zero;
-                if (turretGun?.Top != null && turretGun.Top.Props.barrelMuzzleOffset != Vector3.zero)
-                {
-                    offset = turretGun.Top.Props.barrelMuzzleOffset;
+                    return turretGun.TurretRotation;
                 }
 
-                offset += CurrentShotOffset;
-                return DrawPos + offset.RotatedBy(GunRotation);
+                if (!CasterIsPawn) return 0;
+                if (CasterPawn.stances.curStance is not Stance_Busy stance_Busy) return 0;
+		        
+                //
+                Vector3 targetPos;
+                if (stance_Busy.focusTarg.HasThing)
+                {
+                    targetPos = stance_Busy.focusTarg.Thing.DrawPos;
+                }
+                else
+                {
+                    targetPos = stance_Busy.focusTarg.Cell.ToVector3Shifted();
+                }
+			        
+                if ((targetPos - CasterPawn.DrawPos).MagnitudeHorizontalSquared() > 0.001f)
+                {
+                    return (targetPos - CasterPawn.DrawPos).AngleFlat();
+                }
+		        
+                return 0;
             }
         }
-
-        protected float GunRotation
+        
+        protected float CurrentAimAngle
         {
             get
             {
+                /*
+                if (AimAngleOverride != null)
+                    return AimAngleOverride.Value;
+                */
                 if (CasterIsPawn)
                 {
-                    Vector3 a;
-                    float num = 0f;
-                    if (CasterPawn.stances.curStance is Stance_Busy {neverAimWeapon: false, focusTarg: {IsValid: true}} stance)
-                    {
-                        if (stance.focusTarg.HasThing)
-                        {
-                            a = stance.focusTarg.Thing.DrawPos;
-                        }
-                        else
-                        {
-                            a = stance.focusTarg.Cell.ToVector3Shifted();
-                        }
-
-                        if ((a - CasterPawn.DrawPos).MagnitudeHorizontalSquared() > 0.001f)
-                        {
-                            num = (a - CasterPawn.DrawPos).AngleFlat();
-                        }
-
-                        return num;
-                    }
+                    return DesiredAimAngle;
                 }
                 return turretGun?.TurretRotation ?? 0f;
             }
         }
+        
+        //REAL DrawPos
+        protected Vector3 DrawPos => caster.DrawPos; //turretGun?.DrawPos ??
+
+        public Vector3 DrawPosOffset
+        {
+            get
+            {
+                if (turretGun != null)
+                {
+                    return turretGun.Props.turretOffset + Props.shotStartOffset.RotatedBy(CurrentAimAngle);
+                }
+                return Vector3.zero;
+            }
+        }
+
+        public Vector3 BaseDrawOffset
+        {
+            get
+            {
+                return DrawPosOffset + Props.shotStartOffset.RotatedBy(CurrentAimAngle);
+            }
+        }
+
+        public Vector3 BaseDrawOffsetRotated => BaseDrawOffset.RotatedBy(CurrentAimAngle);
+        
+        public List<Vector3> RelativeDrawOffsets
+        {
+            get
+            {
+                drawOffsets.Clear();
+                var baseOff = BaseDrawOffset;
+                if (Props.originOffsetPerShot != null)
+                {
+                    foreach (var vector3 in Props.originOffsetPerShot)
+                    {
+                        drawOffsets.Add(baseOff + vector3.RotatedBy(CurrentAimAngle));
+                    }
+                }
+                else
+                {
+                    drawOffsets.Add(baseOff);
+                }
+                return drawOffsets;
+            }
+        }
+
+        public Vector3 CurrentDrawOffset => RelativeDrawOffsets[OffsetIndex];
+        public Vector3 CurrentStartPos => DrawPos + CurrentDrawOffset;
+
+        public virtual void DrawVerb()
+        {
+            var altOff = new Vector3(0, AltitudeLayer.Projectile.AltitudeFor(), 0);
+            
+            var baseOff = BaseDrawOffset + altOff;
+            Matrix4x4 baseMatrix = new Matrix4x4();
+            baseMatrix.SetTRS(baseOff, CurrentAimAngle.ToQuat(), new Vector3(0.5f, 0, 0.5f));
+            Graphics.DrawMesh(MeshPool.plane10, baseMatrix, TeleContent.IOArrow, 0);
+            
+            foreach (var drawOffset in RelativeDrawOffsets)
+            {
+                var off = DrawPos + drawOffset + altOff;
+                Matrix4x4 matri = new Matrix4x4();
+                matri.SetTRS(off, CurrentAimAngle.ToQuat(), new Vector3(0.5f, 0, 0.5f));
+                Graphics.DrawMesh(MeshPool.plane10, matri, BaseContent.BadMat, 0);
+            }
+        }
+
+        protected virtual Vector3 ShotOriginLOS => CurrentStartPos + new Vector3(0, Props.shootHeightOffset, 0);
 
         //Barrel Rotation
         private void RotateNextShotIndex()
         {
             lastOffsetIndex = currentOffsetIndex;
             currentOffsetIndex++;
-            if (currentOffsetIndex > (maxOffsetCount - 1))
+            if (currentOffsetIndex >= maxOffsetCount)
                 currentOffsetIndex = 0;
         }
 
@@ -129,15 +184,15 @@ namespace TeleCore
         public override void Reset()
         {
             base.Reset();
-            maxOffsetCount = Props.originOffsets?.Count ?? 0;
+            maxOffsetCount = Props.originOffsetPerShot?.Count ?? 1;
+            currentOffsetIndex = 0;
+            lastOffsetIndex = 0;
         }
 
         private void Notify_SingleShot()
         {
-            if (turretGun != null)
-                turretGun.Notify_FiredSingleProjectile();
-            else
-                RotateNextShotIndex();
+            turretGun?.Notify_FiredSingleProjectile();
+            RotateNextShotIndex();
         }
 
         //
@@ -161,9 +216,12 @@ namespace TeleCore
             return null;
         }
 
-        protected virtual void CustomTick()
+        public virtual void PreVerbTick()
         {
-            throw new NotImplementedException();
+        }
+        
+        public virtual void PostVerbTick()
+        {
         }
 
         //Base Tele Behaviour
@@ -215,10 +273,7 @@ namespace TeleCore
             if (!flag) return false;
 
             //Do Origin Effect if exists
-            if (Props.originEffecter != null)
-            {
-                Props.originEffecter.Spawn(caster.Position, caster.Map, CurrentShotOffset);
-            }
+            Props.originEffecter?.Spawn(caster.Position, caster.Map, DrawPosOffset);
 
             //Did Shot
             Notify_SingleShot();
@@ -262,8 +317,66 @@ namespace TeleCore
             }
             return true;
         }
-
-        //
+        
+        public bool TryFindShootLineFromToNew(IntVec3 root, LocalTargetInfo targ, out ShootLine resultingLine)
+        {
+            if (targ.HasThing && targ.Thing.Map != caster.Map)
+            {
+                resultingLine = default;
+                return false;
+            }
+            if (this.verbProps.IsMeleeAttack || this.EffectiveRange <= 1.42f)
+            {
+                //TODO: Custom Shootline
+                resultingLine = new ShootLine(root, targ.Cell);
+                return ReachabilityImmediate.CanReachImmediate(root, targ, caster.Map, PathEndMode.Touch, null);
+            }
+            CellRect occupiedRect = targ.HasThing ? targ.Thing.OccupiedRect() : CellRect.SingleCell(targ.Cell);
+            if (OutOfRange(root, targ, occupiedRect))
+            {
+                resultingLine = new ShootLine(root, targ.Cell);
+                return false;
+            }
+            if (!this.verbProps.requireLineOfSight)
+            {
+                resultingLine = new ShootLine(root, targ.Cell);
+                return true;
+            }
+            if (this.CasterIsPawn)
+            {
+                IntVec3 dest;
+                if (this.CanHitFromCellIgnoringRange(root, targ, out dest))
+                {
+                    resultingLine = new ShootLine(root, dest);
+                    return true;
+                }
+                ShootLeanUtility.LeanShootingSourcesFromTo(root, occupiedRect.ClosestCellTo(root), this.caster.Map, Verb.tempLeanShootSources);
+                for (int i = 0; i < Verb.tempLeanShootSources.Count; i++)
+                {
+                    IntVec3 intVec = Verb.tempLeanShootSources[i];
+                    if (this.CanHitFromCellIgnoringRange(intVec, targ, out dest))
+                    {
+                        resultingLine = new ShootLine(intVec, dest);
+                        return true;
+                    }
+                }
+            }
+            else
+            {
+                foreach (IntVec3 intVec2 in this.caster.OccupiedRect())
+                {
+                    IntVec3 dest;
+                    if (this.CanHitFromCellIgnoringRange(intVec2, targ, out dest))
+                    {
+                        resultingLine = new ShootLine(intVec2, dest);
+                        return true;
+                    }
+                }
+            }
+            resultingLine = new ShootLine(root, targ.Cell);
+            return false;
+        }
+        
         /// <summary>
         /// Applies the vanilla target "miss" chance on an intended target
         /// </summary>
@@ -306,6 +419,27 @@ namespace TeleCore
             return intended;
         }
 
+        protected Vector3 AdjustTargetDirect(Vector3 intended)
+        {
+            var intendedIntVec = intended.ToIntVec3();
+            var diffLost = intended - intendedIntVec.ToVector3Shifted();
+            
+            if (verbProps.ForcedMissRadius > 0.5f)
+            {
+                float num = VerbUtility.CalculateAdjustedForcedMiss(verbProps.ForcedMissRadius, intendedIntVec - caster.Position);
+                if (num > 0.5f)
+                {
+                    var num2 = Rand.Range(0, GenRadial.NumCellsInRadius(num));
+                    if (num2 > 0)
+                    {
+
+                        return (intendedIntVec + GenRadial.RadialPattern[num2]).ToVector3Shifted() + diffLost;
+                    }
+                }
+            }
+            return intended;
+        }
+        
         protected LocalTargetInfo GetTargetFromPos(IntVec3 pos, Map map)
         {
             var things = pos.GetThingList(map);

@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
 using UnityEngine;
 using Verse;
 
@@ -31,10 +27,14 @@ namespace TeleCore
         //
         public SoundDef chargeSound;
 
+        //
+        public float shootHeightOffset = 0;
+        public float minHitHeight = 0;
+        
         //Graphical
         public MuzzleFlashProperties muzzleFlash;
-        public List<Vector3> originOffsets;
-        public Vector3 originOffset;
+        public Vector3 shotStartOffset = Vector3.zero;
+        public List<Vector3> originOffsetPerShot;
 
         public void PostLoad()
         {

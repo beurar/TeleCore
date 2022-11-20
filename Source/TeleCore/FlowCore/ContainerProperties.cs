@@ -10,7 +10,7 @@ namespace TeleCore
 {
     public class ContainerProperties : Editable, IExposable
     {
-        public Type containerClass = typeof(NetworkContainer);
+        public Type containerClass;
 
         //Direct Container Values
         public int maxStorage = 0;
@@ -39,6 +39,14 @@ namespace TeleCore
                 leaveContainer = leaveContainer,
                 explosionProps = explosionProps,
             };
+        }
+
+        public override IEnumerable<string> ConfigErrors()
+        {
+            if (containerClass == null)
+            {
+                yield return $"containerClass null in {nameof(ContainerProperties)}";
+            }
         }
 
         public void ExposeData()

@@ -22,14 +22,25 @@ namespace TeleCore
             return c.InBounds(parent.Map) && parent.Map.TeleCore().NetworkInfo.HasConnectionAtFor(parent, c);
         }
 
+        public void Print(SectionLayer layer, Thing thing, float extraRotation, NetworkSubPart forPart)
+        {
+            foreach (var pos in forPart.CellIO.InnerConnnectionCells)
+            {
+                Printer_Plane.PrintPlane(layer, pos.ToVector3ShiftedWithAltitude(AltitudeLayer.FloorEmplacement), Vector2.one, LinkedDrawMatFrom(thing, pos));
+            }
+        }
+
         public override void Print(SectionLayer layer, Thing thing, float extraRotation)
         {
             var comp = thing.TryGetComp<Comp_NetworkStructure>();
             if (comp == null) return;
 
-            foreach (var pos in comp.GeneralIO.InnerConnnectionCells)
+            foreach (var subPart in comp.NetworkParts)
             {
-                Printer_Plane.PrintPlane(layer, pos.ToVector3ShiftedWithAltitude(AltitudeLayer.FloorEmplacement), Vector2.one, LinkedDrawMatFrom(thing, pos));
+                foreach (var pos in subPart.CellIO.InnerConnnectionCells)
+                {
+                    Printer_Plane.PrintPlane(layer, pos.ToVector3ShiftedWithAltitude(AltitudeLayer.FloorEmplacement), Vector2.one, LinkedDrawMatFrom(thing, pos));
+                }
             }
         }
     }

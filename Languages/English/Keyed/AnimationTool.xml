@@ -1,0 +1,17 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+
+	<!-- Animation -->
+	<TELE.AnimationTool.NewAnimation>New Animation</TELE.AnimationTool.NewAnimation>
+	<TELE.AnimationTool.NewAnimation.DefName>Def Name</TELE.AnimationTool.NewAnimation.DefName>
+	<TELE.AnimationTool.NewAnimation.Init>Init</TELE.AnimationTool.NewAnimation.Init>
+	
+	<TELE.AnimationTool.Canvas.MissingParts>Missing Animation Parts</TELE.AnimationTool.Canvas.MissingParts>
+	
+	<TELE.AnimationTool.Settings>Animation Settings</TELE.AnimationTool.Settings>
+	<TELE.AnimationTool.Settings.Animations>Animations</TELE.AnimationTool.Settings.Animations>
+	<TELE.AnimationTool.Settings.AnimationSets>Available Sets</TELE.AnimationTool.Settings.AnimationSets>
+	<TELE.AnimationTool.Settings.AddPart>Add Part</TELE.AnimationTool.Settings.AddPart>
+	<TELE.AnimationTool.Settings.AddSide>Add Side</TELE.AnimationTool.Settings.AddSide>
+	
+</LanguageData>

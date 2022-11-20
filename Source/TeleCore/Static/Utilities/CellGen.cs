@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using RimWorld;
 using UnityEngine;
 using Verse;
 
@@ -10,7 +11,6 @@ namespace TeleCore
 {
     public static class CellGen
     {
-
         /// <summary>
         /// Calculates a circular sector of <see cref="IntVec3"/> cells. Recommended to cache the result.
         /// </summary>
@@ -70,7 +70,6 @@ namespace TeleCore
             yield break;
         }
 
-
         /// <summary>
         /// Offsets a list of cells by a given reference cell.
         /// </summary>
@@ -111,6 +110,82 @@ namespace TeleCore
                 originVec, originVec + new Vector2(1,0),
                 originVec + new Vector2(1,1), originVec +  new Vector2(0,1)
             };
+        }
+        
+        public static IntVec3 LastPointOnLineOfSightWithHeight(Vector3 start, Vector3 end, float maxHeight, Func<IntVec3, bool> validator, bool skipFirstCell = false)
+        {
+            foreach (IntVec3 intVec in PointsOnLineOfSightWithHeight(start, end, maxHeight))
+            {
+                if ((!skipFirstCell || !(intVec.ToVector3() == start.Yto0())) && !validator(intVec))
+                {
+                    return intVec;
+                }
+            }
+            return IntVec3.Invalid;
+        }
+        
+        /// <summary>
+        /// 
+        /// </summary>
+        public static IEnumerable<IntVec3> PointsOnLineOfSightWithHeight(Vector3 start, Vector3 end, float maxHeight)
+        {
+            bool sideOnEqual;
+
+            float startY = start.y;
+            float endY = end.y;
+            start = start.Yto0();
+            end = end.Yto0();
+            
+            if (Math.Abs(start.x - end.x) < 0.015625)
+            {
+                sideOnEqual = (start.z < end.z);
+            }
+            else
+            {
+                sideOnEqual = (start.x < end.x);
+            }
+            
+            //
+            float dx = Mathf.Abs(end.x - start.x);
+            float dz = Mathf.Abs(end.z - start.z);
+
+            //
+            float x = start.x;
+            float z = start.z;
+            
+            //
+            float i = 1 + dx + dz;
+            int x_inc = (end.x > start.x) ? 1 : -1;
+            int z_inc = (end.z > start.z) ? 1 : -1;
+            
+            float error = dx - dz;
+            dx *= 2;
+            dz *= 2;
+            
+            IntVec3 c = default(IntVec3);
+            while (i > 1)
+            {
+                c.x = (int) x;
+                c.z = (int) z;
+
+                var curY = Mathf.Lerp(startY, endY, ((c.x - start.x) * 2) / dx);
+                
+                if(curY <= maxHeight)
+                    yield return c;
+                
+                if (error > 0 || (error == 0 && sideOnEqual))
+                {
+                    x += x_inc;
+                    error -= dz;
+                }
+                else
+                {
+                    z += z_inc;
+                    error += dx;
+                }
+                int num = (int) (i - 1);
+                i = num;
+            }
         }
     }
 }

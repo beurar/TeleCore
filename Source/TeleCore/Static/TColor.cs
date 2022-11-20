@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -12,36 +11,36 @@ namespace TeleCore
     {
         //UI
         //BGs
-        public static readonly Color BGDarker = new ColorInt(29, 30, 30).ToColor;
-        public static readonly Color BGLighter = new ColorInt(61, 62, 63).ToColor;
+        public static readonly Color BGDarker = new Color(29 / 255f, 30 / 255f, 30 / 255f);
+        public static readonly Color BGLighter = new Color(61/255f, 62/255f, 63/255f);
 
-        public static readonly Color BlueHueBG = new ColorInt(32, 36, 40).ToColor;
+        public static readonly Color BlueHueBG = new Color(32 / 255f, 36 / 255f, 40 / 255f);
 
-        public static readonly Color BGP3 = new ColorInt(48, 50, 51).ToColor;
-        public static readonly Color BGM1 = new ColorInt(39, 40, 40).ToColor;
+        public static readonly Color BGP3 = new Color(48/255f, 50/255f, 51/255f);
+        public static readonly Color BGM1 = new Color(39/255f, 40/255f, 40/255f);
 
         //Special
-        public static Color NiceBlue = new ColorInt(38, 169, 224).ToColor;
+        public static Color NiceBlue = new Color(0.17f, 0.74f, 1f);
 
         //Cached Whites
-        public static readonly Color White075 = new Color(1, 1, 1, 0.75f);
-        public static readonly Color White05 = new Color(1, 1, 1, 0.5f);
-        public static readonly Color White025 = new Color(1, 1, 1, 0.25f);
-        public static readonly Color White01 = new Color(1, 1, 1, 0.10f);
-        public static readonly Color White005 = new Color(1, 1, 1, 0.05f);
+        public static readonly Color White075 = new(1, 1, 1, 0.75f);
+        public static readonly Color White05 = new(1, 1, 1, 0.5f);
+        public static readonly Color White025 = new(1, 1, 1, 0.25f);
+        public static readonly Color White01 = new(1, 1, 1, 0.10f);
+        public static readonly Color White005 = new(1, 1, 1, 0.05f);
 
-        public static readonly Color LightBlack = new Color(0, 0, 0, 0.15f);
-        public static readonly Color GapLineColor = new Color(0.35f, 0.35f, 0.35f);
+        public static readonly Color LightBlack = new(0, 0, 0, 0.15f);
+        public static readonly Color GapLineColor = new(0.35f, 0.35f, 0.35f);
 
         //Extra Colors
-        public static readonly Color Orange = new ColorInt(255, 175, 0).ToColor;
-        public static readonly Color Blue = new ColorInt(38, 169, 224).ToColor;
-        public static readonly Color Yellow = new ColorInt(249, 236, 49).ToColor;
-        public static readonly Color Red = new ColorInt(190, 30, 45).ToColor;
-        public static readonly Color Purple = new ColorInt(128, 0, 128).ToColor;
-        public static readonly Color Green = new ColorInt(41, 180, 115).ToColor;
-        public static readonly Color Black = new ColorInt(15, 11, 12).ToColor;
-
+        public static readonly Color Orange = new Color(1, 0.5f, 0);
+        public static readonly Color Blue = new(0.15f, 0.66f, 0.88f);
+        public static readonly Color Yellow = new Color(0.97f, 0.92f, 0.17f);
+        public static readonly Color Red = new Color(0.74f, 0.1f, 0.15f);
+        public static readonly Color Purple = new Color(0.53f, 0f, 0.53f);
+        public static readonly Color Green = new Color(0.16f, 0.71f, 0.45f);
+        public static readonly Color Black = new Color(0.06f, 0.04f, 0f);
+        
         //Vanilla Copies
         public static readonly Color WindowBGBorderColor = new ColorInt(97, 108, 122).ToColor;
         public static readonly Color WindowBGFillColor = new ColorInt(21, 25, 29).ToColor;
@@ -49,9 +48,9 @@ namespace TeleCore
         public static readonly Color MenuSectionBGBorderColor = new ColorInt(135, 135, 135).ToColor;
         public static readonly Color TutorWindowBGFillColor = new ColorInt(133, 85, 44).ToColor;
         public static readonly Color TutorWindowBGBorderColor = new ColorInt(176, 139, 61).ToColor;
-        public static readonly Color OptionUnselectedBGFillColor = new Color(0.21f, 0.21f, 0.21f);
+        public static readonly Color OptionUnselectedBGFillColor = new(0.21f, 0.21f, 0.21f);
         public static readonly Color OptionUnselectedBGBorderColor = OptionUnselectedBGFillColor * 1.8f;
-        public static readonly Color OptionSelectedBGFillColor = new Color(0.32f, 0.28f, 0.21f);
+        public static readonly Color OptionSelectedBGFillColor = new(0.32f, 0.28f, 0.21f);
         public static readonly Color OptionSelectedBGBorderColor = OptionSelectedBGFillColor * 1.8f;
         public static readonly Color BlueHighlight = new ColorInt(0, 120, 200).ToColor;
         public static readonly Color BlueHighlight_Transparent = new ColorInt(0, 120, 200, 125).ToColor;

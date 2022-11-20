@@ -13,19 +13,14 @@ namespace TeleCore
         private List<MapInformation> allMapInfos = new();
         private readonly Dictionary<Type, MapInformation> mapInfoByType = new();
         
-        public NetworkMapInfo NetworkInfo { get; }
-        public ThingGroupCacheInfo ThingGroupCacheInfo { get; }
-        public ThingTrackerInfo ThingTrackerInfo { get; }
+        public NetworkMapInfo NetworkInfo { get; private set; }
+        public ThingGroupCacheInfo ThingGroupCacheInfo { get; private set; }
+        public ThingTrackerInfo ThingTrackerInfo { get; private set; }
         
         public MapComponent_TeleCore(Map map) : base(map)
         {
             StaticData.Notify_NewTeleMapComp(this);
             FillMapInformations();
-            
-            //
-            NetworkInfo = (NetworkMapInfo)mapInfoByType[typeof(NetworkMapInfo)];
-            ThingGroupCacheInfo = (ThingGroupCacheInfo)mapInfoByType[typeof(ThingGroupCacheInfo)];
-            ThingTrackerInfo = (ThingTrackerInfo)mapInfoByType[typeof(ThingTrackerInfo)];
         }
 
         public T GetMapInfo<T>() where T : MapInformation
@@ -58,11 +53,18 @@ namespace TeleCore
                     TLog.Error($"Could not instantiate a MapInformation of type {type}:\n{ex}");
                 }
             }
+            
+            //
             mapInfoByType.Clear();
             foreach (var mapInfo in allMapInfos)
             {
                 mapInfoByType.Add(mapInfo.GetType(), mapInfo);
             }
+            
+            //
+            NetworkInfo = (NetworkMapInfo)mapInfoByType[typeof(NetworkMapInfo)];
+            ThingGroupCacheInfo = (ThingGroupCacheInfo)mapInfoByType[typeof(ThingGroupCacheInfo)];
+            ThingTrackerInfo = (ThingTrackerInfo)mapInfoByType[typeof(ThingTrackerInfo)];
         }
 
         public override void FinalizeInit()

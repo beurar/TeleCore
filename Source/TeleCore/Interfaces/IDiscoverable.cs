@@ -13,7 +13,7 @@ namespace TeleCore
 
         public void Discover()
         {
-            StaticData.WorldCompTele().discoveryTable.Discover(this);
+            StaticData.WorldCompTele().thingDataCache.Discover(this);
         }
     }
 

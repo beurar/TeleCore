@@ -224,7 +224,7 @@ namespace TeleCore
             {
                 foreach (var value in stack.values)
                 {
-                    if (storage.ValueForType(value.Def) > 0 && storage.TryRemoveValue(value.Def, value.Value, out float actualVal))
+                    if (storage.TotalStoredOf(value.Def) > 0 && storage.TryRemoveValue(value.Def, value.Value, out float actualVal))
                     {
                         stack -= new DefValue<NetworkValueDef, float>(value.Def, actualVal);
                     }

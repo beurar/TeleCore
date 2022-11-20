@@ -24,7 +24,7 @@ namespace TeleCore
             {
                 MP.RegisterAll();
             }
-
+            
             //
             ApplyDefChangesPostLoad();
         }

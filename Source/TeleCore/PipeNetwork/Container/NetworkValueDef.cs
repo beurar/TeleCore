@@ -3,20 +3,19 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using TeleCore.Static;
 using UnityEngine;
 using Verse;
 
 namespace TeleCore
 {
-    public class NetworkValueDef : Def
+    public class NetworkValueDef : FlowValueDef
     {
         //
-        public string labelShort;
-        public string valueUnit;
-        public Color valueColor;
         public NetworkDef networkDef;
 
         //
+        public ThingDef specialDroppedContainerDef = null;
         public ThingDef thingDroppedFromContainer;
         public float valueToThingRatio = 1;
 

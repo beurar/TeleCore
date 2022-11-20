@@ -126,6 +126,24 @@ namespace TeleCore
         /// </summary>
         public static Room NeighborRoomOf(this Building building, Room room)
         {
+            TLog.Message($"Getting opposite room of {room?.ID}");
+            for (int i = 0; i < 4; i++)
+            {
+                var cell = GenAdj.CardinalDirections[i] + building.Position;
+                var roomAt = cell.GetRoom(building.Map);
+                TLog.Message($"Checking {new Rot4(i).ToStringWord()}");
+                if (roomAt == room)
+                {
+                    Rot4 rotOfRoom = new Rot4(i);
+                    var otherSide = rotOfRoom.Opposite.FacingCell + building.Position;
+                    var otherRoom = otherSide.GetRoom(building.Map);
+                    TLog.Message($"Result in {rotOfRoom.Opposite.ToStringWord()}: {otherRoom?.ID}");
+                    return otherRoom;
+                }
+                
+            }
+            return null;
+            
             for (int i = 0; i < 4; i++)
             {
                 Room newRoom = (building.Position + GenAdj.CardinalDirections[i]).GetRoom(room.Map);
@@ -237,6 +255,23 @@ namespace TeleCore
                    def.castEdgeShadows &&
                    def.holdsRoof &&
                    def.blockLight;
+        }
+
+        public static bool TryGetComp<T>(this Thing thing, out T comp) where T : ThingComp
+        {
+            comp = null;
+            if (thing is ThingWithComps thingWComps)
+            {
+                comp = thingWComps.GetComp<T>();
+                return comp != null;
+            }
+            return false;
+        }
+        
+        //
+        public static List<T> ToListSingleItem<T>(this T item)
+        {
+            return new List<T>() {item};
         }
     }
 }

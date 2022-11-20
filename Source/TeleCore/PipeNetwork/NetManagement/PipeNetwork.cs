@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using HarmonyLib;
+using UnityEngine;
 using Verse;
 
 namespace TeleCore
@@ -31,12 +32,17 @@ namespace TeleCore
         public NetworkRank NetworkRank => networkRank;
         public int ID { get; set; } = -1;
 
+        public bool IsValid => parentManager.AllNetworks.Contains(this);
+        public bool HasGraph => Graph != null && Graph.AllNodes.Count > 1;
+        
         public virtual bool IsWorking => !def.UsesController || (NetworkController?.IsPowered ?? false);
         public virtual float TotalNetworkValue => ContainerSet.TotalNetworkValue;
         public virtual float TotalStorageNetworkValue => ContainerSet.TotalStorageValue;
 
         //DEBUG
         internal bool DrawInternalGraph = false;
+        internal bool DrawGraphCachedResults = false;
+        internal bool DrawAdjacencyList = false;
 
         public PipeNetwork(NetworkDef def, PipeNetworkManager manager)
         {
@@ -63,12 +69,27 @@ namespace TeleCore
 
         public virtual void Draw()
         {
+            if(DrawGraphCachedResults)
+                Graph.Debug_DrawCachedResults();
+            Graph.Debug_DrawPressure();
+            
+            //
+            var selThing = Find.Selector.SingleSelectedThing;
+            if (selThing != null && selThing.TryGetComp(out Comp_NetworkStructure comp))
+            {
+                foreach (var compNetworkPart in comp.NetworkParts)
+                {  
+                    if (DrawAdjacencyList)
+                        GenDraw.DrawFieldEdges(Graph.AdjacencyLists[compNetworkPart].Select(c => c.Parent.Thing.Position).ToList(), Color.red);  
+                    compNetworkPart.CellIO.DrawIO();
+                }
+            }
         }
 
         public void DrawOnGUI()
         {
             if(DrawInternalGraph)
-                Graph.DrawGraphOnUI();
+                Graph.Debug_DrawGraphOnUI();
         }
 
         //

@@ -73,7 +73,7 @@ namespace TeleCore
                 equipment = caster;
             }
 
-            var drawPos = ShotOrigin;
+            var drawPos = CurrentStartPos;
             //Projectile projectile2 = (Projectile)GenSpawn.Spawn(projectile, shootLine.Source, caster.Map, WipeMode.Vanish);
             if (verbProps.ForcedMissRadius > 0.5f)
             {

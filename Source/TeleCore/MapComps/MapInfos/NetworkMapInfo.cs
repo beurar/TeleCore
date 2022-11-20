@@ -14,12 +14,14 @@ namespace TeleCore
 
         public NetworkMapInfo(Map map) : base(map)
         {
+            TLog.Debug("MAKING NETWORK MAP INFO ON {map");
         }
 
         public PipeNetworkManager this[NetworkDef type] => NetworksByType.TryGetValue(type);
 
         public PipeNetworkManager GetOrCreateNewNetworkSystemFor(NetworkDef networkDef)
         {
+            TLog.Message($"Creating NetworkSystem: {networkDef}");
             if (NetworksByType.TryGetValue(networkDef, out var network)) return network;
 
             //Make New
@@ -62,9 +64,23 @@ namespace TeleCore
 
         public override void Tick()
         {
+            /*
             foreach (var networkSystem in PipeNetworks)
             {
                 networkSystem.TickNetworks();
+            }
+            */
+        }
+
+        public override void TeleTick()
+        {
+            if (TFind.TickManager.CurrentMapTick % 50 == 0)
+            {
+                //TLog.Message($"Ticking all networks | {TFind.TickManager.CurrentTick}");
+                foreach (var networkSystem in PipeNetworks)
+                {
+                    networkSystem.TickNetworks();
+                }
             }
         }
 

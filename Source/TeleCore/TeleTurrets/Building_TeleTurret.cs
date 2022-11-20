@@ -8,6 +8,7 @@ using RimWorld;
 using UnityEngine;
 using Verse;
 using Verse.AI;
+using Verse.Sound;
 
 namespace TeleCore
 {
@@ -27,7 +28,7 @@ namespace TeleCore
         private TurretDefExtension defExtension;
         private TurretGunSet turretSet;
 
-        private bool canForceTarget;
+        private bool canForceTargetDefault;
 
         public TurretDefExtension Extension => defExtension;
 
@@ -37,6 +38,7 @@ namespace TeleCore
         //
         public override LocalTargetInfo CurrentTarget => turretSet.KnownTargets.First();
         public override Verb AttackVerb => turretSet.AttackVerb;
+        public Verb_Tele TeleVerb => turretSet.AttackVerb as Verb_Tele;
         public TurretGun MainGun => turretSet.MainGun;
 
         //TurretHolder
@@ -45,7 +47,7 @@ namespace TeleCore
         public bool MannedByColonist => ManningPawn?.Faction == Faction.OfPlayer;
         public bool MannedByNonColonist => ManningPawn?.Faction != Faction.OfPlayer;
         public bool HoldingFire => turretSet.HoldingFire;
-
+        
         //
         public Pawn ManningPawn => MannableComp?.ManningPawn;
 
@@ -105,8 +107,9 @@ namespace TeleCore
             defExtension = def.TurretExtension();
             
             turretSet = new TurretGunSet(defExtension, this);
+            
             //
-            canForceTarget = defExtension.turrets.Any(t => t.canForceTarget);
+            canForceTargetDefault = defExtension.turrets.Any(t => t.canForceTarget);
         }
 
         public override void Tick()
@@ -159,6 +162,7 @@ namespace TeleCore
         {
             base.Draw();
             turretSet.Draw();
+            TeleVerb?.DrawVerb();
         }
 
         public override string GetInspectString()
@@ -186,6 +190,64 @@ namespace TeleCore
             {
                 yield return turretGizmo;
             }
+            
+            if (canForceTargetDefault)
+            {
+                Command_Target targetCommand = new Command_Target
+                {
+                    defaultLabel = "CommandSetForceAttackTarget".Translate(),
+                    defaultDesc = "CommandSetForceAttackTargetDesc".Translate(),
+                    icon = ContentFinder<Texture2D>.Get("UI/Commands/Attack", true),
+                    targetingParams = TargetingParameters.ForAttackAny(),
+                    action = OrderAttack,
+                    hotKey = KeyBindingDefOf.Misc4,
+                };
+                
+                Command_VerbTarget command_VerbTarget = new Command_VerbTarget();
+                command_VerbTarget.defaultLabel = "CommandSetForceAttackTarget".Translate();
+                command_VerbTarget.defaultDesc = "CommandSetForceAttackTargetDesc".Translate();
+                command_VerbTarget.icon = ContentFinder<Texture2D>.Get("UI/Commands/Attack", true);
+                command_VerbTarget.verb = this.AttackVerb;
+                command_VerbTarget.hotKey = KeyBindingDefOf.Misc4;
+                command_VerbTarget.drawRadius = false;
+                if (base.Spawned && true && base.Position.Roofed(base.Map)) //this.IsMortarOrProjectileFliesOverhead 
+                {
+                    command_VerbTarget.Disable("CannotFire".Translate() + ": " + "Roofed".Translate().CapitalizeFirst());
+                }
+                yield return command_VerbTarget;
+                
+                if (TargetOverride.IsValid)
+                {
+                    Command_Action command_Action = new Command_Action
+                    {
+                        defaultLabel = "CommandStopForceAttack".Translate(),
+                        defaultDesc = "CommandStopForceAttackDesc".Translate(),
+                        icon = ContentFinder<Texture2D>.Get("UI/Commands/Halt", true),
+                        action = delegate()
+                        {
+                            ResetOrderedAttack();
+                            SoundDefOf.Tick_Low.PlayOneShotOnCamera();
+                        }
+                    };
+                    if (!TargetOverride.IsValid)
+                    {
+                        command_Action.Disable("CommandStopAttackFailNotForceAttacking".Translate());
+                    }
+                    command_Action.hotKey = KeyBindingDefOf.Misc5;
+                    yield return command_Action;
+                }
+                /*
+                if (base.Spawned && this.IsMortarOrProjectileFliesOverhead && base.Position.Roofed(base.Map))
+                {
+                    command_VerbTarget.Disable("CannotFire".Translate() + ": " + "Roofed".Translate().CapitalizeFirst());
+                }
+                */
+                yield return targetCommand;
+            }
+
+            if (DebugSettings.godMode)
+            {
+            }
 
             /*
             IEnumerator<Gizmo> enumerator = null;
@@ -205,24 +267,6 @@ namespace TeleCore
                 yield return command_Action;
             }
             */
-
-            if (canForceTarget)
-            {
-                yield return new Command_Target
-                {
-                    defaultLabel = "CommandSetForceAttackTarget".Translate(),
-                    defaultDesc = "CommandSetForceAttackTargetDesc".Translate(),
-                    icon = ContentFinder<Texture2D>.Get("UI/Commands/Attack", true),
-                    targetingParams = TargetingParameters.ForAttackAny(),
-                    action = OrderAttack
-                };
-            }
-
-            if (DebugSettings.godMode)
-            {
-            }
-
-            yield break;
         }
     }
 }

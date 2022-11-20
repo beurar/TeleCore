@@ -46,11 +46,13 @@ namespace TeleCore
 
         //Debug
         internal static bool DEBUG_DrawNetwork = false;
-
+        
         public NetworkDef NetworkDef { get; }
         public Map Map => map;
 
         public NetworkSubPart MainNetworkPart { get; private set; }
+
+        public List<PipeNetwork> AllNetworks => allNetworks;
 
         public PipeNetworkManager(Map map, NetworkDef networkDef)
         {
@@ -91,13 +93,15 @@ namespace TeleCore
         public void DrawNetwork()
         {
             //
-            if (!DEBUG_DrawNetwork) return;
             foreach (var network in allNetworks)
             {
                 network.Draw();
-                for (var c = 0; c < network.NetworkCells.Count; c++)
+                if (DEBUG_DrawNetwork)
                 {
-                    CellRenderer.RenderCell(network.NetworkCells[c], 0.75f);
+                    for (var c = 0; c < network.NetworkCells.Count; c++)
+                    {
+                        CellRenderer.RenderCell(network.NetworkCells[c], 0.75f);
+                    }
                 }
             }
         }
@@ -138,7 +142,6 @@ namespace TeleCore
                     //Should always happen first
                     case DelayedNetworkActionType.Register:
                     {
-                        TLog.Message("[First] - Register");
                         if (!(delayedActionForDestruction.pos == delayedActionForDestruction.subPart.Thing.Position))
                         {
                             break;
@@ -158,7 +161,6 @@ namespace TeleCore
                     }
                     case DelayedNetworkActionType.Deregister:
                     {
-                        TLog.Message("[First] - Deregister");
                         TryDestroyNetworkAt(delayedActionForDestruction.pos);
                         break;
                     }
@@ -176,14 +178,12 @@ namespace TeleCore
                     //Create On Newly Spawned Comp
                     case DelayedNetworkActionType.Register:
                     {
-                        TLog.Message("[Second] - Register");
                         TryCreateNetworkAt(delayedActionForCreation.pos, delayedActionForCreation.subPart);
                         break;
                     }
                     //Create By Checking Adjacent Cells Of Despawned Component
                     case DelayedNetworkActionType.Deregister:
                     {
-                        TLog.Message("[Second] - Deregister");
                         foreach (IntVec3 adjPos in GenAdj.CellsAdjacentCardinal(delayedActionForCreation.pos, parentThing.Rotation, parentThing.def.size))
                         {
                             TryCreateNetworkAtForDestruction(adjPos, delayedActionForCreation.subPart);
@@ -210,7 +210,6 @@ namespace TeleCore
 
         private void TryCreateNetworkAt(IntVec3 cell, NetworkSubPart part)
         {
-            TLog.Message($"Trying to create network at {cell} for {part.NetworkDef} of {part.Thing}");
             if (!cell.InBounds(map)) return;
             if (PipeNetworkAt(cell) == null)
             {

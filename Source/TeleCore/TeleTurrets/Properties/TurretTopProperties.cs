@@ -18,8 +18,7 @@ namespace TeleCore
         //
         public float resetSpeed = 5;
         public float recoilSpeed = 150;
-
-        public Vector3 barrelMuzzleOffset = Vector3.zero;
+        
         public IntRange idleDuration = new IntRange(50, 200);
         public IntRange idleInterval = new IntRange(150, 350);
     }

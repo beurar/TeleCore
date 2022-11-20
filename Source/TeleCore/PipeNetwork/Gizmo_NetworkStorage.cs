@@ -74,7 +74,7 @@ namespace TeleCore
                 Widgets.DrawBoxSolid(BarRect, new Color(0.25f, 0.25f, 0.25f));
                 foreach (NetworkValueDef type in container.AllStoredTypes)
                 {
-                    float percent = (container.ValueForType(type) / container.Capacity);
+                    float percent = (container.TotalStoredOf(type) / container.Capacity);
                     Rect typeRect = new Rect(2.5f + xPos, BarRect.y, BarRect.width * percent, BarRect.height);
                     Color color = type.valueColor;
                     xPos += BarRect.width * percent;
@@ -118,7 +118,7 @@ namespace TeleCore
         [SyncMethod]
         private void Debug_Clear()
         {
-            container.Clear();
+            container.Data_Clear();
         }
 
         [SyncMethod]

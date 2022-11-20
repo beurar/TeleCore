@@ -43,7 +43,7 @@ namespace TeleCore
         {
             GenExplosion.DoExplosion(center, map, explosionRadius * intensity, damageDef, instigator,
                 damageOverride ?? -1, -1f, explosionSound, null, null, null, postSpawnDef, postSpawnChance,
-                postSpawnCount, GasType.Unused, false, preSpawnDef, preSpawnChance, preSpawnCount, fireChance,
+                postSpawnCount, null, false, preSpawnDef, preSpawnChance, preSpawnCount, fireChance,
                 useDamageFalloff, null, null);
 
             explosionEffect?.Spawn(center, map);

@@ -35,7 +35,7 @@ namespace TeleCore
             {
                 foreach (var specificCost in Cost.SpecificCosts)
                 {
-                    if (directContainer.ValueForType(specificCost.valueDef) >= specificCost.value)
+                    if (directContainer.TotalStoredOf(specificCost.valueDef) >= specificCost.value)
                         totalNeeded -= specificCost.value;
                 }
             }
@@ -45,7 +45,7 @@ namespace TeleCore
             {
                 foreach (var type in Cost.AcceptedValueTypes)
                 {
-                    totalNeeded -= directContainer.ValueForType(type);
+                    totalNeeded -= directContainer.TotalStoredOf(type);
                 }
             }
 

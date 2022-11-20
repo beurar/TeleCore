@@ -5,17 +5,53 @@ using Verse;
 
 namespace TeleCore;
 
+public struct NetworkGraphPath
+{
+    public readonly INetworkSubPart start;
+    public readonly INetworkSubPart end;
+    public readonly INetworkSubPart[] fullPath;
+    public readonly HashSet<NetEdge> edgesOnPath;
+
+    public IEnumerable<INetworkSubPart> PathWithoutEnds => fullPath.Except(start).Except(end);
+
+    public NetworkGraphPath(IList<INetworkSubPart> fullPath)
+    {
+        start = fullPath.First();
+        end = fullPath.Last();
+        this.fullPath = new INetworkSubPart[fullPath.Count];
+        
+        //
+        var edgeSet = new HashSet<NetEdge>();
+        int i = 0;
+        foreach (var subPart in fullPath)
+        {
+            this.fullPath[i] = subPart;
+            var partTo = (i + 1) < fullPath.Count ? fullPath[i + 1] : null;
+            if (subPart.Network.Graph.TryGetEdge(subPart, partTo, out var edge))
+            {
+                edgeSet.Add(edge);
+            }
+
+            i++;
+        }
+        edgesOnPath = edgeSet;
+    }
+
+    public override string ToString()
+    {
+        return $"{start} -[{fullPath.Length}]-> {end}";
+    }
+}
+
 public struct NetworkGraphPathResult
 {
     public readonly NetworkGraphPathRequest request;
-    public readonly INetworkSubPart[][] allPaths;
-    public readonly NetEdge[][] edges;
+    public readonly NetworkGraphPath[] allPaths;
+
+    //
     public readonly HashSet<INetworkSubPart> allPartsUnique;
     public readonly HashSet<INetworkSubPart> allTargets;
 
-    //
-    public readonly INetworkSubPart[] singlePath;
- 
     public bool IsValid => allTargets != null && allTargets.Any();
 
     public static NetworkGraphPathResult Invalid => new NetworkGraphPathResult()
@@ -24,35 +60,19 @@ public struct NetworkGraphPathResult
 
     public NetworkGraphPathResult(NetworkGraphPathRequest request, List<List<INetworkSubPart>> allResults)
     {
-        TLog.Debug($"Request: {allResults.Count}");
+        TLog.Debug($"Making Results: {allResults.Count}");
+        //
         this.request = request;
-        allPaths = new INetworkSubPart[allResults.Count][];
+        allPaths = new NetworkGraphPath[allResults.Count];
+        
+        //
         allPartsUnique = new();
         allTargets = new HashSet<INetworkSubPart>();
-        singlePath = allPaths.First();
-        edges = new NetEdge[allResults.Count][];
         for (var i = 0; i < allResults.Count; i++)
         {
-            allPaths[i] = allResults[i].ToArray();
-            allPartsUnique.AddRange(allPaths[i]);
-            allTargets.Add(allPaths[i].Last());
-
-            
-            // 01 23 45 = 3+2
-            // 01 23 = 2 + 1
-            // 01 23 45 67 = 4+3
-            var edgeList = new List<NetEdge>();
-            for (int a = 0; a < allPaths[i].Length; a++)
-            {
-                TLog.Message($"a: {a} / {allPaths[i].Length} | -> {a+1}");
-                var partFrom = allPaths[i][a];
-                var partTo = (a + 1) < allPaths[i].Length ? allPaths[i][a+1] : null;
-                if (request.Requester.Network.Graph.TryGetEdge(partFrom, partTo, out var edge))
-                {
-                    edgeList.Add(edge);
-                }
-            }
-            edges[i] = edgeList.ToArray();
+            allPaths[i] = new NetworkGraphPath(allResults[i]);
+            allPartsUnique.AddRange(allPaths[i].fullPath);
+            allTargets.Add(allPaths[i].end);
         }
     }
 
@@ -71,4 +91,18 @@ public struct NetworkGraphPathResult
         singlePath = null;
     }
     */
+    internal void Debug_Draw()
+    {
+        foreach (var path in allPaths)
+        {
+            GenDraw.DrawFieldEdges(path.start.Parent.Thing.Position.ToListSingleItem(), Color.red);
+            GenDraw.DrawFieldEdges(path.PathWithoutEnds.Select(c => c.Parent.Thing.Position).ToList(), Color.green);
+            GenDraw.DrawFieldEdges(path.end.Parent.Thing.Position.ToListSingleItem(), Color.blue);
+        }
+    }
+
+    public override string ToString()
+    {
+        return $"[{IsValid}] Paths: {allPaths.Length} | Parts: {allPartsUnique.Count} | Targets: {allTargets.Count}";
+    }
 }

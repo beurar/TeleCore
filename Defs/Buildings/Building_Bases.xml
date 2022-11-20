@@ -17,6 +17,19 @@
 		</statBases>
 	</ThingDef>
 	
+	<ThingDef Name="Tele_BuildingBaseOverBuildings" ParentName="Tele_BuildingBase" Abstract="True">
+		<clearBuildingArea>false</clearBuildingArea>
+		<castEdgeShadows>false</castEdgeShadows>
+		<drawPlaceWorkersWhileSelected>true</drawPlaceWorkersWhileSelected>
+		<building>
+			<isEdifice>false</isEdifice>
+			<canPlaceOverWall>true</canPlaceOverWall>
+		</building>
+		<placeWorkers>
+			<li>TeleCore.PlaceWorker_PlaceOverBuilding</li>
+		</placeWorkers>
+	</ThingDef>
+	
 	<ThingDef Name="Tele_StationBase" ParentName="Tele_BuildingBase" Abstract="True">
 		<terrainAffordanceNeeded>Heavy</terrainAffordanceNeeded>
 		<surfaceType>Item</surfaceType>

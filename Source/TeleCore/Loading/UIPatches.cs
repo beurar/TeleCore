@@ -52,12 +52,13 @@ namespace TeleCore
         [HarmonyPatch(nameof(MainTabWindow_Architect.ClickedCategory))]
         internal static class ClickedCategoryPatch
         {
-            static void Postfix(ArchitectCategoryTab Pan)
+            static void Postfix(ArchitectCategoryTab Pan, MainTabWindow_Architect __instance)
             {
                 var subMenuDes = Pan.def.AllResolvedDesignators.Find(d => d is Designator_SubBuildMenu);
                 if (subMenuDes is Designator_SubBuildMenu subMenu)
                 {
-                    subMenu.Toggle_Menu();
+                    var opening = __instance.selectedDesPanel != Pan;
+                    subMenu.Toggle_Menu(opening);
                 }
             }
         }

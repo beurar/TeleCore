@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using RimWorld;
 using UnityEngine;
+using UnityEngine.UIElements;
 using Verse;
 using Verse.Sound;
 
@@ -45,6 +46,7 @@ namespace TeleCore
             Vector2 vector = new Vector2(barRect.x + barRect.width * pct, barRect.y);
             Rect rect = new Rect(vector.x - num / 2f, vector.y, num, num);
             var matrix = GUI.matrix;
+            
             UI.RotateAroundPivot(180f, rect.center);
             GUI.DrawTexture(rect, Need.BarInstantMarkerTex);
             GUI.matrix = matrix;
@@ -490,7 +492,7 @@ namespace TeleCore
             Vector2 size = new Vector2(10, 10);
             foreach (var type in container.AllStoredTypes)
             {
-                Vector2 typeSize = Text.CalcSize($"{type.labelShort}: {container.ValueForType(type)}");
+                Vector2 typeSize = Text.CalcSize($"{type.labelShort}: {container.TotalStoredOf(type)} ({container.StoredPercentOf(type).ToStringPercent()})");
                 size.y += 10 + 2;
                 var sizeX = typeSize.x + 20;
                 if (size.x <= sizeX)
@@ -536,12 +538,13 @@ namespace TeleCore
         public static void DrawNetworkValueReadout(Rect rect, NetworkContainer container)
         {
             float height = 5;
+            Widgets.DrawMenuSection(rect);
             Widgets.BeginGroup(rect);
             Text.Font = GameFont.Tiny;
             Text.Anchor = TextAnchor.UpperLeft;
             foreach (var type in container.AllStoredTypes)
             {
-                string label = $"{type.labelShort}: {container.ValueForType(type)}";
+                string label = $"{type.labelShort}: {container.TotalStoredOf(type)} ({container.StoredPercentOf(type).ToStringPercent()})";
                 Rect typeRect = new Rect(5, height, 10, 10);
                 Vector2 typeSize = Text.CalcSize(label);
                 Rect typeLabelRect = new Rect(20, height - 2, typeSize.x, typeSize.y);
@@ -597,7 +600,7 @@ namespace TeleCore
             Widgets.DrawTexturePart(drawRect, uvRect, texture2D);
         }
         */
-        public static void DrawTextureInCorner(Rect rect, Texture2D texture, float textureWidth, TextAnchor anchor, Vector2 offset = default)
+        public static void DrawTextureInCorner(Rect rect, Texture2D texture, float textureWidth, TextAnchor anchor, Vector2 offset = default, Action clickAction = null)
         {
             Rect newRect = new Rect();
             Vector2 size = FittedSizeFor(texture, textureWidth);
@@ -617,7 +620,55 @@ namespace TeleCore
                     break;
             }
             newRect.Set(newRect.x + offset.x, newRect.y + offset.y, newRect.width, newRect.height);
+            
+            //
+            if (clickAction != null)
+            {
+                if (Widgets.ButtonImage(newRect, texture, false))
+                {
+                    clickAction.Invoke();
+                }
+                return;
+            }
+            
+            //
             Widgets.DrawTextureFitted(newRect, texture, 1f);
+        }
+        
+        //
+        public static void DrawHalfArrow(Vector2 start, Vector2 end, Color color, float width)
+        {
+            var diffVec = end - start;
+            var magnitude = diffVec.magnitude;
+            var angle = diffVec.ToAngle();
+
+            var atlas = TeleContent.EdgeArrow;
+            Rect rect = new Rect(start, new Vector2(magnitude, width));
+
+            var previousColor = GUI.color;
+            GUI.color = color;
+            var matrix = GUI.matrix;
+            UI.RotateAroundPivot(-angle, rect.position);
+            {
+                Rect drawRect;
+                Rect uvRect;
+                Widgets.BeginGroup(rect);
+                {
+                    //Draw ArrowLine
+                    drawRect = new Rect(0f, 0f, magnitude - width, width);
+                    uvRect = new Rect(0f, 0.5f, 0.5f, 0.5f);
+                    Widgets.DrawTexturePart(drawRect, uvRect, atlas);
+
+                    //Draw ArrowTip
+                    drawRect = new Rect(drawRect.width, 0f, width, width);
+                    uvRect = new Rect(0.5f, 0.5f, 0.5f, 0.5f);
+                    Widgets.DrawTexturePart(drawRect, uvRect, atlas);
+                }
+                Widgets.EndGroup();
+
+            }
+            GUI.matrix = matrix;
+            GUI.color = previousColor;
         }
     }
 }

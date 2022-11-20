@@ -8,9 +8,9 @@ namespace TeleCore.Verbs
 {
     public class Verb_Sprayer : Verb_Tele
     {
-        protected override void CustomTick()
+        public override void PostVerbTick()
         {
-            base.CustomTick();
+            base.PostVerbTick();
         }
     }
 }

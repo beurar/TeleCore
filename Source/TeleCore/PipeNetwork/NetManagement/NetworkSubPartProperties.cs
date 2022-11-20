@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml;
 using JetBrains.Annotations;
 using Verse;
 
@@ -11,22 +12,61 @@ namespace TeleCore
     public class NetworkSubPartProperties
     {
         //Cached Data
+        [Unsaved]
         private NetworkRole networkRole;
-        private List<NetworkValueDef> allowedValuesInt;
-        private Dictionary<NetworkRole, List<NetworkValueDef>> allowedValuesByRoleInt;
+        [Unsaved]
+        private List<NetworkValueDef> allowedValuesInt = null!;
+        [Unsaved]
+        private Dictionary<NetworkRole, List<NetworkValueDef>> allowedValuesByRoleInt = null!;
+
+        //
+        public bool requiresController;
 
         //Loaded from XML
         public Type workerType = typeof(NetworkSubPart);
         public NetworkDef networkDef;
         public ContainerProperties containerProps;
-        public string networkIOPattern;
-
+        //TODO: Shared Container Set Pool - to track capacity sharing
+        public List<NetworkDef> shareCapacityWith;
+        
         public List<NetworkRoleProperties> networkRoles = new(){ NetworkRole.Transmitter };
-
+        public string subIOPattern;
+        
         //
-        public NetworkDef networkDefForValues;
-        private List<NetworkValueDef> handledValues;
+        private class ValueProperties
+        {
+            public NetworkDef fromDef;
+            public List<NetworkValueDef> values;
+            
+            public void LoadDataFromXmlCustom(XmlNode xmlRoot)
+            {
+                TLog.Debug($"Loading XML: {xmlRoot.Name}: {xmlRoot.FirstChild.Name}");
+                //
+                if (xmlRoot.FirstChild.Name == "li")
+                {
+                    //TLog.Error($"Definition for networkRole not a listing.");
+                    values = DirectXmlToObject.ObjectFromXml<List<NetworkValueDef>>(xmlRoot, true);
+                    return;
+                }
+                
+                var fromDefNode = xmlRoot.SelectSingleNode(nameof(fromDef));
+                if (fromDefNode != null)
+                {
+                    DirectXmlCrossRefLoader.RegisterObjectWantsCrossRef(this, $"{nameof(fromDef)}", fromDefNode.Value);
+                }
 
+                //
+                var valuesNode = xmlRoot.SelectSingleNode(nameof(values));
+                if (valuesNode != null)
+                {
+                    values = DirectXmlToObject.ObjectFromXml<List<NetworkValueDef>>(valuesNode, true);
+                }
+            }
+        }
+        
+        private ValueProperties valueProperties;
+        
+        //TODO: Add default All 
         public Dictionary<NetworkRole, List<NetworkValueDef>> AllowedValuesByRole
         {
             get
@@ -55,13 +95,13 @@ namespace TeleCore
                 if (allowedValuesInt == null)
                 {
                     var list = new List<NetworkValueDef>();
-                    if (networkDefForValues != null)
+                    if (valueProperties.fromDef != null)
                     {
-                        list.AddRange(networkDefForValues.NetworkValueDefs);
+                        list.AddRange(valueProperties.fromDef.NetworkValueDefs);
                     }
-                    if (!handledValues.NullOrEmpty())
+                    if (!valueProperties.values.NullOrEmpty())
                     {
-                        list.AddRange(handledValues);
+                        list.AddRange(valueProperties.values);
                     }
                     allowedValuesInt = list.Distinct().ToList();
                 }

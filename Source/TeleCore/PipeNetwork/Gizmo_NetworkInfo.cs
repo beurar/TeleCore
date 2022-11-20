@@ -261,7 +261,7 @@ namespace TeleCore
                 Widgets.DrawBoxSolid(BarRect, TColor.White025);
                 foreach (NetworkValueDef type in Container.AllStoredTypes)
                 {
-                    float percent = (Container.ValueForType(type) / Container.Capacity);
+                    float percent = (Container.TotalStoredOf(type) / Container.Capacity);
                     Rect typeRect = new Rect(xPos, BarRect.y, BarRect.width * percent, BarRect.height);
                     Color color = type.valueColor;
                     xPos += BarRect.width * percent;
@@ -274,7 +274,6 @@ namespace TeleCore
                     var mousePos = Event.current.mousePosition;
                     var containerReadoutSize = TWidgets.GetNetworkValueReadoutSize(Container);
                     Rect rectAtMouse = new Rect(mousePos.x, mousePos.y - containerReadoutSize.y, containerReadoutSize.x, containerReadoutSize.y);
-                    Widgets.DrawMenuSection(rectAtMouse);
                     TWidgets.DrawNetworkValueReadout(rectAtMouse, Container);
                 }
             }
@@ -441,7 +440,7 @@ namespace TeleCore
 
                         foreach (var acceptedType in parentComp.Container.AcceptedTypes)
                         {
-                            var boolVal = parentComp.Container.AcceptsType(acceptedType);
+                            var boolVal = parentComp.Container.AcceptsValue(acceptedType);
                             listingScroll.CheckboxLabeled($"{acceptedType.LabelCap.CapitalizeFirst().Colorize(acceptedType.valueColor)}: ", ref boolVal);
                             parentComp.Container.Notify_FilterChanged(acceptedType, boolVal);
                         }
@@ -453,7 +452,7 @@ namespace TeleCore
                     //Copy
                     if (Widgets.ButtonImageFitted(clipboardRect, TeleContent.Copy, Color.white))
                     {
-                        ClipBoardUtility.TrySetClipBoard(StringCache.NetworkFilterClipBoard, Container.Filter.Copy());
+                        ClipBoardUtility.TrySetClipBoard(StringCache.NetworkFilterClipBoard, Container.TypeFilter.Copy());
                         SoundDefOf.Tick_High.PlayOneShotOnCamera(null);
                     }
 
@@ -494,7 +493,7 @@ namespace TeleCore
         [SyncMethod]
         private void Debug_Clear()
         {
-            Container.Clear();
+            Container.Data_Clear();
         }
 
         [SyncMethod]

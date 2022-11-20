@@ -65,7 +65,8 @@ namespace TeleCore
         private bool WarmingUp => burstWarmupTicksLeft > 0;
         public Verb AttackVerb => GunCompEq.PrimaryVerb;
         public VerbProperties VerbProps => AttackVerb.verbProps;
-        public VerbProperties_Extended VerbPropsExtended => AttackVerb.verbProps as VerbProperties_Extended;
+        public Verb_Tele TeleVerb => AttackVerb as Verb_Tele;
+        public VerbProperties_Extended VerbPropsExtended => TeleVerb.Props;
         public bool IsMannable => MannableComp != null;
         public bool PlayerControlled => ParentHolder.PlayerControlled;
         public bool CanSetForcedTarget => (MannableComp != null || props.canForceTarget) && PlayerControlled;
@@ -107,7 +108,7 @@ namespace TeleCore
         public bool UsesTurretGunTop => props.turretTop != null;
 
         public Graphic TurretGraphic => props.turretTop.topGraphic.Graphic;
-        public Vector3 DrawPos => ParentThing.DrawPos + props.drawOffset;
+        public Vector3 DrawPos => ParentThing.DrawPos + props.turretOffset;
 
         public float TargetPriorityFactor => 1f;
 
@@ -517,7 +518,7 @@ namespace TeleCore
             if (UsesTurretGunTop && WarmingUp)
             {
                 int degreesWide = (int)(burstWarmupTicksLeft * 0.5f);
-                GenDraw.DrawAimPieRaw(DrawPos + new Vector3(0f, top.Props.barrelMuzzleOffset.magnitude, 0f), TurretRotation, degreesWide);
+                GenDraw.DrawAimPieRaw(DrawPos + (TeleVerb?.BaseDrawOffsetRotated ?? Vector3.zero), TurretRotation, degreesWide);
             }
         }
 

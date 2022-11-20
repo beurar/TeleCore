@@ -11,7 +11,7 @@ namespace TeleCore
     public class WorldComp_Tele : WorldComponent
     {
         //Discovery
-        internal DiscoveryTable discoveryTable;
+        internal ThingDataCache thingDataCache;
 
         public WorldComp_Tele(World world) : base(world)
         {
@@ -21,7 +21,8 @@ namespace TeleCore
         public override void ExposeData()
         {
             base.ExposeData();
-            Scribe_Deep.Look(ref discoveryTable, "DiscoveryTable");
+            StaticData.ExposeStaticData();
+            Scribe_Deep.Look(ref thingDataCache, "DiscoveryTable");
 
             if (Scribe.mode == LoadSaveMode.PostLoadInit)
             {
@@ -32,7 +33,7 @@ namespace TeleCore
 
         private void GenerateInfos()
         {
-            discoveryTable ??= new DiscoveryTable();
+            thingDataCache ??= new ThingDataCache();
         }
     }
 }

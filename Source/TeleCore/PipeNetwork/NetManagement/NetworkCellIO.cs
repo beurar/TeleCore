@@ -49,11 +49,12 @@ namespace TeleCore
         private const char _Input = 'I';
         private const char _Output = 'O';
         private const char _TwoWay = '+';
-        private const char _Empty = '.';
-
-        //private static readonly string RegexPattern = $@"(/^(?!.*({_Input}|{_Output}|{_TwoWay}|{_Empty})).*/)";
-        private static Regex regex = new Regex(@"(/^(?!.*(I|O|\+|\.)).*/)");
-        private static readonly string RegexPattern = @"(/^(?!.*(I|O|\+|\.)).*/)";
+        private const char _Empty = '#';
+        private const char _Visual = '=';
+        
+        //
+        private static readonly string regexIgnore = @"[^IO+#]";
+        private static readonly string regexMustHave = @"[IO+#|]";
 
         //
         private readonly Thing thing;
@@ -62,6 +63,7 @@ namespace TeleCore
         //
         private IntVec3[] cachedInnerConnectionCells;
         private IntVec3[] cachedConnectionCells;
+        private IntVec3[] _cachedRenderCells;
 
         private Dictionary<char, IntVec3[]> InnerCellsByTag;
         private Dictionary<char, IntVec3Rot[]> OuterCellsByTag;
@@ -72,6 +74,7 @@ namespace TeleCore
             this.thing = thing;
             cachedInnerConnectionCells = null;
             cachedConnectionCells = null;
+            _cachedRenderCells = null;
             InnerCellsByTag = new Dictionary<char, IntVec3[]>();
             OuterCellsByTag = new Dictionary<char, IntVec3Rot[]>();
 
@@ -116,6 +119,21 @@ namespace TeleCore
                     return ' ';
             }
         }
+        
+        private NetworkIOMode ModeFromChar(char c)
+        {
+            switch (c)
+            {
+                case _Input:
+                    return NetworkIOMode.Input;
+                case _Output:
+                    return NetworkIOMode.Output;
+                case _TwoWay:
+                    return NetworkIOMode.TwoWay;
+                default:
+                    return NetworkIOMode.None;
+            }
+        }
 
         private void AddIOCell<TValue>(Dictionary<char, TValue[]> forDict, NetworkIOMode mode, TValue cell)
         {
@@ -146,25 +164,7 @@ namespace TeleCore
         //
         private void GenerateIOCells()
         {
-            if (connectionPattern == null)
-            {
-                int widthx = thing.RotatedSize.x;
-                int heighty = thing.RotatedSize.z;
-
-                var charArr = new char[widthx * heighty];
-                //Inner Connection Cells
-                for (int y = 0; y < widthx; y++)
-                {
-                    for (int x = 0; x < heighty; x++)
-                    {
-                        charArr[x + (y*widthx)] = _TwoWay;
-                    }
-                }
-
-                connectionPattern = charArr.ArrayToString();
-            }
-
-            var pattern = PatternByRot(thing.Rotation, thing.def.size);
+            var pattern = GetCorrectPattern();
             var rect = thing.OccupiedRect();
             var rectList = rect.ToArray();
             var cellsInner = new List<IntVec3>();
@@ -173,6 +173,7 @@ namespace TeleCore
             int width = thing.RotatedSize.x;
             int height = thing.RotatedSize.z;
 
+            //TLog.Message($"Using Pattern: {pattern} from {connectionPattern}");
             //Inner Connection Cells
             for (int y = 0; y < height; y++)
             {
@@ -183,8 +184,12 @@ namespace TeleCore
 
                     var c = pattern[actualIndex];
                     var cell = rectList[actualIndex];
-                    if(c != _Empty)
+                    
+                    if (c != _Empty)
+                    {
                         cellsInner.Add(cell);
+                    }
+
                     if (c == _TwoWay)
                     {
                         AddIOCell(InnerCellsByTag, NetworkIOMode.TwoWay, cell);
@@ -223,84 +228,57 @@ namespace TeleCore
             cachedInnerConnectionCells = cellsInner.ToArray();
             cachedConnectionCells = cellsOuter.ToArray();
         }
+        
+        private string GetCorrectPattern()
+        {
+            if (connectionPattern == null)
+            {
+                int widthx = thing.RotatedSize.x;
+                int heighty = thing.RotatedSize.z;
+
+                var charArr = new char[widthx * heighty];
+                //Inner Connection Cells
+                for (int y = 0; y < widthx; y++)
+                {
+                    for (int x = 0; x < heighty; x++)
+                    {
+                        charArr[x + (y*widthx)] = _TwoWay;
+                    }
+                }
+                connectionPattern = charArr.ArrayToString();
+            }
+
+            return PatternByRot(thing.Rotation, thing.def.size);
+        }
 
         private string PatternByRot(Rot4 rotation, IntVec2 size)
         {
-            var newPattern = Regex.Replace(connectionPattern, RegexPattern, "").ToCharArray();
-            //var patternArray = String.Concat(connectionPattern.Split('|')).ToCharArray();
+            var newPattern = Regex.Replace(connectionPattern, regexIgnore, "").ToCharArray();
+            if (!Regex.IsMatch(connectionPattern, regexMustHave))
+            {
+                TLog.Warning($"Pattern '{connectionPattern}' contains invalid characters. Allowed characters: ({_Input}, {_Output}, {_TwoWay}, {_Empty})");
+            }
 
             int xWidth = size.x;
             int yHeight = size.z;
-
             if (rotation == Rot4.East)
             {
-                return new string(Rotate(newPattern, xWidth, yHeight, 1));
+                return new string(newPattern.RotateLeft(xWidth, yHeight));
             }
 
             if (rotation == Rot4.South)
             {
-                return new string(Rotate(newPattern, xWidth, yHeight, 2));
+                return new string(newPattern.FLipHorizontal(xWidth, yHeight));
             }
 
             if (rotation == Rot4.West)
             {
-                return new string(Rotate(newPattern, xWidth, yHeight, 3));
+                return new string(newPattern.RotateRight(xWidth, yHeight));
             }
 
             return new string(newPattern);
         }
-
-        private char[] Rotate(char[] arr, int width, int height, int rotationInt = 0)
-        {
-            if (rotationInt is < 0 or > 3)
-                throw new ArgumentOutOfRangeException();
-
-            for (int x = 0; x < width; ++x)
-            {
-                for (int y = 0; y < height; ++y)
-                {
-                    //0+1
-                    int newIndex = y;
-                    int oldIndex = width * y + x;
-                    switch (rotationInt)
-                    {
-                        case 0:
-                            continue;
-                        case 1:
-                            newIndex = (width - 1) * x + y;
-                            break;
-                        case 2:
-                            newIndex = arr.Length - oldIndex;
-                            break;
-                        case 3:
-                            newIndex = (width - 1) * x + ((height - 1) - y);
-                            break;
-                    }
-
-                    (arr[newIndex], arr[oldIndex]) = (arr[oldIndex], arr[newIndex]);
-                }
-            }
-
-            /*
-            for (int y = 0; y < height; y++)
-            {
-                for (int x = 0; x < width; x++)
-                {
-                    int indexToRotate = y * width + x;
-                    int transposed = (x * height) + ((height - 1) - y);
-
-                    var temp = arr[transposed];
-                    arr[transposed] = arr[indexToRotate];
-                    arr[indexToRotate] = ;
-
-                    newArray[transposed] = arr[indexToRotate];
-                }
-            }
-            */
-            return arr;
-        }
-
-
+        
         //
         public void DrawIO()
         {
@@ -366,8 +344,7 @@ namespace TeleCore
 
         public bool ConnectsTo(NetworkCellIO otherGeneralIO)
         {
-            return  
-                OuterConnnectionCells.Where(otherGeneralIO.InnerConnnectionCells.Contains)
+            return OuterConnnectionCells.Where(otherGeneralIO.InnerConnnectionCells.Contains)
                 .Any(m => Matches(otherGeneralIO.InnerModeFor(m), OuterModeFor(m)));
         }
 

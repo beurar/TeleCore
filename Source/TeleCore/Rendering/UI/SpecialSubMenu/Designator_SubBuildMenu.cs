@@ -16,9 +16,9 @@ public class Designator_SubBuildMenu : Designator
         subMenuDef = menuDef;
     }
 
-    public void Toggle_Menu()
+    public void Toggle_Menu(bool opening)
     {
-        SubBuildMenu.ToggleOpen(subMenuDef);
+        SubBuildMenu.ToggleOpen(subMenuDef, opening);
     }
 
     public override void ProcessInput(Event ev)

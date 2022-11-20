@@ -35,7 +35,6 @@ namespace TeleCore
         //
         public Thing Thing => parent;
         public List<NetworkSubPart> NetworkParts => networkParts;
-
         public NetworkCellIO GeneralIO => cellIO;
 
         public bool IsPowered => CompPower?.PowerOn ?? true;
@@ -158,12 +157,12 @@ namespace TeleCore
             }
         }
 
-        public virtual void NetworkPostTick(bool isPowered)
+        public virtual void NetworkPostTick(NetworkSubPart networkSubPart, bool isPowered)
         {
 
         }
 
-        public virtual void NetworkPartProcessor(INetworkSubPart netPart)
+        public virtual void NetworkPartProcessorTick(INetworkSubPart netPart)
         {
         }
 
@@ -187,27 +186,26 @@ namespace TeleCore
         {
             return true;
         }
-
-        public bool CanConnectToOther(INetworkStructure other)
+        
+        public virtual bool CanConnectToOther(INetworkStructure other)
         {
-            return GeneralIO.ConnectsTo(other.GeneralIO);
+            return true;
         }
-
+        
         //UI
         public override void PostDraw()
         {
             base.PostDraw();
 
             //   
-            if (DebugConnectionCells && Find.Selector.IsSelected(parent))
-            {
-                GenDraw.DrawFieldEdges(GeneralIO.OuterConnnectionCells.ToList(), Color.cyan);
-                GenDraw.DrawFieldEdges(GeneralIO.InnerConnnectionCells.ToList(), Color.green);
-            }
-
             foreach (var networkPart in NetworkParts)
             {
                 networkPart.Draw();
+                if (DebugConnectionCells && Find.Selector.IsSelected(parent))
+                {
+                    GenDraw.DrawFieldEdges(networkPart.CellIO.OuterConnnectionCells.ToList(), Color.cyan);
+                    GenDraw.DrawFieldEdges(networkPart.CellIO.InnerConnnectionCells.ToList(), Color.green);
+                }
             }
         }
 
@@ -218,7 +216,7 @@ namespace TeleCore
             //
             foreach (var networkPart in NetworkParts)
             {
-                networkPart.NetworkDef.TransmitterGraphic?.Print(layer, Thing, 0);
+                networkPart.NetworkDef.TransmitterGraphic?.Print(layer, Thing, 0, networkPart);
             }
         }
 

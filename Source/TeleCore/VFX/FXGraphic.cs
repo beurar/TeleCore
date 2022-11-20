@@ -231,9 +231,9 @@ namespace TeleCore
             var drawPos = drawLocOverride ?? GetDrawPos;
             GetDrawInfo(Graphic, ref drawPos, Rot4, ExData, parent.parent.def, out drawSize, out drawMat, out drawMesh, out float extraRotation, out flipUV);
 
-            if(!parent.IgnoreDrawOff)
+            if(parent.IgnoreDrawOff)
                 drawPos += data.drawOffset;
-
+            
             //Colors
             var graphicColor = data.data.color;
             if (GetColorOverride != Color.white)

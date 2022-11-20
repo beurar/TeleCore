@@ -14,7 +14,7 @@ namespace TeleCore
         public string label = "Turret Gun";
         public TurretTopProperties turretTop;
         public ThingDef turretGunDef;
-        public Vector3 drawOffset;
+        public Vector3 turretOffset;
 
         public float turretBurstWarmupTime;
         public float turretBurstCooldownTime = -1f;

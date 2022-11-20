@@ -35,14 +35,19 @@ namespace TeleCore
             }
         }
 
-        public override void Print(SectionLayer layer, Thing parent, float extraRotation)
+        public void Print(SectionLayer layer, Thing parent, float extraRotation, NetworkDef forNetwork)
         {
             var comp = parent.TryGetComp<Comp_NetworkStructure>();
-            foreach (IntVec3 cell in comp.GeneralIO.InnerConnnectionCells)
+            foreach (IntVec3 cell in comp[forNetwork].CellIO.InnerConnnectionCells)
             {
                 Vector3 center = cell.ToVector3ShiftedWithAltitude(AltitudeLayer.MetaOverlays);
                 Printer_Plane.PrintPlane(layer, center, new Vector2(1f, 1f), LinkedDrawMatFrom(parent, cell), extraRotation, false, null, null, 0.01f, 0f);
             }
+        }
+        
+        public override void Print(SectionLayer layer, Thing parent, float extraRotation)
+        {
+            Print(layer, parent, extraRotation, SectionLayer_NetworkGrid.CURRENTNETWORK);
         }
 
         public Graphic_Linked_NetworkStructureOverlay ColoredVersion(Shader newShader, Color newColor, Color newColorTwo)

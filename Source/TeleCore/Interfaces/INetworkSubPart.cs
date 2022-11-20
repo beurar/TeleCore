@@ -4,6 +4,7 @@ namespace TeleCore
     public interface INetworkSubPart
     {
         //General Data
+        public NetworkSubPartProperties Props { get; }
         public NetworkDef NetworkDef { get; }
         public NetworkRole NetworkRole { get; }
         public INetworkStructure Parent { get; }
@@ -19,7 +20,7 @@ namespace TeleCore
         public bool IsNetworkEdge { get; }
         public bool IsJunction { get; }
 
-        public bool IsActive { get; }
+        public bool CanWork { get; }
         public bool IsReceiving { get; }
 
         public bool HasContainer { get; }

@@ -10,6 +10,65 @@ namespace TeleCore
 {
     public static class TMath
     {
+        //Rotate Arrays
+        public static T[] FLipHorizontal<T>(this T[] arr, int width, int height)
+        {
+            var newArr = new T[arr.Length];
+        
+            for (int x = 0; x < width; x++)
+            {
+                for (int y = 0; y < height; y++)
+                {
+                    var curIndex = width * y + x;
+                    int newX = width - 1 - x;
+                    int newY = height - 1 - y;
+                    var newIndex = width * newY + newX;
+                
+                    newArr[newIndex] = arr[curIndex];
+                }   
+            }
+
+            return newArr;
+        }
+    
+        public static T[] RotateLeft<T>(this T[] arr, int width, int height)
+        {
+            var newArr = new T[arr.Length];
+        
+            for (int x = width - 1; x >= 0; x--)
+            {
+                for (int y = height - 1; y >= 0; y--)
+                {
+                    var curIndex = width * y + x;
+                    int newX = width - 1 - x;
+                    int transposed = height * newX + y;
+                    newArr[transposed] = arr[curIndex];
+                }   
+            }
+
+            return newArr;
+        }
+    
+        public static T[] RotateRight<T>(this T[] arr, int width, int height)
+        {
+            var newArr = new T[arr.Length];
+        
+            for (int x = 0; x < width; x++)
+            {
+                for (int y = 0; y < height; y++)
+                {
+                    int curIndex = width * y + x;
+                
+                    //Invert y(as width)
+                    int newY = (height - 1) - y;
+                    int transposed = height * x + newY;
+                    newArr[transposed] = arr[curIndex];
+                }   
+            }
+
+            return newArr;
+        }
+        
         //Basic
         public static float InverseLerpUnclamped(float a, float b, float value)
         {

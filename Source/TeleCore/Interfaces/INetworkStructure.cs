@@ -14,8 +14,8 @@ namespace TeleCore
         public bool IsPowered { get; }
 
         //
-        void NetworkPartProcessor(INetworkSubPart subPart);
-        void NetworkPostTick(bool isPowered);
+        void NetworkPartProcessorTick(INetworkSubPart subPart);
+        void NetworkPostTick(NetworkSubPart networkSubPart, bool isPowered);
 
         //
         void Notify_ReceivedValue();

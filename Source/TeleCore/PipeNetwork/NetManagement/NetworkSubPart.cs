@@ -6,12 +6,13 @@ using System.Text;
 using System.Threading.Tasks;
 using HarmonyLib;
 using RimWorld;
+using TeleCore.Static.Utilities;
 using UnityEngine;
 using Verse;
 
 namespace TeleCore
 {
-    public class NetworkSubPart : INetworkSubPart, IContainerHolderStructure, IExposable
+    public class NetworkSubPart : INetworkSubPart, IContainerHolderNetworkPart, IExposable
     {
         //
         private Gizmo_NetworkInfo networkInfoGizmo;
@@ -51,11 +52,11 @@ namespace TeleCore
 
         //States
         public bool IsMainController => Network?.NetworkController == Parent;
-        public bool IsNetworkNode => NetworkRole != NetworkRole.Transmitter || IsJunction || IsPipeEndPoint;
+        public bool IsNetworkNode => NetworkRole != NetworkRole.Transmitter || IsJunction; //|| IsPipeEndPoint;
         public bool IsNetworkEdge => !IsNetworkNode;
-        public bool IsJunction => DirectPartSet[NetworkRole.Transmitter]?.Count > 2;
-        public bool IsPipeEndPoint => DirectPartSet[NetworkRole.Transmitter]?.Count == 1;
-        public bool IsActive => Network.IsWorking;
+        public bool IsJunction => NetworkRole == NetworkRole.Transmitter && DirectPartSet[NetworkRole.Transmitter]?.Count > 2;
+        public bool IsPipeEndPoint => NetworkRole == NetworkRole.Transmitter && DirectPartSet[NetworkRole.Transmitter]?.Count == 1;
+        public bool CanWork => Network.IsWorking || !Props.requiresController;
 
         public bool IsReceiving => receivingTicks > 0;
 
@@ -69,13 +70,14 @@ namespace TeleCore
         //
         public NetworkPartSet DirectPartSet => directPartSet;
         public AdjacentNodePartSet AdjacencySet => adjacencySet;
+        
         public NetworkCellIO CellIO
         {
             get
             {
                 if (cellIO != null) return cellIO;
-                if (Props.networkIOPattern == null) return Parent.GeneralIO;
-                return cellIO ??= new NetworkCellIO(Props.networkIOPattern, Parent.Thing);
+                if (Props.subIOPattern == null) return Parent.GeneralIO;
+                return cellIO ??= new NetworkCellIO(Props.subIOPattern, Parent.Thing);
             }
         }
 
@@ -156,8 +158,11 @@ namespace TeleCore
                 {
                     if (PipeNetworkMaker.Fits(thingList[i], NetworkDef, out var subPart))
                     {
-                        directPartSet.AddNewComponent(subPart);
-                        subPart.DirectPartSet.AddNewComponent(this);
+                        if (ConnectsTo(subPart))
+                        {
+                            directPartSet.AddNewComponent(subPart);
+                            subPart.DirectPartSet.AddNewComponent(this);
+                        }
                     }
                 }
             }
@@ -193,12 +198,11 @@ namespace TeleCore
                 if (receivingTicks > 0 && lastReceivedTick < Find.TickManager.TicksGame)
                     receivingTicks--;
 
-                if (!IsActive) return;
+                if (!CanWork) return;
                 ProcessValues();
-                parent.NetworkPartProcessor(this);
+                parent.NetworkPartProcessorTick(this);
             }
-
-            parent.NetworkPostTick(isPowered);
+            parent.NetworkPostTick(this, isPowered);
         }
 
         //Network 
@@ -214,6 +218,7 @@ namespace TeleCore
             //Storages push to Consumers
             if (NetworkRole.HasFlag(NetworkRole.Storage))
             {
+                //TLog.Debug($"[{Parent.Thing}] StoreTick");
                 StorageTick();
             }
 
@@ -223,6 +228,7 @@ namespace TeleCore
                 ConsumerTick();
             }
 
+            //
             if (NetworkRole.HasFlag(NetworkRole.Requester))
             {
                 RequesterTick();
@@ -231,7 +237,10 @@ namespace TeleCore
 
         protected virtual void ProducerTick()
         {
-            TransferToOthers(NetworkRole.Producer, NetworkRole.Storage);
+            NetworkTransactionUtility.DoTransaction(new NetworkTransactionUtility.TransactionRequest(this,
+                NetworkRole.Producer, NetworkRole.Storage,
+                part => NetworkTransactionUtility.Actions.TransferToOther_AnyDesired(this, part),
+                part => NetworkTransactionUtility.Validators.PartValidator_Sender(this, part)));
         }
 
         protected virtual void StorageTick()
@@ -240,12 +249,22 @@ namespace TeleCore
             {
                 ClearForbiddenTypes();
             }
-            if (ContainerProps.storeEvenly)
+
+            if (ContainerProps.storeEvenly && Network.HasGraph)
             {
-                TransferToOthers(NetworkRole.Storage, NetworkRole.Storage);
+                TLog.Debug("Storing Evenly");
+                NetworkTransactionUtility.DoTransaction(new NetworkTransactionUtility.TransactionRequest(this,
+                    NetworkRole.Storage, NetworkRole.Storage,
+                    part => NetworkTransactionUtility.Actions.TransferToOther_Equalize(this, part),
+                    part => NetworkTransactionUtility.Validators.StoreEvenly_EQ_Check(this, part)));
                 return;
             }
-            TransferToOthers(NetworkRole.Storage, NetworkRole.Consumer);
+            
+            //
+            NetworkTransactionUtility.DoTransaction(new NetworkTransactionUtility.TransactionRequest(this,
+                NetworkRole.Storage, NetworkRole.Consumer,
+                part => NetworkTransactionUtility.Actions.TransferToOther_AnyDesired(this, part),
+                part => NetworkTransactionUtility.Validators.PartValidator_Sender(this, part)));
         }
 
         protected virtual void ConsumerTick()
@@ -281,18 +300,20 @@ namespace TeleCore
             {
                 //If not requested, skip
                 if (!requestedType.Value.Item1) continue;
-                if (Container.PercentOf(requestedType.Key) < requestedType.Value.Item2)
+                if (Container.StoredPercentOf(requestedType.Key) < requestedType.Value.Item2)
                 {
-                    DoNetworkAction(this, NetworkRole.Storage, part =>
-                    {
-                        var container = part.Container;
-                        if (container.Empty) return;
-                        if (container.ValueForType(requestedType.Key) <= 0) return;
-                        if (container.TryTransferTo(Container, requestedType.Key, 1))
+                    NetworkTransactionUtility.DoTransaction(new NetworkTransactionUtility.TransactionRequest(this,
+                        NetworkRole.Requester, NetworkRole.Storage,
+                        part =>
                         {
-                            Notify_ReceivedValue();
-                        }
-                    }, (_) => true);
+                            var partContainer = part.Container;
+                            if (partContainer.Empty) return;
+                            if (partContainer.TotalStoredOf(requestedType.Key) <= 0) return;
+                            if (partContainer.TryTransferTo(Container, requestedType.Key, 1, out _))
+                            {
+                                Notify_ReceivedValue();
+                            }
+                        }));
                 }
             }
 
@@ -342,40 +363,6 @@ namespace TeleCore
             }
             */
         }
-        
-        private void DoNetworkAction(INetworkSubPart fromPart, NetworkRole forRole, Action<INetworkSubPart> funcOnPart, Predicate<INetworkSubPart> validator)
-        {
-            var requestResult = Network.Graph.ProcessRequest(new NetworkGraphPathRequest(fromPart, forRole, validator, 1));
-            if (!requestResult.IsValid)
-            {
-                return;
-            }
-            foreach (var targetPart in requestResult.allTargets)
-            {
-                funcOnPart.Invoke(targetPart);
-                FleckMaker.ThrowDustPuff(targetPart.Parent.Thing.TrueCenter(), Find.CurrentMap, 1);
-                //TLog.Message($"Trying to manipulate {targetPart} from {fromPart}");
-            }
-
-            foreach (var path in requestResult.edges)
-            {
-                path.Do(p => ((NetworkSubPart)p.fromNode).SetFlowDir(p.toNode));
-            }
-            
-            /*
-            foreach (var subPart in Network.PartSet[forRole])
-            {
-                if (validator(subPart))
-                {
-                    var result = Network.Graph.GetPart(new NetworkGraphNodeRequest(fromPart, subPart));
-                    if (result == subPart)
-                    {
-                        funcOnPart.Invoke(subPart);
-                    }
-                }
-            }
-            */
-        }
 
         private void DoNetworkAction(INetworkSubPart fromPart, INetworkSubPart previous, NetworkRole ofRole, Action<INetworkSubPart> funcOnPart, Predicate<INetworkSubPart> validator)
         {
@@ -414,7 +401,7 @@ namespace TeleCore
                 {
                     var type = usedTypes[i];
                     if (!subPart.NeedsValue(type, ofRole)) continue;
-                    if (Container.TryTransferTo(subPart.Container, type, 1))
+                    if (Container.TryTransferTo(subPart.Container, type, 1, out _))
                     {
                         subPart.Notify_ReceivedValue();
                     }
@@ -435,56 +422,11 @@ namespace TeleCore
             {
                 var type = usedTypes[i];
                 if (!part.NeedsValue(type, ofRole)) continue;
-                if (Container.TryTransferTo(part.Container, type, 1))
+                if (Container.TryTransferTo(part.Container, type, 1, out _))
                 {
                     part.Notify_ReceivedValue();
                 }
             }
-        }
-        
-        private void TransferToOthers(NetworkRole fromRole, NetworkRole ofRole)
-        {
-            if (Container.Empty) return;
-            DoNetworkAction(this, ofRole, (part) =>
-            {
-                if (part == null)
-                {
-                    TLog.Warning("Target part of path is null");
-                    return;
-                }
-            
-                var usedTypes = Props.AllowedValuesByRole[fromRole];
-                for (int i = usedTypes.Count - 1; i >= 0; i--)
-                {
-                    var type = usedTypes[i];
-                    if (!part.NeedsValue(type, ofRole)) continue;
-                    if (Container.TryTransferTo(part.Container, type, 1))
-                    {
-                        part.Notify_ReceivedValue();
-                    }
-                }
-            }, (part) => part.HasContainer && !part.Container.Full && !Container.Empty);
-
-            //var path = Network.Graph.GetRequestPath(new NetworkGraphNodeRequest(this, ofRole));
-            //SubTransfer(null, this, usedTypes, ofRole);
-
-            /*
-            foreach (var component in Network.PartSet[ofRole])
-            {
-                if (Container.Empty || component.Container.Full) continue;
-                if (evenly && component.Container.StoredPercent > Container.StoredPercent) continue;
-
-                for (int i = usedTypes.Count - 1; i >= 0; i--)
-                {
-                    var type = usedTypes[i];
-                    if (!component.NeedsValue(type, ofRole)) continue;
-                    if (Container.TryTransferTo(component.Container, type, 1))
-                    {
-                        component.Notify_ReceivedValue();
-                    }
-                }
-            }
-            */
         }
 
         private void ClearForbiddenTypes()
@@ -496,9 +438,9 @@ namespace TeleCore
                 for (int i = Container.AllStoredTypes.Count - 1; i >= 0; i--)
                 {
                     var type = Container.AllStoredTypes.ElementAt(i);
-                    if (Container.AcceptsType(type)) continue;
+                    if (Container.AcceptsValue(type)) continue;
                     if (!component.NeedsValue(type, NetworkRole.Storage)) continue;
-                    if (Container.TryTransferTo(component.Container, type, 1))
+                    if (Container.TryTransferTo(component.Container, type, 1, out _))
                     {
                         component.Notify_ReceivedValue();
                     }
@@ -543,14 +485,16 @@ namespace TeleCore
         //
         public void SendFirstValue(INetworkSubPart other)
         {
-            Container.TryTransferTo(other.Container, Container.AllStoredTypes.FirstOrDefault(), 1);
+            Container.TryTransferTo(other.Container, Container.AllStoredTypes.FirstOrDefault(), 1, out _);
         }
 
         //
         public bool ConnectsTo(INetworkSubPart other)
         {
             if (other == this) return false;
-            return NetworkDef == other.NetworkDef && Parent.CanConnectToOther(other.Parent);
+            if (!NetworkDef.CanWorkWith(other.NetworkDef)) return false;
+            if (!Parent.CanConnectToOther(other.Parent)) return false;
+            return CellIO.ConnectsTo(other.CellIO);
         }
 
         /*
@@ -564,11 +508,24 @@ namespace TeleCore
             return other.Network.NetworkRank == Network.NetworkRank;
         }
         */
+        
         public bool CanTransmit(NetEdge netEdge)
         {
             //TODO:
             //NetworkRole.GraphTransmitter;
             return NetworkRole.HasFlag(NetworkRole.Transmitter);
+        }
+
+        public bool AcceptsValue(NetworkValueDef value)
+        {
+            if (HasContainer && Parent.AcceptsValue(value))
+            {
+                if (Container.AcceptsValue(value))
+                {
+                    
+                }
+            }
+            return false;
         }
         
         public bool NeedsValue(NetworkValueDef value, NetworkRole forRole)
@@ -642,11 +599,17 @@ namespace TeleCore
                     defaultLabel = $"Draw Graph",
                     action = delegate { Network.DrawInternalGraph = !Network.DrawInternalGraph; }
                 };
+                
+                yield return new Command_Action
+                {
+                    defaultLabel = $"Draw Results",
+                    action = delegate { Network.DrawGraphCachedResults = !Network.DrawGraphCachedResults; }
+                };
 
                 yield return new Command_Action
                 {
                     defaultLabel = $"Draw AdjacencyList",
-                    action = delegate { DebugDrawGraphAdjacency = !DebugDrawGraphAdjacency; }
+                    action = delegate { Network.DrawAdjacencyList = !Network.DrawAdjacencyList; }
                 };
                 
                 
@@ -664,6 +627,7 @@ namespace TeleCore
             StringBuilder sb = new StringBuilder();
             sb.AppendLine($"[{NetworkDef}]ID: {Network?.ID}");
             sb.AppendLine($"Has Network: {Network != null}");
+            sb.AppendLine($"Network Valid: {Network?.IsValid}");
             if (IsNetworkNode)
             {
                 sb.AppendLine("Is Node");
@@ -680,8 +644,7 @@ namespace TeleCore
             sb.AppendLine($"[Transmitters] {DirectPartSet[NetworkRole.Transmitter]?.Count}");
             return sb.ToString();
         }
-
-        internal static bool DebugDrawGraphAdjacency = false;
+        
         internal static bool Debug_DrawFlowDir = false;
 
 
@@ -707,15 +670,6 @@ namespace TeleCore
                 GenDraw.DrawFieldEdges(Network.NetworkCells, Color.cyan);
             }
 
-            if (Find.Selector.IsSelected(Parent.Thing))
-            {
-                if (DebugDrawGraphAdjacency)
-                {
-                    GenDraw.DrawFieldEdges(Network.Graph.AdjacencyLists[this].Select(c => c.Parent.Thing.Position).ToList(), Color.red);
-                }
-                CellIO.DrawIO();
-            }
-            
             //Render Flow Debug
             if (Debug_DrawFlowDir && FlowDir != Rot4.Invalid)
             {

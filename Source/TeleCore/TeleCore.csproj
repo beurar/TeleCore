@@ -2,30 +2,30 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
+    <Authors>Telefonmast (aka Maxim)</Authors>
+    <Company>Telefonmast</Company>
+    <Description>A collection of tools and functionalities for RimWorld modding.</Description>
     <RootNamespace>TeleCore</RootNamespace>
     <AssemblyName>TeleCore</AssemblyName>
     <TargetFramework>net472</TargetFramework>
     <LangVersion>latest</LangVersion>
     <PlatformTarget>x64</PlatformTarget>
     <OutputPath>C:\Program Files (x86)\Steam\steamapps\common\RimWorld\Mods\TeleCore\Assemblies\</OutputPath>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <PackageTags>RimWorld;Mod;Telefonmast;Framework;Library;</PackageTags>
+    <RepositoryUrl>https://github.com/RealTelefonmast/TeleCore</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/RealTelefonmast/TeleCore</PackageProjectUrl>
+    <PackageIcon>TeleCore.jpg</PackageIcon>
+    <!--
     <Optimize>true</Optimize>
     <DebugType>none</DebugType>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
-
-    <Authors>Telefonmast (aka Maxim)</Authors>
-    <PackageTags>RimWorld;Mod;Telefonmast;Framework;Library;</PackageTags>
-    <RepositoryUrl>https://github.com/RealTelefonmast/TeleCore</RepositoryUrl>
-    <Copyright></Copyright>
+    -->
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
-    <Company>Telefonmast</Company>
-    <Description>A collection of tools and functionalities for RimWorld modding.</Description>
-    <PackageProjectUrl>https://github.com/RealTelefonmast/TeleCore</PackageProjectUrl>
-    <PackageIcon>TeleCore.jpg</PackageIcon>
-    <AssemblyVersion></AssemblyVersion>
-    <FileVersion></FileVersion>
     <Version>1.2.5</Version>
     <SignAssembly>False</SignAssembly>
-    <PackageVersion>1.5.4</PackageVersion>
+    <PackageVersion>1.5.6</PackageVersion>
+    <Nullable>enable</Nullable>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
@@ -33,12 +33,16 @@
     <WarningLevel>4</WarningLevel>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <OutputPath>bin\Release\</OutputPath>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-    <DefineConstants>TRACE;DEBUG</DefineConstants>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <DebugType>full</DebugType>
+    <OutputPath>C:\Program Files (x86)\Steam\steamapps\common\RimWorld\Mods\TeleCore\Assemblies</OutputPath>
+    <Optimize>false</Optimize>
   </PropertyGroup>
 
 	<PropertyGroup>
@@ -52,7 +56,7 @@
 	</ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Krafs.Rimworld.Ref" Version="1.4.3525" GeneratePathProperty="true">
+    <PackageReference Include="Krafs.Rimworld.Ref" Version="1.4.3550-beta" GeneratePathProperty="true">
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
     

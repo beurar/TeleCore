@@ -28,7 +28,8 @@ namespace TeleCore
         public bool GamePaused => !GameActive || Find.TickManager.Paused;
 
         public int CurrentTick => internalTicks;
-
+        public int CurrentMapTick => internalMapTicks;
+        
         private float ReusedTickRateMultiplier
         {
             get
@@ -47,21 +48,46 @@ namespace TeleCore
         
         public void Update()
         {
-            if (GameActive)
+            UpdateTick();
+            
+            //
+            if (!GameActive) return;
+            for (var i = 0; i < Current.Game.maps.Count; i++)
             {
-                UpdateTick();
-                for (var i = 0; i < Current.Game.maps.Count; i++)
-                {
-                    var map = Current.Game.maps[i].TeleCore();
-                    UpdateMapTick(map);
-                    UpdateDrawMap(map);
-                }  
+                var map = Current.Game.maps[i].TeleCore();
+                UpdateMapTick(map);
+                UpdateDrawMap(map);
             }
         }
 
         private int ticksThisFrame = 0;
+        
+        //TODO: Check why it ticks 4 times
         private void UpdateMapTick(MapComponent_TeleCore map)
         {
+            ticksThisFrame = 0;
+            if (!Paused)
+            {
+                var curTimePerTick = Find.TickManager.CurTimePerTick;
+                if (Mathf.Abs(Time.deltaTime - curTimePerTick) < curTimePerTick * 0.1f)
+                    realTimeToTickThrough += curTimePerTick;
+                else
+                    realTimeToTickThrough += Time.deltaTime;
+                var tickRateMultiplier = Find.TickManager.TickRateMultiplier;
+                clock.Reset();
+                clock.Start();
+                while (realTimeToTickThrough > 0f && ticksThisFrame < tickRateMultiplier * 2f)
+                {
+                    map.TeleMapSingleTick();
+                    realTimeToTickThrough -= curTimePerTick;
+                    ticksThisFrame++;
+                    internalMapTicks++;
+                    if (Paused || clock.ElapsedMilliseconds > 45.454544f) break;
+                }
+
+                if (realTimeToTickThrough > 0f) realTimeToTickThrough = 0f;
+            }
+            /*
             var timePerMapTick = Find.TickManager.CurTimePerTick;
             //
             if (Mathf.Abs(Time.deltaTime - timePerMapTick) < timePerMapTick * 0.1f)
@@ -89,6 +115,7 @@ namespace TeleCore
             
             //
             realTimeToTickThrough = 0;
+            */
         }
         
         private int ticksThisFrameNormal = 0;

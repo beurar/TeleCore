@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using TeleCore.Static.Utilities;
 using Verse;
 
@@ -9,10 +11,24 @@ public class NetworkGraphRequestManager
     private readonly NetworkGraph parent;
 
     //Caching
-    private readonly Dictionary<NetworkGraphPathRequest, NetworkGraphPathResult> _cachedRequestResults;
-    private readonly Dictionary<INetworkSubPart, List<NetworkGraphPathRequest>> _nodesOnCachedResult;
-    private readonly HashSet<NetworkGraphPathRequest> _dirtyRequests;
+    internal readonly Dictionary<NetworkGraphPathRequest, NetworkGraphPathResult> _cachedRequestResults;
+    internal readonly Dictionary<INetworkSubPart, List<NetworkGraphPathRequest>> _nodesOnCachedResult;
+    internal readonly HashSet<NetworkGraphPathRequest> _dirtyRequests;
 
+    internal List<NetworkGraphPathResult> GetResultsFor(INetworkSubPart part)
+    {
+        var list = new List<NetworkGraphPathResult>();
+        foreach (var pathResult in _cachedRequestResults)
+        {
+            if (pathResult.Key.Requester == part)
+            {
+                list.Add(pathResult.Value);
+            }
+        }
+
+        return list;
+    }
+    
     public NetworkGraphRequestManager(NetworkGraph graph)
     {
         parent = graph;
@@ -59,10 +75,11 @@ public class NetworkGraphRequestManager
     }
 
     private Dictionary<NetworkGraphPathRequest, int> _TimeOutCache = new Dictionary<NetworkGraphPathRequest, int>();
-
+    
     private NetworkGraphPathResult CreateAndCacheRequest(NetworkGraphPathRequest request)
     {
-        List<List<INetworkSubPart>> result = GenGraph.Dijkstra(parent, request);
+        TLog.Debug($"Creating or Caching Result");
+        List<List<INetworkSubPart>> result = GenGraphPath.Dijkstra(parent, request);
         if (result == null)
         {
             //Add Time-Out
@@ -86,6 +103,19 @@ public class NetworkGraphRequestManager
         return requestResult;
     }
 
+    public void MakeRequestsDirtyForStructuresWith(NetworkGraphPathRequest request)
+    {
+        if (request._dirtyChecker == null) return;
+        foreach (var part in request.Requester.Network.Graph.AllNodes)
+        {
+            if (request._dirtyChecker(part))
+            {
+                TLog.Debug("REQUEST GOT DIRTY CHECKED");
+                Notify_NodeStateChanged(part);
+            }
+        }
+    }
+    
     public NetworkGraphPathResult ProcessRequest(NetworkGraphPathRequest request)
     {
         //Check TimeOut
@@ -98,7 +128,10 @@ public class NetworkGraphRequestManager
             }
             _TimeOutCache.Remove(request);
         }
-        
+
+        //
+        MakeRequestsDirtyForStructuresWith(request);
+
         //Check dirty result
         CheckRequestDirty(request);
 
@@ -110,5 +143,13 @@ public class NetworkGraphRequestManager
 
         //
         return CreateAndCacheRequest(request);
+    }
+
+    internal void Debug_DrawCachedResults()
+    {
+        foreach (var requestResult in _cachedRequestResults)
+        {
+            requestResult.Value.Debug_Draw();
+        }   
     }
 }

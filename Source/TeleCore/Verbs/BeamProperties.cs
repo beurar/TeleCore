@@ -16,12 +16,14 @@ namespace TeleCore
 
         //
         public DamageDef damageDef;
-        public int damageBase = 100;
-        public float armorPenetration;
-        public int damageTicks = 10;
-        public float stoppingPower;
+        public int? damageBaseOverride = 100;
+        public float? armorPenetrationOverride;
+        public float? stoppingPowerOverride;
         public float staggerTime = 95.TicksToSeconds();
 
+        public bool isStatic = false;
+        public bool spawnMotePerBeam = false;
+        
         //
         public EffecterDef impactEffecter;
         public ExplosionProperties impactExplosion;
@@ -32,8 +34,7 @@ namespace TeleCore
         public float BeamWidth => parent.beamWidth;
         public float BeamMaxDeviation => parent.beamMaxDeviation;
         
-
-        //public Material BeamMat => cachedBeamMat ??= MaterialPool.MatFrom(beamTexturePath, ShaderDatabase.MoteGlow);
+        
         public void SetParent(VerbProperties_Extended verbprops)
         {
             this.parent = verbprops;

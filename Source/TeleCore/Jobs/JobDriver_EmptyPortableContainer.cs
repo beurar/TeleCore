@@ -34,7 +34,7 @@ namespace TeleCore
             {
                 var type = Container.AllStoredTypes.ElementAt(i);
                 if (!NetworkPart.NeedsValue(type, NetworkRole.Storage)) continue;
-                if (Container.TryTransferTo(NetworkPart.Container, type, 1))
+                if (Container.TryTransferTo(NetworkPart.Container, type, 1, out _))
                 {
                     NetworkPart.Notify_ReceivedValue();
                 }
