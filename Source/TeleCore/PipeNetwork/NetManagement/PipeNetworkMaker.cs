@@ -72,6 +72,24 @@ namespace TeleCore
             _ClosedGlobalSet.Clear();
         }
 
+        //Generate Network
+        //Look at ANY outer cell
+        //take cell, get I/O mode, begin edge search
+        //when finding target, set edge with found cell and get mode from 
+        
+        public static void FillGraph(INetworkSubPart fromRoot, NetworkGraph graph)
+        {
+            var cells = fromRoot.CellIO.OuterConnnectionCells;
+            for (var i = 0; i < cells.Length; i++)
+            {
+                var cell = cells[i];
+                var mode = fromRoot.CellIO.OuterModeFor(cell);
+                var newSearchRoot = GetFittingPartAt(fromRoot, cell, graph.ParentNetwork.ParentManager.Map);
+                if (newSearchRoot == null) continue;
+                
+            }
+        }
+        
         private static void InitGraphSearch(INetworkSubPart searchRoot, NetworkGraph forGraph, INetworkSubPart nodeToIgnore = null)
         {
             AddNetworkData(searchRoot, forGraph);
