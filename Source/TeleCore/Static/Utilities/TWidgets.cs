@@ -13,6 +13,26 @@ namespace TeleCore
 {
     public static class TWidgets
     {
+        //World To ScreenSpace
+        public static void DrawBoxOnThing(Thing thing)
+        {
+            var v = ToScreenPos(thing.TrueCenter());
+            
+            var driver = Find.CameraDriver;
+            var size = 1 * driver.CellSizePixels;
+            var sizeHalf = size * 0.5f;
+            
+            var rect = new Rect(v.x - sizeHalf, v.y - sizeHalf, size, size);
+            DrawColoredBox(rect, new Color(1, 1, 1, 0.125f), Color.white, 1);
+        }
+        
+        public static Vector2 ToScreenPos(this Vector3 vec)
+        {
+            Vector2 vector = Find.Camera.WorldToScreenPoint(vec) / Prefs.UIScale;
+            vector.y = (float)UI.screenHeight - vector.y;
+            return vector;
+        }
+
         public static float GapLine(float x, float y, float width, float gapSize = 5, float sideContraction = 4, TextAnchor anchor = TextAnchor.MiddleCenter)
         {
             //Adds 

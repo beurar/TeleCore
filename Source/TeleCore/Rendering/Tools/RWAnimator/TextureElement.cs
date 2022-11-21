@@ -5,7 +5,6 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using HarmonyLib;
-using HotSwap;
 using UnityEngine;
 using Verse;
 
@@ -38,8 +37,7 @@ namespace TeleCore
         BottomLeft,
         BottomRight,
     }
-
-    [HotSwappable]
+    
     internal class TextureElement : UIElement, IKeyFramedElement, IReorderableElement
     {
         //

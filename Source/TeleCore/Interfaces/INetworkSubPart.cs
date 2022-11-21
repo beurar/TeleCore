@@ -33,7 +33,7 @@ namespace TeleCore
         void Notify_ReceivedValue();
         void Notify_StateChanged(string signal);
 
-        void Notify_SetConnection(INetworkSubPart otherPart, NetEdge withEdge);
+        void Notify_SetConnection(NetEdge edge, IntVec3Rot ioCell);
         void Notify_NetworkDestroyed();
 
         bool ConnectsTo(INetworkSubPart otherPart);

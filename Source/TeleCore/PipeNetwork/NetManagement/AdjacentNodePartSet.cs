@@ -13,8 +13,8 @@ namespace TeleCore
     {
         private INetworkSubPart parentNode;
         private HashSet<NetEdge> allEdges;
-        private Dictionary<INetworkSubPart, NetEdge> outgoingEdges;
-        private Dictionary<INetworkSubPart, NetEdge> incomingEdges;
+        private Dictionary<IntVec3Rot, NetEdge> outgoingEdges;
+        private Dictionary<IntVec3Rot, NetEdge> incomingEdges;
 
         public int EdgeCount => outgoingEdges.Count;
         public int IncomingEdgeCount => incomingEdges.Count;
@@ -22,9 +22,8 @@ namespace TeleCore
         public AdjacentNodePartSet(NetworkSubPart parent)
         {
             this.parentNode = parent;
-            allEdges = new HashSet<NetEdge>();
-            outgoingEdges = new Dictionary<INetworkSubPart, NetEdge>();
-            incomingEdges = new Dictionary<INetworkSubPart, NetEdge>();
+            outgoingEdges = new Dictionary<IntVec3Rot, NetEdge>();
+            incomingEdges = new Dictionary<IntVec3Rot, NetEdge>();
         }
 
         public void Notify_ParentDestroyed()
@@ -39,7 +38,7 @@ namespace TeleCore
             incomingEdges.Clear();
         }
 
-        public void Notify_SetEdge(INetworkSubPart withOther, NetEdge edge)
+        public void Notify_SetEdge(NetEdge edge, IntVec3Rot ioCell)
         {
             allEdges.Add(edge);
         }

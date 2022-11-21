@@ -100,6 +100,11 @@ namespace TeleCore
         }
 
         //
+        public bool HasKnownEdgeFor(INetworkSubPart fromRoot, IntVec3 cell, out NetEdge netEdge)
+        {
+            fromRoot.AdjacencySet
+        }
+        
         public bool TryGetEdge(INetworkSubPart source, INetworkSubPart dest, out NetEdge value)
         {
             return _edges.TryGetValue((source, dest), out value) || _edges.TryGetValue((dest, source), out value);
@@ -114,16 +119,19 @@ namespace TeleCore
             }
         }
 
-        //
-        public void Debug_DrawGraphOnUI()
+        //Debug stuff
+        private static readonly Material FilledMat = SolidColorMaterials.NewSolidColorMaterial(Color.green, ShaderDatabase.MetaOverlay);
+        private static readonly Material UnFilledMat = SolidColorMaterials.NewSolidColorMaterial(TColor.LightBlack, ShaderDatabase.MetaOverlay);
+        
+        internal void Debug_DrawGraphOnUI()
         {
             var size = Find.CameraDriver.CellSizePixels / 4;
             foreach (var pair in _edgePairs)
             {
                 var edge1 = pair.Item1;
                 var edge2 = pair.Item2;
-                TWidgets.DrawHalfArrow(ScreenPositionOf(edge1.fromNode.Parent.Thing.TrueCenter()), ScreenPositionOf(edge1.toNode.Parent.Thing.TrueCenter()), Color.red, size);
-                TWidgets.DrawHalfArrow(ScreenPositionOf(edge2.fromNode.Parent.Thing.TrueCenter()), ScreenPositionOf(edge2.toNode.Parent.Thing.TrueCenter()), Color.blue, size);
+                TWidgets.DrawHalfArrow(edge1.fromNode.Parent.Thing.TrueCenter().ToScreenPos(), edge1.toNode.Parent.Thing.TrueCenter().ToScreenPos(), Color.red, size);
+                TWidgets.DrawHalfArrow(edge2.fromNode.Parent.Thing.TrueCenter().ToScreenPos(), edge2.toNode.Parent.Thing.TrueCenter().ToScreenPos(), Color.blue, size);
             }
             
             foreach (var netEdge in _edges)
@@ -134,39 +142,17 @@ namespace TeleCore
                 
                 //TWidgets.DrawHalfArrow(ScreenPositionOf(thingA.TrueCenter()), ScreenPositionOf(thingB.TrueCenter()), Color.red, 8);
                 
-                DrawBoxOnThing(thingA);
-                DrawBoxOnThing(thingB);
+                TWidgets.DrawBoxOnThing(thingA);
+                TWidgets.DrawBoxOnThing(thingB);
             }
-        }
-
-        private void DrawBoxOnThing(Thing thing)
-        {
-            var v = ScreenPositionOf(thing.TrueCenter());
-            
-            var driver = Find.CameraDriver;
-            var size = 1 * driver.CellSizePixels;
-            var sizeHalf = size * 0.5f;
-            
-            var rect = new Rect(v.x - sizeHalf, v.y - sizeHalf, size, size);
-            TWidgets.DrawColoredBox(rect, new Color(1, 1, 1, 0.125f), Color.white, 1);
-        }
-        
-        private Vector2 ScreenPositionOf(Vector3 vec)
-        {
-            Vector2 vector = Find.Camera.WorldToScreenPoint(vec) / Prefs.UIScale;
-            vector.y = (float)UI.screenHeight - vector.y;
-            return vector;
         }
 
         public void Debug_DrawCachedResults()
         {
             _requestManager.Debug_DrawCachedResults();
         }
-       
-        private static readonly Material FilledMat = SolidColorMaterials.NewSolidColorMaterial(Color.green, ShaderDatabase.MetaOverlay);
-        private static readonly Material UnFilledMat = SolidColorMaterials.NewSolidColorMaterial(TColor.LightBlack, ShaderDatabase.MetaOverlay);
         
-        public void Debug_DrawPressure()
+        internal void Debug_DrawPressure()
         {
             foreach (var networkSubPart in AllNodes)
             {

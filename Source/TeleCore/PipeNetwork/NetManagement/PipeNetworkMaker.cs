@@ -89,7 +89,24 @@ namespace TeleCore
                 
             }
         }
-        
+
+        private void TrySplitSearchFrom(INetworkSubPart fromRoot, NetworkGraph forGraph)
+        {
+            var cells = fromRoot.CellIO.OuterConnnectionCells;
+            for (var i = 0; i < cells.Length; i++)
+            {
+                var cell = cells[i];
+                //TODO: Forbidden state, one I/O pos can be origin for multiple edges
+                if(forGraph.HasKnownEdgeFor(fromRoot, cell, out NetEdge edge)) continue;
+                
+                
+                var mode = fromRoot.CellIO.OuterModeFor(cell);
+                var newSearchRoot = GetFittingPartAt(fromRoot, cell, forGraph.ParentNetwork.ParentManager.Map);
+                if (newSearchRoot == null) continue;
+                
+            }
+        }
+
         private static void InitGraphSearch(INetworkSubPart searchRoot, NetworkGraph forGraph, INetworkSubPart nodeToIgnore = null)
         {
             AddNetworkData(searchRoot, forGraph);
@@ -184,8 +201,8 @@ namespace TeleCore
             //Add Edge To Graph with found nodes
             if (forGraph.AddEdge(newEdge))
             {
-                newEdge.fromNode.Notify_SetConnection(newEdge.toNode, newEdge);
-                newEdge.toNode.Notify_SetConnection(newEdge.fromNode, newEdge);
+                newEdge.fromNode.Notify_SetConnection(newEdge, newEdge.fromCell);
+                newEdge.toNode.Notify_SetConnection(newEdge);
                 return true;
             }
             return false;

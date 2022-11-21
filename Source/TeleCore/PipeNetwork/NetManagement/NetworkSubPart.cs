@@ -472,9 +472,9 @@ namespace TeleCore
             }
         }
 
-        public void Notify_SetConnection(INetworkSubPart otherPart, NetEdge withEdge)
+        public void Notify_SetConnection(NetEdge edge, IntVec3Rot ioCell)
         {
-            AdjacencySet.Notify_SetEdge(otherPart, withEdge);
+            AdjacencySet.Notify_SetEdge(edge, ioCell);
         }
 
         public void Notify_NetworkDestroyed()
