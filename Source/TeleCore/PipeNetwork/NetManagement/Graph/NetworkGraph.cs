@@ -102,7 +102,9 @@ namespace TeleCore
         //
         public bool HasKnownEdgeFor(INetworkSubPart fromRoot, IntVec3 cell, out NetEdge netEdge)
         {
-            fromRoot.AdjacencySet
+            netEdge = new NetEdge();
+            return false;
+            //fromRoot.AdjacencySet
         }
         
         public bool TryGetEdge(INetworkSubPart source, INetworkSubPart dest, out NetEdge value)

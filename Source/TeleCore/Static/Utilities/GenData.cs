@@ -267,9 +267,18 @@ namespace TeleCore
             }
             return false;
         }
+
+        public static bool TryGetNetworkPart(this Thing thing, NetworkDef def, out INetworkSubPart subPart)
+        {
+            subPart = null;
+            var networkComp = thing.TryGetComp<Comp_NetworkStructure>();
+            if (networkComp == null) return false;
+            subPart = networkComp[def];
+            return subPart != null;
+        }
         
         //
-        public static List<T> ToListSingleItem<T>(this T item)
+        public static List<T> ToSingleItemList<T>(this T item)
         {
             return new List<T>() {item};
         }

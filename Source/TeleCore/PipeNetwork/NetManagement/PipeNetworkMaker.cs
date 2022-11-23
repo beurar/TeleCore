@@ -90,7 +90,7 @@ namespace TeleCore
             }
         }
 
-        private void TrySplitSearchFrom(INetworkSubPart fromRoot, NetworkGraph forGraph)
+        private static void TrySplitSearchFrom(INetworkSubPart fromRoot, NetworkGraph forGraph)
         {
             var cells = fromRoot.CellIO.OuterConnnectionCells;
             for (var i = 0; i < cells.Length; i++)
@@ -153,6 +153,20 @@ namespace TeleCore
         //Special search for next best node
         private static INetworkSubPart FindNextNodeAlongEdge(INetworkSubPart rootEdge)
         {
+            var selfThing = rootEdge.Parent.Thing;
+            bool PassCheck(IntVec3 vec3)
+            {
+                
+                return vec3.thing;
+            }
+
+            bool Processor(IntVec3 vec3)
+            {
+                return false;
+            }
+
+            selfThing.Map.floodFiller.FloodFill(selfThing.Position, PassCheck, Processor);
+            
             _CurrentSubSet.Clear();
             _OpenSubSet.Clear();
             _OpenSubSet.Add(rootEdge);
@@ -199,10 +213,10 @@ namespace TeleCore
         private static bool TrySetEdge(NetEdge newEdge, NetworkGraph forGraph)
         {
             //Add Edge To Graph with found nodes
-            if (forGraph.AddEdge(newEdge))
+             if (forGraph.AddEdge(newEdge))
             {
                 newEdge.fromNode.Notify_SetConnection(newEdge, newEdge.fromCell);
-                newEdge.toNode.Notify_SetConnection(newEdge);
+                newEdge.toNode.Notify_SetConnection(newEdge, newEdge.toCell);
                 return true;
             }
             return false;

@@ -95,9 +95,9 @@ public struct NetworkGraphPathResult
     {
         foreach (var path in allPaths)
         {
-            GenDraw.DrawFieldEdges(path.start.Parent.Thing.Position.ToListSingleItem(), Color.red);
+            GenDraw.DrawFieldEdges(path.start.Parent.Thing.Position.ToSingleItemList(), Color.red);
             GenDraw.DrawFieldEdges(path.PathWithoutEnds.Select(c => c.Parent.Thing.Position).ToList(), Color.green);
-            GenDraw.DrawFieldEdges(path.end.Parent.Thing.Position.ToListSingleItem(), Color.blue);
+            GenDraw.DrawFieldEdges(path.end.Parent.Thing.Position.ToSingleItemList(), Color.blue);
         }
     }
 

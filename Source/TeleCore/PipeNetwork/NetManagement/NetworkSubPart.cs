@@ -656,10 +656,12 @@ namespace TeleCore
         
         internal void SetFlowDir(INetworkSubPart other)
         {
+            /*
             if (Network.Graph.TryGetEdge(this, other, out var edge))
             {
                 FlowDir = edge.fromToDir;
             }
+            */
         }
         
         public void Draw()
