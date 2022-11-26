@@ -6,6 +6,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
 using System.Threading.Tasks;
+using TeleCore.Static;
 using UnityEngine;
 using Verse;
 
@@ -153,60 +154,49 @@ namespace TeleCore
         //Special search for next best node
         private static INetworkSubPart FindNextNodeAlongEdge(INetworkSubPart rootEdge)
         {
-            var selfThing = rootEdge.Parent.Thing;
-            bool PassCheck(IntVec3 vec3)
-            {
-                
-                return vec3.thing;
-            }
-
-            bool Processor(IntVec3 vec3)
-            {
-                return false;
-            }
-
-            selfThing.Map.floodFiller.FloodFill(selfThing.Position, PassCheck, Processor);
+            //
+            var currentSubSet = StaticListHolder<INetworkSubPart>.RequestList("CurrentSubSet");
+            var openSubSet = StaticListHolder<INetworkSubPart>.RequestList("OpenSubSet");
+            var closedSubSot = StaticListHolder<INetworkSubPart>.RequestList("ClosedSubSet");
             
-            _CurrentSubSet.Clear();
-            _OpenSubSet.Clear();
-            _OpenSubSet.Add(rootEdge);
-            while (_OpenSubSet.Count > 0)
+            //
+            openSubSet.Add(rootEdge);
+            while (openSubSet.Count > 0)
             {
                 //Swap Current with Open
-                (_CurrentSubSet, _OpenSubSet) = (_OpenSubSet, _CurrentSubSet);
-                _OpenSubSet.Clear();
-                foreach (INetworkSubPart part in _CurrentSubSet)
+                (currentSubSet, openSubSet) = (openSubSet, currentSubSet);
+                openSubSet.Clear();
+                foreach (INetworkSubPart part in currentSubSet)
                 {
-                    TLog.Debug($"Output Cells: {part.CellIO.OuterConnnectionCells.Length}");
                     foreach (var output in part.CellIO.OuterConnnectionCells)
                     {
                         List<Thing> thingList = output.GetThingList(rootEdge.Parent.Thing.Map);
                         foreach (var thing in thingList)
                         {
                             if (!Fits(thing, part.NetworkDef, out INetworkSubPart newPart)) continue;
-                            if (_ClosedGlobalSet.Contains(newPart)) continue;
+                            if (closedSubSot.Contains(newPart)) continue;
                             if (newPart.ConnectsTo(part))
                             {
                                 //If Node - Quit
                                 if (newPart.IsNetworkNode)
                                 {
-                                    _CurrentSubSet.Clear();
-                                    _OpenSubSet.Clear();
-                                    _ClosedGlobalSet.Clear();
+                                    currentSubSet.Clear();
+                                    openSubSet.Clear();
+                                    closedSubSot.Clear();
                                     return newPart;
                                 }
                                 //If Edge, continue search
-                                _OpenSubSet.Add(newPart); 
-                                _ClosedGlobalSet.Add(newPart);
+                                openSubSet.Add(newPart); 
+                                closedSubSot.Add(newPart);
                                 break;
                             }
                         }
                     }
                 }
             }
-            _CurrentSubSet.Clear();
-            _OpenSubSet.Clear();
-            _ClosedGlobalSet.Clear();
+            currentSubSet.Clear();
+            openSubSet.Clear();
+            closedSubSot.Clear();
             return null;
         }
 
