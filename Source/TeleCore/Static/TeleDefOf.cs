@@ -25,5 +25,9 @@ namespace TeleCore.Static
 
         //
         public static ThingDef PortableContainer;
+        
+        //
+        public static TerrainDef ChromaKeyGreen;
+        public static TerrainDef ChromaKeyBlue;
     }
 }

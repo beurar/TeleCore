@@ -189,7 +189,7 @@ namespace TeleCore
                             TryCreateNetworkAtForDestruction(adjPos, delayedActionForCreation.subPart);
                         }
                         break;
-                    }
+                    } 
                 }
             }
             delayedActions.RemoveRange(0, count);

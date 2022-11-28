@@ -18,8 +18,11 @@ public static class NetworkTransactionUtility
                 return;
             }
 
-            //
-            ContainerTransferUtility.TryEqualizeAll(sender.Container, receiver.Container);
+            if (Validators.StoreEvenly_EQ_Check(sender, receiver))
+            {
+                //
+                ContainerTransferUtility.TryEqualizeAll(sender.Container, receiver.Container);
+            }
         }
         
         /// <summary>
@@ -76,8 +79,8 @@ public static class NetworkTransactionUtility
         /// </summary>
         internal static bool StoreEvenly_EQ_Check(INetworkSubPart selfPart, INetworkSubPart otherPart)
         {
-            TLog.Debug($"EQ_CHECK[{selfPart} -> {otherPart}] {Mathf.Abs(selfPart.Container.TotalStored - otherPart.Container.TotalStored)} >= 2");
-            return Mathf.Abs(selfPart.Container.TotalStored - otherPart.Container.TotalStored) >= 2;
+            //Only send - we cannot request without special cases (checking path for directionality)
+            return selfPart.Container.TotalStored - otherPart.Container.TotalStored >= 2;
         }
 
         /// <summary>
@@ -150,7 +153,8 @@ public static class NetworkTransactionUtility
         if (!request.IsValid) return;
         
         //Search for potential transaction partners
-        var transactionPartnersResult = request.requester.Network.Graph.ProcessRequest(new NetworkGraphPathRequest(request));
+         var transactionPartnersResult = request.requester.Network.Graph.ProcessRequest(new NetworkGraphPathRequest(request));
+        
         if (!transactionPartnersResult.IsValid)
         {
             return;

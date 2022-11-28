@@ -88,6 +88,7 @@ namespace TeleCore
 
         public void DrawOnGUI()
         {
+            Graph.Debug_DrawOverlays();
             if(DrawInternalGraph)
                 Graph.Debug_DrawGraphOnUI();
         }

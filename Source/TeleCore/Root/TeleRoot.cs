@@ -33,7 +33,7 @@ namespace TeleCore
             {
                 TLog.Error("Error in TiberiumRoot.Update(): " + arg);
             }
-        }
+        } 
 
         private void OnApplicationQuit()
         {

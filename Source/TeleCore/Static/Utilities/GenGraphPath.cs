@@ -150,17 +150,13 @@ namespace TeleCore.Static.Utilities
             return null;
         }
 
-
         public static List<INetworkSubPart> GetPaths()
         {
             return null;
         }
 
-
         public static List<List<INetworkSubPart>> Dijkstra(NetworkGraph graph, INetworkSubPart source, Predicate<INetworkSubPart> validator, int maxDepth = int.MaxValue)
         {
-            TLog.Message($"Doing Dijkstra for {source}");
-            
             //
             _WorkingList.Clear();
             _Distances.Clear();
@@ -191,11 +187,7 @@ namespace TeleCore.Static.Utilities
                 }
                 _Distances.Add(node, int.MaxValue);
             }
-            
-            TLog.Debug($"WorkingList: {_WorkingList.ToStringSafeEnumerable()}");
-            TLog.Debug($"PreviousOf: {_PreviousOf.ToStringSafeEnumerable()}");
-            TLog.Debug($"Distances: {_Distances.ToStringSafeEnumerable()}");
-            
+
             while (_WorkingList.Count > 0)
             {
                 //
@@ -205,7 +197,7 @@ namespace TeleCore.Static.Utilities
                     foreach (var toPart in validParts)
                     {
                         part = toPart;
-                        if (_PreviousOf[part] != null || part == source)
+                        if (_PreviousOf[part] != null || (_PreviousOf[part] == null && part == source))
                         {
                             List<INetworkSubPart> pathResult = new List<INetworkSubPart>();
                             var depthCount = 0;
@@ -215,21 +207,20 @@ namespace TeleCore.Static.Utilities
                                     depthCount++;
                                 
                                 pathResult.Insert(0, part);
-                                part = _PreviousOf[part];
+
+                                if (part == source)
+                                {
+                                    allPaths.Add(pathResult);
+                                    break;
+                                }
                                 
+                                part = _PreviousOf[part];
                                 if (depthCount > maxDepth)
                                 {
                                     goto _ExitLoop;
                                 }
                             }
-                            
-                            //
-                            allPaths.Add(pathResult);
-                            
-                            //
-                            //_WorkingList.Remove(toPart);
                         }
-                        
                         _ExitLoop: ;
                     }
                     if(allPaths.Count == validParts.Count)

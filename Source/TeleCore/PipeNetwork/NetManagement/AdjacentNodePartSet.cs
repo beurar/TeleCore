@@ -9,6 +9,7 @@ namespace TeleCore
     /// <summary>
     /// This class manages all adjacent <see cref="NetworkSubPart"/> nodes of a specific NetworkComponent within a <see cref="PipeNetwork"/> graph. Especially for directional edges.
     /// </summary>
+    /*
     public class AdjacentNodePartSet
     {
         private INetworkSubPart parentNode;
@@ -47,21 +48,14 @@ namespace TeleCore
         {
             StringBuilder sb = new StringBuilder();
 
-            sb.AppendLine("Outgoing: ");
+            sb.AppendLine("All Edges: ");
             foreach (var edge in allEdges)
             {
                 sb.AppendLine(edge.ToStringSimple(parentNode));
             }
 
-            /*
-            sb.AppendLine("Incoming: ");
-            foreach (var edge in incomingEdges)
-            {
-                sb.AppendLine(edge.Value.ToString(parentNode));
-            }
-            */
-
             return sb.ToString();
         }
     }
+    */
 }

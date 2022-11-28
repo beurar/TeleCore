@@ -47,17 +47,19 @@ namespace TeleCore
 
             //Generate Network and Graph
             _ClosedGlobalSet.Clear();
+            
+            //
+            CreateGraph(root, newGraph);
 
+            _ClosedGlobalSet.Clear();
+            return;
             //Search For Initial Node
             if (root.IsNetworkEdge)
             {
-                TLog.Message($"Root is edge, searching for new root node...");
                 root = FindNextNodeAlongEdge(root);
-                TLog.Message($"New Root Node: {root}");
-
                 if (root == null)
                 {
-                    TLog.Warning("New root is null.");
+                    TLog.Warning($"Could not find a suitable Network Root for {forNetwork.Def}");
                     return;
                 }
             }
@@ -72,48 +74,238 @@ namespace TeleCore
             NetGraphResolver.ResolveGraph(newGraph, root);
             _ClosedGlobalSet.Clear();
         }
-
-        //Generate Network
-        //Look at ANY outer cell
-        //take cell, get I/O mode, begin edge search
-        //when finding target, set edge with found cell and get mode from 
         
-        public static void FillGraph(INetworkSubPart fromRoot, NetworkGraph graph)
+        public static void CreateGraph(INetworkSubPart fromRoot, NetworkGraph graph)
         {
-            var cells = fromRoot.CellIO.OuterConnnectionCells;
-            for (var i = 0; i < cells.Length; i++)
+            //Get all connected parts
+            var allNodes = ContiguousNetworkParts(fromRoot);
+            foreach (var subRootPart in allNodes)
             {
-                var cell = cells[i];
-                var mode = fromRoot.CellIO.OuterModeFor(cell);
-                var newSearchRoot = GetFittingPartAt(fromRoot, cell, graph.ParentNetwork.ParentManager.Map);
-                if (newSearchRoot == null) continue;
+                //Register part in network
+                AddNetworkDataCallback(subRootPart, graph.ParentNetwork);
                 
+                //Set edges for part
+                var allEdges = GetAllAdjacencyEdges(subRootPart, graph);
+                foreach (var netEdge in allEdges)
+                {
+                    if (netEdge.IsValid)
+                    {
+                        if (TrySetEdge(netEdge, graph))
+                        {
+
+                        }
+                    }
+                }
             }
         }
-
-        private static void TrySplitSearchFrom(INetworkSubPart fromRoot, NetworkGraph forGraph)
+        
+        private static List<INetworkSubPart> ContiguousNetworkParts(INetworkSubPart root)
         {
-            var cells = fromRoot.CellIO.OuterConnnectionCells;
-            for (var i = 0; i < cells.Length; i++)
+            var currentSet = StaticListHolder<INetworkSubPart>.RequestSet("CurrentSubSet");
+            var openSet = StaticListHolder<INetworkSubPart>.RequestSet("OpenSubSet");
+            var closedSet = StaticListHolder<INetworkSubPart>.RequestSet("ClosedSubSet");
+
+            var nodeList = new List<INetworkSubPart>();
+            
+            var map = root.Parent.Thing.Map;
+            
+            closedSet.Clear();
+            openSet.Clear();
+            currentSet.Clear();
+            openSet.Add(root);
+            do
             {
-                var cell = cells[i];
-                //TODO: Forbidden state, one I/O pos can be origin for multiple edges
-                if(forGraph.HasKnownEdgeFor(fromRoot, cell, out NetEdge edge)) continue;
-                
-                
-                var mode = fromRoot.CellIO.OuterModeFor(cell);
-                var newSearchRoot = GetFittingPartAt(fromRoot, cell, forGraph.ParentNetwork.ParentManager.Map);
-                if (newSearchRoot == null) continue;
-                
+                foreach (var item in openSet)
+                {
+                    if (item.IsNetworkNode)
+                    {
+                        nodeList.Add(item);
+                    }
+                    closedSet.Add(item);
+                }
+                (currentSet, openSet) = (openSet, currentSet);
+                openSet.Clear();
+                foreach (INetworkSubPart part in currentSet)
+                {
+                    foreach (var output in part.CellIO.OuterConnnectionCells)
+                    {
+                        if(!output.InBounds(map)) continue;
+                        
+                        List<Thing> thingList = output.GetThingList(map);
+                        foreach (var thing in thingList)
+                        {
+                            if (!Fits(thing, root.NetworkDef, out var newPart)) continue;
+                            if (closedSet.Contains(newPart)) continue;
+                            if (newPart.ConnectsTo(part))
+                            {
+                                openSet.Add(newPart);
+                                break;
+                            }
+                        }
+                    }
+                }
             }
+            while (openSet.Count > 0);
+            
+            closedSet.Clear();
+            openSet.Clear();
+            currentSet.Clear();
+
+            return nodeList;
         }
 
+        private static List<NetEdge> GetAllAdjacencyEdges(INetworkSubPart rootNode, NetworkGraph graph)
+        {
+            var closedSetGlobalLocal = StaticListHolder<INetworkSubPart>.RequestSet("ClosedSubSetGlobalLocal");
+            var map = rootNode.Parent.Thing.Map;
+            var resultList = new List<NetEdge>();
+            
+            //
+            closedSetGlobalLocal.Add(rootNode);
+            foreach (var directPart in rootNode.DirectPartSet.FullSet)
+            {
+                if (directPart.IsNetworkNode)
+                {
+                    
+                }
+                else if (directPart.IsNetworkEdge)
+                {
+                    var directPos = directPart.Parent.Thing.Position;
+                    InternalEdgeSearch(directPart, directPos, rootNode.CellIO.OuterModeFor(directPos), rootNode);
+                }
+            }
+
+            void InternalEdgeSearch(INetworkSubPart subPart, IntVec3 startCell, NetworkIOMode startMode, INetworkSubPart originPart = null, int? previousLength = null)
+            {
+                var currentSet = StaticListHolder<INetworkSubPart>.RequestSet($"CurrentSubSet_{subPart}");
+                var openSet = StaticListHolder<INetworkSubPart>.RequestSet($"OpenSubSet_{subPart}");
+                var closedSet = StaticListHolder<INetworkSubPart>.RequestSet($"ClosedSubSet_{subPart}");
+                
+                var mainOriginPart = originPart ?? subPart;
+                var curLength = previousLength ?? 1;
+                
+                openSet.Add(subPart);
+                do
+                {
+                    foreach (var item in openSet)
+                    {
+                        closedSet.Add(item);
+                        AddNetworkDataCallback(item, graph.ParentNetwork);
+                        closedSetGlobalLocal.Add(item);
+                    }
+                    (currentSet, openSet) = (openSet, currentSet);
+                    openSet.Clear();
+                    foreach (INetworkSubPart part in currentSet)
+                    {
+                        foreach (var output in part.CellIO.OuterConnnectionCells)
+                        {
+                            if(!output.InBounds(map)) continue;
+                            List<Thing> thingList = output.GetThingList(map);
+                            foreach (var thing in thingList)
+                            {
+                                if (!Fits(thing, rootNode.NetworkDef, out var newPart)) continue;
+                                if (closedSet.Concat(closedSetGlobalLocal).Contains(newPart)) continue;
+                                if (newPart.ConnectsTo(part, out var cell, out var IOMode))
+                                {
+                                     //Make Edge When Node Found
+                                    if (newPart.IsNetworkNode)
+                                    {
+                                        resultList.Add(new NetEdge(mainOriginPart, newPart, startCell, cell, startMode,IOMode, curLength));
+                                        break;
+                                    }
+
+                                    //Split At Junction (length tracking)
+                                    if (newPart.IsJunction)
+                                    {
+                                        InternalEdgeSearch(newPart, startCell, startMode, mainOriginPart, curLength);
+                                        break;
+                                    }
+                                    
+                                    //If Edge, continue search
+                                    curLength++;
+                                    openSet.Add(newPart);
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+                while (openSet.Count > 0);
+                
+                //
+                currentSet.Clear();
+                openSet.Clear();
+                closedSet.Clear();
+            }
+
+            //    
+            closedSetGlobalLocal.Clear();
+            return resultList;
+        }
+        
+        private static void AddNetworkDataCallback(INetworkSubPart newPart, PipeNetwork network)
+        {
+            _ClosedGlobalSet.Add(newPart);
+            newPart.Network = network;
+            network.Notify_AddPart(newPart);
+        }
+
+        //Root Searcher
+        private static INetworkSubPart FindNextNodeAlongEdge(INetworkSubPart rootEdge)
+        {
+            //
+            var currentSubSet = StaticListHolder<INetworkSubPart>.RequestList("CurrentSubSet");
+            var openSubSet = StaticListHolder<INetworkSubPart>.RequestList("OpenSubSet");
+            var closedSubSot = StaticListHolder<INetworkSubPart>.RequestList("ClosedSubSet");
+            
+            //
+            openSubSet.Add(rootEdge);
+            while (openSubSet.Count > 0)
+            {
+                //Swap Current with Open
+                (currentSubSet, openSubSet) = (openSubSet, currentSubSet);
+                openSubSet.Clear();
+                foreach (var part in currentSubSet)
+                {
+                    foreach (var output in part.CellIO.OuterConnnectionCells)
+                    {
+                        List<Thing> thingList = output.GetThingList(rootEdge.Parent.Thing.Map);
+                        foreach (var thing in thingList)
+                        {
+                            if (!Fits(thing, part.NetworkDef, out var newPart)) continue;
+                            if (closedSubSot.Contains(newPart)) continue;
+                            if (newPart.ConnectsTo(part))
+                            {
+                                //If Node - Quit
+                                if (newPart.IsNetworkNode)
+                                {
+                                    currentSubSet.Clear();
+                                    openSubSet.Clear();
+                                    closedSubSot.Clear();
+                                    return newPart;
+                                }
+                                //If Edge, continue search
+                                openSubSet.Add(newPart); 
+                                closedSubSot.Add(newPart);
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+            currentSubSet.Clear();
+            openSubSet.Clear();
+            closedSubSot.Clear();
+            return null;
+        }
+        
+        
         private static void InitGraphSearch(INetworkSubPart searchRoot, NetworkGraph forGraph, INetworkSubPart nodeToIgnore = null)
         {
             AddNetworkData(searchRoot, forGraph);
             SplitSearch(searchRoot, forGraph, nodeToIgnore, null, searchRoot);
         }
-
+        
         private static void AddNetworkData(INetworkSubPart newPart, NetworkGraph forGraph)
         {
             _ClosedGlobalSet.Add(newPart);
@@ -151,62 +343,13 @@ namespace TeleCore
             searchEvent.Invoke();
         }
 
-        //Special search for next best node
-        private static INetworkSubPart FindNextNodeAlongEdge(INetworkSubPart rootEdge)
-        {
-            //
-            var currentSubSet = StaticListHolder<INetworkSubPart>.RequestList("CurrentSubSet");
-            var openSubSet = StaticListHolder<INetworkSubPart>.RequestList("OpenSubSet");
-            var closedSubSot = StaticListHolder<INetworkSubPart>.RequestList("ClosedSubSet");
-            
-            //
-            openSubSet.Add(rootEdge);
-            while (openSubSet.Count > 0)
-            {
-                //Swap Current with Open
-                (currentSubSet, openSubSet) = (openSubSet, currentSubSet);
-                openSubSet.Clear();
-                foreach (INetworkSubPart part in currentSubSet)
-                {
-                    foreach (var output in part.CellIO.OuterConnnectionCells)
-                    {
-                        List<Thing> thingList = output.GetThingList(rootEdge.Parent.Thing.Map);
-                        foreach (var thing in thingList)
-                        {
-                            if (!Fits(thing, part.NetworkDef, out INetworkSubPart newPart)) continue;
-                            if (closedSubSot.Contains(newPart)) continue;
-                            if (newPart.ConnectsTo(part))
-                            {
-                                //If Node - Quit
-                                if (newPart.IsNetworkNode)
-                                {
-                                    currentSubSet.Clear();
-                                    openSubSet.Clear();
-                                    closedSubSot.Clear();
-                                    return newPart;
-                                }
-                                //If Edge, continue search
-                                openSubSet.Add(newPart); 
-                                closedSubSot.Add(newPart);
-                                break;
-                            }
-                        }
-                    }
-                }
-            }
-            currentSubSet.Clear();
-            openSubSet.Clear();
-            closedSubSot.Clear();
-            return null;
-        }
-
         private static bool TrySetEdge(NetEdge newEdge, NetworkGraph forGraph)
         {
             //Add Edge To Graph with found nodes
              if (forGraph.AddEdge(newEdge))
             {
-                newEdge.fromNode.Notify_SetConnection(newEdge, newEdge.fromCell);
-                newEdge.toNode.Notify_SetConnection(newEdge, newEdge.toCell);
+                newEdge.startNode.Notify_SetConnection(newEdge, newEdge.fromCell);
+                newEdge.endNode.Notify_SetConnection(newEdge, newEdge.toCell);
                 return true;
             }
             return false;
@@ -243,11 +386,11 @@ namespace TeleCore
                         foreach (var thing in thingList)
                         {
                             if (!Fits(thing, part.NetworkDef, out INetworkSubPart newPart)) continue;
-                            if(!newPart.CellIO.ConnectsTo(part.CellIO)) continue;
+                            if(!newPart.ConnectsTo(part)) continue;
                             if (newPart == nodeToIgnore) continue;
                             if (newPart == edgeParent) continue;
 
-                            var newEdge = new NetEdge(edgeParent, newPart, startCell, part.Parent.Thing.Position, edgeLength);
+                            var newEdge = new NetEdge();//new NetEdge(edgeParent, newPart, startCell, part.Parent.Thing.Position, edgeLength);
                             if (_ClosedGlobalSet.Contains(newPart))
                             {
                                 if (newPart.IsNetworkNode)
@@ -285,7 +428,7 @@ namespace TeleCore
                                     TLog.Message($"Found {"Node".Colorize(Color.cyan)}: '{newPart.Parent.Thing}' - Setting Edge [{edgeParent.Parent.Thing} -- {newPart.Parent.Thing}]");
 
                                     //Found Node for edge, create edge and start search for more nodes
-                                    if (newEdge.toNode != null && newEdge.toNode != edgeParent)
+                                    if (newEdge.endNode != null && newEdge.endNode != edgeParent)
                                     {
                                         if (TrySetEdge(newEdge, forGraph))
                                         {
@@ -330,7 +473,7 @@ namespace TeleCore
         }
 
         //Helper Methods
-        internal static INetworkSubPart GetFittingPartAt(INetworkSubPart forNode, IntVec3 c, Map map, INetworkSubPart excludeNode = null)
+        internal static INetworkSubPart GetFittingPartAt(INetworkSubPart forNode, IntVec3 c, Map map, INetworkSubPart excludeNode = null, bool useClosedSet = false)
         {
             List<Thing> thingList = c.GetThingList(map);
 
@@ -344,10 +487,10 @@ namespace TeleCore
                 }
 
                 //
-                if (_ClosedGlobalSet.Contains(newNodeResult)) continue;
+                if (useClosedSet && _ClosedGlobalSet.Contains(newNodeResult)) continue;
 
                 //Select new node as result
-                if (newNodeResult != excludeNode && newNodeResult.ConnectsTo(forNode))
+                if (newNodeResult != excludeNode && newNodeResult.ConnectsTo(forNode, out _, out _))
                 {
                     return newNodeResult;
                 }
@@ -358,8 +501,13 @@ namespace TeleCore
         //Check whether or not a thing is part of a network
         internal static bool Fits(Thing thing, NetworkDef forNetwork, out INetworkSubPart part)
         {
-            Comp_NetworkStructure structure = (Comp_NetworkStructure) (thing as ThingWithComps)?.AllComps.Find(t => t is Comp_NetworkStructure);
-            part = structure?[forNetwork];
+            part = null;
+            if (thing is not ThingWithComps compThing) return false;
+            
+            var structure = compThing.GetComp<Comp_NetworkStructure>();
+            if (structure == null) return false;
+            
+            part = structure[forNetwork];
             return part != null;
         }
     }

@@ -1,6 +1,9 @@
-﻿using System;
+﻿#define DEBUG
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using RimWorld;
@@ -34,6 +37,11 @@ namespace TeleCore
         public override void SpawnSetup(Map map, bool respawningAfterLoad)
         {
             base.SpawnSetup(map, respawningAfterLoad);
+        }
+        
+        public override void DrawGUIOverlay()
+        {
+            base.DrawGUIOverlay();
         }
     }
 }

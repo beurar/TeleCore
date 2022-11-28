@@ -13,7 +13,7 @@ namespace TeleCore
     /// <summary>
     /// Temporary <see cref="NetworkContainer"/> holder spawned upon deconstruction of a <see cref="Building"/> containing a <see cref="Comp_NetworkStructure"/> comp.
     /// </summary>
-    public class PortableContainer : FXThing, IContainerHolder
+    public class PortableContainer : FXThing, IContainerHolder<NetworkValueDef>
     {
         private NetworkDef networkDef;
         private NetworkContainer container;
@@ -25,11 +25,15 @@ namespace TeleCore
 
         public string ContainerTitle => "TELE.PortableContainer.Title".Translate();
         public Thing Thing => this;
-        public NetworkContainer Container => container;
+
         public NetworkDef NetworkDef => networkDef;
         public ContainerProperties ContainerProps => containerProps;
         public float EmptyPercent => Container.StoredPercent - 1f;
 
+        //
+        BaseContainer<NetworkValueDef> IContainerHolder<NetworkValueDef>.Container => Container;
+        public NetworkContainer Container => container;
+        
         //Target Request
         public LocalTargetInfo TargetToEmptyAt => currentDesignatedTarget;
         public bool HasValidTarget => currentDesignatedTarget.IsValid;
@@ -82,6 +86,9 @@ namespace TeleCore
         //
         public virtual void Notify_ContainerFull() { }
         public virtual void Notify_ContainerStateChanged() { }
+        public void Notify_AddedContainerValue(NetworkValueDef def, float value)
+        {
+        }
 
         //Job-Hook
         public void Notify_FinishEmptyingToTarget()

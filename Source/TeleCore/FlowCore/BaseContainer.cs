@@ -15,7 +15,7 @@ internal enum ContainerMode
 public class BaseContainer<T> : IExposable where T : FlowValueDef
 {
     //Local Set Data
-    private IContainerHolder _parentHolder = null!;
+    private IContainerHolder<T> _parentHolder = null!;
 
     //
     private float _capacity;
@@ -31,8 +31,10 @@ public class BaseContainer<T> : IExposable where T : FlowValueDef
     public DefValueStack<T> ValueStack { get; protected set; }
 
     //
-    public IContainerHolder Parent => _parentHolder;
-    public IContainerHolderThing ThingParent => _parentHolder as IContainerHolderThing ?? null!;
+    public IContainerHolder<T> Parent => _parentHolder;
+    public IContainerHolderThing<T> ThingParent => _parentHolder as IContainerHolderThing<T> ?? null!;
+    public IContainerHolderRoom<T> RoomParent => _parentHolder as IContainerHolderRoom<T> ?? null!;
+    
     public Thing ParentThing => ThingParent.Thing ?? null!;
     public ContainerProperties Props => Parent.ContainerProps;
     public string Title => Parent.ContainerTitle;
@@ -52,9 +54,9 @@ public class BaseContainer<T> : IExposable where T : FlowValueDef
     public bool ContainsForbiddenType => AllStoredTypes.Any(t => !AcceptsValue(t));
 
     //
-    public bool HasThingParent => _parentHolder is IContainerHolderThing;
-    public bool HasNetworkParent => _parentHolder is IContainerHolderNetworkPart;
-    public bool HasRoomParent => _parentHolder is IContainerHolderRoom;
+    public bool HasThingParent => _parentHolder is IContainerHolderThing<T>;
+    public bool HasNetworkParent => _parentHolder is IContainerHolderNetworkPart<T>;
+    public bool HasRoomParent => _parentHolder is IContainerHolderRoom<T>;
 
     public T MainValueDef => _storedValues.MaxBy(x => x.Value).Key;
     public Dictionary<T, float> StoredValuesByType => _storedValues;
@@ -78,38 +80,44 @@ public class BaseContainer<T> : IExposable where T : FlowValueDef
         return _capacity;
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public float TotalStoredOf(T def)
     {
         return _storedValues.GetValueOrDefault(def, 0f);
     }
     
-    public float TotalStoredOfMany(List<T> defs)
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public float TotalStoredOfMany(IEnumerable<T> defs)
     {
         return defs.Sum(TotalStoredOf);
     }
 
-
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public float StoredPercentOf(T def)
     {
         return TotalStoredOf(def) / Mathf.Ceil(CapacityOf(def));
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool IsFull(T def)
     {
+        if (def.sharesCapacity) return Full;
         return TotalStoredOf(def) >= _capacity;
     }
 
+    #region Constructors
+    
     public BaseContainer()
     {
     }
 
-    public BaseContainer(IContainerHolder parent)
+    public BaseContainer(IContainerHolder<T> parent)
     {
         _parentHolder = parent;
         _capacity = Props.maxStorage;
     }
 
-    public BaseContainer(IContainerHolder parent, DefValueStack<T> valueStack)
+    public BaseContainer(IContainerHolder<T> parent, DefValueStack<T> valueStack)
     {
         _parentHolder = parent;
         _capacity = Props.maxStorage;
@@ -123,7 +131,7 @@ public class BaseContainer<T> : IExposable where T : FlowValueDef
         Data_LoadFromStack(valueStack);
     }
 
-    public BaseContainer(IContainerHolder parent, List<T> acceptedTypes)
+    public BaseContainer(IContainerHolder<T> parent, List<T> acceptedTypes)
     {
         _parentHolder = parent;
         _capacity = Props.maxStorage;
@@ -141,6 +149,8 @@ public class BaseContainer<T> : IExposable where T : FlowValueDef
         }
         //TLog.Message($"Creating new container for {Parent?.Thing} with capacity {Capacity} | acceptedTypes: {this.AcceptedTypes.ToStringSafeEnumerable()}");
     }
+    
+    #endregion
     
     //
     public virtual void Notify_AddedValue(T valueType, float value)
@@ -210,7 +220,7 @@ public class BaseContainer<T> : IExposable where T : FlowValueDef
     }
 
     //
-    public BaseContainer<T> Copy(IContainerHolder newHolder = null!)
+    public BaseContainer<T> Copy(IContainerHolder<T> newHolder = null!)
     {
         BaseContainer<T> newContainer = new BaseContainer<T>();
         newContainer._parentHolder = newHolder ?? _parentHolder;
@@ -251,7 +261,7 @@ public class BaseContainer<T> : IExposable where T : FlowValueDef
         return other.TotalStoredOf(valueDef) + value <= other.CapacityOf(valueDef);
     }
     
-    public bool CanAccept(T valueDef)
+    public virtual bool CanAccept(T valueDef)
     {
         if (IsFull(valueDef)) return false;
           
@@ -269,8 +279,7 @@ public class BaseContainer<T> : IExposable where T : FlowValueDef
         */
         return true;
     }
-
-
+    
     public bool PotentialCapacityFull(T valueType, float potentialVal, out bool overfilled)
     {
         float val = potentialVal;
@@ -291,18 +300,23 @@ public class BaseContainer<T> : IExposable where T : FlowValueDef
         //var maxCap = other.CapacityOf(valueType) - other.TotalStoredOf(valueType);
         return Mathf.Clamp(desiredValue, 0, other.CapacityOf(valueDef) - other.TotalStoredOf(valueDef));
     }
-
     
     // Value Functions
     public bool TryAddValue(T valueType, float wantedValue, out float actualValue)
     {
+        if (!ShouldAddValue(valueType, wantedValue))
+        {
+            actualValue = 0;
+            return false;
+        }
+        
         //If we add more than we can contain, we have an excess weight
         var excessValue = Mathf.Clamp((TotalStored + wantedValue) - Capacity, 0, float.MaxValue);
         //The actual added weight is the wanted weight minus the excess
         actualValue = wantedValue - excessValue;
 
         //If the container is full, or doesnt accept the type, we dont add anything
-        if (Full)
+        if (IsFull(valueType))
         {
             Notify_Full();
             return false;
@@ -319,7 +333,7 @@ public class BaseContainer<T> : IExposable where T : FlowValueDef
 
         Notify_AddedValue(valueType, actualValue);
         //If this adds the last drop, notify full
-        if (Full)
+        if (IsFull(valueType))
             Notify_Full();
 
         return true;
@@ -327,6 +341,12 @@ public class BaseContainer<T> : IExposable where T : FlowValueDef
 
     public bool TryRemoveValue(T valueType, float wantedValue, out float actualValue)
     {
+        if (!ShouldRemoveValue(valueType, wantedValue))
+        {
+            actualValue = 0;
+            return false;
+        }
+        
         //Attempt to remove a certain weight from the container
         actualValue = wantedValue;
         if (_storedValues.TryGetValue(valueType, out float value) && value > 0)
@@ -350,8 +370,27 @@ public class BaseContainer<T> : IExposable where T : FlowValueDef
         Notify_RemovedValue(valueType, actualValue);
         return actualValue > 0;
     }
+    
+    //
+    protected virtual bool ShouldAddValue(T valueType, float wantedValue)
+    {
+        return true;
+    }
+    
+    protected virtual bool ShouldRemoveValue(T valueType, float wantedValue)
+    {
+        return true;
+    }
 
     //
+    public void TransferAllTo(BaseContainer<T> otherContainer)
+    {
+        foreach (var type in AllStoredTypes)
+        {
+            TryTransferTo(otherContainer, type, TotalStoredOf(type), out _);
+        }
+    }
+    
     public void TryTransferTo(BaseContainer<T> otherContainer, float value)
     {
         for (int i = AllStoredTypes.Count - 1; i >= 0; i--)

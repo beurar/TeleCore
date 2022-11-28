@@ -2,7 +2,7 @@
 
 namespace TeleCore;
 
-public interface IContainerHolderRoom : IContainerHolder
+public interface IContainerHolderRoom<T> : IContainerHolder<T> where T : FlowValueDef
 {
     public RoomComponent Room { get; }
 }

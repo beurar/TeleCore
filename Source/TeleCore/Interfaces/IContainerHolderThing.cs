@@ -2,7 +2,7 @@
 
 namespace TeleCore;
 
-public interface IContainerHolderThing : IContainerHolder
+public interface IContainerHolderThing<T> : IContainerHolder<T> where T : FlowValueDef
 {
     Thing Thing { get; }
 }

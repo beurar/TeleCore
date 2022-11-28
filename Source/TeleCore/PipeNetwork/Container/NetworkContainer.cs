@@ -28,22 +28,22 @@ namespace TeleCore
         }
         
         //
-        public IContainerHolderNetworkPart ParentNetworkPart => Parent as IContainerHolderNetworkPart ?? null!;
+        public IContainerHolderNetworkPart<NetworkValueDef> ParentNetworkPart => Parent as IContainerHolderNetworkPart<NetworkValueDef> ?? null!;
 
         
         public NetworkContainer()
         {
         }
 
-        public NetworkContainer(IContainerHolder parent) : base(parent)
+        public NetworkContainer(IContainerHolder<NetworkValueDef> parent) : base(parent)
         {
         }
 
-        public NetworkContainer(IContainerHolder parent, DefValueStack<NetworkValueDef> valueStack) : base(parent, valueStack)
+        public NetworkContainer(IContainerHolder<NetworkValueDef> parent, DefValueStack<NetworkValueDef> valueStack) : base(parent, valueStack)
         {
         }
 
-        public NetworkContainer(IContainerHolder parent, List<NetworkValueDef> acceptedTypes) : base(parent, acceptedTypes)
+        public NetworkContainer(IContainerHolder<NetworkValueDef> parent, List<NetworkValueDef> acceptedTypes) : base(parent, acceptedTypes)
         {
         }
 

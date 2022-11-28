@@ -20,7 +20,7 @@ namespace TeleCore
         private readonly List<INetworkSubPart> _allNodes;
         private readonly Dictionary<INetworkSubPart, LinkedList<INetworkSubPart>> _adjacencyLists;
         private readonly Dictionary<(INetworkSubPart, INetworkSubPart), NetEdge> _edges;
-        private readonly HashSet<(NetEdge, NetEdge)> _edgePairs;
+        //private readonly HashSet<(NetEdge, NetEdge)> _edgePairs;
 
         //Props
         public int NodeCount => _adjacencyLists.Count;
@@ -38,7 +38,7 @@ namespace TeleCore
             _allNodes = new List<INetworkSubPart>();
             _adjacencyLists = new Dictionary<INetworkSubPart, LinkedList<INetworkSubPart>>();
             _edges = new Dictionary<(INetworkSubPart, INetworkSubPart), NetEdge>();
-            _edgePairs = new HashSet<(NetEdge, NetEdge)>();
+            //_edgePairs = new HashSet<(NetEdge, NetEdge)>();
 
             _requestManager = new NetworkGraphRequestManager(this);
         }
@@ -62,40 +62,44 @@ namespace TeleCore
 
         public bool AddEdge(NetEdge newEdge)
         {
-            var newKey = (newEdge.fromNode, newEdge.toNode);
-            if (_edges.ContainsKey(newKey))
+            var newKey = (fromNode: newEdge.startNode, toNode: newEdge.endNode);
+            var reverseKey = (newEdge.endNode, newEdge.startNode);
+            if (_edges.ContainsKey(newKey) || _edges.ContainsKey(reverseKey))
             {
-                TLog.Warning($"Key ({newEdge.fromNode.Parent.Thing}, {newEdge.toNode.Parent.Thing}) already exists in graph!");
+                TLog.Warning($"Key ({newEdge.startNode.Parent.Thing}, {newEdge.endNode.Parent.Thing}) already exists in graph!");
                 return false;
             }
-            
+
             _edges.Add(newKey, newEdge);
+            
+            /*
             if (_edges.TryGetValue((newEdge.toNode, newEdge.fromNode), out var value))
             {
                 TLog.Message("Adding edge pair");
                 _edgePairs.Add((newEdge, value));
             }
+            */
             
-            if (!_adjacencyLists.TryGetValue(newEdge.fromNode, out var listSource))
+            if (!_adjacencyLists.TryGetValue(newEdge.startNode, out var listSource))
             {
-                AddNode(newEdge.fromNode);
-                listSource = _adjacencyLists[newEdge.fromNode];
+                AddNode(newEdge.startNode);
+                listSource = _adjacencyLists[newEdge.startNode];
             }
-            if (!_adjacencyLists.TryGetValue(newEdge.toNode, out var listSource2))
+            if (!_adjacencyLists.TryGetValue(newEdge.endNode, out var listSource2))
             {
-                AddNode(newEdge.toNode);
-                listSource2 = _adjacencyLists[newEdge.toNode];
+                AddNode(newEdge.endNode);
+                listSource2 = _adjacencyLists[newEdge.endNode];
             }
             
-            if(!listSource.Contains(newEdge.toNode))
-                listSource.AddFirst(newEdge.toNode);
+            if(!listSource.Contains(newEdge.endNode))
+                listSource.AddFirst(newEdge.endNode);
             else
-                TLog.Warning($"Already added {newEdge.toNode}");
+                TLog.Warning($"Already added {newEdge.endNode}");
             
-            if(!listSource2.Contains(newEdge.fromNode))
-                listSource2?.AddFirst(newEdge.fromNode);
+            if(!listSource2.Contains(newEdge.startNode))
+                listSource2?.AddFirst(newEdge.startNode);
             else
-                TLog.Warning($"Already added {newEdge.fromNode}");
+                TLog.Warning($"Already added {newEdge.startNode}");
             return true;
         }
 
@@ -109,9 +113,26 @@ namespace TeleCore
         
         public bool TryGetEdge(INetworkSubPart source, INetworkSubPart dest, out NetEdge value)
         {
-            return _edges.TryGetValue((source, dest), out value) || _edges.TryGetValue((dest, source), out value);
+            value = GetEdgeFor(source, dest);
+            return value.IsValid;
+            return _edges.TryGetValue((source, dest), out value);// || _edges.TryGetValue((dest, source), out value);
         }
 
+        private NetEdge GetEdgeFor(INetworkSubPart source, INetworkSubPart dest)
+        {
+            if (_edges.TryGetValue((source, dest), out var value))
+            {
+                return value;
+            }
+
+            if (_edges.TryGetValue((dest, source), out value))
+            {
+                return value.Reverse;
+            }
+
+            return NetEdge.Invalid;
+        }
+        
         public IEnumerable<NetEdge> EdgesFor(INetworkSubPart startNode)
         {
             foreach (var adjacentNode in _adjacencyLists.TryGetValue(startNode))
@@ -128,13 +149,18 @@ namespace TeleCore
         internal void Debug_DrawGraphOnUI()
         {
             var size = Find.CameraDriver.CellSizePixels / 4;
+            /*
             foreach (var pair in _edgePairs)
             {
                 var edge1 = pair.Item1;
                 var edge2 = pair.Item2;
-                TWidgets.DrawHalfArrow(edge1.fromNode.Parent.Thing.TrueCenter().ToScreenPos(), edge1.toNode.Parent.Thing.TrueCenter().ToScreenPos(), Color.red, size);
-                TWidgets.DrawHalfArrow(edge2.fromNode.Parent.Thing.TrueCenter().ToScreenPos(), edge2.toNode.Parent.Thing.TrueCenter().ToScreenPos(), Color.blue, size);
+                
+                if(edge1.IsValid)
+                    TWidgets.DrawHalfArrow(edge1.fromNode.Parent.Thing.TrueCenter().ToScreenPos(), edge1.toNode.Parent.Thing.TrueCenter().ToScreenPos(), Color.red, size);
+                if(edge2.IsValid)
+                    TWidgets.DrawHalfArrow(edge2.fromNode.Parent.Thing.TrueCenter().ToScreenPos(), edge2.toNode.Parent.Thing.TrueCenter().ToScreenPos(), Color.blue, size);
             }
+            */
             
             foreach (var netEdge in _edges)
             {
@@ -143,7 +169,17 @@ namespace TeleCore
                 var thingB = subParts.Item2.Parent.Thing;
                 
                 //TWidgets.DrawHalfArrow(ScreenPositionOf(thingA.TrueCenter()), ScreenPositionOf(thingB.TrueCenter()), Color.red, 8);
-                
+
+                //TODO: edge access only works for one version (node1, node2) - breaks two-way
+                //TODO:some edges probably get setup broken (because only one edge is set)
+                if (netEdge.Value.IsValid)
+                {
+                    TWidgets.DrawHalfArrow(netEdge.Value.startNode.Parent.Thing.TrueCenter().ToScreenPos(), netEdge.Value.endNode.Parent.Thing.TrueCenter().ToScreenPos(), Color.red, size);
+                    if (netEdge.Value.IsBiDirectional)
+                    {
+                        TWidgets.DrawHalfArrow(netEdge.Value.endNode.Parent.Thing.TrueCenter().ToScreenPos(), netEdge.Value.startNode.Parent.Thing.TrueCenter().ToScreenPos(), Color.blue, size);  
+                    }
+                }
                 TWidgets.DrawBoxOnThing(thingA);
                 TWidgets.DrawBoxOnThing(thingB);
             }
@@ -168,6 +204,15 @@ namespace TeleCore
                 r.margin = 0f;
                 r.rotation = Rot4.East;
                 GenDraw.DrawFillableBar(r);
+            }
+        }
+
+        public void Debug_DrawOverlays()
+        {
+            foreach (var networkSubPart in AllNodes)
+            {
+                var pos = networkSubPart.Parent.Thing.DrawPos;
+                GenMapUI.DrawText(new Vector2(pos.x, pos.z), $"[{networkSubPart.Parent.Thing}]", Color.green);
             }
         }
     }

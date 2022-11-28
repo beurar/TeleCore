@@ -8,6 +8,9 @@ public class FlowValueDef : Def
     public string labelShort;
     public string valueUnit;
     public Color valueColor;
+
+    public bool sharesCapacity;
+    
     //The rate at which value flows between containers
     public float viscosity = 1;
     public float capacityFactor = 1;

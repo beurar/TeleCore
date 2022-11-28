@@ -21,10 +21,10 @@ namespace TeleCore
 
         public PipeNetworkManager GetOrCreateNewNetworkSystemFor(NetworkDef networkDef)
         {
-            TLog.Message($"Creating NetworkSystem: {networkDef}");
             if (NetworksByType.TryGetValue(networkDef, out var network)) return network;
 
             //Make New
+            TLog.Debug($"Creating NetworkSystem: {networkDef}");
             var networkMaster = new PipeNetworkManager(Map, networkDef);
             NetworksByType.Add(networkDef, networkMaster);
             PipeNetworks.Add(networkMaster);

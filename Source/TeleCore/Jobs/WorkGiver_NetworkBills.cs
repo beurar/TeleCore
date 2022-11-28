@@ -26,18 +26,17 @@ namespace TeleCore
             }
         }
 
-
-        public IEnumerable<Thing> Targets(Map map)
-        {
-            return map.TeleCore().ThingGroupCacheInfo.ThingsOfGroup(ThingGroupDefOf.NetworkBillCrafters);
-        }
-
         public override IEnumerable<Thing> PotentialWorkThingsGlobal(Pawn pawn)
         {
             if (def.fixedBillGiverDefs != null) return base.PotentialWorkThingsGlobal(pawn);
 
             //
             return Targets(pawn.Map);
+        }
+
+        private IEnumerable<Thing> Targets(Map map)
+        {
+            return map.TeleCore().ThingGroupCacheInfo.ThingsOfGroup(ThingGroupDefOf.NetworkBillCrafters);
         }
 
         public override bool ShouldSkip(Pawn pawn, bool forced = false)

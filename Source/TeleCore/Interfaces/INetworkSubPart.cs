@@ -1,4 +1,6 @@
 ﻿
+using Verse;
+
 namespace TeleCore
 {
     public interface INetworkSubPart
@@ -11,7 +13,6 @@ namespace TeleCore
         public NetworkCellIO CellIO { get; }
         public PipeNetwork Network { get; set; }
         public NetworkPartSet DirectPartSet { get; }
-        public AdjacentNodePartSet AdjacencySet { get; }
         public NetworkContainer Container { get; }
 
         //States
@@ -37,6 +38,7 @@ namespace TeleCore
         void Notify_NetworkDestroyed();
 
         bool ConnectsTo(INetworkSubPart otherPart);
+        bool ConnectsTo(INetworkSubPart otherPart, out IntVec3 intersectingCell, out NetworkIOMode IOMode);
         bool CanTransmit(NetEdge netEdge);
         bool NeedsValue(NetworkValueDef value, NetworkRole forRole);
     }

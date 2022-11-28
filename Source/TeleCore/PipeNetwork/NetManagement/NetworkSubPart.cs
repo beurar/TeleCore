@@ -12,7 +12,7 @@ using Verse;
 
 namespace TeleCore
 {
-    public class NetworkSubPart : INetworkSubPart, IContainerHolderNetworkPart, IExposable
+    public class NetworkSubPart : INetworkSubPart, IContainerHolderNetworkPart<NetworkValueDef>, IExposable
     {
         //
         private Gizmo_NetworkInfo networkInfoGizmo;
@@ -21,7 +21,6 @@ namespace TeleCore
         protected NetworkCellIO cellIO;
         protected NetworkContainer container;
         protected NetworkPartSet directPartSet;
-        protected AdjacentNodePartSet adjacencySet;
 
         private NetworkDef internalDef;
         
@@ -52,7 +51,7 @@ namespace TeleCore
 
         //States
         public bool IsMainController => Network?.NetworkController == Parent;
-        public bool IsNetworkNode => NetworkRole != NetworkRole.Transmitter || IsJunction; //|| IsPipeEndPoint;
+        public bool IsNetworkNode => NetworkRole != NetworkRole.Transmitter;// || IsJunction; //|| IsPipeEndPoint;
         public bool IsNetworkEdge => !IsNetworkNode;
         public bool IsJunction => NetworkRole == NetworkRole.Transmitter && DirectPartSet[NetworkRole.Transmitter]?.Count > 2;
         public bool IsPipeEndPoint => NetworkRole == NetworkRole.Transmitter && DirectPartSet[NetworkRole.Transmitter]?.Count == 1;
@@ -69,8 +68,7 @@ namespace TeleCore
 
         //
         public NetworkPartSet DirectPartSet => directPartSet;
-        public AdjacentNodePartSet AdjacencySet => adjacencySet;
-        
+
         public NetworkCellIO CellIO
         {
             get
@@ -89,6 +87,7 @@ namespace TeleCore
         public ContainerProperties ContainerProps => Props.containerProps;
         public NetworkContainerSet ContainerSet => Network.ContainerSet;
 
+        BaseContainer<NetworkValueDef> IContainerHolder<NetworkValueDef>.Container => Container;
         public NetworkContainer Container
         {
             get => container;
@@ -131,15 +130,18 @@ namespace TeleCore
             {
                 Props = ((Comp_NetworkStructure) Parent).Props.networks.Find(p => p.networkDef == internalDef);
             }
-            Scribe_Values.Look(ref requestedCapacityPercent, "requesterPercent");
-            Scribe_Deep.Look(ref container, "container", this, Props.AllowedValues);
+
+            if (Props.containerProps != null)
+            {
+                Scribe_Values.Look(ref requestedCapacityPercent, "requesterPercent");
+                Scribe_Deep.Look(ref container, "container", this, Props.AllowedValues);
+            }
         }
 
         public void SubPartSetup(bool respawningAfterLoad)
         {
             //Generate components
             directPartSet = new NetworkPartSet(NetworkDef, this);
-            adjacencySet = new AdjacentNodePartSet(this);
 
             RolePropertySetup();
             GetDirectlyAjdacentNetworkParts();
@@ -158,7 +160,7 @@ namespace TeleCore
                 {
                     if (PipeNetworkMaker.Fits(thingList[i], NetworkDef, out var subPart))
                     {
-                        if (ConnectsTo(subPart))
+                        if (ConnectsTo(subPart, out _, out _))
                         {
                             directPartSet.AddNewComponent(subPart);
                             subPart.DirectPartSet.AddNewComponent(this);
@@ -170,7 +172,6 @@ namespace TeleCore
 
         public void PostDestroy(DestroyMode mode, Map previousMap)
         {
-            AdjacencySet.Notify_ParentDestroyed();
             DirectPartSet.Notify_ParentDestroyed();
             Container?.Notify_ParentDestroyed(mode, previousMap);
             //Network.Notify_RemovePart(this);
@@ -249,10 +250,9 @@ namespace TeleCore
             {
                 ClearForbiddenTypes();
             }
-
+            
             if (ContainerProps.storeEvenly && Network.HasGraph)
             {
-                TLog.Debug("Storing Evenly");
                 NetworkTransactionUtility.DoTransaction(new NetworkTransactionUtility.TransactionRequest(this,
                     NetworkRole.Storage, NetworkRole.Storage,
                     part => NetworkTransactionUtility.Actions.TransferToOther_Equalize(this, part),
@@ -457,6 +457,10 @@ namespace TeleCore
         {
         }
 
+        public void Notify_AddedContainerValue(NetworkValueDef def, float value)
+        {
+        }
+
         public void Notify_ReceivedValue()
         {
             lastReceivedTick = Find.TickManager.TicksGame;
@@ -474,12 +478,10 @@ namespace TeleCore
 
         public void Notify_SetConnection(NetEdge edge, IntVec3Rot ioCell)
         {
-            AdjacencySet.Notify_SetEdge(edge, ioCell);
         }
 
         public void Notify_NetworkDestroyed()
         {
-            AdjacencySet.Notify_Clear();
         }
 
         //
@@ -491,10 +493,17 @@ namespace TeleCore
         //
         public bool ConnectsTo(INetworkSubPart other)
         {
+            return ConnectsTo(other, out _, out _);
+        }
+        
+        public bool ConnectsTo(INetworkSubPart other, out IntVec3 intersectingCell, out NetworkIOMode IOMode)
+        {
+            intersectingCell = IntVec3.Invalid;
+            IOMode = NetworkIOMode.None;
             if (other == this) return false;
             if (!NetworkDef.CanWorkWith(other.NetworkDef)) return false;
             if (!Parent.CanConnectToOther(other.Parent)) return false;
-            return CellIO.ConnectsTo(other.CellIO);
+            return CellIO.ConnectsTo(other.CellIO, out intersectingCell, out IOMode);
         }
 
         /*
@@ -575,15 +584,15 @@ namespace TeleCore
 
                 yield return new Command_Action
                 {
-                    defaultLabel = $"View Adjacent Structures",
+                    defaultLabel = $"View DirectPartSet",
                     defaultDesc = DirectPartSet.ToString(),
                     action = delegate { }
                 };
 
                 yield return new Command_Action
                 {
-                    defaultLabel = $"View {NetworkDef.defName} Set",
-                    defaultDesc = AdjacencySet.ToString(),
+                    defaultLabel = $"View Adjacency List",
+                    defaultDesc = Network.Graph.AdjacencyLists[this].ToStringSafeEnumerable(),
                     action = delegate { }
                 };
 

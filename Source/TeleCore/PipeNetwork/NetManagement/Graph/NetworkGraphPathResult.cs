@@ -39,7 +39,7 @@ public struct NetworkGraphPath
 
     public override string ToString()
     {
-        return $"{start} -[{fullPath.Length}]-> {end}";
+        return fullPath.ToStringSafeEnumerable();
     }
 }
 

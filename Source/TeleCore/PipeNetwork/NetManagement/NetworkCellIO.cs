@@ -213,6 +213,7 @@ namespace TeleCore
                         cellsOuter.Add(edgeCell);
                         if (InnerModeFor(inner) == NetworkIOMode.TwoWay)
                         {
+                            //TODO: Cleanup?
                             AddIOCell(OuterCellsByTag, NetworkIOMode.TwoWay, new IntVec3Rot(edgeCell, edgeCell.Rot4Relative(inner)));
                             AddIOCell(OuterCellsByTag, NetworkIOMode.Input, new IntVec3Rot(edgeCell, edgeCell.Rot4Relative(inner)));
                             AddIOCell(OuterCellsByTag, NetworkIOMode.Output, new IntVec3Rot(edgeCell, edgeCell.Rot4Relative(inner)));
@@ -342,13 +343,28 @@ namespace TeleCore
             }
         }
 
-        public bool ConnectsTo(NetworkCellIO otherGeneralIO)
+        public bool ConnectsTo(NetworkCellIO otherGeneralIO, out IntVec3 intersectingCell, out NetworkIOMode IOMode)
         {
-            return OuterConnnectionCells.Where(otherGeneralIO.InnerConnnectionCells.Contains)
-                .Any(m => Matches(otherGeneralIO.InnerModeFor(m), OuterModeFor(m)));
+            intersectingCell = IntVec3.Invalid;
+            IOMode = NetworkIOMode.None;
+            for (var i = 0; i < OuterConnnectionCells.Length; i++)
+            {
+                var outerCell = OuterConnnectionCells[i];
+                var outerMode = OuterModeFor(outerCell);
+                if (otherGeneralIO.InnerConnnectionCells.Contains(outerCell) && Matches(otherGeneralIO.InnerModeFor(outerCell), outerMode))
+                {
+                    intersectingCell = outerCell;
+                    IOMode = outerMode;
+                    return true;
+                }
+            }
+
+            return false;
+
+            return OuterConnnectionCells.Where(otherGeneralIO.InnerConnnectionCells.Contains).Any(m => Matches(otherGeneralIO.InnerModeFor(m), OuterModeFor(m)));
         }
 
-        private bool Matches(NetworkIOMode innerMode, NetworkIOMode outerMode)
+        public static bool Matches(NetworkIOMode innerMode, NetworkIOMode outerMode)
         {
             var innerInput = (innerMode | NetworkIOMode.Input) == NetworkIOMode.Input;
             var outerInput = (outerMode | NetworkIOMode.Input) == NetworkIOMode.Input;
@@ -357,6 +373,14 @@ namespace TeleCore
             var outerOutput = (outerMode | NetworkIOMode.Output) == NetworkIOMode.Output;
             
             return (innerInput && outerOutput) || (outerInput && innerOutput);
+        }
+        
+        public static bool MatchesFromTo(NetworkIOMode from, NetworkIOMode to)
+        {
+            var fromOutput = (from | NetworkIOMode.Output) == NetworkIOMode.Output;
+            var toInput = (to | NetworkIOMode.Input) == NetworkIOMode.Input;
+
+            return (toInput && fromOutput);
         }
 
         public bool Contains(IntVec3 cell)

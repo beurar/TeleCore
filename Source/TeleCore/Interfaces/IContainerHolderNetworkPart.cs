@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace TeleCore
 {
-    public interface IContainerHolderNetworkPart : IContainerHolderThing
+    public interface IContainerHolderNetworkPart<T> : IContainerHolderThing<T> where T : FlowValueDef
     {
         INetworkSubPart NetworkPart { get; }
         NetworkContainerSet ContainerSet { get; }
