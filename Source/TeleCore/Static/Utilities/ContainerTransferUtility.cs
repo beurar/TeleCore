@@ -5,7 +5,7 @@ namespace TeleCore.Static.Utilities;
 
 public class ContainerTransferUtility
 {
-    internal const float MIN_EQ_VAL = 2;
+    public const float MIN_EQ_VAL = 2;
 
     public static bool NeedsEqualizing<T>(BaseContainer<T> containerA, BaseContainer<T> containerB, float minDiffMargin, out ValueFlowDirection flow, out float diffPct) where T : FlowValueDef
     {

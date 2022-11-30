@@ -195,6 +195,7 @@ namespace TeleCore
                 Listing_Standard listing = new Listing_Standard();
                 listing.Begin(workingRect);
 
+                //TODO TranslationUtil.AnimationStrings.NewAnimation
                 listing.Label(TranslationUtil.AnimationStrings.NewAnimation);
                 listing.GapLine();
                 listing.TextFieldLabeled(TranslationUtil.AnimationStrings.DefName + ": ", ref animationMetaData.defName, anchor: TextAnchor.MiddleLeft);

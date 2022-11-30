@@ -1,11 +1,14 @@
-﻿using Verse;
+﻿using TeleCore.Attributes;
+using Verse;
 using Verse.Noise;
 
 namespace TeleCore.Static;
 
+[StaticConstructorOnStartup]
 internal static class TranslationUtil
 {
     //Animation Tool
+    [StaticConstructorOnStartup]
     internal static class AnimationStrings
     {
         public static string NewAnimation = "TELE.AnimationTool.Canvas.NewAnimation".Translate();
@@ -18,5 +21,9 @@ internal static class TranslationUtil
         public static string SettingsSets = "TELE.AnimationTool.Settings.AnimationSets".Translate();
         public static string SettingsAddPart = "TELE.AnimationTool.Settings.AddPart".Translate();
         public static string SettingsAddSide = "TELE.AnimationTool.Settings.AddSide".Translate();
+
+        static AnimationStrings()
+        {
+        }
     }
 }

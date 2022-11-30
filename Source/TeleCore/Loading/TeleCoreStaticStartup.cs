@@ -2,11 +2,13 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using HarmonyLib;
 using Multiplayer.API;
 using RimWorld;
+using TeleCore.Attributes;
 using Verse;
 
 namespace TeleCore
@@ -31,6 +33,10 @@ namespace TeleCore
 
         internal static void ApplyDefChangesPostLoad()
         {
+            //Load Translation Libraries
+            LoadStaticTranslationLibraries();
+            
+            //
             var allInjectors = DefInjectors()?.ToArray();
 
             //All Buildables
@@ -89,6 +95,27 @@ namespace TeleCore
                 return allSubclasses.Select(t => (DefInjectBase)Activator.CreateInstance(t));
             }
             return null;
+        }
+
+        private static void LoadStaticTranslationLibraries()
+        {
+            foreach (var type in GenTypes.AllTypesWithAttribute<StaticTranslationLibraryAttribute>())
+            {
+                try
+                {
+                    RuntimeHelpers.RunClassConstructor(type.TypeHandle);
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(string.Concat(new object[]
+                    {
+                        "Error in static translation library of ",
+                        type,
+                        ": ",
+                        ex
+                    }));
+                }
+            }
         }
     }
 }

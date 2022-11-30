@@ -12,6 +12,15 @@ namespace TeleCore.Loading;
 
 public static class XMLPatches
 {
+    [HarmonyPatch(typeof(LoadedLanguage), nameof(LoadedLanguage.LoadData))]
+    public static class LoadDataPatch
+    {
+        public static void Postfix(LoadedLanguage __instance)
+        {
+            TLog.Debug($"Loaded: {__instance}");
+        }
+    }
+    
     /*
     [HarmonyPatch]
     internal static class MonoMethod_MakeGenericMethod
