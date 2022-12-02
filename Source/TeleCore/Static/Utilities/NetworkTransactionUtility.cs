@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using RimWorld;
@@ -20,14 +22,10 @@ public static class NetworkTransactionUtility
 
             if (Validators.StoreEvenly_EQ_Check(sender, receiver))
             {
-                //
                 ContainerTransferUtility.TryEqualizeAll(sender.Container, receiver.Container);
             }
         }
         
-        /// <summary>
-        /// 
-        /// </summary>
         internal static void TransferToOther_AnyDesired(INetworkSubPart sender, INetworkSubPart receiver)
         {
             if (receiver == null)
@@ -107,52 +105,35 @@ public static class NetworkTransactionUtility
         }
     }
 
-    //Transaction - What is it?
-    //A transaction is the exchange of a value between two actors
-    //Any networkSubPart can send a transaction request to another part
-    //This request can be to send or receive a value
-    
-    //The request has a filter to find potential interactable partners first
-    public struct TransactionRequest
+    private static IEnumerable<INetworkSubPart> AdjacentParts(INetworkSubPart part, ValueFlowDirection flowDir)
     {
-        //Request
-        public readonly INetworkSubPart requester;
-        public readonly NetworkRole requesterRole;
-        
-        //Filter
-        public readonly int maxDepth = Int32.MaxValue;
-        public readonly NetworkRole requestedRole;
-        public readonly Predicate<INetworkSubPart> partValidator = null;
-        public readonly Predicate<INetworkSubPart> dirtyChecker = null;
-
-        //Transaction
-        public readonly Action<INetworkSubPart> transaction;
-
-        public NetworkContainer Container => requester?.Container;
-        //Cannot do a transaction without a container
-        public bool IsValid => Container != null;
-        
-        //Network Transaction
-        //1. Request Partner Node(s)
-        //2. Do Transaction-Action
-        
-        public TransactionRequest(INetworkSubPart requester, NetworkRole sendingRole, NetworkRole requestedRole, Action<INetworkSubPart> transaction, Predicate<INetworkSubPart> partValidator = null, Predicate<INetworkSubPart> dirtyChecker = null)
+        var graph = part.Network.Graph;
+        if (!graph.AdjacencyLists.TryGetValue(part, out var nbrs)) yield break;
+        foreach (var subPart in graph.AdjacencyLists[part])
         {
-            this.requester = requester;
-            this.requesterRole = sendingRole;
-            this.requestedRole = requestedRole;
-            this.partValidator = partValidator;
-            this.dirtyChecker = dirtyChecker;
+            if (graph.GetAnyEdgeBetween(part, subPart, out var edge))
+            {
+                if (edge.IsBiDirectional)
+                    yield return subPart;
 
-            this.transaction = transaction;
+                if (flowDir == ValueFlowDirection.Positive && edge.startNode == part)
+                    yield return subPart;
+                
+                if (flowDir == ValueFlowDirection.Negative && edge.endNode == part)
+                    yield return subPart;
+            }
         }
     }
-
+    
     internal static void DoTransaction(TransactionRequest request)
     {
         if (!request.IsValid) return;
         
         //Search for potential transaction partners
+        foreach (var VARIABLE in AdjacentParts(request.requester, request.FlowDir))
+        {
+            
+        }
          var transactionPartnersResult = request.requester.Network.Graph.ProcessRequest(new NetworkGraphPathRequest(request));
         
         if (!transactionPartnersResult.IsValid)
@@ -184,31 +165,5 @@ public static class NetworkTransactionUtility
         //         }
         //     }
         // }
-    }
-
-    internal static void ProcessTransferRequest(TransactionRequest request)
-    {
-        if (request.Container.Empty) return;
-
-        //var path = Network.Graph.GetRequestPath(new NetworkGraphNodeRequest(this, ofRole));
-        //SubTransfer(null, this, usedTypes, ofRole);
-
-        /*
-        foreach (var component in Network.PartSet[ofRole])
-        {
-            if (Container.Empty || component.Container.Full) continue;
-            if (evenly && component.Container.StoredPercent > Container.StoredPercent) continue;
-
-            for (int i = usedTypes.Count - 1; i >= 0; i--)
-            {
-                var type = usedTypes[i];
-                if (!component.NeedsValue(type, ofRole)) continue;
-                if (Container.TryTransferTo(component.Container, type, 1))
-                {
-                    component.Notify_ReceivedValue();
-                }
-            }
-        }
-        */
     }
 }

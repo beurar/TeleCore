@@ -110,6 +110,12 @@ namespace TeleCore
             return false;
             //fromRoot.AdjacencySet
         }
+
+        public bool GetAnyEdgeBetween(INetworkSubPart source, INetworkSubPart dest, out NetEdge value)
+        {
+            value = GetEdgeFor(source, dest, true);
+            return value.IsValid;
+        }
         
         public bool TryGetEdge(INetworkSubPart source, INetworkSubPart dest, out NetEdge value)
         {
@@ -118,7 +124,7 @@ namespace TeleCore
             return _edges.TryGetValue((source, dest), out value);// || _edges.TryGetValue((dest, source), out value);
         }
 
-        private NetEdge GetEdgeFor(INetworkSubPart source, INetworkSubPart dest)
+        private NetEdge GetEdgeFor(INetworkSubPart source, INetworkSubPart dest, bool any = false)
         {
             if (_edges.TryGetValue((source, dest), out var value))
             {
@@ -127,7 +133,7 @@ namespace TeleCore
 
             if (_edges.TryGetValue((dest, source), out value))
             {
-                return value.Reverse;
+                return any ? value : value.Reverse;
             }
 
             return NetEdge.Invalid;

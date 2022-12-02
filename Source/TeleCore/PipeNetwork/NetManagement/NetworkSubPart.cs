@@ -253,7 +253,7 @@ namespace TeleCore
             
             if (ContainerProps.storeEvenly && Network.HasGraph)
             {
-                NetworkTransactionUtility.DoTransaction(new NetworkTransactionUtility.TransactionRequest(this,
+                NetworkTransactionUtility.DoTransaction(new TransactionRequest(this,
                     NetworkRole.Storage, NetworkRole.Storage,
                     part => NetworkTransactionUtility.Actions.TransferToOther_Equalize(this, part),
                     part => NetworkTransactionUtility.Validators.StoreEvenly_EQ_Check(this, part)));
@@ -261,7 +261,7 @@ namespace TeleCore
             }
             
             //
-            NetworkTransactionUtility.DoTransaction(new NetworkTransactionUtility.TransactionRequest(this,
+            NetworkTransactionUtility.DoTransaction(new TransactionRequest(this,
                 NetworkRole.Storage, NetworkRole.Consumer,
                 part => NetworkTransactionUtility.Actions.TransferToOther_AnyDesired(this, part),
                 part => NetworkTransactionUtility.Validators.PartValidator_Sender(this, part)));
