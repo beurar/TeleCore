@@ -9,41 +9,6 @@ namespace TeleCore.Static.Utilities
 {
     internal class GenGraphPath
     {
-        public List<INetworkSubPart> ShortestPathFunction(NetworkGraph graph, INetworkSubPart start, INetworkSubPart end)
-        {
-            var previous = new Dictionary<INetworkSubPart, INetworkSubPart>();
-
-            var queue = new Queue<INetworkSubPart>();
-            queue.Enqueue(start);
-
-            while (queue.Count > 0)
-            {
-                var vertex = queue.Dequeue();
-                foreach (var neighbor in graph.AdjacencyLists[vertex])
-                {
-                    if (previous.ContainsKey(neighbor))
-                        continue;
-
-                    previous[neighbor] = vertex;
-                    queue.Enqueue(neighbor);
-                }
-            }
-
-            var path = new List<INetworkSubPart> { };
-
-            var current = end;
-            while (!current.Equals(start))
-            {
-                path.Add(current);
-                current = previous[current];
-            };
-
-            path.Add(start);
-            path.Reverse();
-
-            return path;
-        }
-
         private static List<INetworkSubPart> _WorkingList = new();
         private static Dictionary<INetworkSubPart, int> _Distances = new();
         private static Dictionary<INetworkSubPart, INetworkSubPart> _PreviousOf = new();
@@ -127,7 +92,8 @@ namespace TeleCore.Static.Utilities
                 part = _WorkingList.MinBy(v => _Distances[v]);
 
                 _WorkingList.Remove(part);
-                foreach (var neighbor in graph.AdjacencyLists[part])
+                var adjacencyList = graph.GetAdjacencyList(part);
+                foreach (var neighbor in adjacencyList)
                 {
                     if (!_WorkingList.Contains(neighbor)) continue;
                     if (graph.TryGetEdge(part, neighbor, out var edge))
@@ -231,7 +197,8 @@ namespace TeleCore.Static.Utilities
                 part = _WorkingList.MinBy(v => _Distances[v]);
 
                 _WorkingList.Remove(part);
-                foreach (var neighbor in graph.AdjacencyLists[part])
+                var adjacencyList = graph.GetAdjacencyList(part);
+                foreach (var neighbor in adjacencyList)
                 {
                     if (!_WorkingList.Contains(neighbor)) continue;
                     if (graph.TryGetEdge(part, neighbor, out var edge))

@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System.Collections.Generic;
+using UnityEngine;
 using Verse;
 
 namespace TeleCore.Static.Utilities;
@@ -6,30 +7,32 @@ namespace TeleCore.Static.Utilities;
 public class ContainerTransferUtility
 {
     public const float MIN_EQ_VAL = 2;
+    public const float MIN_FLOAT_COMPARE = 0.001953125F;
 
-    public static bool NeedsEqualizing<T>(BaseContainer<T> containerA, BaseContainer<T> containerB, float minDiffMargin, out ValueFlowDirection flow, out float diffPct) where T : FlowValueDef
+    
+    public static bool NeedsEqualizing<T,V>(BaseContainer<T> containerA, BaseContainer<V> containerB, out ValueFlowDirection flow, out float diffPct) where T : FlowValueDef where V : FlowValueDef
     {
         flow = ValueFlowDirection.None;
         diffPct = 0f;
         
-        var fromTotal = containerA.TotalStored;
-        var toTotal = containerB.TotalStored;
-
         var fromPct = containerA.StoredPercent;
         var toPct = containerB.StoredPercent;
         
-        var totalDiff = Mathf.Abs(fromTotal - toTotal);
         diffPct = fromPct - toPct;
-
         flow = diffPct switch
         {
             > 0 => ValueFlowDirection.Positive,
             < 0 => ValueFlowDirection.Negative,
             _ => ValueFlowDirection.None
         };
-        diffPct = Mathf.Abs(diffPct);
-        if (diffPct <= 0.0078125f) return false;
-        return totalDiff >= minDiffMargin;
+        
+        //diffPct = Mathf.Abs(diffPct);
+        return Mathf.Abs(diffPct) >= MIN_FLOAT_COMPARE;
+    }
+
+    public static bool NeedsEqualizing<T>(BaseContainer<T> containerA, BaseContainer<T> containerB, out ValueFlowDirection flow, out float diffPct) where T : FlowValueDef
+    {
+        return NeedsEqualizing<T, T>(containerA, containerB, out flow, out diffPct);
     }
 
     public static bool NeedsEqualizing<T>(BaseContainer<T> containerA, BaseContainer<T> containerB, T def, float minDiffMargin, out ValueFlowDirection flow, out float diffPct) where T : FlowValueDef
@@ -53,14 +56,14 @@ public class ContainerTransferUtility
             _ => ValueFlowDirection.None
         };
         diffPct = Mathf.Abs(diffPct);
-        if (diffPct <= 0.0078125f) return false;
+        if (diffPct <= MIN_FLOAT_COMPARE) return false;
         return totalDiff >= minDiffMargin;
     }
 
     //
     public static void TryEqualizeAll<T>(BaseContainer<T> from, BaseContainer<T> to) where T : FlowValueDef
     {
-        if (!NeedsEqualizing(from, to, MIN_EQ_VAL, out var flow, out var diffPct))
+        if (!NeedsEqualizing<T>(from, to, out var flow, out var diffPct))
         {
             return;
         }
@@ -68,15 +71,18 @@ public class ContainerTransferUtility
         BaseContainer<T> sender   = flow == ValueFlowDirection.Positive ? from : to;
         BaseContainer<T> receiver = flow == ValueFlowDirection.Positive ? to : from;
 
-        foreach (var valueDef in sender.AllStoredTypes)
+        var tempTypes = StaticListHolder<T>.RequestSet("EqualizingTempSet");
+        tempTypes.AddRange(sender.AllStoredTypes);
+        foreach (var valueDef in tempTypes)
         {
             var value = sender.TotalStoredOf(valueDef) * 0.5f;
-            var flowAmount = sender.GetMaxTransferRateTo(receiver, valueDef, Mathf.CeilToInt(value * diffPct * valueDef.FlowRate));
+            var flowAmount = receiver.GetMaxTransferRate(valueDef, Mathf.CeilToInt(value * diffPct * valueDef.FlowRate));
             if (sender.TryTransferTo(receiver, valueDef, flowAmount, out _))
             {
                 //...
             }
         }
+        tempTypes.Clear();
     }
     
     public static void TryEqualize<T>(BaseContainer<T> from, BaseContainer<T> to, T valueDef) where T : FlowValueDef
@@ -91,7 +97,7 @@ public class ContainerTransferUtility
 
         //Get base transfer part
         var value = sender.TotalStoredOf(valueDef) * 0.5f;
-        var flowAmount = sender.GetMaxTransferRateTo(receiver, valueDef, Mathf.CeilToInt(value * diffPct * valueDef.FlowRate));
+        var flowAmount = receiver.GetMaxTransferRate(valueDef, Mathf.CeilToInt(value * diffPct * valueDef.FlowRate));
 
         //
         if (sender.TryTransferTo(receiver, valueDef, flowAmount, out _))

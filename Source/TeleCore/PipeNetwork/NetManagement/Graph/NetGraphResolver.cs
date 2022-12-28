@@ -40,7 +40,8 @@ public static class NetGraphResolver
         var foundNodes = FoundNodesFor(searcher);
         
         foundNodes.Add(searcher);
-        if (!inGraph.AdjacencyLists.TryGetValue(node, out var adjacencyList))
+        var adjacencyList = inGraph.GetAdjacencyList(node);
+        if (adjacencyList == null)
         {
             TLog.Warning($"Root {node} has no adjacent connections!");
             return;

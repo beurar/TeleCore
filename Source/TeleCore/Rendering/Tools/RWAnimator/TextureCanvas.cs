@@ -356,7 +356,7 @@ namespace TeleCore
                     Widgets.Label(setSelectionListing.ContractedBy(5, 0), new Rot4(i).ToStringHuman());
                     if (Widgets.ButtonInvisible(setSelectionListing))
                     {
-                        AnimationData.SetRotation(new Rot4(i));
+                        AnimationData.CreateOrSetRotationSet(new Rot4(i));
                         Notify_SideChanged();
                     }
                     curYNew += 20;
@@ -601,7 +601,7 @@ namespace TeleCore
                 Rot4 rot = new Rot4(i);
                 yield return new FloatMenuOption($"Rotate {rot.ToStringHuman()}", delegate
                 {
-                    animationMetaData.SetRotation(rot);
+                    animationMetaData.CreateOrSetRotationSet(rot);
                     Notify_SideChanged();
                 });
             }

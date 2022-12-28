@@ -26,6 +26,7 @@ namespace TeleCore
         public Type workerType = typeof(NetworkSubPart);
         public NetworkDef networkDef;
         public ContainerProperties containerProps;
+        private NetworkValueFilter defFilter;
         //TODO: Shared Container Set Pool - to track capacity sharing
         public List<NetworkDef> shareCapacityWith;
         
@@ -33,18 +34,15 @@ namespace TeleCore
         public string subIOPattern;
         
         //
-        private class ValueProperties
+        private class NetworkValueFilter
         {
-            public NetworkDef fromDef;
-            public List<NetworkValueDef> values;
+            public NetworkDef? fromDef;
+            public List<NetworkValueDef>? values;
             
             public void LoadDataFromXmlCustom(XmlNode xmlRoot)
             {
-                TLog.Debug($"Loading XML: {xmlRoot.Name}: {xmlRoot.FirstChild.Name}");
-                //
                 if (xmlRoot.FirstChild.Name == "li")
                 {
-                    //TLog.Error($"Definition for networkRole not a listing.");
                     values = DirectXmlToObject.ObjectFromXml<List<NetworkValueDef>>(xmlRoot, true);
                     return;
                 }
@@ -52,7 +50,7 @@ namespace TeleCore
                 var fromDefNode = xmlRoot.SelectSingleNode(nameof(fromDef));
                 if (fromDefNode != null)
                 {
-                    DirectXmlCrossRefLoader.RegisterObjectWantsCrossRef(this, $"{nameof(fromDef)}", fromDefNode.Value);
+                    DirectXmlCrossRefLoader.RegisterObjectWantsCrossRef(this, $"{nameof(fromDef)}", fromDefNode.InnerText);
                 }
 
                 //
@@ -63,9 +61,7 @@ namespace TeleCore
                 }
             }
         }
-        
-        private ValueProperties valueProperties;
-        
+
         //TODO: Add default All 
         public Dictionary<NetworkRole, List<NetworkValueDef>> AllowedValuesByRole
         {
@@ -95,13 +91,13 @@ namespace TeleCore
                 if (allowedValuesInt == null)
                 {
                     var list = new List<NetworkValueDef>();
-                    if (valueProperties.fromDef != null)
+                    if (defFilter.fromDef != null)
                     {
-                        list.AddRange(valueProperties.fromDef.NetworkValueDefs);
+                        list.AddRange(defFilter.fromDef.NetworkValueDefs);
                     }
-                    if (!valueProperties.values.NullOrEmpty())
+                    if (!defFilter.values.NullOrEmpty())
                     {
-                        list.AddRange(valueProperties.values);
+                        list.AddRange(defFilter.values);
                     }
                     allowedValuesInt = list.Distinct().ToList();
                 }

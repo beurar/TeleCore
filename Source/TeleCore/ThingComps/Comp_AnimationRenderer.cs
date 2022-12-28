@@ -275,7 +275,6 @@ namespace TeleCore
     public class CompProperties_AnimationRenderer : CompProperties
     {
         public AnimationDataDef animationDef;
-
         public string defaultAnimationTag = null;
 
         public CompProperties_AnimationRenderer()

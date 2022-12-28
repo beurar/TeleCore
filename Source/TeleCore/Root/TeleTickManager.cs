@@ -143,7 +143,7 @@ namespace TeleCore
                 {
                     GameTickers?.Invoke();
                 }
-
+                
                 UITickers?.Invoke();
                 GameUITickers?.Invoke();
 

@@ -201,7 +201,7 @@ namespace TeleCore
             SetAnimationIndex(CurrentAnimations.Count - 1);
         }
 
-        public void SetRotation(Rot4 newRotation)
+        public void CreateOrSetRotationSet(Rot4 newRotation)
         {
             internalRot = newRotation;
             if (Enumerable.Any(CurrentAnimations))

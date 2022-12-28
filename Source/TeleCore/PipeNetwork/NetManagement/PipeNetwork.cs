@@ -78,9 +78,13 @@ namespace TeleCore
             if (selThing != null && selThing.TryGetComp(out Comp_NetworkStructure comp))
             {
                 foreach (var compNetworkPart in comp.NetworkParts)
-                {  
+                {
                     if (DrawAdjacencyList)
-                        GenDraw.DrawFieldEdges(Graph.AdjacencyLists[compNetworkPart].Select(c => c.Parent.Thing.Position).ToList(), Color.red);  
+                    {
+                        var adjacencyLis = Graph.GetAdjacencyList(compNetworkPart);
+                        if (adjacencyLis != null)
+                            GenDraw.DrawFieldEdges(adjacencyLis.Select(c => c.Parent.Thing.Position).ToList(), Color.red);
+                    }  
                     compNetworkPart.CellIO.DrawIO();
                 }
             }

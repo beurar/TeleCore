@@ -423,6 +423,11 @@ namespace TeleCore
 
                     Widgets.DrawWindowBackground(rect);
                     TWidgets.DrawColoredBox(readoutRect, TColor.BlueHueBG, TColor.MenuSectionBGBorderColor, 1);
+                    
+                    if (parentComp.Container.AcceptedTypes.NullOrEmpty())
+                        return;
+                    
+                    //
                     Listing_Standard listing = new();
                     listing.Begin(listingRect);
                     listing.Label("Allowed Types");

@@ -3,7 +3,7 @@
 
 	<!-- Animation -->
 	<TELE.AnimationTool.NewAnimation>New Animation</TELE.AnimationTool.NewAnimation>
-	<TELE.AnimationTool.NewAnimation.DefName>Def Name</TELE.AnimationTool.NewAnimation.DefName>
+	<TELE.AnimationTool.NewAnimation.DefName>DefName</TELE.AnimationTool.NewAnimation.DefName>
 	<TELE.AnimationTool.NewAnimation.Init>Init</TELE.AnimationTool.NewAnimation.Init>
 	
 	<TELE.AnimationTool.Canvas.MissingParts>Missing Animation Parts</TELE.AnimationTool.Canvas.MissingParts>

@@ -17,7 +17,7 @@ public struct NetworkGraphPathRequest
     public INetworkSubPart Requester => _requester;
     public int Depth => _depth;
 
-    public NetworkGraphPathRequest(NetworkTransactionUtility.TransactionRequest transactionRequest)
+    public NetworkGraphPathRequest(TransactionRequest transactionRequest)
     {
         _depth = transactionRequest.maxDepth;
         _requester = transactionRequest.requester;

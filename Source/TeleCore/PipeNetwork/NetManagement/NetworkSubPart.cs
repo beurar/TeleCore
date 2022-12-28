@@ -210,6 +210,11 @@ namespace TeleCore
         //Process current stored values according to rules of the network role
         private void ProcessValues()
         {
+            if (NetworkRole.HasFlag(NetworkRole.Passthrough))
+            {
+                PassthroughTick();
+            }
+            
             //Producers push to Storages
             if (NetworkRole.HasFlag(NetworkRole.Producer))
             {
@@ -236,9 +241,17 @@ namespace TeleCore
             }
         }
 
+        protected virtual void PassthroughTick()
+        {
+            NetworkTransactionUtility.DoTransaction(new TransactionRequest(this,
+                NetworkRole.Producer, NetworkRole.Storage,
+                part => NetworkTransactionUtility.Actions.TransferToOther_Equalize(this, part),
+                part => NetworkTransactionUtility.Validators.PartValidator_Sender(this, part)));
+        }
+        
         protected virtual void ProducerTick()
         {
-            NetworkTransactionUtility.DoTransaction(new NetworkTransactionUtility.TransactionRequest(this,
+            NetworkTransactionUtility.DoTransaction(new TransactionRequest(this,
                 NetworkRole.Producer, NetworkRole.Storage,
                 part => NetworkTransactionUtility.Actions.TransferToOther_AnyDesired(this, part),
                 part => NetworkTransactionUtility.Validators.PartValidator_Sender(this, part)));
@@ -302,7 +315,7 @@ namespace TeleCore
                 if (!requestedType.Value.Item1) continue;
                 if (Container.StoredPercentOf(requestedType.Key) < requestedType.Value.Item2)
                 {
-                    NetworkTransactionUtility.DoTransaction(new NetworkTransactionUtility.TransactionRequest(this,
+                    NetworkTransactionUtility.DoTransaction(new TransactionRequest(this,
                         NetworkRole.Requester, NetworkRole.Storage,
                         part =>
                         {
@@ -366,7 +379,10 @@ namespace TeleCore
 
         private void DoNetworkAction(INetworkSubPart fromPart, INetworkSubPart previous, NetworkRole ofRole, Action<INetworkSubPart> funcOnPart, Predicate<INetworkSubPart> validator)
         {
-            foreach (var subPart in fromPart.Network.Graph.AdjacencyLists[this])
+            var adjacencyList = fromPart.Network.Graph.GetAdjacencyList(this);
+            if (adjacencyList == null) return;
+            
+            foreach (var subPart in adjacencyList)
             {
                 if (subPart == previous) continue;
 
@@ -385,7 +401,10 @@ namespace TeleCore
         //
         private void SubTransfer(INetworkSubPart previousPart, INetworkSubPart part, List<NetworkValueDef> usedTypes, NetworkRole ofRole)
         {
-            foreach (var subPart in part.Network.Graph.AdjacencyLists[this])
+            var adjacencyList = part.Network.Graph.GetAdjacencyList(this);
+            if (adjacencyList == null) return;
+            
+            foreach (var subPart in adjacencyList)
             {
                 if(subPart == previousPart) continue;
                 
@@ -592,7 +611,7 @@ namespace TeleCore
                 yield return new Command_Action
                 {
                     defaultLabel = $"View Adjacency List",
-                    defaultDesc = Network.Graph.AdjacencyLists[this].ToStringSafeEnumerable(),
+                    defaultDesc = Network.Graph.GetAdjacencyList(this)?.ToStringSafeEnumerable(),
                     action = delegate { }
                 };
 

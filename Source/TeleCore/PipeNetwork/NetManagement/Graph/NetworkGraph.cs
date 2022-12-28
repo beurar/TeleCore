@@ -27,7 +27,7 @@ namespace TeleCore
         public int EdgeCount => _edges.Count;
 
         public List<INetworkSubPart> AllNodes => _allNodes;
-        public Dictionary<INetworkSubPart, LinkedList<INetworkSubPart>> AdjacencyLists => _adjacencyLists;
+        private Dictionary<INetworkSubPart, LinkedList<INetworkSubPart>> AdjacencyLists => _adjacencyLists;
 
         public PipeNetwork ParentNetwork { get; internal set; }
 
@@ -54,6 +54,15 @@ namespace TeleCore
         }
 
         //
+        public LinkedList<INetworkSubPart>? GetAdjacencyList(INetworkSubPart forPart)
+        {
+            if (_adjacencyLists.TryGetValue(forPart, out var list))
+            {
+                return list;
+            }
+            return null;
+        }
+
         public void AddNode(INetworkSubPart node)
         {
             _allNodes.Add(node);

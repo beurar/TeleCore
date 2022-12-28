@@ -122,7 +122,6 @@ namespace TeleCore
         //Adding
         public void SetKeyFrameFor(IKeyFramedElement element)
         {
-            TLog.Message($"Setting New KeyFrame for {element}");
             UpdateKeyframeFor(element, GetDataFor(element));
         }
 
@@ -332,7 +331,7 @@ namespace TeleCore
             Widgets.BeginScrollView(RightRect, ref timeLineScrollPos, timelineViewRect, false);
             {
                 DrawTimeSelector(timeLineSelectorRect, timelineViewRect.height);
-                DrawEventFlags(timeLineSelectorRect, timelineBotViewRect.height);
+                DrawEventFlags(timeLineSelectorRect, timelineViewRect.height);
             }
             Widgets.EndScrollView();
 
@@ -361,7 +360,7 @@ namespace TeleCore
                 var flagValue = eventFlag.Value;
                 float valX = rect.x + (eventFlag.Key * PixelPerTickAdjusted);
                 Rect selectorRect = new Rect(valX-12, rect.y, 25, 25);
-                
+
                 GUI.color = TColor.Orange;
                 Widgets.DrawLineVertical(valX, selectorRect.yMax - 5, height);
                 GUI.color = Color.white;
@@ -677,6 +676,12 @@ namespace TeleCore
                 }
             }
 
+            //Add Animation Event
+            if (row.ButtonIcon(TeleContent.AddKeyFrame, backgroundColor:Color.yellow))
+            {
+                SetEventFlag();
+            }
+            
             row.Gap(8);
             row.Slider(125, ref zoomFactor, zoomRange.min, zoomRange.max);
 
@@ -686,13 +691,9 @@ namespace TeleCore
             }
             row.Gap(8);
             row.Label($"[{CurrentFrame}][{Math.Round(CurrentFrame.TicksToSeconds(),2)}s]");
-            row.Init(0, Rect.height - 16, UIDirection.LeftThenUp);
+
             
-            //Add Animation Event
-            if (row.ButtonIcon(TeleContent.AddKeyFrame, backgroundColor:Color.magenta))
-            {
-                SetEventFlag();
-            }
+            row.Init(0, Rect.height - 16, UIDirection.LeftThenUp);
             
             Widgets.EndGroup();
         }

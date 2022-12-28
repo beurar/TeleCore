@@ -126,29 +126,18 @@ namespace TeleCore
         /// </summary>
         public static Room NeighborRoomOf(this Building building, Room room)
         {
-            TLog.Message($"Getting opposite room of {room?.ID}");
             for (int i = 0; i < 4; i++)
             {
                 var cell = GenAdj.CardinalDirections[i] + building.Position;
                 var roomAt = cell.GetRoom(building.Map);
-                TLog.Message($"Checking {new Rot4(i).ToStringWord()}");
                 if (roomAt == room)
                 {
                     Rot4 rotOfRoom = new Rot4(i);
                     var otherSide = rotOfRoom.Opposite.FacingCell + building.Position;
                     var otherRoom = otherSide.GetRoom(building.Map);
-                    TLog.Message($"Result in {rotOfRoom.Opposite.ToStringWord()}: {otherRoom?.ID}");
                     return otherRoom;
                 }
                 
-            }
-            return null;
-            
-            for (int i = 0; i < 4; i++)
-            {
-                Room newRoom = (building.Position + GenAdj.CardinalDirections[i]).GetRoom(room.Map);
-                if (newRoom == null || newRoom == room) continue;
-                return newRoom;
             }
             return null;
         }

@@ -36,7 +36,7 @@ public class BaseContainer<T> : IExposable where T : FlowValueDef
     public IContainerHolderRoom<T> RoomParent => _parentHolder as IContainerHolderRoom<T> ?? null!;
     
     public Thing ParentThing => ThingParent.Thing ?? null!;
-    public ContainerProperties Props => Parent.ContainerProps;
+    public ContainerProperties? Props => Parent?.ContainerProps;
     public string Title => Parent.ContainerTitle;
     public Color Color => _colorInt;
 
@@ -75,7 +75,7 @@ public class BaseContainer<T> : IExposable where T : FlowValueDef
 
     //Type-Based States
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal virtual float CapacityOf(T def)
+    public virtual float CapacityOf(T def)
     {
         return _capacity;
     }
@@ -114,7 +114,7 @@ public class BaseContainer<T> : IExposable where T : FlowValueDef
     public BaseContainer(IContainerHolder<T> parent)
     {
         _parentHolder = parent;
-        _capacity = Props.maxStorage;
+        _capacity = Props?.maxStorage ?? 0;
     }
 
     public BaseContainer(IContainerHolder<T> parent, DefValueStack<T> valueStack)
@@ -295,10 +295,17 @@ public class BaseContainer<T> : IExposable where T : FlowValueDef
     }
     
     //
+    /* -- Seems redundant
     public float GetMaxTransferRateTo(BaseContainer<T> other, T valueDef, float desiredValue)
     {
         //var maxCap = other.CapacityOf(valueType) - other.TotalStoredOf(valueType);
         return Mathf.Clamp(desiredValue, 0, other.CapacityOf(valueDef) - other.TotalStoredOf(valueDef));
+    }
+    */
+
+    public float GetMaxTransferRate(T valueDef, float desiredValue)
+    {
+        return Mathf.Clamp(desiredValue, 0, CapacityOf(valueDef) - TotalStoredOf(valueDef));
     }
     
     // Value Functions
@@ -360,14 +367,13 @@ public class BaseContainer<T> : IExposable where T : FlowValueDef
                 _storedValues[valueType] = 0;
                 actualValue = value;
             }
+            
+            if (_storedValues[valueType] <= 0)
+            {
+                _storedValues.Remove(valueType);
+            }
+            Notify_RemovedValue(valueType, actualValue);
         }
-
-        if (_storedValues[valueType] <= 0)
-        {
-            _storedValues.Remove(valueType);
-        }
-
-        Notify_RemovedValue(valueType, actualValue);
         return actualValue > 0;
     }
     

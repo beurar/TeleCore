@@ -11,16 +11,17 @@ namespace TeleCore
     {
         Controller = 1,
         Transmitter = 2,
-        Producer = 4,
-        Consumer = 8,
-        Storage = 16,
-        Requester = 32,
-        DirectionalControl = 64,
-        Pump = 128,
+        Passthrough = 4,
+        Producer = 8,
+        Consumer = 16,
+        Storage = 32,
+        Requester = 64,
+        Valve = 128,
+        Pump = 356,
         //All = 64,
 
         AllContainers = Producer | Consumer | Storage | Requester,
-        AllFlag = Controller | Transmitter | DirectionalControl | AllContainers,
+        AllFlag = Controller | Transmitter | Valve | AllContainers,
         //All = Transmitter | AllContainers,
     }
 }

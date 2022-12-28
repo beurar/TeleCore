@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System.Collections.Generic;
+using UnityEngine;
 using Verse;
 
 namespace TeleCore;
@@ -17,4 +18,17 @@ public class FlowValueDef : Def
     
     //Runtime
     public float FlowRate => 1f / viscosity;
+
+    public override IEnumerable<string> ConfigErrors()
+    {
+        foreach (var error in base.ConfigErrors())
+        {
+            yield return error;
+        }
+
+        if (viscosity == 0)
+        {
+            yield return $"{nameof(viscosity)} cannot be 0!";
+        }
+    }
 }

@@ -8,7 +8,6 @@ using System.Threading.Tasks;
 using HarmonyLib;
 using Multiplayer.API;
 using RimWorld;
-using TeleCore.Attributes;
 using Verse;
 
 namespace TeleCore
@@ -34,7 +33,7 @@ namespace TeleCore
         internal static void ApplyDefChangesPostLoad()
         {
             //Load Translation Libraries
-            LoadStaticTranslationLibraries();
+            //LoadStaticTranslationLibraries();
             
             //
             var allInjectors = DefInjectors()?.ToArray();
@@ -97,12 +96,14 @@ namespace TeleCore
             return null;
         }
 
-        private static void LoadStaticTranslationLibraries()
+        /*
+        internal static void LoadStaticTranslationLibraries()
         {
             foreach (var type in GenTypes.AllTypesWithAttribute<StaticTranslationLibraryAttribute>())
             {
                 try
                 {
+                    TLog.Debug("Loading type for tranlsation..");
                     RuntimeHelpers.RunClassConstructor(type.TypeHandle);
                 }
                 catch (Exception ex)
@@ -117,5 +118,6 @@ namespace TeleCore
                 }
             }
         }
+        */
     }
 }

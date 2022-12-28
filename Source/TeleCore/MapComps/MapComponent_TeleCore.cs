@@ -15,7 +15,7 @@ namespace TeleCore
         
         public NetworkMapInfo NetworkInfo { get; private set; }
         public ThingGroupCacheInfo ThingGroupCacheInfo { get; private set; }
-        public ThingTrackerInfo ThingTrackerInfo { get; private set; }
+        public ThingTrackerMapInfo ThingTrackerMapInfo { get; private set; }
         
         public MapComponent_TeleCore(Map map) : base(map)
         {
@@ -64,7 +64,7 @@ namespace TeleCore
             //
             NetworkInfo = (NetworkMapInfo)mapInfoByType[typeof(NetworkMapInfo)];
             ThingGroupCacheInfo = (ThingGroupCacheInfo)mapInfoByType[typeof(ThingGroupCacheInfo)];
-            ThingTrackerInfo = (ThingTrackerInfo)mapInfoByType[typeof(ThingTrackerInfo)];
+            ThingTrackerMapInfo = (ThingTrackerMapInfo)mapInfoByType[typeof(ThingTrackerMapInfo)];
         }
 
         public override void FinalizeInit()
@@ -149,7 +149,7 @@ namespace TeleCore
             try
             {
                 //
-                ThingTrackerInfo.Notify_RegisterThing(thing);
+                ThingTrackerMapInfo.Notify_RegisterThing(thing);
             }
             catch (Exception ex)
             {
@@ -170,7 +170,7 @@ namespace TeleCore
         {
             try
             {
-                ThingTrackerInfo.Notify_DeregisterThing(thing);
+                ThingTrackerMapInfo.Notify_DeregisterThing(thing);
             }
             catch (Exception ex)
             {
@@ -192,7 +192,7 @@ namespace TeleCore
         {
             try
             {
-                ThingTrackerInfo.Notify_ThingStateChanged(thing, signal);
+                ThingTrackerMapInfo.Notify_ThingStateChanged(thing, signal);
             }
             catch (Exception ex)
             {

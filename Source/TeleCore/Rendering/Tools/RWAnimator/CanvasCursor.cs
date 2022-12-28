@@ -3,17 +3,14 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using TeleCore.Static;
 using UnityEngine;
 using Verse;
 
 namespace TeleCore
 {
-    [StaticConstructorOnStartup]
     internal static class CanvasCursor
     {
-        internal static readonly Texture2D CustomCursor_Drag = ContentFinder<Texture2D>.Get("UI/Cursors/CursorCustom_Drag", true);
-        internal static readonly Texture2D CustomCursor_Rotate = ContentFinder<Texture2D>.Get("UI/Cursors/CursorCustom_Rotate", true);
-        
         //
         private static Vector2 cursorHotspot;
         private static ManipulationMode? lastMode;
@@ -21,7 +18,6 @@ namespace TeleCore
 
         public static void Notify_TriggeredMode(ManipulationMode? maniMode)
         {
-            return;
             if (lastMode == maniMode) return;
             var shouldReset = maniMode == null || maniMode == ManipulationMode.None;
             var newMode = !shouldReset && (maniMode != ManipulationMode.None || maniMode != lastMode);
@@ -30,14 +26,14 @@ namespace TeleCore
                 switch (maniMode)
                 {
                     case ManipulationMode.Move:
-                        cursorHotspot = new Vector2(CustomCursor_Drag.width / 2f, CustomCursor_Drag.height / 2f);
-                        Cursor.SetCursor(CustomCursor_Drag, cursorHotspot, CursorMode.Auto);
+                        cursorHotspot = new Vector2(TRContentDatabase.CustomCursor_Drag.width / 2f, TRContentDatabase.CustomCursor_Drag.height / 2f);
+                        Cursor.SetCursor(TRContentDatabase.CustomCursor_Drag, cursorHotspot, CursorMode.Auto);
                         break;
                     case ManipulationMode.Resize:
                         break;
                     case ManipulationMode.Rotate:
-                        cursorHotspot = new Vector2(CustomCursor_Rotate.width / 2f, CustomCursor_Rotate.height / 2f);
-                        Cursor.SetCursor(CustomCursor_Rotate, cursorHotspot, CursorMode.Auto);
+                        cursorHotspot = new Vector2(TRContentDatabase.CustomCursor_Rotate.width / 2f, TRContentDatabase.CustomCursor_Rotate.height / 2f);
+                        Cursor.SetCursor(TRContentDatabase.CustomCursor_Rotate, cursorHotspot, CursorMode.Auto);
                         break;
                 }
                 lastMode ??= maniMode;

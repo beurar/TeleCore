@@ -24,7 +24,7 @@
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <Version>1.2.5</Version>
     <SignAssembly>False</SignAssembly>
-    <PackageVersion>1.5.9</PackageVersion>
+    <PackageVersion>1.6.3</PackageVersion>
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
@@ -91,7 +91,12 @@
   <ItemGroup>
     <Reference Include="HotSwap">
       <HintPath>..\..\..\HotSwap\Assemblies\HotSwap.dll</HintPath>
+      <Private>False</Private>
     </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Attributes" />
   </ItemGroup>
 
   <Target Name="MyCode" BeforeTargets="UpdateReferences">

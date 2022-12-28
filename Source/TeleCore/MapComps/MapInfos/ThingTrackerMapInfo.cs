@@ -4,11 +4,14 @@ using Verse;
 
 namespace TeleCore;
 
-public class ThingTrackerInfo : MapInformation
+/// <summary>
+/// 
+/// </summary>
+public class ThingTrackerMapInfo : MapInformation
 {
     private readonly ThingTrackerComp[] trackerComps;
     
-    public ThingTrackerInfo(Map map) : base(map)
+    public ThingTrackerMapInfo(Map map) : base(map)
     {
         var compTypes = typeof(ThingTrackerComp).AllSubclassesNonAbstract();
         trackerComps = new ThingTrackerComp[compTypes.Count];
@@ -21,7 +24,7 @@ public class ThingTrackerInfo : MapInformation
             }
             catch (Exception ex)
             {
-                TLog.Error($"Could not instantiated {nameof(ThingTrackerComp)} of type {type}:\n{ex}");
+                TLog.Error($"Could not instantiate {nameof(ThingTrackerComp)} of type {type}:\n{ex}");
             }
         }
     }
@@ -51,12 +54,15 @@ public class ThingTrackerInfo : MapInformation
     }
 }
 
+/// <summary>
+/// Provides an abstract base for custom Thing-tracking worker classes which process Thing-Data on Spawn/Despawn/State change events
+/// </summary>
 public abstract class ThingTrackerComp
 {
-    protected ThingTrackerInfo parent;
+    protected ThingTrackerMapInfo parent;
 
     //
-    protected ThingTrackerComp(ThingTrackerInfo parent)
+    protected ThingTrackerComp(ThingTrackerMapInfo parent)
     {
         this.parent = parent;
     }

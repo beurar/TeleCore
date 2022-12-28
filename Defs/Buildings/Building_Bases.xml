@@ -36,7 +36,10 @@
 		<statBases>
 			<Mass>1000</Mass>
 		</statBases>
-		<filthLeaving>Filth_RubbleBuilding</filthLeaving>		
+		<filthLeaving>Filth_RubbleBuilding</filthLeaving>
+		<inspectorTabs>
+			<li>TeleCore.ITab_NetworkDebug</li>
+		</inspectorTabs>
 	</ThingDef>
 	
 	<ThingDef Name="Tele_BenchBase" ParentName="Tele_StationBase" Abstract="True">

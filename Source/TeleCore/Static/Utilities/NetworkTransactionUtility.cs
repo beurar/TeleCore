@@ -69,7 +69,7 @@ public static class NetworkTransactionUtility
             }
         }
     }
-
+    
     internal static class Validators
     {
         /// <summary>
@@ -77,18 +77,13 @@ public static class NetworkTransactionUtility
         /// </summary>
         internal static bool StoreEvenly_EQ_Check(INetworkSubPart selfPart, INetworkSubPart otherPart)
         {
+            if (!selfPart.HasContainer || !otherPart.HasContainer) return false;
+            
             //Only send - we cannot request without special cases (checking path for directionality)
+            return selfPart.Container.StoredPercent - otherPart.Container.StoredPercent >= ContainerTransferUtility.MIN_FLOAT_COMPARE;
             return selfPart.Container.TotalStored - otherPart.Container.TotalStored >= 2;
         }
 
-        /// <summary>
-        /// Determines whether to set owned cached requests dirty.
-        /// </summary>
-        internal static bool StoreEvenly_EQ_DirtyCheck(INetworkSubPart a, INetworkSubPart b)
-        {
-            return StoreEvenly_EQ_Check(a, b);
-        }
-        
         internal static bool PartValidator_AnyWithContainer(INetworkSubPart part)
         {
             return part.HasContainer;
@@ -108,8 +103,9 @@ public static class NetworkTransactionUtility
     private static IEnumerable<INetworkSubPart> AdjacentParts(INetworkSubPart part, ValueFlowDirection flowDir)
     {
         var graph = part.Network.Graph;
-        if (!graph.AdjacencyLists.TryGetValue(part, out var nbrs)) yield break;
-        foreach (var subPart in graph.AdjacencyLists[part])
+        var adjacencyList = graph.GetAdjacencyList(part);
+        if (adjacencyList == null) yield break;
+        foreach (var subPart in adjacencyList)
         {
             if (graph.GetAnyEdgeBetween(part, subPart, out var edge))
             {
@@ -130,11 +126,13 @@ public static class NetworkTransactionUtility
         if (!request.IsValid) return;
         
         //Search for potential transaction partners
-        foreach (var VARIABLE in AdjacentParts(request.requester, request.FlowDir))
+        foreach (var adjacentPart in AdjacentParts(request.requester, request.FlowDir))
         {
-            
+            request.transaction.Invoke(adjacentPart);
         }
-         var transactionPartnersResult = request.requester.Network.Graph.ProcessRequest(new NetworkGraphPathRequest(request));
+
+        /*
+        var transactionPartnersResult = request.requester.Network.Graph.ProcessRequest(new NetworkGraphPathRequest(request));
         
         if (!transactionPartnersResult.IsValid)
         {
@@ -146,6 +144,7 @@ public static class NetworkTransactionUtility
         {
             request.transaction.Invoke(targetPart);
         }
+        */
 
         //Debug stuff?
         // foreach (var path in requestResult.allPaths)
