@@ -23,10 +23,9 @@ namespace TeleCore
         protected NetworkPartSet directPartSet;
 
         private NetworkDef internalDef;
-        
-        //
         private int lastReceivedTick;
         private int receivingTicks;
+        private bool drawNetworkInfo = false;
 
         //Settings
         private Dictionary<NetworkValueDef, (bool, float)> requestedTypes;
@@ -34,7 +33,6 @@ namespace TeleCore
         private RequesterMode requesterMode = RequesterMode.Automatic;
 
         //
-        private bool drawNetworkInfo = false;
 
         //DEBUG
         protected bool DebugNetworkCells = false;
@@ -55,10 +53,10 @@ namespace TeleCore
         public bool IsNetworkEdge => !IsNetworkNode;
         public bool IsJunction => NetworkRole == NetworkRole.Transmitter && DirectPartSet[NetworkRole.Transmitter]?.Count > 2;
         public bool IsPipeEndPoint => NetworkRole == NetworkRole.Transmitter && DirectPartSet[NetworkRole.Transmitter]?.Count == 1;
-        public bool CanWork => Network.IsWorking || !Props.requiresController;
-
         public bool IsReceiving => receivingTicks > 0;
-
+        public bool NetworkActive => Network.IsWorking || !Props.requiresController;
+        
+        //
         public bool HasContainer => Props.containerProps != null;
         public bool HasConnection => DirectPartSet[NetworkRole.Transmitter]?.Count > 0;
         public bool HasLeak => false;
@@ -199,7 +197,7 @@ namespace TeleCore
                 if (receivingTicks > 0 && lastReceivedTick < Find.TickManager.TicksGame)
                     receivingTicks--;
 
-                if (!CanWork) return;
+                if (!NetworkActive) return;
                 ProcessValues();
                 parent.NetworkPartProcessorTick(this);
             }
@@ -224,7 +222,6 @@ namespace TeleCore
             //Storages push to Consumers
             if (NetworkRole.HasFlag(NetworkRole.Storage))
             {
-                //TLog.Debug($"[{Parent.Thing}] StoreTick");
                 StorageTick();
             }
 
@@ -510,6 +507,11 @@ namespace TeleCore
         }
 
         //
+        public bool CanInteractWith(INetworkSubPart other)
+        {
+            return Parent.CanInteractWith(this, other);
+        }
+        
         public bool ConnectsTo(INetworkSubPart other)
         {
             return ConnectsTo(other, out _, out _);

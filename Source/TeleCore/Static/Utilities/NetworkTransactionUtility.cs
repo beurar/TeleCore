@@ -75,18 +75,12 @@ public static class NetworkTransactionUtility
         /// <summary>
         /// Determines whether there should be a equalization between two network parts.
         /// </summary>
-        internal static bool StoreEvenly_EQ_Check(INetworkSubPart selfPart, INetworkSubPart otherPart)
+        internal static bool StoreEvenly_EQ_Check(INetworkSubPart sender, INetworkSubPart receiver)
         {
-            if (!selfPart.HasContainer || !otherPart.HasContainer) return false;
+            if (!sender.HasContainer || !receiver.HasContainer) return false;
             
             //Only send - we cannot request without special cases (checking path for directionality)
-            return selfPart.Container.StoredPercent - otherPart.Container.StoredPercent >= ContainerTransferUtility.MIN_FLOAT_COMPARE;
-            return selfPart.Container.TotalStored - otherPart.Container.TotalStored >= 2;
-        }
-
-        internal static bool PartValidator_AnyWithContainer(INetworkSubPart part)
-        {
-            return part.HasContainer;
+            return sender.Container.StoredPercent - receiver.Container.StoredPercent >= ContainerTransferUtility.MIN_FLOAT_COMPARE;
         }
 
         internal static bool PartValidator_Sender(INetworkSubPart sender, INetworkSubPart receiver, Predicate<INetworkSubPart> extraValidator = null)
@@ -97,6 +91,11 @@ public static class NetworkTransactionUtility
         internal static bool PartValidator_Receiver(INetworkSubPart receiver, INetworkSubPart sender, Predicate<INetworkSubPart> extraValidator = null)
         {
             return (sender.HasContainer && sender.Container.NotEmpty) && !receiver.Container.Full && (extraValidator?.Invoke(sender) ?? true);
+        }
+        
+        internal static bool PartValidator_AnyWithContainer(INetworkSubPart part)
+        {
+            return part.HasContainer;
         }
     }
 
@@ -128,7 +127,8 @@ public static class NetworkTransactionUtility
         //Search for potential transaction partners
         foreach (var adjacentPart in AdjacentParts(request.requester, request.FlowDir))
         {
-            request.transaction.Invoke(adjacentPart);
+            if(request.partValidator.Invoke(adjacentPart) && request.requester.CanInteractWith(adjacentPart)) 
+                request.transaction.Invoke(adjacentPart);
         }
 
         /*

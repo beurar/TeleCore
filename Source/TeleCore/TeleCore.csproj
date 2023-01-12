@@ -24,7 +24,7 @@
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <Version>1.2.5</Version>
     <SignAssembly>False</SignAssembly>
-    <PackageVersion>1.6.3</PackageVersion>
+    <PackageVersion>1.6.4</PackageVersion>
     <Nullable>enable</Nullable>
   </PropertyGroup>
 

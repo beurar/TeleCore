@@ -39,6 +39,9 @@ namespace TeleCore
 
         public bool IsPowered => CompPower?.PowerOn ?? true;
 
+        //
+        public virtual bool IsActiveOverride => true;
+        
         //FX
         public virtual bool IsMain => true;
         public virtual int Priority => 10;
@@ -157,6 +160,12 @@ namespace TeleCore
             }
         }
 
+        //
+        public virtual bool CanInteractWith(INetworkSubPart interactor, INetworkSubPart otherPart)
+        {
+            return true;
+        }
+        
         public virtual void NetworkPostTick(NetworkSubPart networkSubPart, bool isPowered)
         {
 

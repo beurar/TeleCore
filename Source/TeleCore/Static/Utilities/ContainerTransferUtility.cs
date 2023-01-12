@@ -7,7 +7,7 @@ namespace TeleCore.Static.Utilities;
 public class ContainerTransferUtility
 {
     public const float MIN_EQ_VAL = 2;
-    public const float MIN_FLOAT_COMPARE = 0.001953125F;
+    public const float MIN_FLOAT_COMPARE = 0.01f; //0.00390625F; //0.001953125F;
 
     
     public static bool NeedsEqualizing<T,V>(BaseContainer<T> containerA, BaseContainer<V> containerB, out ValueFlowDirection flow, out float diffPct) where T : FlowValueDef where V : FlowValueDef
@@ -16,7 +16,7 @@ public class ContainerTransferUtility
         diffPct = 0f;
         
         var fromPct = containerA.StoredPercent;
-        var toPct = containerB.StoredPercent;
+        var toPct   = containerB.StoredPercent;
         
         diffPct = fromPct - toPct;
         flow = diffPct switch

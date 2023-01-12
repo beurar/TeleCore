@@ -10,9 +10,10 @@ namespace TeleCore
         public List<NetworkSubPart> NetworkParts { get; }
         public NetworkCellIO GeneralIO { get; }
 
-        //Internal Data
+        //States
         public bool IsPowered { get; }
-
+        public bool IsActiveOverride { get; }
+        
         //
         void NetworkPartProcessorTick(INetworkSubPart subPart);
         void NetworkPostTick(NetworkSubPart networkSubPart, bool isPowered);
@@ -25,6 +26,7 @@ namespace TeleCore
         void Notify_StructureRemoved(INetworkStructure other);
 
         //
+        bool CanInteractWith(INetworkSubPart interactor, INetworkSubPart otherPart);
         bool AcceptsValue(NetworkValueDef value);
         bool CanConnectToOther(INetworkStructure other);
     }

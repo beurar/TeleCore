@@ -21,7 +21,7 @@ namespace TeleCore
         public bool IsNetworkEdge { get; }
         public bool IsJunction { get; }
 
-        public bool CanWork { get; }
+        public bool NetworkActive { get; }
         public bool IsReceiving { get; }
 
         public bool HasContainer { get; }
@@ -37,6 +37,8 @@ namespace TeleCore
         void Notify_SetConnection(NetEdge edge, IntVec3Rot ioCell);
         void Notify_NetworkDestroyed();
 
+
+        bool CanInteractWith(INetworkSubPart other);
         bool ConnectsTo(INetworkSubPart otherPart);
         bool ConnectsTo(INetworkSubPart otherPart, out IntVec3 intersectingCell, out NetworkIOMode IOMode);
         bool CanTransmit(NetEdge netEdge);
