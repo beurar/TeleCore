@@ -125,7 +125,7 @@ namespace TeleCore
             }
         }
 
-        //TODO: Add mod file metadata to know which mods are needef for textures
+        //TODO: Add mod file metadata to know which mods are needed for textures
         private void LoadAnimation(FileInfo fileInfo)
         {
             TLog.Message($"Init Loading {fileInfo.FullName}", Color.magenta);

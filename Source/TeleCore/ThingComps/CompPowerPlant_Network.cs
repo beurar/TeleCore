@@ -9,16 +9,15 @@ using Verse;
 
 namespace TeleCore
 {
+    //TODO: YouTrack TR-6
     public class CompPowerPlant_Network : CompPowerPlant
     {
         private int powerTicksRemaining;
         private float internalPowerOutput;
 
-        private Comp_NetworkStructure compNetworkStructure;
-        private NetworkSubPart networkComponent;
-
-        private List<(float, int)> valuePackage;
-
+        private Comp_NetworkStructure _compNetworkStructure;
+        private NetworkSubPart _networkComponent;
+        
         public new CompProperties_NetworkStructurePowerPlant Props => (CompProperties_NetworkStructurePowerPlant)base.Props;
 
         public bool GeneratesPowerNow => powerTicksRemaining > 0;
@@ -33,24 +32,8 @@ namespace TeleCore
         public override void PostSpawnSetup(bool respawningAfterLoad)
         {
             base.PostSpawnSetup(respawningAfterLoad);
-            compNetworkStructure = parent.GetComp<Comp_NetworkStructure>();
-            networkComponent = compNetworkStructure[Props.fromNetwork];
-
-            //Naive Sort
-            valuePackage = new List<(float, int)>();
-            for (var i = 0; i < Props.costPerValue.Count; i++)
-            {
-                var costDefFloat = Props.costPerValue[i];
-                for (var k = 0; k < Props.ticksPerValue.Count; k++)
-                {
-                    var ticksDefFloat = Props.ticksPerValue[k];
-                    if (costDefFloat.def == ticksDefFloat.def)
-                    {
-                        valuePackage.Add((costDefFloat.value, ticksDefFloat.value));
-                        break;
-                    }
-                }
-            }
+            _compNetworkStructure = parent.GetComp<Comp_NetworkStructure>();
+            _networkComponent = _compNetworkStructure[Props.fromNetwork];
         }
 
         public override void CompTick()
@@ -62,25 +45,20 @@ namespace TeleCore
         private void PowerTick()
         {
             base.CompTick();
-            if (!base.PowerOn)
+            if (!base.PowerOn || Props.valueToTickRules.NullOrEmpty())
             {
                 internalPowerOutput = 0f;
                 return;
             }
 
-            if (networkComponent.Container.NotEmpty)
+            if (_networkComponent.Container.NotEmpty)
             {
-                foreach (var storedType in networkComponent.Container.AllStoredTypes)
+                foreach (var conversion in Props.valueToTickRules)
                 {
-                    for (var i = 0; i < Props.costPerValue.Count; i++)
+                    if (_networkComponent.Container.TotalStoredOf(conversion.valueDef) <= 0) continue;
+                    if (_networkComponent.Container.TryConsume(conversion.valueDef, conversion.cost))
                     {
-                        var costDefFloat = Props.costPerValue[i];
-                        if(storedType != costDefFloat.def) continue;
-                        var package = valuePackage[i];
-                        if (networkComponent.Container.TryConsume(costDefFloat.def, package.Item1))
-                        {
-                            powerTicksRemaining += Mathf.RoundToInt(package.Item2);
-                        }
+                        powerTicksRemaining += Mathf.RoundToInt(conversion.secondPerCost.SecondsToTicks());
                     }
                 }
             }
@@ -101,13 +79,51 @@ namespace TeleCore
             return sb.ToString().TrimEndNewlines();
         }
     }
-
-    //TODO: BUFFER FOR NETWORKS; COMPONENT THAT FIRST FILLS UP BEFORE THEN PUSHING THE VALUES ON
-    //TODO: BIG TASK: GRAPH BASED NETWORK; 
+    
     public class CompProperties_NetworkStructurePowerPlant : CompProperties_Power
     {
         public NetworkDef fromNetwork;
+        public List<ValueConversion> valueToTickRules;
+        
+        [Obsolete]
         public List<DefFloat<NetworkValueDef>> costPerValue;
+        [Obsolete]
         public List<DefCount<NetworkValueDef>> ticksPerValue;
+
+
+        public override void ResolveReferences(ThingDef parentDef)
+        {
+            base.ResolveReferences(parentDef);
+            //TODO: Backwardscompatibility
+            if (!costPerValue.NullOrEmpty() && !ticksPerValue.NullOrEmpty())
+            {
+                valueToTickRules ??= new List<ValueConversion>();
+                for (var i = 0; i < costPerValue.Count; i++)
+                {
+                    var costDefFloat = costPerValue[i];
+                    for (var k = 0; k < ticksPerValue.Count; k++)
+                    {
+                        var ticksDefFloat = ticksPerValue[k];
+                        if (costDefFloat.def == ticksDefFloat.def)
+                        {
+                            valueToTickRules.Add(new ValueConversion
+                            {
+                                valueDef = costDefFloat.def,
+                                cost = costDefFloat.value,
+                                secondPerCost = ticksDefFloat.value.TicksToSeconds()
+                            });
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    public struct ValueConversion
+    {
+        public NetworkValueDef valueDef;
+        public float cost;
+        public float secondPerCost;
     }
 }

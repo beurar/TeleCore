@@ -36,7 +36,6 @@ namespace TeleCore
 
         public void ExposeData()
         {
-            TLog.Message($"Scribing {GetUniqueLoadID()}");
             Scribe_Values.Look(ref curTick, nameof(curTick));
             Scribe_Values.Look(ref startTick, nameof(startTick));
             Scribe_Values.Look(ref endTick, nameof(endTick));
@@ -127,7 +126,7 @@ namespace TeleCore
 
         public string GetUniqueLoadID()
         {
-            return $"ActionComposition_{_ID}";
+            return $"{nameof(ActionComposition)}{_ID}";
         }
     }
 }

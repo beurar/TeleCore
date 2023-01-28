@@ -258,7 +258,7 @@ namespace TeleCore
         {
             if (Container.ContainsForbiddenType)
             {
-                ClearForbiddenTypes();
+                ClearForbiddenTypesSubTick();
             }
             
             if (ContainerProps.storeEvenly && Network.HasGraph)
@@ -374,6 +374,16 @@ namespace TeleCore
             */
         }
 
+        private void ClearForbiddenTypesSubTick()
+        {
+            if (Container.Empty) return;
+            NetworkTransactionUtility.DoTransaction(new TransactionRequest(this,
+                NetworkRole.Storage, NetworkRole.Consumer,
+                part => NetworkTransactionUtility.Actions.TransferToOtherPurge(this, part),
+                part => NetworkTransactionUtility.Validators.PartValidator_Sender(this, part, 
+                    ePart => Container.FilterSettings.Any(pair => !pair.Value.canStore && ePart.Container.AcceptsValue(pair.Key)))));
+        }
+        
         private void DoNetworkAction(INetworkSubPart fromPart, INetworkSubPart previous, NetworkRole ofRole, Action<INetworkSubPart> funcOnPart, Predicate<INetworkSubPart> validator)
         {
             var adjacencyList = fromPart.Network.Graph.GetAdjacencyList(this);
@@ -441,25 +451,6 @@ namespace TeleCore
                 if (Container.TryTransferTo(part.Container, type, 1, out _))
                 {
                     part.Notify_ReceivedValue();
-                }
-            }
-        }
-
-        private void ClearForbiddenTypes()
-        {
-            if (Container.Empty) return;
-            foreach (var component in Network.PartSet[NetworkRole.Storage])
-            {
-                if (component.Container.Full) continue;
-                for (int i = Container.AllStoredTypes.Count - 1; i >= 0; i--)
-                {
-                    var type = Container.AllStoredTypes.ElementAt(i);
-                    if (Container.AcceptsValue(type)) continue;
-                    if (!component.NeedsValue(type, NetworkRole.Storage)) continue;
-                    if (Container.TryTransferTo(component.Container, type, 1, out _))
-                    {
-                        component.Notify_ReceivedValue();
-                    }
                 }
             }
         }
@@ -552,7 +543,7 @@ namespace TeleCore
             {
                 if (Container.AcceptsValue(value))
                 {
-                    
+                    return true;
                 }
             }
             return false;
@@ -562,7 +553,7 @@ namespace TeleCore
         {
             if (Props.AllowedValuesByRole.TryGetValue(forRole, out var values) && values.Contains(value))
             {
-                return Parent.AcceptsValue(value);
+                return AcceptsValue(value);
             }
             return false;
         }
@@ -672,12 +663,11 @@ namespace TeleCore
             }
 
             sb.AppendLine($"[Transmitters] {DirectPartSet[NetworkRole.Transmitter]?.Count}");
-            return sb.ToString();
+            return sb.ToString().TrimEndNewlines();
         }
         
         internal static bool Debug_DrawFlowDir = false;
-
-
+        
         private Rot4 FlowDir
         {
             get;

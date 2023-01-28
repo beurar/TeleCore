@@ -21,7 +21,6 @@ namespace TeleCore
 
         public void ExposeData()
         {
-            //TODO:
             Scribe_Collections.Look(ref currentCompositions, nameof(currentCompositions), LookMode.Deep);
         }
 

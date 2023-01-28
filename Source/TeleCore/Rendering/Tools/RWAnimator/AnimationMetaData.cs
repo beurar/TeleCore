@@ -28,7 +28,6 @@ namespace TeleCore
 
         private AnimationPartValue _currentAnimation;
 
-
         public Rot4 CurRot => internalRot;
         public bool Initialized => initialized;
         public bool Loading { get; private set; }
@@ -102,7 +101,7 @@ namespace TeleCore
                 LoadSetFrom(dataDef, i);
             }
         }
-
+ 
         private void LoadSetFrom(AnimationDataDef dataDef, int rot)
         {
             var animationSet = dataDef.animationSets[rot];
@@ -137,6 +136,8 @@ namespace TeleCore
             StringBuffers.Add(frame, buffer);
             return StringBuffers[frame];
         }
+
+        #region SAVELOADING
 
         public void ExposeData()
         {
@@ -174,6 +175,8 @@ namespace TeleCore
 
             Loading = false;
         }
+
+        #endregion
 
         //
         public void Notify_RemoveAnimationPart(int index)
@@ -313,7 +316,7 @@ namespace TeleCore
                 frames = frames,
                 bounds = ReplayBounds,
                 keyFrames = KeyFramesList(orderBy),
-                eventFlags = InternalEventFlags.OrderByDescending(t => frames- t.Key).Select(t => t.Value).ToList(),
+                //eventFlags = InternalEventFlags.OrderByDescending(t => frames- t.Key).Select(t => t.Value).ToList(),
             };
         }
     }

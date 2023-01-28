@@ -31,8 +31,8 @@ namespace TeleCore
         protected QuickSearchWidget SearchWidget => searchWidget;
         protected virtual IEnumerable<ModContentPack> BaseMods => null;
         protected IEnumerable<ModContentPack> AllowedMods => BaseMods?.Where(m => TeleCoreMod.Settings.AllowsModInDataBrowser(typeof(T), m));
-        protected List<T> DataList => dataList;
-
+        
+        //
         private Rect MainRect => Rect.BottomPartPixels(Rect.height - TopRect.height);
         private Rect SearchWidgetRect => MainRect.TopPartPixels(QuickSearchWidget.WidgetHeight);
         private Rect SearchAreaRect => MainRect.BottomPartPixels(MainRect.height - QuickSearchWidget.WidgetHeight).ContractedBy(1);
@@ -47,6 +47,17 @@ namespace TeleCore
 
             //
             searchWidget = new QuickSearchWidget();
+            dataList = new List<T>();
+        }
+
+        public DataBrowser(Vector2 pos, Vector2 size, UIElementMode mode) : base(pos, size, mode)
+        {
+            Title = "Data Browser";
+            bgColor = TColor.BGP3;
+
+            //
+            searchWidget = new QuickSearchWidget();
+            dataList = new List<T>();
         }
 
         protected override void DrawTopBarExtras(Rect topRect)
@@ -60,14 +71,31 @@ namespace TeleCore
                 if (openFilter == false)
                 {
                     //
-                    CheckSearch(searchWidget.filter, true);
+                    GenerateItemsFromSearch(searchWidget.filter, true);
                 }
             }
         }
 
-        protected virtual void DrawElementOption(Rect optionRect, T element, int index)
+        protected void DrawElementOption(Rect optionRect, T element, int index)
         {
+            WidgetRow row = new WidgetRow(Rect.x, optionRect.y, gap: 4f);
+            row.Label($"[{index + 1}]");
+            row.Icon(IconFor(element));
+            row.Label(LabelFor(element));
 
+
+            //TooltipHandler.TipRegion(new Rect(ScrollRectInner.x, curY, ScrollRectInner.width, _OptionSize), PathLabelMarked(textureList[i].Path, searchWidget.filter.searchText));
+
+            var pathLabelResizec = SearchTextResized(SearchTextFor(element), optionRect.width);
+            var pathLabelMarked = PathLabelMarked(pathLabelResizec, SearchWidget.filter.searchText);
+            var pathLabelSize = Text.CalcSize(pathLabelMarked);
+            var pathLabelX = pathLabelSize.x > optionRect.width
+                ? optionRect.x - (pathLabelSize.x - optionRect.width)
+                : optionRect.x;
+            Rect pathLabelRect = new Rect(pathLabelX, optionRect.y + WidgetRow.IconSize, pathLabelSize.x, optionRect.height);
+            GUI.color = TColor.White075;
+            TWidgets.DoTinyLabel(pathLabelRect, pathLabelMarked);
+            GUI.color = Color.white;
         }
 
         protected override void DrawContentsBeforeRelations(Rect inRect)
@@ -118,26 +146,27 @@ namespace TeleCore
 
             float curY = 0;
             Widgets.BeginScrollView(ScrollRect, ref scrollPos, ScrollRectInner, false);
-            startIndex = (int)(scrollPos.y / _OptionSize);
-            indexRange = Math.Min((int)(ScrollRect.height / _OptionSize) + 1, dataList.Count);
-            endIndex = startIndex + indexRange;
-            if (startIndex >= 0 && endIndex <= dataList.Count)
             {
-                for (int i = startIndex; i < endIndex; i++)
+                startIndex = (int) (scrollPos.y / _OptionSize);
+                indexRange = Math.Min((int) (ScrollRect.height / _OptionSize) + 1, dataList.Count);
+                endIndex = startIndex + indexRange;
+                if (startIndex >= 0 && endIndex <= dataList.Count)
                 {
-                    curY = ScrollRect.y + i * _OptionSize;
-                    var optionRect = new Rect(Rect.x, curY, Rect.width, _OptionSize);
-                    DrawElementOption(optionRect, dataList[i], i);
-
-                    //Dragger
-                    if (Mouse.IsOver(optionRect))
+                    for (int i = startIndex; i < endIndex; i++)
                     {
-                        DragAndDropData = dataList[i];
-                        Widgets.DrawHighlight(optionRect);
+                        curY = ScrollRect.y + i * _OptionSize;
+                        var optionRect = new Rect(Rect.x, curY, Rect.width, _OptionSize);
+                        DrawElementOption(optionRect, dataList[i], i);
+
+                        //Dragger
+                        if (Mouse.IsOver(optionRect))
+                        {
+                            DragAndDropData = dataList[i];
+                            Widgets.DrawHighlight(optionRect);
+                        }
                     }
                 }
             }
-
             Widgets.EndScrollView();
 
             Text.Font = GameFont.Tiny;
@@ -150,10 +179,43 @@ namespace TeleCore
 
         private void DoSearchOnGUI()
         {
-           dataList = CheckSearch(searchWidget.filter, true);
+           dataList = GenerateItemsFromSearch(searchWidget.filter, true);
         }
 
-        protected virtual List<T> CheckSearch(QuickSearchFilter filter, bool filterChanged)
+        //
+        private string SearchTextResized(string pathLabel, float width)
+        {
+            return pathLabel;
+        }
+
+        private string PathLabelMarked(string pathLabel, string searchText)
+        {
+            if (searchText.NullOrEmpty()) return pathLabel;
+
+            var index = pathLabel.IndexOf(searchText, StringComparison.InvariantCultureIgnoreCase);
+            if (index == -1) return pathLabel;
+
+            var subPart = pathLabel.Substring(index, searchText.Length);
+            return pathLabel.Replace(subPart, subPart.Colorize(Color.cyan));
+        }
+        
+        //
+        protected virtual List<T> GenerateItemsFromSearch(QuickSearchFilter filter, bool filterChanged)
+        {
+            return null;
+        }
+        
+        protected virtual string SearchTextFor(T element)
+        {
+            return null;
+        }
+
+        protected virtual Texture2D IconFor(T element)
+        {
+            return BaseContent.BadTex;
+        }
+        
+        protected virtual string LabelFor(T element)
         {
             return null;
         }

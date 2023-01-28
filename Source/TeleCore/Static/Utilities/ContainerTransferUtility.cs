@@ -27,7 +27,9 @@ public class ContainerTransferUtility
         };
         
         //diffPct = Mathf.Abs(diffPct);
-        return Mathf.Abs(diffPct) >= MIN_FLOAT_COMPARE;
+        var relativeDiff = Mathf.Abs(diffPct / ((fromPct + toPct) / 2)); // relative difference calculation
+        return relativeDiff >= 0.01f;
+        //return Mathf.Abs(diffPct) >= MIN_FLOAT_COMPARE;
     }
 
     public static bool NeedsEqualizing<T>(BaseContainer<T> containerA, BaseContainer<T> containerB, out ValueFlowDirection flow, out float diffPct) where T : FlowValueDef
@@ -73,14 +75,13 @@ public class ContainerTransferUtility
 
         var tempTypes = StaticListHolder<T>.RequestSet("EqualizingTempSet");
         tempTypes.AddRange(sender.AllStoredTypes);
+        
+        var smoothVal = receiver.Capacity * 0.1f * diffPct;
         foreach (var valueDef in tempTypes)
         {
-            var value = sender.TotalStoredOf(valueDef) * 0.5f;
-            var flowAmount = receiver.GetMaxTransferRate(valueDef, Mathf.CeilToInt(value * diffPct * valueDef.FlowRate));
-            if (sender.TryTransferTo(receiver, valueDef, flowAmount, out _))
-            {
-                //...
-            }
+            smoothVal = (smoothVal * valueDef.FlowRate) / sender.ValueStack.values.Length;
+            smoothVal = receiver.GetMaxTransferRate(valueDef, smoothVal);
+            _ = sender.TryTransferTo(receiver, valueDef, smoothVal, out _); 
         }
         tempTypes.Clear();
     }

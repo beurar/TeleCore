@@ -56,7 +56,7 @@ namespace TeleCore
         //UIElement
         public UIElement Element => this;
         public UIElement Owner => this;
-        public TextureCanvas ParentCanvas => (TextureCanvas)parent;
+        public TextureCanvas ParentCanvas => (TextureCanvas)_parent;
         public override bool CanBeFocused => base.CanBeFocused && IsSelected;
         protected override Rect DragAreaRect => Rect;
         public ManipulationMode ManiMode { get; private set; } = ManipulationMode.None;

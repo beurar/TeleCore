@@ -116,7 +116,6 @@ namespace TeleCore
         {
             ParentNetworkPart?.ContainerSet?.Notify_AddedValue(valueType, value, ParentNetworkPart.NetworkPart);
             base.Notify_AddedValue(valueType, value);
-            
         }
 
         public override void Notify_RemovedValue(NetworkValueDef valueType, float value)

@@ -12,7 +12,8 @@ namespace TeleCore
     public enum UIElementMode
     {
         Dynamic,
-        Static
+        Static,
+        Fill
     }
 
     public enum UIElementState
@@ -25,12 +26,12 @@ namespace TeleCore
     public abstract class UIElement : IDraggable, IFocusable
     {
         //Global Const
-        private const int _BorderMargin = 25;
+        private const int BorderMargin = 25;
 
         //
-        protected UIElement parent;
-        protected List<UIElement> children = new List<UIElement>();
-
+        protected UIElement _parent;
+        protected readonly List<UIElement> _children = new();
+        
         //Local Data
         protected Color bgColor = TColor.MenuSectionBGFillColor;
         protected Color borderColor = TColor.MenuSectionBGBorderColor;
@@ -71,11 +72,11 @@ namespace TeleCore
         //Relations
         public UIElement Parent
         {
-            get => parent;
-            set => parent = value;
+            get => _parent;
+            set => _parent = value;
         }
 
-        public virtual List<UIElement> ChildElements => children;
+        public virtual List<UIElement> ChildElements => _children;
 
         public virtual UIContainerMode ContainerMode => UIContainerMode.InOrder;
 
@@ -103,7 +104,7 @@ namespace TeleCore
 
         public Rect Rect
         {
-            get => (overrideRect ?? new Rect(position, size)).Rounded();
+            get => (overrideRect ?? new Rect(Position, Size)).Rounded();
             private set
             {
                 overrideRect = value;
@@ -115,7 +116,7 @@ namespace TeleCore
 
         public Rect InRect => new Rect(Rect.x, hasTopBar ? TopRect.yMax : Rect.y, Rect.width, Rect.height - (hasTopBar ? TopRect.height : 0));
 
-        public Rect? DragContext => parent?.Rect ?? null;
+        public Rect? DragContext => _parent?.Rect ?? null;
 
         public string Title
         {
@@ -126,7 +127,7 @@ namespace TeleCore
         public virtual string Label => "New Element";
 
         //Input Rect Data
-        protected Rect TopRect => new Rect(position.x, position.y, size.x, _BorderMargin);
+        protected Rect TopRect => new Rect(position.x, position.y, size.x, BorderMargin);
         protected virtual Rect DragAreaRect => TopRect;
         public virtual Rect FocusRect => Rect;
 
@@ -151,7 +152,7 @@ namespace TeleCore
             this.UIMode = mode;
         }
 
-        private void SetParent(UIElement parent) => this.parent = parent;
+        private void SetParent(UIElement parent) => this._parent = parent;
         private void SetPosition(Vector2 pos) => this.Position = pos;
         private void SetSize(Vector2 size) => this.Size = size;
 
@@ -221,7 +222,7 @@ namespace TeleCore
         //Relation State Change
         private void Notify_StateChanged()
         {
-            parent?.Notify_ChildElementChanged(this);
+            _parent?.Notify_ChildElementChanged(this);
         }
 
         protected virtual void Notify_ChildElementChanged(UIElement element)

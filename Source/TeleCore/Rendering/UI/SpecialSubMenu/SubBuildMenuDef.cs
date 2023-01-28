@@ -14,7 +14,7 @@ public class SubBuildMenuDef : Def
     //
     public List<SubMenuGroupDef> subMenus;
     public string superPackPath;
-    public Type allowedDefWorker;
+    public Type allowedDefWorker = typeof(SubMenuAllowWorker);
     
     //
     public DesignationTexturePack TexturePack => _textures;

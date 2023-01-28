@@ -72,9 +72,12 @@ namespace TeleCore
             */
         }
 
+        [TweakValue("Network", 0, 100)] 
+        public static int NetworkTickInterval = 50;
+
         public override void TeleTick()
         {
-            if (TFind.TickManager.CurrentMapTick % 50 == 0)
+            if (TFind.TickManager.CurrentMapTick % NetworkTickInterval == 0)
             {
                 //TLog.Message($"Ticking all networks | {TFind.TickManager.CurrentTick}");
                 foreach (var networkSystem in PipeNetworks)

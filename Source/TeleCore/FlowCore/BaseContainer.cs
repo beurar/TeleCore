@@ -12,6 +12,16 @@ internal enum ContainerMode
     ByCapacity
 }
 
+public struct ContainerFilterSettings
+{
+    public bool canReceive = true;
+    public bool canStore = true;
+
+    public ContainerFilterSettings()
+    {
+    }
+}
+
 public class BaseContainer<T> : IExposable where T : FlowValueDef
 {
     //Local Set Data
@@ -25,7 +35,7 @@ public class BaseContainer<T> : IExposable where T : FlowValueDef
     protected Color _colorInt;
     protected float _totalStoredCache;
     protected HashSet<T> _storedTypeCache = new();
-    protected Dictionary<T, bool> _typeFilter = new();
+    protected Dictionary<T, ContainerFilterSettings> filterSettings = new();
     protected Dictionary<T, float> _storedValues = new();
 
     public DefValueStack<T> ValueStack { get; protected set; }
@@ -51,7 +61,7 @@ public class BaseContainer<T> : IExposable where T : FlowValueDef
     public bool Full => TotalStored >= Capacity;
 
     //
-    public bool ContainsForbiddenType => AllStoredTypes.Any(t => !AcceptsValue(t));
+    public bool ContainsForbiddenType => AllStoredTypes.Any(t => !CanHoldValue(t));
 
     //
     public bool HasThingParent => _parentHolder is IContainerHolderThing<T>;
@@ -60,7 +70,7 @@ public class BaseContainer<T> : IExposable where T : FlowValueDef
 
     public T MainValueDef => _storedValues.MaxBy(x => x.Value).Key;
     public Dictionary<T, float> StoredValuesByType => _storedValues;
-    public Dictionary<T, bool> TypeFilter => _typeFilter;
+    public Dictionary<T, ContainerFilterSettings> FilterSettings => filterSettings;
 
     public HashSet<T> AllStoredTypes
     {
@@ -124,7 +134,7 @@ public class BaseContainer<T> : IExposable where T : FlowValueDef
         AcceptedTypes = valueStack.AllTypes.ToList();
         foreach (var type in AcceptedTypes)
         {
-            TypeFilter.Add(type, true);
+            FilterSettings.Add(type, new ContainerFilterSettings());
         }
 
         //
@@ -140,7 +150,7 @@ public class BaseContainer<T> : IExposable where T : FlowValueDef
             AcceptedTypes = acceptedTypes;
             foreach (var type in AcceptedTypes)
             {
-                TypeFilter.Add(type, true);
+                FilterSettings.Add(type, new ContainerFilterSettings());
             }
         }
         else
@@ -165,7 +175,6 @@ public class BaseContainer<T> : IExposable where T : FlowValueDef
     public virtual void Notify_RemovedValue(T valueType, float value)
     {
         _totalStoredCache -= value;
-        //TODO: Add value by role/
         if (AllStoredTypes.Contains(valueType) && TotalStoredOf(valueType) <= 0)
             AllStoredTypes.RemoveWhere(v => v == valueType);
 
@@ -214,9 +223,9 @@ public class BaseContainer<T> : IExposable where T : FlowValueDef
         Parent?.Notify_ContainerFull();
     }
     
-    public void Notify_FilterChanged(T def, bool state)
+    public void Notify_FilterChanged(T def, ContainerFilterSettings settings)
     {
-        TypeFilter[def] = state;
+        FilterSettings[def] = settings;
     }
 
     //
@@ -231,11 +240,11 @@ public class BaseContainer<T> : IExposable where T : FlowValueDef
         //Copy Lists
         _acceptedTypes ??= new List<T>();
         _storedTypeCache ??= new HashSet<T>();
-        _typeFilter ??= new Dictionary<T, bool>();
+        filterSettings ??= new Dictionary<T, ContainerFilterSettings>();
         _storedValues ??= new Dictionary<T, float>();
         newContainer._acceptedTypes.AddRange(_acceptedTypes);
         newContainer._storedTypeCache.AddRange(_storedTypeCache);
-        newContainer._typeFilter.AddRange(_typeFilter);
+        newContainer.filterSettings.AddRange(filterSettings);
         newContainer._storedValues.AddRange(_storedValues);
 
         newContainer.ValueStack = ValueStack;
@@ -247,7 +256,12 @@ public class BaseContainer<T> : IExposable where T : FlowValueDef
     //Value Funcs
     public virtual bool AcceptsValue(T valueType)
     {
-        return TypeFilter.TryGetValue(valueType, out bool filterBool) && filterBool;
+        return FilterSettings.TryGetValue(valueType, out var settings) && settings.canReceive;
+    }
+    
+    public virtual bool CanHoldValue(T valueType)
+    {
+        return FilterSettings.TryGetValue(valueType, out var settings) && settings.canStore;
     }
 
     public bool CanFullyTransferTo(BaseContainer<T> other, float value)
@@ -329,8 +343,7 @@ public class BaseContainer<T> : IExposable where T : FlowValueDef
             return false;
         }
 
-        if (!AcceptsValue(valueType))
-            return false;
+        if (!AcceptsValue(valueType)) return false;
 
         //If the weight type is already stored, add to it, if not, make a new entry
         if (_storedValues.ContainsKey(valueType))
@@ -446,7 +459,6 @@ public class BaseContainer<T> : IExposable where T : FlowValueDef
         }
         return false;
     }
-
     
     //Visual
     public virtual Color ColorFor(T def)
@@ -489,7 +501,7 @@ public class BaseContainer<T> : IExposable where T : FlowValueDef
     //
     public void ExposeData()
     {
-        Scribe_Collections.Look(ref _typeFilter, "typeFilter");
+        Scribe_Collections.Look(ref filterSettings, "typeFilter");
         Scribe_Collections.Look(ref _storedValues, "storedValues");
         Scribe_Collections.Look(ref _acceptedTypes, "acceptedTypes", LookMode.Def);
         if (Scribe.mode == LoadSaveMode.PostLoadInit)

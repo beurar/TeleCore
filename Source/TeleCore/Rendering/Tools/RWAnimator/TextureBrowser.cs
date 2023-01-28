@@ -17,65 +17,38 @@ namespace TeleCore
 
         public TextureBrowser(UIElementMode mode) : base(mode)
         {
+            AllContent = new List<KeyValuePair<string, Texture2D>>();
         }
 
-        protected override List<WrappedTexture> CheckSearch(QuickSearchFilter filter, bool filterChanged)
+        protected override List<WrappedTexture> GenerateItemsFromSearch(QuickSearchFilter filter, bool filterChanged)
         {
-            if (AllContent == null || filterChanged)
+            if (AllContent.NullOrEmpty() || filterChanged)
             {
                 ReloadAssets();
             }
-
-            //
-            return AllContent
-                .Where(t =>filter.Matches($"{t.Key} {t.Value.name}"))
-                .Select(t => new WrappedTexture(t.Key, t.Value)).ToList();
+            return AllContent.Where(t =>filter.Matches($"{t.Key} {t.Value.name}")).Select(t => new WrappedTexture(t.Key, t.Value)).ToList();
         }
 
-        protected void ReloadAssets()
+        private void ReloadAssets()
         {
-            AllContent?.Clear();
-            AllContent = AllowedMods.SelectMany(m => m.GetContentHolder<Texture2D>().contentList).ToList();
+            AllContent.Clear();
+            AllContent.AddRange(AllowedMods.SelectMany(m => m.GetContentHolder<Texture2D>().contentList).ToList());
         }
-
-        protected override void DrawElementOption(Rect optionRect, WrappedTexture texture, int i)
-        {
-            var tex = texture.Texture;
-            WidgetRow row = new WidgetRow(Rect.x, optionRect.y, gap: 4f);
-            row.Label($"[{i + 1}]");
-            row.Icon(tex);
-            row.Label($"{tex.name}");
-
-
-            //TooltipHandler.TipRegion(new Rect(ScrollRectInner.x, curY, ScrollRectInner.width, _OptionSize), PathLabelMarked(textureList[i].Path, searchWidget.filter.searchText));
-
-            var pathLabelResizec = PathLabelResized(DataList[i].Path, optionRect.width);
-            var pathLabelMarked = PathLabelMarked(pathLabelResizec, SearchWidget.filter.searchText);
-            var pathLabelSize = Text.CalcSize(pathLabelMarked);
-            var pathLabelX = pathLabelSize.x > optionRect.width
-                ? optionRect.x - (pathLabelSize.x - optionRect.width)
-                : optionRect.x;
-            Rect pathLabelRect = new Rect(pathLabelX, optionRect.y + WidgetRow.IconSize, pathLabelSize.x, optionRect.height);
-            GUI.color = TColor.White075;
-            TWidgets.DoTinyLabel(pathLabelRect, pathLabelMarked);
-            GUI.color = Color.white;
-        }
-
+        
         //
-        private string PathLabelResized(string pathLabel, float width)
+        protected override string LabelFor(WrappedTexture element)
         {
-            return pathLabel;
+            return element.Texture?.name;
         }
 
-        private string PathLabelMarked(string pathLabel, string searchText)
+        protected override Texture2D IconFor(WrappedTexture element)
         {
-            if (searchText.NullOrEmpty()) return pathLabel;
+            return (Texture2D)element.Texture;
+        }
 
-            var index = pathLabel.IndexOf(searchText, StringComparison.InvariantCultureIgnoreCase);
-            if (index == -1) return pathLabel;
-
-            var subPart = pathLabel.Substring(index, searchText.Length);
-            return pathLabel.Replace(subPart, subPart.Colorize(Color.cyan));
+        protected override string SearchTextFor(WrappedTexture element)
+        {
+            return $"{element.Path} {element.Texture?.name}";
         }
     }
 }

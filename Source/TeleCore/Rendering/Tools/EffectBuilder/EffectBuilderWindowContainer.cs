@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using TeleCore.Rendering;
 using UnityEngine;
 using Verse;
 
@@ -11,7 +12,9 @@ namespace TeleCore
         private readonly UITopBar topBar;
         private readonly EffectCanvas canvas;
 
-        private readonly FleckMoteBrowser browser;
+        //
+        private readonly FleckMoteBrowser effectBrowser;
+        private readonly DefBrowser defBrowser;
 
         public EffectBuilderWindowContainer(Window parent, Rect rect, UIElementMode mode) : base(rect, mode)
         {
@@ -23,8 +26,9 @@ namespace TeleCore
             this.bgColor = TColor.BGDarker;
             this.borderColor = Color.clear;
             //
-            canvas = new EffectCanvas(UIElementMode.Static);
-            browser = new FleckMoteBrowser(UIElementMode.Static);
+            canvas = new EffectCanvas(Vector2.zero, new Vector2(rect.width - 2, rect.height - 2), UIElementMode.Static);
+            effectBrowser = new FleckMoteBrowser(new Vector2(900, 0), new Vector2(300, 900), UIElementMode.Dynamic);
+            defBrowser = new DefBrowser(new Vector2(700,0), new Vector2(300, 900), UIElementMode.Dynamic);
 
             //
             var buttonMenus = new List<TopBarButtonMenu>();
@@ -66,12 +70,13 @@ namespace TeleCore
         {
             Widgets.BeginGroup(inRect);
             {
-                Rect canvasRect = new Rect(0, 0, 900, 900);
-                Rect objectBrowserRect = new Rect(canvasRect.xMax-1, canvasRect.y, 300, canvasRect.height + 1);
+                //Rect canvasRect = new Rect(0, 0, 900, 900);
+                //Rect objectBrowserRect = new Rect(canvasRect.xMax-1, canvasRect.y, 300, canvasRect.height + 1);
 
                 //
-                canvas.DrawElement(canvasRect);
-                browser.DrawElement(objectBrowserRect);
+                canvas.DrawElement();
+                effectBrowser.DrawElement();
+                defBrowser.DrawElement();
             }
             Widgets.EndGroup();
 

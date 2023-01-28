@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 using Verse;
 
 namespace TeleCore
@@ -30,6 +31,11 @@ namespace TeleCore
             CurrentLayer++;
         }
 
+        public static int GetLayerOf(UIElement element)
+        {
+            throw new NotImplementedException();
+        }
+        
         public static bool ElementIsCovered(IFocusable element)
         {
             for (int i = element.RenderLayer; i > -1; i--)

@@ -356,6 +356,24 @@ namespace TeleCore
         }
 
         //WidgetRow Extensions
+        public static void Checkbox(this WidgetRow row, ref bool checkOn, bool active, float width = 24)
+        {
+            row.IncrementYIfWillExceedMaxWidth(width);
+            Rect rect = new Rect(row.LeftX(width), row.curY, width, 24f);
+            
+            if (active && Widgets.ButtonInvisible(rect, true))
+            {
+                checkOn = !checkOn;
+                if (checkOn)
+                    SoundDefOf.Checkbox_TurnedOn.PlayOneShotOnCamera(null);
+                else
+                    SoundDefOf.Checkbox_TurnedOff.PlayOneShotOnCamera(null);
+            }
+            Widgets.CheckboxDraw(rect.x, rect.y, checkOn, !active, 24f, null, null);
+            
+            row.IncrementPosition(width);
+        }
+        
         public static void Slider(this WidgetRow row, float width, ref float value, float min = 0, float max = 1)
         {
             row.IncrementYIfWillExceedMaxWidth(width);
@@ -397,6 +415,11 @@ namespace TeleCore
             return result;
         }
 
+        public static void Highlight(this WidgetRow row, float width = 24)
+        {
+           Widgets.DrawHighlightIfMouseover(new Rect(row.curX, row.curY, width, 24));
+        }
+        
         //
         public static bool CloseButtonCustom(Rect rectToClose, float buttonSize = 18)
         {
@@ -484,6 +507,61 @@ namespace TeleCore
             listing.Gap(listing.verticalSpacing);
         }
 
+        public static void MultiCheckboxLabeled(this Listing_Standard listing, string label, ref bool[] checkOn, string tooltip = null, float height = 0f, float labelPct = 1f)
+        {
+            float height2 = (height != 0f) ? height : Text.CalcHeight(label, listing.ColumnWidth * labelPct);
+            Rect rect = listing.GetRect(height2, labelPct);
+            rect.width = Math.Min(rect.width + 24f, listing.ColumnWidth);
+            if (listing.BoundingRectCached == null || rect.Overlaps(listing.BoundingRectCached.Value))
+            {
+                if (!tooltip.NullOrEmpty())
+                {
+                    if (Mouse.IsOver(rect))
+                    {
+                        Widgets.DrawHighlight(rect);
+                    }
+                    TooltipHandler.TipRegion(rect, tooltip);
+                }
+
+                MultiCheckboxLabeled(rect, label, ref checkOn);
+            }
+            listing.Gap(listing.verticalSpacing);
+        }
+        
+        
+        public static void MultiCheckboxLabeled(Rect rect, string label, ref bool[] checkOn, bool disabled = false, Texture2D texChecked = null, Texture2D texUnchecked = null, bool placeCheckboxNearText = false)
+        {
+            TextAnchor anchor = Text.Anchor;
+            Text.Anchor = TextAnchor.MiddleLeft;
+            if (placeCheckboxNearText)
+            {
+                rect.width = Mathf.Min(rect.width, Text.CalcSize(label).x + 24f + 10f);
+            }
+            Rect rect2 = rect;
+            rect2.xMax -= 24f;
+            Widgets.Label(rect2, label);
+            for (var i = 0; i < checkOn.Length; i++)
+            {
+                //var refBool = checkOn[i];
+                rect.Set(rect.xMax - ((i+1) * 24), rect.y, 24, 24);
+                if (!disabled && Widgets.ButtonInvisible(rect, true))
+                {
+                    checkOn[i] = !checkOn[i];
+                    if (checkOn[i])
+                    {
+                        SoundDefOf.Checkbox_TurnedOn.PlayOneShotOnCamera(null);
+                    }
+                    else
+                    {
+                        SoundDefOf.Checkbox_TurnedOff.PlayOneShotOnCamera(null);
+                    }
+                }
+                //y: + (rect.height - 24f) / 2f
+                Widgets.CheckboxDraw(rect.x, rect.y, checkOn[i], disabled, 24f, null, null);
+            }
+            Text.Anchor = anchor;
+        }
+        
         //
         public static void DrawListedPart<T>(Rect rect, ref Vector2 scrollPos, List<T> elements, Action<Rect, UIPartSizes, T> drawProccessor, Func<T, UIPartSizes> heightFunc)
         {
@@ -587,20 +665,51 @@ namespace TeleCore
             return null;
         }
 
-        internal static Texture TextureForFleckMote(Def def)
+        internal static Texture2D TextureForFleck(FleckDef fleck)
         {
-            Texture texture = null;
+            Texture2D texture = null;
+            if (fleck.graphicData is {Graphic: { }})
+                texture = (Texture2D)fleck.graphicData.Graphic.MatSingle.mainTexture;
+            if (texture == null && fleck.randomGraphics != null)
+            {
+                var randomGraphic = fleck.randomGraphics.FirstOrFallback(c => GetPathOf(c) != null);
+                if(randomGraphic != null)
+                    texture = (Texture2D)randomGraphic.Graphic.MatSingle.mainTexture;
+            }
+            return texture ?? BaseContent.BadTex;
+        }
+
+        internal static Texture2D TextureForThingDef(ThingDef def)
+        {
+            Texture2D texture = null;
+            if (def.graphicData is {Graphic: { }})
+                texture = (Texture2D)def.graphicData.Graphic.MatSingle.mainTexture;
+            if (texture == null && def.graphicData.Graphic is Graphic_Random random)
+            {
+                var randomGraphic = random.subGraphics.FirstOrDefault();
+                if(randomGraphic != null)
+                    texture = (Texture2D)randomGraphic.MatSingle.mainTexture;
+            }
+            return texture ?? BaseContent.BadTex;
+        }
+        
+        internal static Texture2D TextureForFleckMote(Def def)
+        {
+            Texture2D texture = null;
             if (def is ThingDef mote)
             {
                 texture = mote.uiIcon;
+                return texture;
             }
             if (def is FleckDef fleck)
             {
-                if (fleck.graphicData != null)
-                    texture = fleck.graphicData.Graphic?.MatNorth?.mainTexture;
+                if (fleck.graphicData is {Graphic: { }})
+                    texture = (Texture2D)fleck.graphicData.Graphic.MatSingle.mainTexture;
                 if (texture == null && fleck.randomGraphics != null)
                 {
-                    texture = fleck.randomGraphics.FirstOrFallback(c => GetPathOf(c) != null).Graphic.MatNorth.mainTexture;
+                    var randomGraphic = fleck.randomGraphics.FirstOrFallback(c => GetPathOf(c) != null);
+                    if(randomGraphic != null)
+                        texture = (Texture2D)randomGraphic.Graphic.MatSingle.mainTexture;
                 }
             }
             return texture;

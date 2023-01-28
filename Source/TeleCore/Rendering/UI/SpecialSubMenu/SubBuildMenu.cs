@@ -108,7 +108,18 @@ namespace TeleCore
                 Setup(menuDef);
             }
         }
+
+
+        public override bool OnCloseRequest()
+        {
+            if (MainButtonDefOf.Architect.TabWindow is MainTabWindow_Architect architect)
+            {
+                architect.selectedDesPanel = null;
+            }
+            return base.OnCloseRequest();
+        }
         
+
         public override void DoWindowContents(Rect inRect)
         {
             //

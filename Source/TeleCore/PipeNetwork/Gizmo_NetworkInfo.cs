@@ -9,6 +9,7 @@ using TeleCore.Static;
 using UnityEngine;
 using Verse;
 using Verse.Sound;
+using GridLayout = Verse.GridLayout;
 
 namespace TeleCore
 {
@@ -430,7 +431,7 @@ namespace TeleCore
                     //
                     Listing_Standard listing = new();
                     listing.Begin(listingRect);
-                    listing.Label("Allowed Types");
+                    listing.Label("Filter");
                     listing.GapLine(4);
                     listing.End();
 
@@ -440,29 +441,50 @@ namespace TeleCore
                     Widgets.DrawBoxSolid(scrollOutRect, TColor.BGDarker);
                     Widgets.BeginScrollView(scrollOutRect, ref filterScroller, scrollViewRect, false);
                     {
-                        Listing_Standard listingScroll = new Listing_Standard();
-                        listingScroll.Begin(scrollViewRect);
+                        Text.Font = GameFont.Tiny;
+                        WidgetRow row = new WidgetRow(scrollViewRect.x, scrollViewRect.y);
+                        row.Label("Type", 48);
+                        row.Label("Receive", 48);
+                        row.Label("Store", 36);
 
+                        float curY = scrollViewRect.y + 24;
                         foreach (var acceptedType in parentComp.Container.AcceptedTypes)
                         {
-                            var boolVal = parentComp.Container.AcceptsValue(acceptedType);
-                            listingScroll.CheckboxLabeled($"{acceptedType.LabelCap.CapitalizeFirst().Colorize(acceptedType.valueColor)}: ", ref boolVal);
-                            parentComp.Container.Notify_FilterChanged(acceptedType, boolVal);
-                        }
+                            var settings = parentComp.Container.FilterSettings[acceptedType];
+                            var canReceive = settings.canReceive;
+                            var canStore = settings.canStore;
+                         
+                            WidgetRow itemRow = new WidgetRow(scrollViewRect.xMax, curY, UIDirection.LeftThenDown);
+                            itemRow.Checkbox( ref canStore, true); 
+                            itemRow.Highlight(24);
+                            itemRow.Checkbox( ref canReceive, true);
+                            itemRow.Highlight(24);
+                            itemRow.Label($"{acceptedType.LabelCap.CapitalizeFirst().Colorize(acceptedType.valueColor)}: ", 84);
+                            itemRow.Highlight(84);
 
-                        listingScroll.End();
+                            parentComp.Container.Notify_FilterChanged(acceptedType, new ContainerFilterSettings()
+                            {
+                                canReceive = canReceive,
+                                canStore = canStore
+                            });
+                            
+                            //
+                            curY += 24;
+                        }
+                        
+                        Text.Font = GameFont.Small;
                     }
                     Widgets.EndScrollView();
 
                     //Copy
                     if (Widgets.ButtonImageFitted(clipboardRect, TeleContent.Copy, Color.white))
                     {
-                        ClipBoardUtility.TrySetClipBoard(StringCache.NetworkFilterClipBoard, Container.TypeFilter.Copy());
+                        ClipBoardUtility.TrySetClipBoard(StringCache.NetworkFilterClipBoard, Container.FilterSettings.Copy());
                         SoundDefOf.Tick_High.PlayOneShotOnCamera(null);
                     }
 
                     //Paste Option
-                    var clipBoard = ClipBoardUtility.TryGetClipBoard<Dictionary<NetworkValueDef, bool>>(StringCache.NetworkFilterClipBoard);
+                    var clipBoard = ClipBoardUtility.TryGetClipBoard<Dictionary<NetworkValueDef, ContainerFilterSettings>>(StringCache.NetworkFilterClipBoard);
                     bool clipBoardInsertActive = clipBoard != null && clipBoard.All(t => Container.AcceptedTypes.Contains(t.Key));
                     GUI.color = clipBoardInsertActive ? Color.white : Color.gray;
                     if (clipBoardInsertActive)

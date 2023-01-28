@@ -145,7 +145,7 @@ namespace TeleCore
         /// <summary>
         /// Returns the current room at a position.
         /// </summary>
-        public static Room GetRoomFast(this IntVec3 pos, Map map)
+        public static Room? GetRoomFast(this IntVec3 pos, Map map)
         {
             Region validRegion = map.regionGrid.GetValidRegionAt_NoRebuild(pos);
             if (validRegion != null && validRegion.type.Passable())
@@ -158,7 +158,7 @@ namespace TeleCore
         /// <summary>
         /// 
         /// </summary>
-        public static Room GetRoomIndirect(this Thing thing)
+        public static Room? GetRoomIndirect(this Thing thing)
         {
             var room = thing.GetRoom();
             if (room == null)
@@ -202,7 +202,7 @@ namespace TeleCore
         /// <summary>
         /// Get the desired <see cref="RoomComponent"/> based on type of <typeparamref name="T"/>.
         /// </summary>
-        public static T GetRoomComp<T>(this Room room) where T : RoomComponent
+        public static T? GetRoomComp<T>(this Room room) where T : RoomComponent
         {
             return room.RoomTracker()?.GetRoomComp<T>();
         }

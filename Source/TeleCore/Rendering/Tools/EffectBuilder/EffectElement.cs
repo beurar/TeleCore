@@ -14,21 +14,12 @@ namespace TeleCore
         private ThingDef moteDef;
         private FleckDef fleckDef;
 
-        //OnCanvas
-        private Vector2? oldPos;
-        private Vector2 position = Vector2.zero;
-
         //DataSet
         public bool IsMote => moteDef != null;
         public bool IsFleck => fleckDef != null;
 
-        public EffectCanvas ParentCanvas => (EffectCanvas)parent;
+        public EffectCanvas ParentCanvas => (EffectCanvas)_parent;
         public Vector2 DrawSize => new Vector2(20, 20);
-        public Vector2 Position
-        {
-            get => position;
-            private set => position = value;
-        }
 
         private Vector2 ZoomedSize => DrawSize * ParentCanvas.CanvasZoomScale;
         private Vector2 ZoomedPos => Position * ParentCanvas.CanvasZoomScale;
@@ -53,6 +44,7 @@ namespace TeleCore
 
         protected override void HandleEvent_Custom(Event ev, bool inContext = false)
         {
+            /*
             if (!IsFocused) return;
 
             var mv = ev.mousePosition;
@@ -86,6 +78,7 @@ namespace TeleCore
             {
                 oldPos = null;
             }
+            */
         }
 
         protected override void DrawContentsBeforeRelations(Rect inRect)

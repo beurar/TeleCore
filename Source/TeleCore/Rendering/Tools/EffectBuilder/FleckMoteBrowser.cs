@@ -15,11 +15,11 @@ namespace TeleCore
 
         protected override IEnumerable<ModContentPack> BaseMods => ModDirectoryData.GetAllModsWithDefs();
 
-        public FleckMoteBrowser(UIElementMode mode) : base(mode)
+        public FleckMoteBrowser(Vector2 pos, Vector2 size, UIElementMode mode) : base(pos, size, mode)
         {
         }
 
-        protected override List<Def> CheckSearch(QuickSearchFilter filter, bool filterChanged)
+        protected override List<Def> GenerateItemsFromSearch(QuickSearchFilter filter, bool filterChanged)
         {
             if (DataCached.NullOrEmpty() || filterChanged)
             {
@@ -29,7 +29,7 @@ namespace TeleCore
                 {
                     foreach (var def in contentPack.AllDefs)
                     {
-                        if (def is ThingDef {mote: { }} or FleckDef)
+                        if (def is ThingDef {mote: { }} or FleckDef && filter.Matches(def.defName))
                         {
                             DataCached.Add(def);
                         }
@@ -39,28 +39,31 @@ namespace TeleCore
             return DataCached;
         }
 
-        protected override void DrawElementOption(Rect optionRect, Def def, int i)
+        protected override string LabelFor(Def element)
         {
-            WidgetRow row = new WidgetRow(Rect.x, optionRect.y, gap: 4f);
-            row.Label($"[{i + 1}]");
-            if (def is ThingDef mote)
-            {
-                row.Label("[Mote]");
-                row.Icon(mote.uiIcon);
-                row.Label(mote.defName);
-                return;
-            }
+            return $"[{(element is FleckDef ? "Fleck" : "Mote")}]{element.defName}";
+        }
 
-            if (def is FleckDef fleck)
+        protected override Texture2D IconFor(Def element)
+        {
+            if (element is ThingDef moteDef)
             {
-                row.Label("[Fleck]");
-                var texture = TWidgets.TextureForFleckMote(def);
-                if (texture != null)
-                {
-                    row.Icon(texture);
-                }
-                row.Label(fleck.defName);
+                return (Texture2D)(moteDef.graphicData?.Graphic?.MatSingle?.mainTexture ?? BaseContent.BadTex);
             }
+            if (element is FleckDef fleckDef)
+            {
+               var texture = TWidgets.TextureForFleckMote(fleckDef);
+               if (texture != null)
+               {
+                   return texture;
+               }
+            }
+            return base.IconFor(element);
+        }
+
+        protected override string SearchTextFor(Def element)
+        {
+            return element.defName;
         }
     }
 }

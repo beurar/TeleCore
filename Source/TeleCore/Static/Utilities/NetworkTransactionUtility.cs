@@ -5,6 +5,7 @@ using System.ComponentModel;
 using System.Linq;
 using RimWorld;
 using UnityEngine;
+using Verse;
 
 namespace TeleCore.Static.Utilities;
 
@@ -45,6 +46,31 @@ public static class NetworkTransactionUtility
                     receiver.Notify_ReceivedValue();
                     MoteMaker.ThrowText(receiver.Parent.Thing.DrawPos, sender.Parent.Thing.Map, $"{val}", Color.green);
                 }
+            }
+        }
+
+        internal static void TransferToOtherSpecific(INetworkSubPart sender, INetworkSubPart receiver, NetworkValueDef def)
+        {
+            if (!receiver.Parent.AcceptsValue(def)) return;
+            if (sender.Container.TryTransferTo(receiver.Container, def, 1, out var val))
+            {
+                receiver.Notify_ReceivedValue();
+                MoteMaker.ThrowText(receiver.Parent.Thing.DrawPos, sender.Parent.Thing.Map, $"{val}", Color.green);
+            }
+        }
+        
+        internal static void TransferToOtherPurge(INetworkSubPart sender, INetworkSubPart? receiver)
+        {
+            if (receiver == null)
+            {
+                TLog.Warning("Transaction receiver is null.");
+                return;
+            }
+
+            var usedTypes = sender.Container.FilterSettings;
+            foreach (var type in usedTypes.Where(type => !type.Value.canStore))
+            {
+                TransferToOtherSpecific(sender, receiver, type.Key);
             }
         }
         
@@ -119,15 +145,17 @@ public static class NetworkTransactionUtility
             }
         }
     }
-    
+
     internal static void DoTransaction(TransactionRequest request)
     {
-        if (!request.IsValid) return;
+         if (!request.IsValid) return;
         
         //Search for potential transaction partners
         foreach (var adjacentPart in AdjacentParts(request.requester, request.FlowDir))
         {
-            if(request.partValidator.Invoke(adjacentPart) && request.requester.CanInteractWith(adjacentPart)) 
+            if (!adjacentPart.HasContainer) continue; //Cant do transaction without containers
+            if (!request.partValidator?.Invoke(adjacentPart) ?? false) continue; //Custom Validator check
+            if (request.requester.CanInteractWith(adjacentPart)) //Custom interaction check
                 request.transaction.Invoke(adjacentPart);
         }
 
