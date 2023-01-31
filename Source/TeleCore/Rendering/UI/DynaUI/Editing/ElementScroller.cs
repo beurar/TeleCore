@@ -1,19 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using TeleCore.Rendering.UI.DynaUI.Events;
 using UnityEngine;
 using Verse;
 
 namespace TeleCore
 {
-    public interface IReorderableElement
-    {
-        public UIElement Element { get; }
-        public void DrawElementInScroller(Rect inRect);
-    }
-
     public class ElementScroller : UIElement
     {
         private UIElement parentContainer;
@@ -51,18 +47,25 @@ namespace TeleCore
         {
             this.parentContainer = parentContainer;
             hasTopBar = false;
+            
+            //Event Hooking
+            parentContainer.CollectionChanged += HandleCollectionChange;
         }
 
-        public void Notify_NewElement(UIElement newElement)
+        private void HandleCollectionChange(object sender, NotifyCollectionChangedEventArgs e)
         {
-            //elementList.Add(newElement);
-            SelectedElement = newElement;
-        }
-
-        public void Notify_RemoveElement(UIElement element)
-        {
-            if (SelectedElement == element)
-                SelectedElement = ElementList.FirstOrFallback(null);
+            switch (e.Action)
+            {
+                case NotifyCollectionChangedAction.Add:
+                    SelectedElement = e.NewItems[0] as UIElement;
+                    break;
+                case NotifyCollectionChangedAction.Remove:
+                    if (SelectedElement == e.OldItems[0])
+                        SelectedElement = ElementList.FirstOrFallback(null);
+                    break;
+                default:
+                    throw new NotImplementedException();
+            }
         }
 
         public void Notify_SelectIndex(int index)

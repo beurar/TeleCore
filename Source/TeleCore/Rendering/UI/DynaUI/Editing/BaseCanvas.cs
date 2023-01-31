@@ -8,14 +8,14 @@ using Verse;
 
 namespace TeleCore;
 
-public class BasicCanvas : UIElement, IDragAndDropReceiver
+public class BaseCanvas : UIElement, IDragAndDropReceiver
 {
     //
     internal const int _TileSize = 100;
     internal const int _CanvasDimensions = 5;
     internal static FloatRange SizeRange = new(0.01f, _CanvasDimensions);
     internal static Vector2 TileVector = new(_TileSize, _TileSize);
-    private static FloatRange ScaleRange = new(0.5f, 20);
+    private static readonly FloatRange ScaleRange = new(0.5f, 20);
 
     //
     private Vector2? oldDragPos;
@@ -33,16 +33,16 @@ public class BasicCanvas : UIElement, IDragAndDropReceiver
     protected Vector2 LimitSize => (Size * 1f) * CanvasZoomScale;
 
 
-    public BasicCanvas(UIElementMode mode) : base(mode)
+    public BaseCanvas(UIElementMode mode) : base(mode)
     {
+        //layerView = new TextureLayerView(this);
+        //animationMetaData = new AnimationMetaData(this);
+        UIDragNDropper.RegisterAcceptor(this);
     }
 
-    public BasicCanvas(Rect rect, UIElementMode mode) : base(rect, mode)
+    public BaseCanvas(Vector2 pos, Vector2 size, UIElementMode mode) : base(pos, size, mode)
     {
-    }
-
-    public BasicCanvas(Vector2 pos, Vector2 size, UIElementMode mode) : base(pos, size, mode)
-    {
+        UIDragNDropper.RegisterAcceptor(this);
     }
 
     //Basic Property Setters

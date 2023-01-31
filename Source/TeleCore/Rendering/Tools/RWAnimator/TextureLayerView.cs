@@ -22,16 +22,6 @@ namespace TeleCore
             internalScroller = new ElementScroller(parentContainer, UIElementMode.Static);
         }
 
-        public void Notify_NewLayer(TextureElement newElement)
-        {
-            internalScroller.Notify_NewElement(newElement);
-        }
-
-        public void Notify_RemovedLayer(UIElement element)
-        {
-            internalScroller.Notify_RemoveElement(element);
-        }
-
         public void Notify_SelectIndex(int index)
         {
             internalScroller.Notify_SelectIndex(index);

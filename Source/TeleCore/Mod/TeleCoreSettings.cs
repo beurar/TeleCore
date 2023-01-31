@@ -13,7 +13,7 @@ namespace TeleCore
         internal bool enableProjectileGraphicRandomFix = false;
 
         //Tools.General
-        internal Dictionary<string, ScribeDictionary<string, bool>> DataBrowserSettings = new();
+        //internal Dictionary<string, ScribeDictionary<string, bool>> DataBrowserSettings = new();
 
         //Tools.Animation
         private string userDefinedAnimationDefLocation = null;
@@ -27,6 +27,7 @@ namespace TeleCore
         }
 
         //Data Notifiers
+        /*
         internal bool AllowsModInDataBrowser(Type forType, ModContentPack mod)
         {
             if (!DataBrowserSettings.TryGetValue(forType.ToString(), out var settings)) return true;
@@ -48,7 +49,8 @@ namespace TeleCore
             settings[packName] = value;
             Write();
         }
-
+        */
+        
         internal void SetAnimationDefLocation(string newPath, bool write = true)
         {
             userDefinedAnimationDefLocation = newPath;
@@ -68,17 +70,19 @@ namespace TeleCore
         {
             Scribe_Values.Look(ref enableProjectileGraphicRandomFix, "enableProjectileGraphicRandomFix");
             Scribe_Values.Look(ref userDefinedAnimationDefLocation, "userDefinedAnimationDefLocation");
-            Scribe_Collections.Look(ref DataBrowserSettings, "DataBrowserSettings", LookMode.Value, LookMode.Deep);
+            //Scribe_Collections.Look(ref DataBrowserSettings, "DataBrowserSettings", LookMode.Value, LookMode.Deep);
 
             if (userDefinedAnimationDefLocation == null)
             {
                 SetAnimationDefLocation(StringCache.DefaultAnimationDefLocation, false);
             }
 
+            /*
             if (DataBrowserSettings == null)
             {
                 DataBrowserSettings = new Dictionary<string, ScribeDictionary<string, bool>>();
             }
+            */
         }
     }
 }

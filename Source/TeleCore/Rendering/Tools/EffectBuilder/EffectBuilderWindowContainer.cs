@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using TeleCore.Rendering;
+using TeleCore.Rendering.Tools.EffectBuilder;
 using UnityEngine;
 using Verse;
 
@@ -10,11 +11,9 @@ namespace TeleCore
         private Window parentWindow;
 
         private readonly UITopBar topBar;
-        private readonly EffectCanvas canvas;
+        private readonly EffectWorkTableView workTable;
 
         //
-        private readonly FleckMoteBrowser effectBrowser;
-        private readonly DefBrowser defBrowser;
 
         public EffectBuilderWindowContainer(Window parent, Rect rect, UIElementMode mode) : base(rect, mode)
         {
@@ -25,11 +24,10 @@ namespace TeleCore
             this.parentWindow = parent;
             this.bgColor = TColor.BGDarker;
             this.borderColor = Color.clear;
+            
             //
-            canvas = new EffectCanvas(Vector2.zero, new Vector2(rect.width - 2, rect.height - 2), UIElementMode.Static);
-            effectBrowser = new FleckMoteBrowser(new Vector2(900, 0), new Vector2(300, 900), UIElementMode.Dynamic);
-            defBrowser = new DefBrowser(new Vector2(700,0), new Vector2(300, 900), UIElementMode.Dynamic);
-
+            workTable = new EffectWorkTableView(Vector2.zero, new Vector2(rect.width - 15, rect.height - 25), UIElementMode.Static);
+            
             //
             var buttonMenus = new List<TopBarButtonMenu>();
             //File
@@ -74,9 +72,7 @@ namespace TeleCore
                 //Rect objectBrowserRect = new Rect(canvasRect.xMax-1, canvasRect.y, 300, canvasRect.height + 1);
 
                 //
-                canvas.DrawElement();
-                effectBrowser.DrawElement();
-                defBrowser.DrawElement();
+                workTable.DrawElement();
             }
             Widgets.EndGroup();
 

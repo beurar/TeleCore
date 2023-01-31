@@ -494,7 +494,7 @@ namespace TeleCore
         {
             if (!IsSelected) yield break;
             yield return new FloatMenuOption("Reset", this.Reset);
-            yield return new FloatMenuOption("Delete", delegate { ParentCanvas.DiscardElement(this); });
+            yield return new FloatMenuOption("Delete", delegate { ParentCanvas.RemoveElement(this); });
             yield return new FloatMenuOption("Center", Recenter);
         }
 

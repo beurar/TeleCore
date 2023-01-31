@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Linq;
 using RimWorld;
 using TeleCore.Static;
@@ -8,7 +9,7 @@ using Verse;
 
 namespace TeleCore
 {
-    internal class TextureCanvas : BasicCanvas
+    internal class TextureCanvas : BaseCanvas
     {
         private TextureLayerView layerView;
         private AnimationMetaData animationMetaData;
@@ -62,34 +63,31 @@ namespace TeleCore
         public void Notify_LoadedElement(UIElement loadedElement)
         {
             loadedElement.SetProperties(parent: this);
-            base.Notify_AddedElement(loadedElement);
+            NotifyCollectionChanged(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Add, loadedElement));
+            //base.Notify_AddedElement(loadedElement);
         }
 
-        protected override void Notify_AddedElement(UIElement newElement)
+        protected override void NotifyCollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
         {
-            base.Notify_AddedElement(newElement);
-            layerView.Notify_NewLayer(newElement as TextureElement);
-
-            if (newElement is not IKeyFramedElement framedElement) return;
-            foreach (var animation in AnimationData.CurrentAnimations)
+            switch (e.Action)
             {
-                animation.InternalFrames.Add(framedElement, new Dictionary<int, KeyFrame>());
-            }
-        }
-
-        protected override void Notify_RemovedElement(UIElement newElement)
-        {
-            base.Notify_RemovedElement(newElement);
-            layerView.Notify_RemovedLayer(newElement);
-
-            //
-            if (newElement is not IKeyFramedElement framedElement) return;
-            foreach (var animation in AnimationData.CurrentAnimations)
-            {
-                if (animation.InternalFrames.ContainsKey(framedElement))
-                {
-                    animation.InternalFrames.Remove(framedElement);
-                }
+                case NotifyCollectionChangedAction.Add:
+                    if (e.NewItems[0] is not IKeyFramedElement framedElement) return;
+                    foreach (var animation in AnimationData.CurrentAnimations)
+                    {
+                        animation.InternalFrames.Add(framedElement, new Dictionary<int, KeyFrame>());
+                    }
+                    break;
+                case NotifyCollectionChangedAction.Remove:
+                    if (e.OldItems[0] is not IKeyFramedElement framedElementRemoved) return;
+                    foreach (var animation in AnimationData.CurrentAnimations)
+                    {
+                        if (animation.InternalFrames.ContainsKey(framedElementRemoved))
+                        {
+                            animation.InternalFrames.Remove(framedElementRemoved);
+                        }
+                    }
+                    break;
             }
         }
 

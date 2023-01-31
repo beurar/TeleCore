@@ -11,21 +11,15 @@ namespace TeleCore
     public class EffectElement : UIElement
     {
         private Def def;
-        private ThingDef moteDef;
-        private FleckDef fleckDef;
 
         //DataSet
-        public bool IsMote => moteDef != null;
-        public bool IsFleck => fleckDef != null;
+        public bool IsMote => def is ThingDef;
+        public bool IsFleck => def is FleckDef;
 
         public EffectCanvas ParentCanvas => (EffectCanvas)_parent;
-        public Vector2 DrawSize => new Vector2(20, 20);
 
-        private Vector2 ZoomedSize => DrawSize * ParentCanvas.CanvasZoomScale;
-        private Vector2 ZoomedPos => Position * ParentCanvas.CanvasZoomScale;
-        private Vector2 TruePos => ParentCanvas.Origin + (ZoomedPos);
-        private Vector2 RectPosition => TruePos - ZoomedSize / 2f;
-        private Rect ElementRect => new Rect(RectPosition, ZoomedSize);
+        //EffectData
+        public Vector2 EffectOffset => Position - Parent.InRect.center;
 
         public EffectElement(Rect rect, Def def) : base(rect, UIElementMode.Dynamic)
         {
@@ -33,61 +27,27 @@ namespace TeleCore
             bgColor = Color.clear;
             hasTopBar = false;
 
+            Size = new Vector2(20, 20);
+            
             //
             this.def = def;
-            if (def is ThingDef mote)
-                moteDef = mote;
-            if (def is FleckDef fleck)
-                fleckDef = fleck;
-
         }
 
         protected override void HandleEvent_Custom(Event ev, bool inContext = false)
         {
-            /*
-            if (!IsFocused) return;
-
-            var mv = ev.mousePosition;
-
-            //
-            if (ElementRect.Contains(mv))
-            {
-                if (ev.type == EventType.MouseDown)
-                {
-                    if (ev.button == 0)
-                    {
-                        oldPos ??= Position;
-                        UIEventHandler.StartFocusForced(this);
-                    }
-                }
-            }
-
-            //
-            if (IsFocused && ev.type == EventType.MouseDrag)
-            {
-                if (oldPos != null)
-                {
-                    var dragDiff = CurrentDragDiff;
-                    dragDiff /= ParentCanvas.CanvasZoomScale;
-                    Position = oldPos.Value + dragDiff;
-                }
-            }
-
-            //
-            if (ev.type == EventType.MouseUp)
-            {
-                oldPos = null;
-            }
-            */
         }
 
         protected override void DrawContentsBeforeRelations(Rect inRect)
         {
+            var label = $"[{def.defName}]\n{EffectOffset}";
             var labelSize = Text.CalcSize(def.defName);
-            Rect drawRect = ElementRect;
-            Rect labelRect = new Rect(drawRect.x, drawRect.y - 20, labelSize.x, labelSize.y);
-            TWidgets.DoTinyLabel(labelRect, $"[{def.defName}]");
-            Widgets.DrawTextureFitted(drawRect, TeleContent.UIDataNode, 1f);
+            Rect labelRect = new Rect(Rect.x, Rect.y - labelSize.y, labelSize.x, labelSize.y);
+            TWidgets.DoTinyLabel(labelRect, label);
+            
+            //
+            GUI.color = Color.red;
+            Widgets.DrawTextureFitted(Rect, TeleContent.UIDataNode, 1f);
+            GUI.color = Color.white;
         }
     }
 }

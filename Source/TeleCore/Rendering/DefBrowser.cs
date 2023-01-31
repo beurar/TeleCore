@@ -20,6 +20,14 @@ public class DefBrowser : DataBrowser<Def>
 {
     private DefBrowserSettings _settings;
     private readonly List<Def> _cachedData;
+
+    protected override IEnumerable<ModContentPack> BaseMods => ModDirectoryData.GetAllModsWithDefs();
+
+    public DefBrowser(UIElementMode mode, DefBrowserSettings settings = null) : base(mode)
+    {
+        _settings = settings ?? new DefBrowserSettings();
+        _cachedData = new List<Def>();
+    }
     
     public DefBrowser(Vector2 pos, Vector2 size, UIElementMode mode, DefBrowserSettings settings = null) : base(pos, size, mode)
     {
@@ -36,7 +44,7 @@ public class DefBrowser : DataBrowser<Def>
             {
                 foreach (var def in contentPack.AllDefs)
                 {
-                    if (def is ThingDef {mote: { }} or FleckDef && filter.Matches(def.defName))
+                    if (_settings.filter(def) && filter.Matches(def.defName))
                     {
                         _cachedData.Add(def);
                     }

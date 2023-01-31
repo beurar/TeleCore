@@ -1,17 +1,14 @@
 ﻿using System.Collections.Generic;
+using RimWorld;
 using UnityEngine;
 using Verse;
 
 namespace TeleCore;
 
-public class EffectCanvas : BasicCanvas
+public class EffectCanvas : UIElement, IDragAndDropReceiver
 {
-    //Settings
-    private bool ShouldShowMetaData { get; set; } = true;
-    private bool ShouldShowElementProperties { get; set; }
-
-    public Rect MetaDataViewRect => new Rect(Rect.xMax, Position.y, 500, 250);
-
+    private ThingDef _currentHolder;
+    
     public EffectCanvas(Vector2 pos, Vector2 size, UIElementMode mode) : base(pos, size, mode)
     {
         UIDragNDropper.RegisterAcceptor(this);
@@ -28,72 +25,57 @@ public class EffectCanvas : BasicCanvas
         {
             yield return rightClickOption;
         }
-
-        //
-        yield return new FloatMenuOption("Add Node", () => { });
     }
-
-
-    //
-    private void DrawEffectMetaData()
-    {
-        Rect rect = MetaDataViewRect;
-        UILayerRenderer.DrawImmediateLayer(0, rect, delegate { });
-    }
-
-    //
 
     protected override void DrawTopBarExtras(Rect topRect)
     {
         return;
-        WidgetRow buttonRow = new WidgetRow();
-        buttonRow.Init(topRect.xMax, topRect.y, UIDirection.LeftThenDown);
-        if (buttonRow.ButtonIcon(TeleContent.SettingsWheel))
-        {
-            ShouldShowMetaData = !ShouldShowMetaData;
-        }
-
-        if (buttonRow.ButtonIcon(TeleContent.BurgerMenu))
-        {
-            ShouldShowElementProperties = !ShouldShowElementProperties;
-        }
     }
 
-    protected override void DrawOnCanvas(Rect inRect)
+    protected override void DrawContentsBeforeRelations(Rect inRect)
     {
-        if (ShouldShowMetaData)
+        base.DrawContentsBeforeRelations(inRect);
+        if (_currentHolder != null) //Draw Effect Holder Thing
         {
-            DrawEffectMetaData();
+            GUI.color = TColor.White05;
+            Widgets.DrawTextureFitted(inRect, _currentHolder.ToTextureAndColor().Texture, 1f);
+            GUI.color = Color.white;
         }
     }
 
     //
-    public override bool TryAcceptDrop(object draggedObject, Vector2 pos)
+    public bool TryAcceptDrop(object draggedObject, Vector2 pos)
     {
-        if (draggedObject is Def def)
+        if (draggedObject is ThingDef effectHolder && (effectHolder.IsBuilding() || (effectHolder.category is ThingCategory.Item or ThingCategory.Building)))
         {
-            var element = new EffectElement(new Rect(pos, new Vector2(20,20)), def);
-            AddElement(element);
+            _currentHolder = effectHolder;
             return true;
+        }
+
+        if (draggedObject is ThingDef {mote: { }} effectDef)
+        {
+            var element = new EffectElement(new Rect(pos, new Vector2(20,20)), effectDef);
+            AddElement(element);
         }
 
         return false;
     }
 
-    public override bool CanAcceptDrop(object draggedObject)
+    public bool CanAcceptDrop(object draggedObject)
     {
         return draggedObject is Def;
     }
 
-    public override void DrawHoveredData(object draggedObject, Vector2 pos)
+    public void DrawHoveredData(object draggedObject, Vector2 pos)
     {
         if (draggedObject is Def def)
         {
             var texture = TWidgets.TextureForFleckMote(def);
             var labelSize = Text.CalcSize(def.defName);
-            Rect drawRect = pos.RectOnPos(new Vector2(20, 20) * CanvasZoomScale);
+            Rect drawRect = pos.RectOnPos(new Vector2(20, 20));
             Rect labelRect = new Rect(drawRect.x, drawRect.y - 20, labelSize.x, labelSize.y);
             TWidgets.DoTinyLabel(labelRect, $"[{def.defName}]");
+            
             Widgets.DrawTextureFitted(drawRect, TeleContent.UIDataNode, 1f);
         }
     }

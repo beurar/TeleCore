@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using RimWorld;
+using TeleCore.Rendering.UI.DynaUI.Events;
 using UnityEngine;
 using Verse;
 
@@ -15,7 +17,6 @@ namespace TeleCore
         Static,
         Fill
     }
-
     public enum UIElementState
     {
         Open,
@@ -25,24 +26,26 @@ namespace TeleCore
 
     public abstract class UIElement : IDraggable, IFocusable
     {
-        //Global Const
-        private const int BorderMargin = 25;
-
-        //
+        //Relation Holding
         protected UIElement _parent;
         protected readonly List<UIElement> _children = new();
         
         //Local Data
         protected Color bgColor = TColor.MenuSectionBGFillColor;
         protected Color borderColor = TColor.MenuSectionBGBorderColor;
-
         protected string label, title;
         protected bool hasTopBar = true;
+        
+        //TODO: Add Style: protected UIElementStyle style;
 
-        private Rect? overrideRect;
+        //Transform
         private Vector2 position = Vector2.zero;
         private Vector2 size;
+        private float rotation;
 
+        //
+        private Rect? overrideRect;
+        
         //Internal Dragging
         private Vector2? startDragPos, endDragPos, oldPos;
 
@@ -50,6 +53,10 @@ namespace TeleCore
         public Vector2 EndDragPos => endDragPos ?? Vector2.zero;
         public Vector2 CurrentDragDiff => endDragPos.HasValue ? endDragPos.Value - startDragPos.Value : Vector2.zero;
         protected Vector2 CurrentDragResult => oldPos.HasValue ? new Vector2(oldPos.Value.x + CurrentDragDiff.x, oldPos.Value.y + CurrentDragDiff.y) : position;
+
+        //Events
+        public event NotifyCollectionChangedEventHandler CollectionChanged;
+        public event ElementSelectedEventHandler ElementSelected;
 
         //Properties
         public UIElementMode UIMode { get; private set; } = UIElementMode.Dynamic;
@@ -91,6 +98,7 @@ namespace TeleCore
                 Notify_StateChanged();
             }
         }
+
         public Vector2 Size
         {
             get => size;
@@ -127,7 +135,7 @@ namespace TeleCore
         public virtual string Label => "New Element";
 
         //Input Rect Data
-        protected Rect TopRect => new Rect(position.x, position.y, size.x, BorderMargin);
+        protected Rect TopRect => new Rect(position.x, position.y, size.x, UIConsts.BorderMargin);
         protected virtual Rect DragAreaRect => TopRect;
         public virtual Rect FocusRect => Rect;
 
@@ -137,12 +145,16 @@ namespace TeleCore
         protected UIElement(UIElementMode mode)
         {
             this.UIMode = mode;
+            CollectionChanged += NotifyCollectionChanged;
+            ElementSelected += NotifyElementSelected;
         }
 
         protected UIElement(Rect rect, UIElementMode mode)
         {
             this.Rect = rect;
             this.UIMode = mode;
+            CollectionChanged += NotifyCollectionChanged;
+            ElementSelected += NotifyElementSelected;
         }
 
         protected UIElement(Vector2 pos, Vector2 size, UIElementMode mode)
@@ -150,6 +162,8 @@ namespace TeleCore
             this.size = size;
             Position = pos;
             this.UIMode = mode;
+            CollectionChanged += NotifyCollectionChanged;
+            ElementSelected += NotifyElementSelected;
         }
 
         private void SetParent(UIElement parent) => this._parent = parent;
@@ -200,21 +214,28 @@ namespace TeleCore
             if(pos.HasValue)
                 newElement.SetPosition(pos.Value);
 
-            Notify_AddedElement(newElement);
+            //
+            OnCollectionChanged(new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Add, newElement));
+            
+            //Notify_AddedElement(newElement);
+            //TODO: Add More Events
             newElement.Notify_AddedToParent(this);
         }
 
-        public void DiscardElement(UIElement element)
+        public void RemoveElement(UIElement element)
         {
             ChildElements.Remove(element);
             element.SetParent(null);
-            Notify_RemovedElement(element);
-
+            
+            //
+            OnCollectionChanged(new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Remove, element));
+            
+            //TODO: Add More Events
             element.Notify_RemovedFromParent(this);
         }
 
-        protected virtual void Notify_AddedElement(UIElement newElement) { }
-        protected virtual void Notify_RemovedElement(UIElement newElement) { }
+        //protected virtual void Notify_AddedElement(UIElement newElement) { }
+        //protected virtual void Notify_RemovedElement(UIElement newElement) { }
 
         protected virtual void Notify_AddedToParent(UIElement parent) { }
         protected virtual void Notify_RemovedFromParent(UIElement parent){}
@@ -225,6 +246,20 @@ namespace TeleCore
             _parent?.Notify_ChildElementChanged(this);
         }
 
+        private void OnCollectionChanged(NotifyCollectionChangedEventArgs e)
+        {
+            CollectionChanged(this, e);
+        }
+        
+        private void OnElementSelected(ElementSelectedEventArgs e)
+        {
+            ElementSelected(this, e);
+        }
+
+        protected virtual void NotifyCollectionChanged(object sender, NotifyCollectionChangedEventArgs e) { }
+        
+        protected virtual void NotifyElementSelected(object sender, ElementSelectedEventArgs e) { }
+        
         protected virtual void Notify_ChildElementChanged(UIElement element)
         {
         }
@@ -253,6 +288,7 @@ namespace TeleCore
 
             //
             TWidgets.DrawColoredBox(Rect, bgColor, borderColor, 1);
+            TWidgets.DrawColoredBox(InRect, bgColor, borderColor, 1);
             if(hasTopBar) DrawTopBar();
 
             //

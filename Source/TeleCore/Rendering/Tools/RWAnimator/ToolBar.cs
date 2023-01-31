@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -22,11 +23,15 @@ namespace TeleCore
         {
         }
 
-        protected override void Notify_AddedElement(UIElement newElement)
+        protected override void NotifyCollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
         {
-            newElement.ToggleOpen();
+            base.NotifyCollectionChanged(sender, e);
+            if (e.NewItems.Count > 0 && e.NewItems[0] is UIElement element)
+            {
+                element.ToggleOpen();
+            }
         }
-
+        
         protected override void DrawContentsBeforeRelations(Rect inRect)
         {
             Widgets.BeginGroup(inRect);

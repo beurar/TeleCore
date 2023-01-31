@@ -442,10 +442,17 @@ namespace TeleCore
                     Widgets.BeginScrollView(scrollOutRect, ref filterScroller, scrollViewRect, false);
                     {
                         Text.Font = GameFont.Tiny;
-                        WidgetRow row = new WidgetRow(scrollViewRect.x, scrollViewRect.y);
-                        row.Label("Type", 48);
-                        row.Label("Receive", 48);
-                        row.Label("Store", 36);
+                        var label1 = "Type";
+                        var label2 = "Receive";
+                        var label3 = "Store";
+                        var size1 = Text.CalcSize(label1);
+                        var size2 = Text.CalcSize(label2);
+                        var size3 = Text.CalcSize(label3);
+
+                        WidgetRow row = new WidgetRow(scrollViewRect.xMax, scrollViewRect.y, UIDirection.LeftThenDown);
+                        row.Label(label3, size3.x);
+                        row.Label(label2, size2.x);
+                        row.Label(label1, scrollViewRect.width - (row.curX + size1.x));
 
                         float curY = scrollViewRect.y + 24;
                         foreach (var acceptedType in parentComp.Container.AcceptedTypes)
@@ -455,8 +462,8 @@ namespace TeleCore
                             var canStore = settings.canStore;
                          
                             WidgetRow itemRow = new WidgetRow(scrollViewRect.xMax, curY, UIDirection.LeftThenDown);
-                            itemRow.Checkbox( ref canStore, true); 
-                            itemRow.Highlight(24);
+                            itemRow.Checkbox( ref canStore, true, size3.x); 
+                            itemRow.Highlight(size3.x);
                             itemRow.Checkbox( ref canReceive, true);
                             itemRow.Highlight(24);
                             itemRow.Label($"{acceptedType.LabelCap.CapitalizeFirst().Colorize(acceptedType.valueColor)}: ", 84);

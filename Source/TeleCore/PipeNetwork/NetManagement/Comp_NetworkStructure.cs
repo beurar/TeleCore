@@ -122,7 +122,7 @@ namespace TeleCore
             
             //
             if(!respawningAfterLoad)
-                networkParts = new List<NetworkSubPart>(Props.networks.Count);
+                networkParts = new List<NetworkSubPart>(Math.Max(1, Props.networks.Count));
             
             networkPartByDef = new Dictionary<NetworkDef, NetworkSubPart>(Props.networks.Count);
             for (var i = 0; i < Props.networks.Count; i++)
@@ -232,7 +232,7 @@ namespace TeleCore
         public override string CompInspectStringExtra()
         {
             StringBuilder sb = new StringBuilder();
-            foreach (var networkSubPart in networkParts)
+            foreach (var networkSubPart in NetworkParts)
             {
                 sb.AppendLine(networkSubPart.NetworkInspectString());
             }
@@ -263,7 +263,7 @@ namespace TeleCore
             }
             */
 
-            foreach (var networkPart in networkParts)
+            foreach (var networkPart in NetworkParts)
             {
                 foreach (var partGizmo in networkPart.GetPartGizmos())
                 {
@@ -283,7 +283,7 @@ namespace TeleCore
                 defaultLabel = "Draw Networks",
                 action = delegate
                 {
-                    foreach (var networkPart in networkParts)
+                    foreach (var networkPart in NetworkParts)
                     {
                         networkInfo[networkPart.NetworkDef].ToggleShowNetworks();
                     }
