@@ -17,7 +17,7 @@ public class EffectWorkTableView : UIElement
         _browser = new DefBrowser(new Vector2(size.x - 225, pos.y), new Vector2(225, size.y), UIElementMode.Static,
             new DefBrowserSettings()
             {
-                filter = (def) => def is ThingDef or FleckDef,
+                filter = (def) => def is ThingDef {IsFrame: false, IsBlueprint: false} or FleckDef,
             });
     }
 
