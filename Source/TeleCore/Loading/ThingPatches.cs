@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using HarmonyLib;
 using RimWorld;
+using TeleCore.Static;
 using UnityEngine;
 using Verse;
 
@@ -18,10 +19,8 @@ namespace TeleCore
         {
             public static void Postfix(Thing __instance)
             {
-                var teleCore = __instance.MapHeld.TeleCore();
-
-                //Register For DataBase
-                teleCore.Notify_ThingSpawned(__instance);
+                //Event Handling
+                GlobalEventHandler.OnThingSpawned(new ThingStateChangedEventArgs(ThingStateChangeType.Spawned, __instance));
             }
         }
 
@@ -31,10 +30,8 @@ namespace TeleCore
         {
             public static bool Prefix(Thing __instance)
             {
-                var teleCore = __instance.MapHeld.TeleCore();
-
-                //Register For DataBase
-                teleCore.Notify_DespawnedThing(__instance);
+                //Event Handling
+                GlobalEventHandler.OnThingDespawning(new ThingStateChangedEventArgs(ThingStateChangeType.Despawning, __instance));
                 return true;
             }
         }
@@ -45,10 +42,8 @@ namespace TeleCore
         {
             public static void Postfix(Thing __instance, string signal)
             {
-                var teleCore = __instance.MapHeld.TeleCore();
-
-                //
-                teleCore.Notify_ThingSentSignal(__instance, signal);
+                //Event Handling
+                GlobalEventHandler.OnThingSentSignal(new ThingStateChangedEventArgs(ThingStateChangeType.SentSignal, __instance, signal));
             }
         }
         
@@ -59,9 +54,8 @@ namespace TeleCore
         {
             public static void Postfix(Building_Door __instance)
             {
-                var teleCore = __instance.MapHeld.TeleCore();
-
-                teleCore.Notify_ThingSentSignal(__instance, __instance.Open ? "DoorOpened" : "DoorClosed");
+                //Event Handling
+                GlobalEventHandler.OnThingSentSignal(new ThingStateChangedEventArgs(ThingStateChangeType.SentSignal, __instance, __instance.Open ? "DoorOpened" : "DoorClosed"));
             }
         }
 

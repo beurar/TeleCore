@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using RimWorld;
+using TeleCore.DataEvents;
 using Verse;
 
 namespace TeleCore
@@ -37,6 +38,14 @@ namespace TeleCore
                 structuresByRole.Add(role, new HashSet<INetworkSubPart>());
             }
         }
+        
+        public void RegisterParentForEvents(PipeNetworkManager parent)
+        {
+            parent.AddedPart += OnPartAdded;
+            parent.RemovedPart += OnPartRemoved;
+            parent.NetworkDestroyed += OnNetworkDestroyed;
+        }
+
 
         public void Notify_ParentDestroyed()
         {
@@ -128,5 +137,38 @@ namespace TeleCore
                 UpdateString();
             return cachedString;
         }
+        
+        #region EventHandling
+
+        public event NetworkChangedEvent ParentDestroyed;
+        
+        private void OnPartAdded(NetworkChangedEventArgs args)
+        {
+            var part = args.Part;
+            //part.OnParentDestroyed(args);
+            throw new NotImplementedException();
+        }
+
+        private void OnPartRemoved(NetworkChangedEventArgs args)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void OnNetworkDestroyed(NetworkChangedEventArgs networkChangedEventArgs)
+        {
+            
+        }
+        
+        //TODO: Add events for partset handling
+        public void OnParentDestroyed(NetworkChangedEventArgs args)
+        {
+            foreach (INetworkSubPart part in fullSet)
+            {
+                //Remove direct connection from neighboring parts
+                part.DirectPartSet.RemoveComponent(parent);
+            }
+        }
+        
+        #endregion
     }
 }

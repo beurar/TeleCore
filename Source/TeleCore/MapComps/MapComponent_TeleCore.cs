@@ -4,6 +4,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
+using TeleCore.Static;
 using Verse;
 
 namespace TeleCore
@@ -140,63 +141,6 @@ namespace TeleCore
             for (var i = 0; i < allMapInfos.Count; i++)
             {
                 allMapInfos[i].TeleUpdate();
-            }
-        }
-
-        //Events
-        public void Notify_ThingSpawned(Thing thing)
-        {
-            try
-            {
-                //
-                ThingTrackerMapInfo.Notify_RegisterThing(thing);
-            }
-            catch (Exception ex)
-            {
-                TLog.Error($"Error trying to register spawned thing: {thing}\n{ex.Message}");
-            }
-            
-            //
-            if (thing.def.HasTeleExtension(out var extension))
-            {
-                foreach (var group in extension.thingGroups.groups)
-                {
-                    ThingGroupCacheInfo.RegisterPart(group, thing);
-                }
-            }
-        }
-
-        public void Notify_DespawnedThing(Thing thing)
-        {
-            try
-            {
-                ThingTrackerMapInfo.Notify_DeregisterThing(thing);
-            }
-            catch (Exception ex)
-            {
-                TLog.Error($"Error trying to deregister despawned thing: {thing}\n{ex.Message}");
-            }
-
-            //
-            if (thing.def.HasTeleExtension(out var extension))
-            {
-                foreach (var group in extension.thingGroups.groups)
-                {
-                    ThingGroupCacheInfo.DeregisterPart(group, thing);
-                }
-            }
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Notify_ThingSentSignal(Thing thing, string signal)
-        {
-            try
-            {
-                ThingTrackerMapInfo.Notify_ThingStateChanged(thing, signal);
-            }
-            catch (Exception ex)
-            {
-                TLog.Error($"Error trying to send signal on thing: {thing}\n{ex.Message}");
             }
         }
     }

@@ -88,12 +88,5 @@ namespace TeleCore
         {
             belongingValueDefs.Add(networkValueDef);
         }
-
-        //TODO: Evaluate necessity
-        public bool CanWorkWith(NetworkDef otherNetworkDef)
-        {
-            if (this == otherNetworkDef) return true;
-            return false;
-        }
     }
 }

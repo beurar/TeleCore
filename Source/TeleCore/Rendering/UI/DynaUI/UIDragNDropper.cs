@@ -67,7 +67,6 @@ namespace TeleCore
         public static void DrawCurDrag()
         {
             if (sourceElement == null) return;
-            TLog.Message($"CurDrag: {sourceElement.Label} of {draggedObject} | {draggedObject is Def}");
 
             var mousePos = Event.current.mousePosition;
             foreach (var acceptor in ReadyAcceptors)
@@ -137,7 +136,6 @@ namespace TeleCore
 
             if (data is Def def)
             {
-                TLog.Message($"Drawing def: {def}");
                 var fleckMoteTexture = TWidgets.TextureForFleckMote(def);
                 Rect box = new Rect(pos, new Vector2(45, 45));
                 TWidgets.DrawBoxHighlight(box);

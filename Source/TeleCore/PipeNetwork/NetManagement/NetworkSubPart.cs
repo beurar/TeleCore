@@ -381,7 +381,7 @@ namespace TeleCore
                 NetworkRole.Storage, NetworkRole.Consumer,
                 part => NetworkTransactionUtility.Actions.TransferToOtherPurge(this, part),
                 part => NetworkTransactionUtility.Validators.PartValidator_Sender(this, part, 
-                    ePart => Container.FilterSettings.Any(pair => !pair.Value.canStore && ePart.Container.AcceptsValue(pair.Key)))));
+                    ePart => Container.FilterSettings.Any(pair => !pair.Value.canStore && ePart.Container.CanHoldValue(pair.Key)))));
         }
         
         private void DoNetworkAction(INetworkSubPart fromPart, INetworkSubPart previous, NetworkRole ofRole, Action<INetworkSubPart> funcOnPart, Predicate<INetworkSubPart> validator)
@@ -513,7 +513,7 @@ namespace TeleCore
             intersectingCell = IntVec3.Invalid;
             IOMode = NetworkIOMode.None;
             if (other == this) return false;
-            if (!NetworkDef.CanWorkWith(other.NetworkDef)) return false;
+            if (!NetworkDef.Equals(other.NetworkDef)) return false;
             if (!Parent.CanConnectToOther(other.Parent)) return false;
             return CellIO.ConnectsTo(other.CellIO, out intersectingCell, out IOMode);
         }

@@ -40,7 +40,7 @@ namespace TeleCore
         protected override void DrawContentsBeforeRelations(Rect inRect)
         {
             var label = $"[{def.defName}]\n{EffectOffset}";
-            var labelSize = Text.CalcSize(def.defName);
+            var labelSize = Text.CalcSize(label);
             Rect labelRect = new Rect(Rect.x, Rect.y - labelSize.y, labelSize.x, labelSize.y);
             TWidgets.DoTinyLabel(labelRect, label);
             

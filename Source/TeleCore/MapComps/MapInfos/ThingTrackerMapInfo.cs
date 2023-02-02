@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using TeleCore.Static;
 using Verse;
 
 namespace TeleCore;
@@ -28,30 +29,6 @@ public class ThingTrackerMapInfo : MapInformation
             }
         }
     }
-
-    internal void Notify_RegisterThing(Thing thing)
-    {
-        for (var i = 0; i < trackerComps.Length; i++)
-        {
-            trackerComps[i].Notify_ThingRegistered(thing);
-        }
-    }
-    
-    internal void Notify_DeregisterThing(Thing thing)
-    {
-        for (var i = 0; i < trackerComps.Length; i++)
-        {
-            trackerComps[i].Notify_ThingDeregistered(thing);
-        }
-    }
-
-    internal void Notify_ThingStateChanged(Thing thing, string compSignal = null)
-    {
-        for (var i = 0; i < trackerComps.Length; i++)
-        {
-            trackerComps[i].Notify_ThingStateChanged(thing, compSignal);
-        }
-    }
 }
 
 /// <summary>
@@ -65,9 +42,12 @@ public abstract class ThingTrackerComp
     protected ThingTrackerComp(ThingTrackerMapInfo parent)
     {
         this.parent = parent;
+        GlobalEventHandler.ThingSpawned += Notify_ThingRegistered;
+        GlobalEventHandler.ThingDespawning += Notify_ThingDeregistered;
+        GlobalEventHandler.ThingSentSignal += Notify_ThingSentSignal;
     }
 
-    public abstract void Notify_ThingRegistered(Thing thing);
-    public abstract void Notify_ThingDeregistered(Thing thing);
-    public abstract void Notify_ThingStateChanged(Thing thing, string compSignal = null);
+    public abstract void Notify_ThingRegistered(ThingStateChangedEventArgs args);
+    public abstract void Notify_ThingDeregistered(ThingStateChangedEventArgs args);
+    public abstract void Notify_ThingSentSignal(ThingStateChangedEventArgs args);
 }

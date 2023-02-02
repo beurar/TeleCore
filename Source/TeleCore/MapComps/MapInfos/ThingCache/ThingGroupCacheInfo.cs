@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using TeleCore.Static;
 using Verse;
 
 namespace TeleCore
@@ -15,6 +16,8 @@ namespace TeleCore
 
         public ThingGroupCacheInfo(Map map) : base(map)
         {
+            GlobalEventHandler.ThingSpawned += OnRegisterPart;
+            GlobalEventHandler.ThingDespawning += OnDeregisterPart;
         }
 
         public List<Thing> ThingsOfGroup(ThingGroupDef group)
@@ -34,7 +37,31 @@ namespace TeleCore
         }
 
         //
-        public void RegisterPart(ThingGroupDef groupDef, object obj)
+        private void OnRegisterPart(ThingStateChangedEventArgs args)
+        {
+            var thing = args.Thing;
+            if (thing.def.HasTeleExtension(out var extension))
+            {
+                foreach (var group in extension.thingGroups.groups)
+                {
+                    RegisterThingGroup(group, thing);
+                }
+            }
+        }
+        
+        private void OnDeregisterPart(ThingStateChangedEventArgs args)
+        {
+            var thing = args.Thing;
+            if (thing.def.HasTeleExtension(out var extension))
+            {
+                foreach (var group in extension.thingGroups.groups)
+                {
+                    DeregisterThingGroup(group, thing);
+                }
+            }
+        }
+
+        private void RegisterThingGroup(ThingGroupDef groupDef, object obj)
         {
             if (groupDef == null) return;
             switch (obj)
@@ -69,10 +96,10 @@ namespace TeleCore
             
             //
             if (groupDef.ParentGroup != null)
-                RegisterPart(groupDef.ParentGroup, obj);
+                RegisterThingGroup(groupDef.ParentGroup, obj);
         }
 
-        public void DeregisterPart(ThingGroupDef groupDef, object obj)
+        private void DeregisterThingGroup(ThingGroupDef groupDef, object obj)
         {
             if (groupDef == null) return;
             switch (obj)
@@ -92,7 +119,7 @@ namespace TeleCore
             
             //
             if (groupDef.ParentGroup != null)
-                DeregisterPart(groupDef.ParentGroup, obj);
+                DeregisterThingGroup(groupDef.ParentGroup, obj);
         }
     }
 }

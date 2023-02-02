@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using RimWorld;
+using TeleCore.DataEvents;
 using Verse;
 
 namespace TeleCore
@@ -59,11 +60,13 @@ namespace TeleCore
             this.map = map;
             NetworkDef = networkDef;
             TotalPartSet = new NetworkPartSet(networkDef, null);
+            TotalPartSet.RegisterParentForEvents(this);
             lookUpGrid = new PipeNetwork[map.cellIndices.NumGridCells];
 
             allNetworks = new();
             cellsByNetwork = new();
 
+            //
             TFind.TickManager.RegisterMapUITickAction(UpdateNetworkConnections);
         }
 
@@ -273,10 +276,9 @@ namespace TeleCore
 
         public void Notify_PipeNetDestroyed(PipeNetwork deadNetwork)
         {
-            TLog.Message("Destroying Network");
             if (!cellsByNetwork.TryGetValue(deadNetwork, out var list))
             {
-                TLog.Warning($"Net {deadNetwork} does not exist in {NetworkDef} PipeNetworks's dictionary.");
+                TLog.Warning($"No network {deadNetwork} exists for {NetworkDef} to be destroyed! \n{nameof(cellsByNetwork)} cannot find key");
                 return;
             }
 
@@ -290,11 +292,12 @@ namespace TeleCore
                 }
                 else if(lookUpGrid[num] != null)
                 {
-                    TLog.Warning($"Multiple nets on the same cell {list[i]}. This is probably a result of an earlier error.");
+                    TLog.Warning($"Multiple networks on the same cell {list[i]}. This is probably a result of an earlier error.");
                 }
             }
 
             //TODO
+            NetworkDestroyed(new NetworkChangedEventArgs(NetworkChangeType.Destroyed));
             foreach (var networkSubPart in deadNetwork.PartSet.FullSet)
             {
                 networkSubPart.Notify_NetworkDestroyed();
@@ -305,15 +308,29 @@ namespace TeleCore
             allNetworks.Remove(deadNetwork);
         }
 
+        //TODO: Add event handling pipelines
+        #region EventHandling
+        
+        public event NetworkChangedEvent AddedPart;
+        public event NetworkChangedEvent RemovedPart;
+        public event NetworkChangedEvent NetworkDestroyed;
+        
+        #endregion
+
+
+        
+        
         //Single Parts
         public void Notify_AddPart(INetworkSubPart part)
         {
             TotalPartSet.AddNewComponent(part);
+            AddedPart(new NetworkChangedEventArgs(NetworkChangeType.AddedPart, part));
         }
 
         public void Notify_RemovePart(INetworkSubPart part)
         {
             TotalPartSet.RemoveComponent(part);
+            RemovedPart(new NetworkChangedEventArgs(NetworkChangeType.RemovedPart, part));
         }
     }
 }
