@@ -145,13 +145,10 @@ namespace TeleCore
         private void OnPartAdded(NetworkChangedEventArgs args)
         {
             var part = args.Part;
-            //part.OnParentDestroyed(args);
-            throw new NotImplementedException();
         }
 
         private void OnPartRemoved(NetworkChangedEventArgs args)
         {
-            throw new NotImplementedException();
         }
 
         public void OnNetworkDestroyed(NetworkChangedEventArgs networkChangedEventArgs)

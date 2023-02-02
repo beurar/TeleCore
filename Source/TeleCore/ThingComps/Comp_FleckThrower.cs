@@ -9,21 +9,26 @@ using Verse;
 
 namespace TeleCore
 {
+    /// <summary>
+    /// 
+    /// </summary>
+    /// TODO: FIGURE OUT HOW THIS SHIT WORKS AGAIN - REMEMBER MOTETHROWERINFO???
     public class Comp_FleckThrower : ThingComp
     {
         //On Parent
         private List<FleckThrower> effectThrowers;
         
         //On Parent With Specific Offset
-        private List<FleckThrower> effectThrowersOffset;
-        private Dictionary<FleckThrower, PositionOffSets> OffsetsForThrowers;
-        private Dictionary<FleckThrower, int> TickersForThrowers;
+        private Dictionary<FleckThrower, PositionOffSets> throwersWithOffsets;
+        private Dictionary<FleckThrower, int> tickersForThrowers;
 
         //
-        public CompProperties_FleckThrower Props => base.props as CompProperties_FleckThrower;
-        public IFXObject IParent => parent as IFXObject;
+        public CompProperties_FleckThrower Props => (CompProperties_FleckThrower) props;
+        public IFXObject IParent => (IFXObject) parent;
         public bool ShouldThrowFlecks => IParent == null || IParent.ShouldThrowFlecks;
 
+        public bool HasThrowersWithOffset => !throwersWithOffsets?.Any() ?? false;
+        
         public override void PostSpawnSetup(bool respawningAfterLoad)
         {
             base.PostSpawnSetup(respawningAfterLoad);
@@ -36,28 +41,27 @@ namespace TeleCore
                     effectThrowers.Add(new FleckThrower(effectThrower, parent));
                 }
             }
+            
             //Create Throwers With Offset
             if (!Props.effectThrowersOffset.NullOrEmpty())
             {
-                effectThrowersOffset = new ();
-                OffsetsForThrowers = new ();
-                TickersForThrowers = new ();
+                throwersWithOffsets = new ();
+                tickersForThrowers = new ();
                 foreach (var effectThrower in Props.effectThrowersOffset)
                 {
                     var newThrower = new FleckThrower(effectThrower.thrower, parent);
-                    effectThrowersOffset.Add(newThrower);
-                    OffsetsForThrowers.Add(newThrower, effectThrower.spawnPositions);
-                    TickersForThrowers.Add(newThrower, 0);
+                    throwersWithOffsets.Add(newThrower, effectThrower.spawnPositions);
+                    tickersForThrowers.Add(newThrower, 0);
                 }
             }
         }
 
         public IEnumerable<Vector3> CurrentMoteThrowerOffsetsFor(FleckThrower thrower)
         {
-            if (!OffsetsForThrowers.ContainsKey(thrower))
+            if (!throwersWithOffsets.ContainsKey(thrower))
                 yield break;
 
-            foreach (var vector in OffsetsForThrowers[thrower][parent.Rotation])
+            foreach (var vector in throwersWithOffsets[thrower][parent.Rotation])
             {
                 var v = parent.TrueCenter() + vector;
                 yield return new Vector3(v.x, AltitudeLayer.MoteOverhead.AltitudeFor(), v.z);
@@ -138,28 +142,29 @@ namespace TeleCore
 
         private void ThrowFlecksOffsetTick()
         {
-            if (effectThrowersOffset.NullOrEmpty()) return;
-            for (var i = 0; i < effectThrowersOffset.Count; i++)
+            if (!HasThrowersWithOffset) return;
+            for (var i = 0; i < throwersWithOffsets.Count; i++)
             {
                 var fleckThrower = effectThrowersOffset[i];
-                if (TickersForThrowers[fleckThrower] <= 0)
+                if (tickersForThrowers[fleckThrower] <= 0)
                 {
                     foreach (var vector3 in CurrentMoteThrowerOffsetsFor(fleckThrower))
                     {
                         fleckThrower.ThrowerTick(vector3, parent.Map);
                     }
-                    TickersForThrowers[fleckThrower] = Props.effectThrowersOffset[i].tickRange.RandomInRange;
+                    tickersForThrowers[fleckThrower] = Props.effectThrowersOffset[i].tickRange.RandomInRange;
                 }
-                TickersForThrowers[fleckThrower]--;
+                tickersForThrowers[fleckThrower]--;
             }
         }
     }
 
+    //TODO: Try use EffecterDef instead of fleckthrower and then only use spawn pos offsets for location
     public class CompProperties_FleckThrower : CompProperties
     {
         public List<FleckThrowerProperties> effectThrowersOffset;
         public List<FleckThrowerInfo> effectThrowers;
-
+        
         public CompProperties_FleckThrower()
         {
             this.compClass = typeof(Comp_FleckThrower);

@@ -12,7 +12,6 @@ public static class GlobalEventHandler
     public static event ThingSpawnedEvent ThingSpawned;
     public static event ThingDespawnedEvent ThingDespawning;
     public static event ThingStateChangedEvent ThingSentSignal;
-
     
     internal static void OnThingSpawned(ThingStateChangedEventArgs args)
     {
