@@ -29,7 +29,6 @@ namespace TeleCore
         public static bool IsInsideOfContext(IDraggable element)
         {
             return true;
-
             if (!element.DragContext.HasValue) return true;
             return element.DragContext.Value.Contains(element.Position) &&
                    element.DragContext.Value.Contains(element.Position + element.Rect.size);

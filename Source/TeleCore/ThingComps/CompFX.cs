@@ -10,11 +10,14 @@ namespace TeleCore
     public class CompFX : ThingComp
     {
         //
-        private IFXObject internalMainFXParent;
-        private IFXObject parentFXThing;
-        private List<IFXObject> parentFXComps;
-
-        private IFXObject[] IFXPPL; //Parent Per Layer
+        private IFXHolder internalMainFXParent;
+        private IFXHolder parentFXThing;
+        private List<IFXHolder> parentFXComps;
+        
+        
+        //TODO: Simplify layer-holder dependency, use reference IDs
+        //To Remember: Essentially, upon layer generation, all held components by the parent which implement IFXHolder, are checked whether they "support" a desired layer, the first to support that layer is set as the main data provider for that layer
+        private IFXHolder[] IFXPPL; //Parent Per Layer
 
         //
         private FXDefExtension extensionInt;
@@ -39,9 +42,9 @@ namespace TeleCore
 
         public FXDefExtension GraphicExtension => extensionInt ??= parent.def.FXExtension();
 
-        public IFXObject MainParent => internalMainFXParent;
-        public IFXObject IParentThing => parentFXThing;
-        public List<IFXObject> IParentComps => parentFXComps;
+        public IFXHolder MainParent => internalMainFXParent;
+        public IFXHolder IParentThing => parentFXThing;
+        public List<IFXHolder> IParentComps => parentFXComps;
 
         public override void PostExposeData()
         {
@@ -82,10 +85,10 @@ namespace TeleCore
 
         private void ResolveFXParents()
         {
-            var fx = new List<IFXObject>();
+            var fx = new List<IFXHolder>();
 
             //Get FX Parents
-            if (parent is IFXObject parentFX)
+            if (parent is IFXHolder parentFX)
             {
                 parentFXThing = parentFX;
                 fx.Add(parentFXThing);
@@ -93,9 +96,9 @@ namespace TeleCore
 
             foreach (var comp in parent.AllComps)
             {
-                if (comp is IFXObject compFX)
+                if (comp is IFXHolder compFX)
                 {
-                    parentFXComps ??= new List<IFXObject>();
+                    parentFXComps ??= new List<IFXHolder>();
                     parentFXComps.Add(compFX);
                     fx.Add(compFX);
                 }
@@ -116,7 +119,7 @@ namespace TeleCore
             }
 
             //Resolve Order
-            var fxPerLayer = new IFXObject[Props.overlays.Count];
+            var fxPerLayer = new IFXHolder[Props.overlays.Count];
             for (int i = 0; i < Props.overlays.Count; i++)
             {
                 foreach (var fxObject in fx)

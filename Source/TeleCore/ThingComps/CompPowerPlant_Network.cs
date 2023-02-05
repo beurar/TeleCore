@@ -84,40 +84,6 @@ namespace TeleCore
     {
         public NetworkDef fromNetwork;
         public List<ValueConversion> valueToTickRules;
-        
-        [Obsolete]
-        public List<DefFloat<NetworkValueDef>> costPerValue;
-        [Obsolete]
-        public List<DefCount<NetworkValueDef>> ticksPerValue;
-
-
-        public override void ResolveReferences(ThingDef parentDef)
-        {
-            base.ResolveReferences(parentDef);
-            //TODO: Backwardscompatibility
-            if (!costPerValue.NullOrEmpty() && !ticksPerValue.NullOrEmpty())
-            {
-                valueToTickRules ??= new List<ValueConversion>();
-                for (var i = 0; i < costPerValue.Count; i++)
-                {
-                    var costDefFloat = costPerValue[i];
-                    for (var k = 0; k < ticksPerValue.Count; k++)
-                    {
-                        var ticksDefFloat = ticksPerValue[k];
-                        if (costDefFloat.def == ticksDefFloat.def)
-                        {
-                            valueToTickRules.Add(new ValueConversion
-                            {
-                                valueDef = costDefFloat.def,
-                                cost = costDefFloat.value,
-                                secondPerCost = ticksDefFloat.value.TicksToSeconds()
-                            });
-                            break;
-                        }
-                    }
-                }
-            }
-        }
     }
 
     public struct ValueConversion

@@ -532,8 +532,6 @@ namespace TeleCore
         
         public bool CanTransmit(NetEdge netEdge)
         {
-            //TODO:
-            //NetworkRole.GraphTransmitter;
             return NetworkRole.HasFlag(NetworkRole.Transmitter);
         }
 
@@ -594,12 +592,7 @@ namespace TeleCore
                     };
                 }
 
-                yield return new Command_Action
-                {
-                    defaultLabel = $"View DirectPartSet",
-                    defaultDesc = DirectPartSet.ToString(),
-                    action = delegate { }
-                };
+                if (Network == null) yield break;
 
                 yield return new Command_Action
                 {

@@ -40,8 +40,8 @@ namespace TeleCore
                 lastAddedRoom = newRoom;
             }
         }
-
-        /*TODO
+        
+        /*TODO: probably part of the airlocks?
         public static IntVec3 GeneralCenter(this Room room)
         {
             var poll = room.AtmosphericRoomComp();

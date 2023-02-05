@@ -46,11 +46,11 @@ namespace TeleCore
         public NetworkContainer(IContainerHolder<NetworkValueDef> parent, List<NetworkValueDef> acceptedTypes) : base(parent, acceptedTypes)
         {
         }
-
-        //TODO: Drop unique containers for types with it set
+        
         public void Notify_ParentDestroyed(DestroyMode mode, Map previousMap)
         {
             if (Parent == null || TotalStored <= 0 || mode == DestroyMode.Vanish) return;
+          
             if ((mode is DestroyMode.Deconstruct or DestroyMode.Refund) && Props.leaveContainer && ParentNetworkPart.NetworkPart.NetworkDef.portableContainerDef != null)
             {
                 PortableContainer container = (PortableContainer)ThingMaker.MakeThing(ParentNetworkPart.NetworkPart.NetworkDef.portableContainerDef);

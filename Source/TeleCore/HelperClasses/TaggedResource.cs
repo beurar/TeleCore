@@ -20,7 +20,7 @@ namespace TeleCore
 
         protected virtual T GetResource()
         {
-            throw new NotImplementedException();
+            return default;
         }
 
         public void LoadDataFromXmlCustom(XmlNode xmlRoot)

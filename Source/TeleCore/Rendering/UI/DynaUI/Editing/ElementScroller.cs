@@ -63,8 +63,6 @@ namespace TeleCore
                     if (SelectedElement == e.OldItems[0])
                         SelectedElement = ElementList.FirstOrFallback(null);
                     break;
-                default:
-                    throw new NotImplementedException();
             }
         }
 

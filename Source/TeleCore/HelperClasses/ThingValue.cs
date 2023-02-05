@@ -16,7 +16,6 @@ namespace TeleCore
     /// </summary>
     public sealed class ThingValue : Editable, IExposable
     {
-        //TODO: Organize ThingValue - Peer Review 
         public QualityCategory QualityCategory = QualityCategory.Awful;
         public string defName = null;
         public int value = 1;
@@ -59,8 +58,6 @@ namespace TeleCore
             Scribe_Values.Look(ref chance, "chance");
         }
 
-        public bool IsPawnKindDef => DefDatabase<PawnKindDef>.GetNamedSilentFail(defName) != null;
-
         public ThingDef ResolvedStuff
         {
             get
@@ -77,32 +74,31 @@ namespace TeleCore
         {
             get
             {
-                ThingDef def = DefDatabase<ThingDef>.GetNamedSilentFail(defName);
-                if (def == null)
+                if (thingDef == null)
                 {
-                    if (PawnKindDef != null)
-                        def = DefDatabase<ThingDef>.GetNamedSilentFail(PawnKindDef.race.defName);
+                    var def = DefDatabase<ThingDef>.GetNamedSilentFail(defName);
+                    if (def != null) 
+                        thingDef = def;
+                    else if (PawnKindDef != null)
+                        thingDef = DefDatabase<ThingDef>.GetNamedSilentFail(PawnKindDef.race.defName);
                 }
-                return def;
+                return thingDef;
             }
         }
 
-        public PawnKindDef PawnKindDef => DefDatabase<PawnKindDef>.GetNamedSilentFail(defName);
+        public PawnKindDef PawnKindDef => pawnKind ??= DefDatabase<PawnKindDef>.GetNamedSilentFail(defName);
 
+        public bool IsPawnKindDef => DefDatabase<PawnKindDef>.GetNamedSilentFail(defName) != null;
         public bool Valid => ThingDef != null || PawnKindDef != null;
 
         public bool ThingFits(Thing thing)
         {
+            if (thing is Pawn p && p.kindDef != PawnKindDef) return false;
+            if (thing.def != ThingDef) return false;
             if (stuffDef != null && thing.Stuff != stuffDef)
-            {
                 return false;
-            }
-
-            if (!(thing.TryGetQuality(out QualityCategory qc) && qc < QualityCategory))
-            {
-                return false;
-            }
-            return true;
+            
+            return thing.TryGetQuality(out QualityCategory qc) && qc < QualityCategory;
         }
 
         //Notation - <defName>weight, chance, quality, stuff</defName>

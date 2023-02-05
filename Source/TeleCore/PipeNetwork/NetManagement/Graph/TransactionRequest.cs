@@ -24,9 +24,10 @@ public struct TransactionRequest
     public readonly Action<INetworkSubPart> transaction;
 
     public NetworkContainer? Container => requester?.Container;
+    
     //Cannot do a transaction without a container
     public bool IsValid => Container != null;
-    //TODO: Define based on role and shit
+    
     public ValueFlowDirection FlowDir => ValueFlowDirection.Positive;
 
     //Network Transaction

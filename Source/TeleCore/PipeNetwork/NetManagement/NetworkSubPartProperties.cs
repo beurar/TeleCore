@@ -61,15 +61,14 @@ namespace TeleCore
                 }
             }
         }
-
-        //TODO: Add default All 
+        
         public Dictionary<NetworkRole, List<NetworkValueDef>> AllowedValuesByRole
         {
             get
             {
                 if (allowedValuesByRoleInt == null)
                 {
-                    allowedValuesByRoleInt = new();
+                    allowedValuesByRoleInt = new Dictionary<NetworkRole, List<NetworkValueDef>>();
                     foreach (var role in networkRoles)
                     {
                         if (role.HasSubValues && role != NetworkRole.Transmitter)

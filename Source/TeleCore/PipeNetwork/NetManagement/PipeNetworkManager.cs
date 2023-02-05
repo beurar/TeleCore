@@ -295,9 +295,8 @@ namespace TeleCore
                     TLog.Warning($"Multiple networks on the same cell {list[i]}. This is probably a result of an earlier error.");
                 }
             }
-
-            //TODO
-            NetworkDestroyed(new NetworkChangedEventArgs(NetworkChangeType.Destroyed));
+            
+            OnNetworkDestroyed();
             foreach (var networkSubPart in deadNetwork.PartSet.FullSet)
             {
                 networkSubPart.Notify_NetworkDestroyed();
@@ -317,9 +316,12 @@ namespace TeleCore
         
         #endregion
 
+        
+        private void OnNetworkDestroyed()
+        {
+            NetworkDestroyed(new NetworkChangedEventArgs(NetworkChangeType.Destroyed));
+        }
 
-        
-        
         //Single Parts
         public void Notify_AddPart(INetworkSubPart part)
         {

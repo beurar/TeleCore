@@ -29,13 +29,12 @@ namespace TeleCore
             }
         }
     }
-    
 
     //
     public class ThingGroupCollection
     {
-        public List<ThingGroupDef> groups = new List<ThingGroupDef>(){ThingGroupDefOf.All};
-
+        public readonly List<ThingGroupDef> groups = new() { ThingGroupDefOf.All };
+        
         /*TODO: Add listed items to list
         public void LoadDataFromXmlCustom(XmlNode xmlRoot)
         {

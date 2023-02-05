@@ -186,7 +186,7 @@ namespace TeleCore
                 //TWidgets.DrawHalfArrow(ScreenPositionOf(thingA.TrueCenter()), ScreenPositionOf(thingB.TrueCenter()), Color.red, 8);
 
                 //TODO: edge access only works for one version (node1, node2) - breaks two-way
-                //TODO:some edges probably get setup broken (because only one edge is set)
+                //TODO: some edges probably get setup broken (because only one edge is set)
                 if (netEdge.Value.IsValid)
                 {
                     TWidgets.DrawHalfArrow(netEdge.Value.startNode.Parent.Thing.TrueCenter().ToScreenPos(), netEdge.Value.endNode.Parent.Thing.TrueCenter().ToScreenPos(), Color.red, size);

@@ -15,7 +15,7 @@ namespace TeleCore
     /// <summary>
     /// 
     /// </summary>
-    public class Building_TeleTurret : Building_Turret, ITurretHolder, IFXObject
+    public class Building_TeleTurret : Building_Turret, ITurretHolder, IFXHolder
     {
         private CompPowerTrader powerComp;
         private CompCanBeDormant dormantComp;
@@ -66,7 +66,7 @@ namespace TeleCore
         //[2] : TurretTopOverlay
         public bool IsMain => true;
         public int Priority => 100;
-        public virtual bool ShouldThrowFlecks => true;
+        public virtual bool ShouldDoEffects => true;
         public virtual CompPower ForcedPowerComp => null;
 
         public virtual bool FX_AffectsLayerAt(int index) => true;

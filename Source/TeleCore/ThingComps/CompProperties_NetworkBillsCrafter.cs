@@ -14,11 +14,9 @@ namespace TeleCore
         [Unsaved] 
         private List<CustomRecipePresetDef> presetDefsInt;
 
+        //Tags are used to get lists of associated defs
         public List<string> ratioTags;
         public List<string> presetTags;
-        //TODO: use tagged collection generation over direct lists
-        //public List<CustomRecipePresetDef> presets;
-        //public List<CustomRecipeRatioDef> ratios;
 
         public List<CustomRecipeRatioDef> UsedRatioDefs
         {

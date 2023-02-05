@@ -17,10 +17,10 @@ namespace TeleCore
  
     //Ignore this for now
     // Always First: <see cref="ThingDef.thingClass"/>. Followed by the order of <see cref="CompProperties_FX"/> set in <see cref="ThingDef.comps"/>      
-    public interface IFXObject
+    public interface IFXHolder
     {
         /// <summary>
-        /// If set to true, this implementation of the interface will be used for the <see cref="ShouldThrowFlecks"/> and <see cref="ForcedPowerComp"/> getters.
+        /// If set to true, this implementation of the interface will be used for the <see cref="ShouldDoEffects"/> and <see cref="ForcedPowerComp"/> getters.
         /// </summary>
         bool IsMain { get; }
 
@@ -28,11 +28,11 @@ namespace TeleCore
         /// 
         /// </summary>
         int Priority { get; }
-
+        
         /// <summary>
         /// Sets whether or not an attached Comp_FleckThrower should throw effects.
         /// </summary>
-        bool ShouldThrowFlecks { get; }
+        bool ShouldDoEffects { get; }
 
         /// <summary>
         /// Allows you to set a custom power comp (which may be different than the parents')

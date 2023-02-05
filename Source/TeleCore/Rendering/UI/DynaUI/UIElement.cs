@@ -37,7 +37,6 @@ namespace TeleCore
         protected bool hasTopBar = true;
         
         //TODO: Add Style: protected UIElementStyle style;
-
         //Transform
         private Vector2 position = Vector2.zero;
         private Vector2 size;

@@ -325,9 +325,8 @@ namespace TeleCore
                 resultingLine = default;
                 return false;
             }
-            if (this.verbProps.IsMeleeAttack || this.EffectiveRange <= 1.42f)
+            if (verbProps.IsMeleeAttack || EffectiveRange <= 1.42f)
             {
-                //TODO: Custom Shootline
                 resultingLine = new ShootLine(root, targ.Cell);
                 return ReachabilityImmediate.CanReachImmediate(root, targ, caster.Map, PathEndMode.Touch, null);
             }
@@ -337,24 +336,24 @@ namespace TeleCore
                 resultingLine = new ShootLine(root, targ.Cell);
                 return false;
             }
-            if (!this.verbProps.requireLineOfSight)
+            if (!verbProps.requireLineOfSight)
             {
                 resultingLine = new ShootLine(root, targ.Cell);
                 return true;
             }
-            if (this.CasterIsPawn)
+            if (CasterIsPawn)
             {
-                IntVec3 dest;
-                if (this.CanHitFromCellIgnoringRange(root, targ, out dest))
+                if (CanHitFromCellIgnoringRange(root, targ, out var dest))
                 {
                     resultingLine = new ShootLine(root, dest);
                     return true;
                 }
-                ShootLeanUtility.LeanShootingSourcesFromTo(root, occupiedRect.ClosestCellTo(root), this.caster.Map, Verb.tempLeanShootSources);
-                for (int i = 0; i < Verb.tempLeanShootSources.Count; i++)
+                
+                ShootLeanUtility.LeanShootingSourcesFromTo(root, occupiedRect.ClosestCellTo(root), caster.Map, tempLeanShootSources);
+                for (int i = 0; i < tempLeanShootSources.Count; i++)
                 {
-                    IntVec3 intVec = Verb.tempLeanShootSources[i];
-                    if (this.CanHitFromCellIgnoringRange(intVec, targ, out dest))
+                    IntVec3 intVec = tempLeanShootSources[i];
+                    if (CanHitFromCellIgnoringRange(intVec, targ, out dest))
                     {
                         resultingLine = new ShootLine(intVec, dest);
                         return true;
@@ -363,10 +362,10 @@ namespace TeleCore
             }
             else
             {
-                foreach (IntVec3 intVec2 in this.caster.OccupiedRect())
+                foreach (IntVec3 intVec2 in caster.OccupiedRect())
                 {
                     IntVec3 dest;
-                    if (this.CanHitFromCellIgnoringRange(intVec2, targ, out dest))
+                    if (CanHitFromCellIgnoringRange(intVec2, targ, out dest))
                     {
                         resultingLine = new ShootLine(intVec2, dest);
                         return true;

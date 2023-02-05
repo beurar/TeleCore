@@ -10,16 +10,16 @@ using Verse;
 namespace TeleCore
 {
     /// <summary>
-    /// A basic implementation of the <see cref="IFXObject"/> interface, uses <see cref="ThingWithComps"/> as a base class.
+    /// A basic implementation of the <see cref="IFXHolder"/> interface, uses <see cref="ThingWithComps"/> as a base class.
     /// </summary>
-    public class FXThing : ThingWithComps, IFXObject
+    public class FXThing : ThingWithComps, IFXHolder
     {
         public FXDefExtension Extension => def.FXExtension();
         public CompFX FXComp => this.GetComp<CompFX>();
 
         public virtual bool IsMain => true;
         public virtual int Priority => 100;
-        public virtual bool ShouldThrowFlecks => true;
+        public virtual bool ShouldDoEffects => true;
         public virtual CompPower ForcedPowerComp => null;
         public virtual bool FX_AffectsLayerAt(int index) => true;
         public virtual bool FX_ShouldDrawAt(int index) => true;

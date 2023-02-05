@@ -8,7 +8,6 @@ public class UIElementDocker : UIElement
 {
     private UIElement[] _dockedElements = new UIElement[4];
     
-    
     public UIElementDocker(UIElementMode mode) : base(mode)
     {
     }

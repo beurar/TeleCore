@@ -35,7 +35,7 @@ namespace TeleCore
 
         public static void TryRegister(Def def)
         {
-            if (def is CustomRecipeRatioDef ratioDef && ratioDef.tags != null)
+            if (def is CustomRecipeRatioDef {tags: { }} ratioDef)
             {
                 foreach (var ratioDefTag in ratioDef.tags)
                 {
@@ -48,7 +48,7 @@ namespace TeleCore
                 }
             }
 
-            if (def is CustomRecipePresetDef presetDef && presetDef.tags != null)
+            if (def is CustomRecipePresetDef {tags: { }} presetDef)
             {
                 foreach (var presetDefTag in presetDef.tags)
                 {

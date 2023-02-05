@@ -16,7 +16,7 @@ namespace TeleCore
 
         //CompFX
         public Color CurColor => Color.clear;
-        public override bool ShouldThrowFlecks => IsWorkedOn;
+        public override bool ShouldDoEffects => IsWorkedOn;
 
         public override bool FX_AffectsLayerAt(int index)
         {

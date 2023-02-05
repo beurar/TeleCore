@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using TeleCore.Static;
 using Verse;
 
 namespace TeleCore
@@ -70,8 +71,7 @@ namespace TeleCore
         {
             if (IsDiscovered(discovery)) return;
             Discoveries.Add(discovery, true);
-            //TODO: Letter
-            //Find.LetterStack.ReceiveLetter("TR_NewDiscovery".Translate(), "TR_NewDiscoveryDesc".Translate(discovery.description), TiberiumDefOf.DiscoveryLetter);
+            Find.LetterStack.ReceiveLetter("TR_NewDiscovery".Translate(), "TR_NewDiscoveryDesc".Translate(discovery.description), TeleDefOf.DiscoveryLetter);
         }
     }
 }

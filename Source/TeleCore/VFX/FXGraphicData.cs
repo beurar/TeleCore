@@ -17,6 +17,7 @@ namespace TeleCore
         public FXMode mode = FXMode.Static;
 
         //
+        public string FXReferenceID = "Main";
         public bool skip = false;
         public bool needsPower = false;
 

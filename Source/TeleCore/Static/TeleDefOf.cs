@@ -29,5 +29,8 @@ namespace TeleCore.Static
         //
         public static TerrainDef ChromaKeyGreen;
         public static TerrainDef ChromaKeyBlue;
+        
+        //Research
+        public static LetterDef DiscoveryLetter;
     }
 }

@@ -11,7 +11,7 @@ using Verse;
 namespace TeleCore
 {
     //TODO: Add leaking functionality, broken transmitters losing values
-    public class Comp_NetworkStructure : ThingComp, INetworkStructure, IFXObject
+    public class Comp_NetworkStructure : ThingComp, INetworkStructure, IFXHolder
     {
         //
         private NetworkMapInfo networkInfo;
@@ -45,7 +45,7 @@ namespace TeleCore
         //FX
         public virtual bool IsMain => true;
         public virtual int Priority => 10;
-        public virtual bool ShouldThrowFlecks => true;
+        public virtual bool ShouldDoEffects => true;
         public virtual CompPower ForcedPowerComp => CompPower;
 
         public virtual bool FX_AffectsLayerAt(int index)
