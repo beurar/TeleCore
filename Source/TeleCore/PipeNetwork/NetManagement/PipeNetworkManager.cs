@@ -9,6 +9,7 @@ using Verse;
 
 namespace TeleCore
 {
+    //TODO: Combine into DelayedNetworkMaker
     internal enum DelayedNetworkActionType
     {
         Register,

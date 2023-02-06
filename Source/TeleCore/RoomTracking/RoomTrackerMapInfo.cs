@@ -8,6 +8,41 @@ using Verse;
 
 namespace TeleCore
 {
+    /* Update Flow
+     * Any room-structure changed (wall)
+     * Add actions for each change within the tick
+     * Dicard previous actions on the same room when the room has not been yet updated
+     * Update rooms in next tick based on delayed list
+     * => efficiency
+     */
+    
+    internal enum DelayedRoomUpdateType
+    {
+        Create,
+        Reuse,
+        Destroy,
+    }
+
+    internal struct DelayedRoomUpdateInfo
+    {
+        public DelayedRoomUpdateType type;
+        public NetworkSubPart subPart;
+        public IntVec3 pos;
+
+        public DelayedRoomUpdateInfo(DelayedRoomUpdateType type, NetworkSubPart subPart, IntVec3 pos)
+        {
+            this.type = type;
+            this.subPart = subPart;
+            this.pos = pos;
+        }
+    }
+
+    public class RoomUpdateEventArgs : EventArgs
+    {
+        public Room NewRoom { get; }
+        public Room OldRoom { get; }
+    }
+    
     public class RoomTrackerMapInfo : MapInformation
     {
         private Dictionary<Room, RoomTracker> trackerByRoom;
