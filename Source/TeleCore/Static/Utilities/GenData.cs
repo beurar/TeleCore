@@ -271,5 +271,16 @@ namespace TeleCore
         {
             return new List<T>() {item};
         }
+        
+        //
+        internal static FXLayerArgs GetArgs(this FXLayer layer)
+        {
+            return new FXLayerArgs
+            {
+                index = layer.Index,
+                layerTag = layer.data.layerTag,
+                categoryTag = layer.data.categoryTag
+            };
+        }
     }
 }

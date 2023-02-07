@@ -22,6 +22,7 @@ namespace TeleCore
 
         //Debug
         protected static bool DebugConnectionCells = false;
+        private IFXHolder ifxHolderImplementation;
 
         //
         public NetworkSubPart this[NetworkDef def] => networkPartByDef.TryGetValue(def, out var value) ? value : null;
@@ -41,47 +42,49 @@ namespace TeleCore
 
         //
         public virtual bool IsActiveOverride => true;
-        
-        //FX
-        public virtual bool IsMain => true;
-        public virtual int Priority => 10;
-        public virtual bool ShouldDoEffects => true;
-        public virtual CompPower ForcedPowerComp => CompPower;
 
-        public virtual bool FX_AffectsLayerAt(int index)
+        #region FX Implementation
+        
+        public CompPowerTrader FX_PowerProviderFor(FXLayerArgs args)
         {
-            return true;
+            throw new NotImplementedException();
         }
 
-        public virtual bool FX_ShouldDrawAt(int index)
+        public virtual bool FX_ShouldDraw(FXLayerArgs args)
         {
-            return index switch
+            return args.index switch
             {
                 1 => networkParts.Any(t => t?.HasConnection ?? false),
-                _ => true,
+                _ => true
             };
         }
 
-        public virtual Color? FX_GetColorAt(int index)
+        public virtual float FX_GetOpacity(FXLayerArgs args) => 1f;
+
+        public virtual float? FX_GetRotation(FXLayerArgs args) => null;
+        public virtual float? FX_GetAnimationSpeedFactor(FXLayerArgs args) => null;
+        
+        public virtual Color? FX_GetColor(FXLayerArgs args)         
         {
-            return index switch
+            return args.index switch
             {
                 0 => networkParts[0].Container.Color,
                 _ => Color.white
             };
         }
-
-        public virtual Vector3? FX_GetDrawPositionAt(int index)
+        
+        public virtual Vector3? FX_GetDrawPosition(FXLayerArgs args)  
         {
             return parent.DrawPos;
         }
-
-        public virtual float FX_GetOpacityAt(int index) => 1f;
-        public virtual float? FX_GetRotationAt(int index) => null;
-        public virtual float? FX_GetRotationSpeedAt(int index) => null;
-        public virtual Action<FXGraphic> FX_GetActionAt(int index) => null;
-
-        //BEGIN OF ACTUAL CLASS
+        
+        public virtual Action<FXLayer> FX_GetAction(FXLayerArgs args) => null!;
+        public virtual bool FX_ShouldThrowEffects(string effecterTag) => true;
+        public void FX_OnEffectSpawned(FXEffecterArgs args)
+        {
+        }
+        
+        #endregion
         
         //SaveData
         public override void PostExposeData()

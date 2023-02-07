@@ -18,6 +18,8 @@ public class SubEffecterExtendedDef : SubEffecterDef
     public IntRange soundInterval = new IntRange(40, 100);
     public bool affectedByWind;
 
+    public string eventTag;
+
     public override string ToString()
     {
         return base.ToString();

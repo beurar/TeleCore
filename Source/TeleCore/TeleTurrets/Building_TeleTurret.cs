@@ -67,7 +67,7 @@ namespace TeleCore
         public bool IsMain => true;
         public int Priority => 100;
         public virtual bool ShouldDoEffects => true;
-        public virtual CompPower ForcedPowerComp => null;
+        public virtual CompPower PowerProviderFor => null;
 
         public virtual bool FX_AffectsLayerAt(int index) => true;
         public virtual bool FX_ShouldDrawAt(int index) => true;
@@ -85,8 +85,8 @@ namespace TeleCore
         public virtual float? FX_GetRotationSpeedAt(int index) => null;
         public virtual Color? FX_GetColorAt(int index) => null;
         public virtual Vector3? FX_GetDrawPositionAt(int index) => null;
-        public virtual Action<FXGraphic> FX_GetActionAt(int index) => null;
-
+        public virtual Action<FXLayer> FX_GetActionAt(int index) => null;
+        public virtual void FX_OnEffectSpawned(string subEffecterTag) { }
 
         public override void ExposeData()
         {

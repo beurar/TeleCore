@@ -14,69 +14,74 @@ namespace TeleCore
     /// <para>You can implement this interface on multiple parts of a Thing instance, including the base <see cref="ThingDef.thingClass"/> and the <see cref="ThingDef.comps"/>.                                        </para>
     /// <para>If multiple implementations are active, the order of priority for selecting an interface for a layer via <see cref="FX_AffectsLayerAt"/> or for <see cref="IsMain"/> is done by <see cref="Priority"/>.   </para>
     /// </summary>
- 
-    //Ignore this for now
-    // Always First: <see cref="ThingDef.thingClass"/>. Followed by the order of <see cref="CompProperties_FX"/> set in <see cref="ThingDef.comps"/>      
+    ///
+    /// TODO: Define "Reserved-Layers" as index or tags and allow custom layer definition without needing to skip layers, or use reference tags..
+    
     public interface IFXHolder
     {
-        /// <summary>
-        /// If set to true, this implementation of the interface will be used for the <see cref="ShouldDoEffects"/> and <see cref="ForcedPowerComp"/> getters.
-        /// </summary>
-        bool IsMain { get; }
+        #region MetaDataGetter
 
         /// <summary>
-        /// 
+        /// Allows you to override the default power getter with a custom reference, otherwise it defaults to the parent Thing's PowerComp (if it exists)
         /// </summary>
-        int Priority { get; }
+        CompPowerTrader FX_PowerProviderFor(FXLayerArgs args);
+
+        /*
+        /// <summary>
+        /// </summary>
+        bool FX_Data_AffectsLayer(FXLayerArgs args);
+        */
         
-        /// <summary>
-        /// Sets whether or not an attached Comp_FleckThrower should throw effects.
-        /// </summary>
-        bool ShouldDoEffects { get; }
-
-        /// <summary>
-        /// Allows you to set a custom power comp (which may be different than the parents')
-        /// </summary>
-        CompPower ForcedPowerComp { get; }
-
-        /// <summary>
-        /// Define which layers this implementation of the interface will affect.
-        /// </summary>
-        bool FX_AffectsLayerAt(int index);
-
+        #endregion
+        
         /// <summary>
         /// Overrides whether a layer at the same index of that value is rendered or not.
         /// </summary>
-        bool FX_ShouldDrawAt(int index);
+        bool FX_ShouldDraw(FXLayerArgs args);
 
         /// <summary>
         /// Sets the opacity value of a layer at the same index as the value in the array.
         /// </summary>
-        float FX_GetOpacityAt(int index);
+        float FX_GetOpacity(FXLayerArgs args);
 
         /// <summary>
         /// Sets the rotation value of a layer at the same index as the value in the array.
         /// </summary>
-        float? FX_GetRotationAt(int index);
+        float? FX_GetRotation(FXLayerArgs args);
 
         /// <summary>
-        /// Sets the rotation speed value of a layer at the same index as the value in the array.
+        /// Sets the speed at which the layer processes dynamic images (rotating, blinking, moving)
         /// </summary>
-        float? FX_GetRotationSpeedAt(int index);
+        float? FX_GetAnimationSpeedFactor(FXLayerArgs args);
 
         /// <summary>
         /// Overrides the draw color of the layer at the index of the value.
         /// </summary>
-        Color? FX_GetColorAt(int index);
+        Color? FX_GetColor(FXLayerArgs args);
 
         /// <summary>
         /// Sets the exact render position of the layer at the index of that value.
         /// </summary>
-        Vector3? FX_GetDrawPositionAt(int index);
+        Vector3? FX_GetDrawPosition(FXLayerArgs args);
 
         /// <summary>
         /// Attaches a custom function to a layer, it is run before the layer is drawn.
         /// </summary>
-        Action<FXGraphic> FX_GetActionAt(int index);
+        Action<FXLayer> FX_GetAction(FXLayerArgs args);
+        
+        
+        #region Effecter
+
+        /// <summary>
+        /// Sets whether or not an attached Comp_FleckThrower should throw effects.
+        /// </summary>
+        bool FX_ShouldThrowEffects(EffecterLayerArgs args);
+        
+        /// <summary>
+        /// Allows you to hook into the effecter logic, and handle custom logic whenever a tagged effect is spawned.
+        /// </summary>
+        void FX_OnEffectSpawned(FXEffecterArgs args);
+        
+        #endregion
     }
 }

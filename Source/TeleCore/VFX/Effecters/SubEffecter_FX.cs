@@ -351,6 +351,17 @@ public class SubEffecter_FX : SubEffecter
 				velocityAngle = info.velocityAngle,
 				ageTicksOverride = info.overrideSpawnTick
 			});
+			
+			//Try Notify Parent
+			if (Def?.eventTag != null)
+			{
+				((Effecter_FX) parent)?.SpawnedEffect(new FXEffecterArgs()
+				{
+					//Cant pass fleck on as there is no return value when creating
+					effecterTag = Def.eventTag,
+					fleckDef = effectDef,
+				});
+			}
 		}
 	}
 	
@@ -390,8 +401,17 @@ public class SubEffecter_FX : SubEffecter
 						moteAttached.Attach(info.targetDestination, info.offset);
 				}
 			}
-			
 			sustainedMote.Maintain();
+			
+			//Try Notify Parent
+			if (Def?.eventTag != null)
+			{
+				((Effecter_FX) parent)?.SpawnedEffect(new FXEffecterArgs()
+				{
+					effecterTag = Def.eventTag,
+					mote = sustainedMote,
+				});
+			}
 		}
 	}
 }

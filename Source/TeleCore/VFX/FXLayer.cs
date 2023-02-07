@@ -5,44 +5,50 @@ using Verse;
 
 namespace TeleCore
 {
-    public class FXGraphic
+    public class FXLayer
     {
-        //Loaded fixed Data
-        private CompFX parent;
-        public Graphic graphicInt;
-        public FXGraphicData data;
-        public float altitude;
-        public int index = 0;
+        //Cached
+        private Graphic _graphicInt;
+        private Material _drawMat;
+        private MaterialPropertyBlock _materialProperties;
 
-        private bool unused;
-        private Material drawMat;
-
-        //FXModes
-        public int ticksToBlink = 0;
-        public int blinkDuration = 0;
+        private FXLayerArgs _selfArgs;
+        private readonly int _index = 0;
+        private readonly bool _inactive;
+        private readonly float _altitude;
+        
+        //Data
+        public readonly FXLayerData data;
+        private readonly FXParentInfo parentInfo;
 
         //Dynamic Working Data
-        Vector2 drawSize = Vector2.one;
+        private Vector2 drawSize = Vector2.one;
         private Mesh drawMesh;
         private Color drawColor;
         private float exactRotation;
         private bool flipUV;
+        private int ticksToBlink = 0;
+        private int blinkDuration = 0;
 
-        private readonly MaterialPropertyBlock materialProperties = new MaterialPropertyBlock();
-
-        public MaterialPropertyBlock PropertyBlock => materialProperties;
-
-        public float ExactRotation => exactRotation;
-
-        //Parent Values
-        private FXDefExtension ExData => parent.GraphicExtension;
-        private Rot4 Rot4 => parent.parent.Rotation;
-        private float GetOpacity => parent.OpacityFloat(index);
-        private float GetRotation => (parent.RotationOverride(index) ?? 0) + exactRotation;
-        private float GetRotationSpeed => (parent.GetRotationSpeedOverride(index) ?? 1) * RotationSpeed;
-        private Color GetColorOverride => parent.ColorOverride(index) ?? Color.white;
-        private Vector3 GetDrawPos => parent.DrawPosition(index) ?? parent.parent.DrawPos;
-        private Action<FXGraphic> GetAction => parent.Action(index);
+        public MaterialPropertyBlock PropertyBlock => _materialProperties;
+        
+        public CompFX Parent { get; }
+        
+        //
+        public int Index => _index;
+        
+        public Rot4 ParentRot4 => parentInfo.ParentThing.Rotation;
+        public float TrueRotation => ExtraRotation + exactRotation;
+        public float TrueRotationSpeed => AnimationSpeed * (data.rotate?.rotationSpeed ?? 0);
+        
+        //Getters
+        private float Opacity => Parent.OpacityFloat(_selfArgs);
+        private float ExtraRotation => Parent.ExtraRotation(_selfArgs) ?? 0;
+        //private float GetRotationSpeedFactor => Parent.RotationSpeedFactor(_selfArgs) ?? 1;
+        private float AnimationSpeed => Parent.AnimationSpeed(_selfArgs) ?? 1;
+        private Color ColorOverride => Parent.ColorOverride(_selfArgs) ?? Color.white;
+        private Vector3 DrawPos => Parent.DrawPosition(_selfArgs) ?? Parent.parent.DrawPos;
+        private Action<FXLayer> Action => Parent.Action(_selfArgs);
 
         //Blink
         public bool ShouldBeBlinkingNow => blinkDuration > 0;
@@ -50,49 +56,56 @@ namespace TeleCore
         //Fade
 
         //Rotate
-        public float RotationSpeed => data.rotate?.rotationSpeed ?? 0;
 
-        public FXGraphic(CompFX parent, FXGraphicData data, int index)
+        public FXLayer(FXLayerData data, FXParentInfo info, int index)
         {
-            TLog.Message($"Adding Layer {index}: {data.data?.texPath} ({data.mode})");
-            this.parent = parent;
+            //
+            TLog.Message($"Adding Layer {index}: {data.graphicData?.texPath} ({data.fxMode})");
+            
+            //
             this.data = data;
-            this.index = index;
+            parentInfo = info;
+            _index = index;
             
             if (data.skip)
             {
-                unused = true;
+                _inactive = true;
                 return;
             }
-
+            
             //
-            drawColor = Color.white;
+            _altitude = (data.altitude ?? info.Def.altitudeLayer).AltitudeFor();
             if (data.rotate != null)
             {
                 exactRotation = data.rotate.startRotation.RandomInRange;
             }
-            altitude = (data.altitude ?? parent.parent.def.altitudeLayer).AltitudeFor();
+
             if (data.drawLayer != null)
-                altitude += (data.drawLayer.Value * Altitudes.AltInc);
+            {
+                _altitude += (data.drawLayer.Value * Altitudes.AltInc);
+            }
             else
-                altitude += ((index + 1) * Altitudes.AltInc);
+            {
+                _altitude += ((index + 1) * Altitudes.AltInc);
+            }
+            
+            //Set Args Cache
+            _selfArgs = this.GetArgs();
         }
 
         public void Tick()
         {
-            if (unused) return;
+            if (_inactive) return;
             var tick = Find.TickManager.TicksGame;
 
             //Rotate
-            if (GetRotationSpeed != 0)
-                exactRotation += GetRotationSpeed * StaticData.DeltaTime;
+            if (TrueRotationSpeed != 0)
+                exactRotation += TrueRotationSpeed * StaticData.DeltaTime;
 
             //Blink
             TryTickBlink(tick);
-
             //Fade
             TryTickFade(tick);
-
             //Resize
             TryTickSize(tick);
         }
@@ -127,7 +140,7 @@ namespace TeleCore
             if (data.fade == null) return;
             var fade = data.fade;
             if (fade.opacityRange.Average <= 0) return;
-            var opaVal = TMath.OscillateBetween(fade.opacityRange.min, fade.opacityRange.max, fade.opacityDuration, tick + parent.TickOffset + fade.initialOpacityOffset);
+            var opaVal = TMath.OscillateBetween(fade.opacityRange.min, fade.opacityRange.max, fade.opacityDuration, tick + parentInfo.TickOffset + fade.initialOpacityOffset);
             drawColor.a = opaVal;
         }
 
@@ -136,7 +149,7 @@ namespace TeleCore
             if (data.resize == null) return;
             var resize = data.resize;
             if (resize.sizeRange.Average <= 0) return;
-            var sizeVal = TMath.OscillateBetween(resize.sizeRange.min, resize.sizeRange.max, resize.sizeDuration, tick + parent.TickOffset + resize.initialSizeOffset);
+            var sizeVal = TMath.OscillateBetween(resize.sizeRange.min, resize.sizeRange.max, resize.sizeDuration, tick + parentInfo.TickOffset + resize.initialSizeOffset);
             drawSize *= sizeVal;
         }
 
@@ -144,31 +157,31 @@ namespace TeleCore
         {
             get
             {
-                if (graphicInt == null)
+                if (_graphicInt == null)
                 {
-                    if (parent.parent.Graphic is Graphic_Random random)
+                    if (parentInfo.ParentThing.Graphic is Graphic_Random random)
                     {
-                        var path = this.data.data.texPath;
-                        var parentName = random.SubGraphicFor(parent.parent).path.Split('/').Last();
+                        var path = this.data.graphicData.texPath;
+                        var parentName = random.SubGraphicFor(parentInfo.ParentThing).path.Split('/').Last();
                         var lastPart = path.Split('/').Last();
                         path += "/" + lastPart;
                         path += "_" + parentName.Split('_').Last();
-                        graphicInt = GraphicDatabase.Get(typeof(Graphic_Single), path, data.data.shaderType.Shader, data.data.drawSize, data.data.color, data.data.colorTwo);
+                        _graphicInt = GraphicDatabase.Get(typeof(Graphic_Single), path, data.graphicData.shaderType.Shader, data.graphicData.drawSize, data.graphicData.color, data.graphicData.colorTwo);
                     }
-                    else if (data.data != null)
+                    else if (data.graphicData != null)
                     {
-                        graphicInt = data.data.Graphic;
+                        _graphicInt = data.graphicData.Graphic;
                     }
 
                     if (!data.textureParams.NullOrEmpty())
                     {
                         foreach (var param in data.textureParams)
                         {
-                            param.ApplyOn(graphicInt);
+                            param.ApplyOn(_graphicInt);
                         }
                     }
                 }
-                return graphicInt;
+                return _graphicInt;
             }
         }
 
@@ -225,30 +238,30 @@ namespace TeleCore
         public void Draw(Vector3? drawLocOverride = null)
         {
             //Pre-Action
-            GetAction?.Invoke(this);
+            Action?.Invoke(this);
             
             //
-            var drawPos = drawLocOverride ?? GetDrawPos;
-            GetDrawInfo(Graphic, ref drawPos, Rot4, ExData, parent.parent.def, out drawSize, out drawMat, out drawMesh, out float extraRotation, out flipUV);
+            var drawPos = drawLocOverride ?? DrawPos;
+            GetDrawInfo(Graphic, ref drawPos, ParentRot4, parentInfo.Extension, parentInfo.ParentThing.def, out drawSize, out _drawMat, out drawMesh, out float extraRotation, out flipUV);
 
-            if(parent.IgnoreDrawOff)
+            if(Parent.IgnoreDrawOff)
                 drawPos += data.drawOffset;
             
             //Colors
-            var graphicColor = data.data.color;
-            if (GetColorOverride != Color.white)
-                graphicColor *= GetColorOverride;
+            var graphicColor = data.graphicData.color;
+            if (ColorOverride != Color.white)
+                graphicColor *= ColorOverride;
 
-            graphicColor.a = GetOpacity;
+            graphicColor.a = Opacity;
             graphicColor *= drawColor;
 
             //
-            drawMat.SetTextureOffset("_MainTex", data.texCoords.position);
-            drawMat.SetTextureScale("_MainTex", data.texCoords.size);
+            _drawMat.SetTextureOffset("_MainTex", data.texCoords.position);
+            _drawMat.SetTextureScale("_MainTex", data.texCoords.size);
 
-            materialProperties.SetColor(ShaderPropertyIDs.Color, graphicColor);
+            _materialProperties.SetColor(ShaderPropertyIDs.Color, graphicColor);
 
-            var rotationQuat = (GetRotation + extraRotation).ToQuat();
+            var rotationQuat = (ExtraRotation + extraRotation).ToQuat();
 
             if (data.PivotOffset != null)
             {
@@ -257,17 +270,17 @@ namespace TeleCore
                 drawPos = pivotPoint + (relativePos);
             }
 
-            Graphics.DrawMesh(drawMesh, new Vector3(drawPos.x, altitude, drawPos.z), rotationQuat, drawMat, 0, null, 0, materialProperties);
+            Graphics.DrawMesh(drawMesh, new Vector3(drawPos.x, _altitude, drawPos.z), rotationQuat, _drawMat, 0, null, 0, _materialProperties);
         }
 
         public void Print(SectionLayer layer)
         {
             //
-            var drawPos = GetDrawPos;
-            GetDrawInfo(Graphic, ref drawPos, Rot4, ExData, parent.parent.def, out drawSize, out drawMat, out drawMesh, out float extraRotation, out flipUV);
-            if (!parent.IgnoreDrawOff)
+            var drawPos = DrawPos;
+            GetDrawInfo(Graphic, ref drawPos, ParentRot4, parentInfo.Extension, parentInfo.ParentThing.def, out drawSize, out _drawMat, out drawMesh, out float extraRotation, out flipUV);
+            if (!Parent.IgnoreDrawOff)
                 drawPos += data.drawOffset;
-            Printer_Plane.PrintPlane(layer, new Vector3(drawPos.x, altitude, drawPos.z), drawSize, drawMat, (GetRotation + extraRotation), flipUV);
+            Printer_Plane.PrintPlane(layer, new Vector3(drawPos.x, _altitude, drawPos.z), drawSize, _drawMat, (ExtraRotation + extraRotation), flipUV);
         }
     }
 }

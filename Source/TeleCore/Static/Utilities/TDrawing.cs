@@ -12,7 +12,7 @@ namespace TeleCore
     {
         public static void Draw(Graphic graphic, Vector3 drawPos, Rot4 rot, float? rotation, ThingDef def, FXDefExtension extension = null)
         {
-            FXGraphic.GetDrawInfo(graphic, ref drawPos, rot, extension, def, out _, out var drawMat, out var drawMesh, out var exactRotation, out _);
+            FXLayer.GetDrawInfo(graphic, ref drawPos, rot, extension, def, out _, out var drawMat, out var drawMesh, out var exactRotation, out _);
             Graphics.DrawMesh(drawMesh, drawPos, rotation?.ToQuat() ?? exactRotation.ToQuat(), drawMat, 0);
         }
 
@@ -31,7 +31,7 @@ namespace TeleCore
             if (graphic is Graphic_Random rand)
                 graphic = rand.SubGraphicFor(thing);
             var drawPos = thing.DrawPos;
-            FXGraphic.GetDrawInfo(graphic, ref drawPos, thing.Rotation, extension, def, out var drawSize, out var drawMat, out _, out var exactRotation, out var flipUV);
+            FXLayer.GetDrawInfo(graphic, ref drawPos, thing.Rotation, extension, def, out var drawSize, out var drawMat, out _, out var exactRotation, out var flipUV);
             Printer_Plane.PrintPlane(layer, drawPos, drawSize, drawMat, exactRotation, flipUV, null, null, 0.01f, 0f);
             if (graphic.ShadowGraphic != null && thing != null)
             {

@@ -16,29 +16,28 @@ namespace TeleCore
 
         //CompFX
         public Color CurColor => Color.clear;
-        public override bool ShouldDoEffects => IsWorkedOn;
 
-        public override bool FX_AffectsLayerAt(int index)
+        public override bool FX_ShouldDraw(FXLayerArgs args)
         {
-            return base.FX_AffectsLayerAt(index);
-        }
-
-        public override bool FX_ShouldDrawAt(int index)
-        {
-            return index switch
+            return args.index switch
             {
                 0 => IsWorkedOn,
-                _ => base.FX_ShouldDrawAt(index),
+                _ => base.FX_ShouldDraw(args),
             };
         }
 
-        public override Color? FX_GetColorAt(int index)
+        public override Color? FX_GetColor(FXLayerArgs args)
         {
-            return index switch
+            return args.index switch
             {
                 0 => CurColor,
-                _ => base.FX_GetColorAt(index),
+                _ => base.FX_GetColor(args),
             };
+        }
+
+        public override bool FX_ShouldThrowEffects(string effecterTag)
+        {
+            return IsWorkedOn;
         }
 
         //Crafter Code

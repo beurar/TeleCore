@@ -5,22 +5,21 @@ using Verse;
 
 namespace TeleCore
 {
-    public class FXGraphicData
+    public class FXLayerData
     {
         //Main graphic
-        public GraphicData data;
-        //Shader TextureParams
+        public GraphicData graphicData;
         public List<DynamicTextureParameter> textureParams;
-        //
-        //Fixed Alt Override
+        
         public AltitudeLayer? altitude = null;
-        public FXMode mode = FXMode.Static;
+        public FXMode fxMode = FXMode.Static;
 
         //
-        public string FXReferenceID = "Main";
+        public int? index;
+        public string layerTag;
+        public string categoryTag;
         public bool skip = false;
         public bool needsPower = false;
-
         public int? drawLayer = null;
 
         //
@@ -29,14 +28,15 @@ namespace TeleCore
         public FadeProperties fade;
         public ResizeProperties resize;
 
-        //Texture Data
+        //Texture UV Data
         public Rect texCoords = new Rect(0, 0, 1, 1);
-
         public Vector2 textureSize = Vector2.one;
         public Vector3 drawOffset = Vector3.zero;
-
         public Vector3? pivotOffset = null;
         public Vector3? pivotPixelOffset = null;
+        
+        
+        //public List<EffecterDef> effecters;
 
         public Vector3? PivotOffset
         {
@@ -47,8 +47,8 @@ namespace TeleCore
                 {
                     var pixelOffset = pivotPixelOffset.Value;
 
-                    float width = (pixelOffset.x / textureSize.x) * data.drawSize.x;
-                    float height = (pixelOffset.z / textureSize.y) * data.drawSize.y;
+                    float width = (pixelOffset.x / textureSize.x) * graphicData.drawSize.x;
+                    float height = (pixelOffset.z / textureSize.y) * graphicData.drawSize.y;
 
                     pivotOffset = new Vector3(width, 0, height);
                 }
@@ -56,7 +56,5 @@ namespace TeleCore
                 return pivotOffset;
             }
         }
-
-        public Graphic Graphic => data.Graphic;
     }
 }

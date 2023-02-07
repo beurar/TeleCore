@@ -12,7 +12,7 @@
 		</graphicData>
 		<comps>
 			<li Class="TeleCore.CompProperties_FX"> 
-				<overlays>
+				<fxLayerData>
 					<li>
 						<data>
 							<texPath>Items/Network/PortableContainer/Overlay</texPath>
@@ -22,7 +22,7 @@
 						</data>
 						<mode>Dynamic</mode>
 					</li>
-				</overlays>
+				</fxLayerData>
 			</li>
 		</comps>
 		<drawerType>RealtimeOnly</drawerType>

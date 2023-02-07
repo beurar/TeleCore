@@ -26,17 +26,16 @@ namespace TeleCore
     internal struct DelayedRoomUpdateInfo
     {
         public DelayedRoomUpdateType type;
-        public NetworkSubPart subPart;
-        public IntVec3 pos;
+        public RoomUpdateEventArgs args;
 
-        public DelayedRoomUpdateInfo(DelayedRoomUpdateType type, NetworkSubPart subPart, IntVec3 pos)
+        public DelayedRoomUpdateInfo(DelayedRoomUpdateType type, RoomUpdateEventArgs args)
         {
             this.type = type;
-            this.subPart = subPart;
-            this.pos = pos;
+            this.args = args;
         }
     }
 
+    //Todo: get differences from basegame RegionAndRoomUpdater
     public class RoomUpdateEventArgs : EventArgs
     {
         public Room NewRoom { get; }

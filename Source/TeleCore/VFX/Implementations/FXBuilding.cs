@@ -20,18 +20,17 @@ namespace TeleCore
         public FXDefExtension Extension => def.FXExtension();
         public CompFX FXComp => this.GetComp<CompFX>();
 
-        public virtual bool IsMain => true;
-        public virtual int Priority => 100;
-        public virtual bool ShouldDoEffects => true;
-        public virtual CompPower ForcedPowerComp => null;
-        public virtual bool FX_AffectsLayerAt(int index) => true;
-        public virtual bool FX_ShouldDrawAt(int index) => true;
-        public virtual float FX_GetOpacityAt(int index) => 1f;
-        public virtual float? FX_GetRotationAt(int index) => null;
-        public virtual float? FX_GetRotationSpeedAt(int index) => null;
-        public virtual Color? FX_GetColorAt(int index) => null;
-        public virtual Vector3? FX_GetDrawPositionAt(int index) => null;
-        public virtual Action<FXGraphic> FX_GetActionAt(int index) => null;
+        
+        public CompPowerTrader FX_PowerProviderFor(FXLayerArgs args) => null!;
+        public bool FX_ShouldDraw(FXLayerArgs args) => true;
+        public float FX_GetOpacity(FXLayerArgs args) => 1f;
+        public float? FX_GetRotation(FXLayerArgs args) => null;
+        public float? FX_GetAnimationSpeedFactor(FXLayerArgs args) => null;
+        public Color? FX_GetColor(FXLayerArgs args) => null;
+        public Vector3? FX_GetDrawPosition(FXLayerArgs args) => null;
+        public Action<FXLayer> FX_GetAction(FXLayerArgs args) => null!;
+        public bool FX_ShouldThrowEffects(string effecterTag) => true;
+        public void FX_OnEffectSpawned(FXEffecterArgs args) { }
 
         //
         public override void SpawnSetup(Map map, bool respawningAfterLoad)
