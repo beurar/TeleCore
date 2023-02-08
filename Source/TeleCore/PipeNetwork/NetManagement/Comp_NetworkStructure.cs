@@ -86,7 +86,7 @@ namespace TeleCore
         
         public virtual Action<FXLayer> FX_GetAction(FXLayerArgs args) => null!;
         
-        public virtual bool? FX_ShouldThrowEffects(EffecterLayerArgs args) => true;
+        public virtual bool? FX_ShouldThrowEffects(FXLayerArgs args) => true;
         public void FX_OnEffectSpawned(EffecterEffectSpawnedArgs effectSpawnedArgs)
         {
         }

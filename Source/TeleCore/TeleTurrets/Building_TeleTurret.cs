@@ -73,7 +73,7 @@ namespace TeleCore
         public virtual Color? FX_GetColor(FXLayerArgs args) => null;
         public virtual Vector3? FX_GetDrawPosition(FXLayerArgs args) => null;
         public virtual Action<FXLayer> FX_GetAction(FXLayerArgs args) => null!;
-        public virtual bool? FX_ShouldThrowEffects(EffecterLayerArgs args) => null;
+        public virtual bool? FX_ShouldThrowEffects(FXLayerArgs args) => null;
         public virtual void FX_OnEffectSpawned(EffecterEffectSpawnedArgs effectSpawnedArgs) { }
         
         public bool IsMain => true;

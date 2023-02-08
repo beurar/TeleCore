@@ -12,8 +12,6 @@ namespace TeleCore
         private Material? _drawMat;
         private MaterialPropertyBlock _materialProperties;
 
-        private FXLayerArgs _selfArgs;
-        
         //FX
         private readonly bool _inactive;
         private readonly int _index = 0;
@@ -40,6 +38,7 @@ namespace TeleCore
         public MaterialPropertyBlock PropertyBlock => _materialProperties;
         
         public CompFX Parent { get; }
+        public FXLayerArgs Args { get; }
         
         //
         public int Index => _index;
@@ -52,22 +51,22 @@ namespace TeleCore
         public float TrueRotationSpeed => AnimationSpeed * (data.rotate?.rotationSpeed ?? 0);
         
         //Getters
-        private float Opacity => Parent.OpacityFloat(_selfArgs);
-        private float ExtraRotation => Parent.ExtraRotation(_selfArgs);
+        private float Opacity => Parent.OpacityFloat(Args);
+        private float ExtraRotation => Parent.ExtraRotation(Args);
         //private float GetRotationSpeedFactor => Parent.RotationSpeedFactor(_selfArgs) ?? 1;
-        private float AnimationSpeed => Parent.AnimationSpeedFactor(_selfArgs);
-        private Color ColorOverride => Parent.ColorOverride(_selfArgs) ?? Color.white;
-        private Vector3 DrawPos => Parent.DrawPositionOverride(_selfArgs) ?? Parent.parent.DrawPos;
-        private Action<FXLayer> Action => Parent.Action(_selfArgs);
+        private float AnimationSpeed => Parent.AnimationSpeedFactor(Args);
+        private Color ColorOverride => Parent.ColorOverride(Args) ?? Color.white;
+        private Vector3 DrawPos => Parent.DrawPositionOverride(Args) ?? Parent.parent.DrawPos;
+        private Action<FXLayer> Action => Parent.Action(Args);
 
         //Blink
         public bool ShouldBeBlinkingNow => blinkDuration > 0;
-
+        
+        
         public FXLayer(FXLayerData data, FXParentInfo info, int index)
         {
             TLog.Message($"Adding Layer {index}: {data.graphicData?.texPath} ({data.fxMode})");
             
-            //
             this.data = data;
             parentInfo = info;
             _index = index;
@@ -80,9 +79,9 @@ namespace TeleCore
             }
 
             //Generate Effecter Layer
-            if(data.effecterData != null)
+            if(data.effecterDef != null)
             {
-                _effecterLayer = new EffecterLayer(data.effecterData);
+                _effecterLayer = new EffecterLayer(data.effecterDef);
             }
             
             //Generate Visual Layer
@@ -92,13 +91,11 @@ namespace TeleCore
             }
             else
             {
-                //
                 _altitude = (data.altitude ?? info.Def.altitudeLayer).AltitudeFor();
                 if (data.rotate != null)
                 {
                     exactRotation = data.rotate.startRotation.RandomInRange;
                 }
-
                 if (data.drawLayer != null)
                 {
                     _altitude += (data.drawLayer.Value * Altitudes.AltInc);
@@ -110,7 +107,7 @@ namespace TeleCore
             }
 
             //Set Args Cache
-            _selfArgs = this.GetArgs();
+            Args = this.GetArgs();
         }
 
         public void TickLayer(int tickInterval)
@@ -132,7 +129,6 @@ namespace TeleCore
 
         public void TickEffecter(int tickInterval)
         {
-            //
             _effecterLayer?.Tick(parentInfo.ParentThing, parentInfo.ParentThing);
         }
 
@@ -151,7 +147,9 @@ namespace TeleCore
                     blinkDuration--;
                 }
                 else
+                {
                     ResetBlink();
+                }
             }
         }
 

@@ -35,7 +35,7 @@ namespace TeleCore
             };
         }
 
-        public override bool? FX_ShouldThrowEffects(EffecterLayerArgs args)
+        public override bool? FX_ShouldThrowEffects(FXLayerArgs args)
         {
             return IsWorkedOn;
         }

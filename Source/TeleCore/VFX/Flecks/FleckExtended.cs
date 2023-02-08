@@ -11,16 +11,14 @@ public struct FleckExtended : IFleck
 
     public void Setup(FleckCreationData creationData)
     {
-        throw new System.NotImplementedException();
     }
 
     public bool TimeInterval(float deltaTime, Map map)
     {
-        throw new System.NotImplementedException();
+        return true;
     }
 
     public void Draw(DrawBatch batch)
     {
-        throw new System.NotImplementedException();
     }
 }

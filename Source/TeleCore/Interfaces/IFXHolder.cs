@@ -14,8 +14,14 @@ namespace TeleCore
     /// <para>You can implement this interface on multiple parts of a Thing instance, including the base <see cref="ThingDef.thingClass"/> and the <see cref="ThingDef.comps"/>.                                        </para>
     /// <para>If multiple implementations are active, the order of priority for selecting an interface for a layer via <see cref="FX_AffectsLayerAt"/> or for <see cref="IsMain"/> is done by <see cref="Priority"/>.   </para>
     /// </summary>
-    ///
-    /// TODO: Define "Reserved-Layers" as index or tags and allow custom layer definition without needing to skip layers, or use reference tags..
+    
+    
+    // RenderPriority
+    // #0  => Power Glow
+    // #8  => Network Glow
+    // #16 => Network Container Fill
+    // #24 => Network "Lid"
+    // #32 => 
     
     public interface IFXHolder
     {
@@ -30,13 +36,7 @@ namespace TeleCore
         /// Allows you to override the default power getter with a custom reference, otherwise it defaults to the parent Thing's PowerComp (if it exists)
         /// </summary>
         CompPowerTrader FX_PowerProviderFor(FXLayerArgs args);
-        
-        /*
-        /// <summary>
-        /// </summary>
-        bool FX_Data_AffectsLayer(FXLayerArgs args);
-        */
-        
+
         #endregion
         
         /// <summary>
@@ -79,7 +79,7 @@ namespace TeleCore
         /// <summary>
         /// Sets whether or not an attached Comp_FleckThrower should throw effects.
         /// </summary>
-        bool? FX_ShouldThrowEffects(EffecterLayerArgs args);
+        bool? FX_ShouldThrowEffects(FXLayerArgs args);
         
         /// <summary>
         /// Allows you to hook into the effecter logic, and handle custom logic whenever a tagged effect is spawned.

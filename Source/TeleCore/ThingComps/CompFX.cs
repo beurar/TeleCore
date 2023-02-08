@@ -28,7 +28,6 @@ namespace TeleCore
     
     public class CompFX : ThingComp
     {
-        //
         private bool spawnedOnce = false;
         private List<IFXHolder> allHeldFXComps;
 
@@ -189,7 +188,9 @@ namespace TeleCore
             {
                 var g = FXLayers[i];
                 g.TickLayer(tickInterval);
-                g.TickEffecter(tickInterval);
+                
+                if(ShouldThrowEffects(g.Args))
+                    g.TickEffecter(tickInterval);
             }
         }
 
@@ -219,7 +220,6 @@ namespace TeleCore
             return true;
         }
         
-        //TODO: Events with value returns always go through all delegates and return the last value
         //Layer Data Getters
         public CompPowerTrader PowerProvider(FXLayerArgs args)
         {
@@ -269,7 +269,7 @@ namespace TeleCore
             //return GetAction.Invoke(args);
         }
 
-        public bool ShouldThrowEffects(EffecterLayerArgs args)
+        public bool ShouldThrowEffects(FXLayerArgs args)
         {
             return FXHolderByLayerIndex[args.index]?.FX_ShouldThrowEffects(args) ?? true;
             //return GetShouldThrowEffects.Invoke(args);
