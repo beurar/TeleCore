@@ -12,6 +12,7 @@ public delegate void ThingStateChangedEvent(ThingStateChangedEventArgs args);
 public delegate void PawnHediffChangedEvent(PawnHediffChangedEventArgs args);
 
 //FX Events
+/*
 public delegate CompPowerTrader FXGetPowerProviderEvent(FXLayerArgs args);
 public delegate bool FXGetShouldDrawEvent(FXLayerArgs args);
 public delegate float FXGetOpacityEvent(FXLayerArgs args);
@@ -20,6 +21,6 @@ public delegate float? FXGetAnimationSpeedEvent(FXLayerArgs args);
 public delegate Color? FXGetColorEvent(FXLayerArgs args);
 public delegate Vector3? FXGetDrawPositionEvent(FXLayerArgs args);
 public delegate Action<FXLayer> FXGeActionEvent(FXLayerArgs args);
-
 public delegate bool FXShouldThrowEffectsEvent(EffecterLayerArgs args);
-public delegate void FXOnEffectSpawnedEvent(FXEffecterArgs args);
+*/
+public delegate void OnEffectSpawnedEvent(EffecterEffectSpawnedArgs effectSpawnedArgs);

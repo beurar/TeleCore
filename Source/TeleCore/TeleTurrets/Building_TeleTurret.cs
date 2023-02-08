@@ -64,6 +64,18 @@ namespace TeleCore
         //FX
         //Layers:
         //[2] : TurretTopOverlay
+        public virtual bool FX_ProvidesForLayer(FXLayerArgs args) => true; //FXLayerData._ThingHolderTag;
+        public virtual CompPowerTrader FX_PowerProviderFor(FXLayerArgs args) => null!;
+        public virtual bool? FX_ShouldDraw(FXLayerArgs args) => null;
+        public virtual float? FX_GetOpacity(FXLayerArgs args) => null;
+        public virtual float? FX_GetRotation(FXLayerArgs args) => null;
+        public virtual float? FX_GetAnimationSpeedFactor(FXLayerArgs args) => null;
+        public virtual Color? FX_GetColor(FXLayerArgs args) => null;
+        public virtual Vector3? FX_GetDrawPosition(FXLayerArgs args) => null;
+        public virtual Action<FXLayer> FX_GetAction(FXLayerArgs args) => null!;
+        public virtual bool? FX_ShouldThrowEffects(EffecterLayerArgs args) => null;
+        public virtual void FX_OnEffectSpawned(EffecterEffectSpawnedArgs effectSpawnedArgs) { }
+        
         public bool IsMain => true;
         public int Priority => 100;
         public virtual bool ShouldDoEffects => true;

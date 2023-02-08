@@ -8,15 +8,22 @@ namespace TeleCore
     public class FXLayer
     {
         //Cached
-        private Graphic _graphicInt;
-        private Material _drawMat;
+        private Graphic? _graphicInt;
+        private Material? _drawMat;
         private MaterialPropertyBlock _materialProperties;
 
         private FXLayerArgs _selfArgs;
-        private readonly int _index = 0;
+        
+        //FX
         private readonly bool _inactive;
+        private readonly int _index = 0;
+        private readonly int renderPriority;
         private readonly float _altitude;
         
+        //Effecter
+        private EffecterLayer? _effecterLayer;
+        private readonly bool _isEffecterLayer;
+
         //Data
         public readonly FXLayerData data;
         private readonly FXParentInfo parentInfo;
@@ -36,6 +43,9 @@ namespace TeleCore
         
         //
         public int Index => _index;
+        public int RenderPriority => renderPriority;
+
+        public bool HasEffecter => _effecterLayer != null;
         
         public Rot4 ParentRot4 => parentInfo.ParentThing.Rotation;
         public float TrueRotation => ExtraRotation + exactRotation;
@@ -43,59 +53,69 @@ namespace TeleCore
         
         //Getters
         private float Opacity => Parent.OpacityFloat(_selfArgs);
-        private float ExtraRotation => Parent.ExtraRotation(_selfArgs) ?? 0;
+        private float ExtraRotation => Parent.ExtraRotation(_selfArgs);
         //private float GetRotationSpeedFactor => Parent.RotationSpeedFactor(_selfArgs) ?? 1;
-        private float AnimationSpeed => Parent.AnimationSpeed(_selfArgs) ?? 1;
+        private float AnimationSpeed => Parent.AnimationSpeedFactor(_selfArgs);
         private Color ColorOverride => Parent.ColorOverride(_selfArgs) ?? Color.white;
-        private Vector3 DrawPos => Parent.DrawPosition(_selfArgs) ?? Parent.parent.DrawPos;
+        private Vector3 DrawPos => Parent.DrawPositionOverride(_selfArgs) ?? Parent.parent.DrawPos;
         private Action<FXLayer> Action => Parent.Action(_selfArgs);
 
         //Blink
         public bool ShouldBeBlinkingNow => blinkDuration > 0;
 
-        //Fade
-
-        //Rotate
-
         public FXLayer(FXLayerData data, FXParentInfo info, int index)
         {
-            //
             TLog.Message($"Adding Layer {index}: {data.graphicData?.texPath} ({data.fxMode})");
             
             //
             this.data = data;
             parentInfo = info;
             _index = index;
+            renderPriority = data.renderPriority ?? index;
             
             if (data.skip)
             {
                 _inactive = true;
                 return;
             }
-            
-            //
-            _altitude = (data.altitude ?? info.Def.altitudeLayer).AltitudeFor();
-            if (data.rotate != null)
-            {
-                exactRotation = data.rotate.startRotation.RandomInRange;
-            }
 
-            if (data.drawLayer != null)
+            //Generate Effecter Layer
+            if(data.effecterData != null)
             {
-                _altitude += (data.drawLayer.Value * Altitudes.AltInc);
+                _effecterLayer = new EffecterLayer(data.effecterData);
+            }
+            
+            //Generate Visual Layer
+            if (data.graphicData == null)
+            {
+                _isEffecterLayer = _effecterLayer != null;
             }
             else
             {
-                _altitude += ((index + 1) * Altitudes.AltInc);
+                //
+                _altitude = (data.altitude ?? info.Def.altitudeLayer).AltitudeFor();
+                if (data.rotate != null)
+                {
+                    exactRotation = data.rotate.startRotation.RandomInRange;
+                }
+
+                if (data.drawLayer != null)
+                {
+                    _altitude += (data.drawLayer.Value * Altitudes.AltInc);
+                }
+                else
+                {
+                    _altitude += ((index + 1) * Altitudes.AltInc);
+                }
             }
-            
+
             //Set Args Cache
             _selfArgs = this.GetArgs();
         }
 
-        public void Tick()
+        public void TickLayer(int tickInterval)
         {
-            if (_inactive) return;
+            if (_inactive || _isEffecterLayer) return;
             var tick = Find.TickManager.TicksGame;
 
             //Rotate
@@ -108,6 +128,12 @@ namespace TeleCore
             TryTickFade(tick);
             //Resize
             TryTickSize(tick);
+        }
+
+        public void TickEffecter(int tickInterval)
+        {
+            //
+            _effecterLayer?.Tick(parentInfo.ParentThing, parentInfo.ParentThing);
         }
 
         private void TryTickBlink(int tick)

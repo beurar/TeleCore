@@ -15,8 +15,8 @@ public class Effecter_FX : Effecter
     {
     }
 
-    internal void SpawnedEffect(FXEffecterArgs args)
+    internal void SpawnedEffect(EffecterEffectSpawnedArgs effectSpawnedArgs)
     {
-        fxComp?.OnEffectSpawned(args);
+        fxComp?.OnEffectSpawned(effectSpawnedArgs);
     }
 }

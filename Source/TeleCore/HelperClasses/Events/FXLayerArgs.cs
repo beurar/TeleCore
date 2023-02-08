@@ -3,6 +3,7 @@
 public struct FXLayerArgs
 {
     public int index;
+    public int renderPriority;
     public string layerTag;
     public string categoryTag;
 

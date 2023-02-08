@@ -33,9 +33,10 @@ namespace TeleCore
         private List<IFXHolder> allHeldFXComps;
 
         //TODO: Performance comparision
-        //private IFXHolder[] FXByLayerIndex;
+        private IFXHolder[] FXHolderByLayerIndex;
         
         //Events
+        /*
         private FXGetPowerProviderEvent GetPowerProvider;
         private FXGetShouldDrawEvent GetShouldDraw;
         private FXGetRotationEvent GetRotation;
@@ -44,10 +45,11 @@ namespace TeleCore
         private FXGetColorEvent GetColor;
         private FXGetOpacityEvent GetOpacity;
         private FXGeActionEvent GetAction;
-
         private FXShouldThrowEffectsEvent GetShouldThrowEffects;
-        private FXOnEffectSpawnedEvent EffectSpawned;
+        */
         
+        private OnEffectSpawnedEvent EffectSpawned;
+
         //Debug
         internal bool IgnoreDrawOff;
 
@@ -57,8 +59,8 @@ namespace TeleCore
         //
         public CompPowerTrader ParentPowerComp { get; private set; }
         public FXDefExtension GraphicExtension { get; private set; }
-        public List<FXLayer> Overlays { get; private set; }
-        
+        public List<FXLayer> FXLayers { get; private set; }
+
         public override void PostSpawnSetup(bool respawningAfterLoad)
         {
             base.PostSpawnSetup(respawningAfterLoad);
@@ -75,13 +77,17 @@ namespace TeleCore
             {
                 if (!Props.fxLayers.NullOrEmpty())
                 {
-                    Overlays = new List<FXLayer>();
+                    FXLayers = new List<FXLayer>();
                     var spawnTick = Find.TickManager.TicksGame;
                     var tickOffset = Props.tickOffset.RandomInRange;
+                    
                     for (int i = 0; i < Props.fxLayers.Count; i++)
                     {
-                        Overlays.Add(new FXLayer(Props.fxLayers[i], new FXParentInfo(tickOffset, spawnTick, GraphicExtension, parent), i));
+                        FXLayers.Add(new FXLayer(Props.fxLayers[i], new FXParentInfo(tickOffset, spawnTick, GraphicExtension, parent), i));
                     }
+                    
+                    //Resolve priority
+                    FXLayers.Sort((a,b) => a.RenderPriority < b.RenderPriority ? 1 : 0);
                 }
             }
 
@@ -114,23 +120,45 @@ namespace TeleCore
                     PopulateEvents(compFX);
                 }
             }
-        }
-
-        private void PopulateEvents(IFXHolder fxHolder)
-        {
-            GetPowerProvider += fxHolder.FX_PowerProviderFor;
-            GetShouldDraw += fxHolder.FX_ShouldDraw;
-            GetOpacity += fxHolder.FX_GetOpacity;
-            GetRotation += fxHolder.FX_GetRotation;
-            GetAnimationSpeed += fxHolder.FX_GetAnimationSpeedFactor;
-            GetColor += fxHolder.FX_GetColor;
-            GetDrawPosition += fxHolder.FX_GetDrawPosition;
-            GetAction += fxHolder.FX_GetAction;
-
-            GetShouldThrowEffects += fxHolder.FX_ShouldThrowEffects;
-            EffectSpawned += fxHolder.FX_OnEffectSpawned;
+            
+            //Resolve
+            FXHolderByLayerIndex = new IFXHolder[Props.fxLayers.Count];
+            for (int i = 0; i < Props.fxLayers.Count; i++)
+            {
+                var layerData = Props.fxLayers[i];
+                if (allHeldFXComps.NullOrEmpty())
+                {
+                    FXHolderByLayerIndex[i] = null!;
+                    continue;
+                }
+                
+                FXHolderByLayerIndex[i] = allHeldFXComps.FirstOrFallback(fx => (bool)fx?.FX_ProvidesForLayer(new FXLayerArgs
+                {
+                    index = i,
+                    renderPriority = -1,
+                    layerTag = layerData.layerTag,
+                    categoryTag = layerData.categoryTag
+                }), null)!;
+            }
         }
         
+        private void PopulateEvents(IFXHolder fxHolder)
+        {
+            // GetPowerProvider += fxHolder.FX_PowerProviderFor;
+            // GetShouldDraw += fxHolder.FX_ShouldDraw;
+            // GetOpacity += fxHolder.FX_GetOpacity;
+            // GetRotation += fxHolder.FX_GetRotation;
+            // GetAnimationSpeed += fxHolder.FX_GetAnimationSpeedFactor;
+            // GetColor += fxHolder.FX_GetColor;
+            // GetDrawPosition += fxHolder.FX_GetDrawPosition;
+            // GetAction += fxHolder.FX_GetAction;
+            //
+            // GetShouldThrowEffects += fxHolder.FX_ShouldThrowEffects;
+            
+            //
+            EffectSpawned += fxHolder.FX_OnEffectSpawned;
+        }
+
         //Notification
         public override void ReceiveCompSignal(string signal)
         {
@@ -143,31 +171,32 @@ namespace TeleCore
 
         public override void CompTick()
         {
-            Tick();
+            FXTick(1);
         }
 
         public override void CompTickRare()
         {
-            for (int i = 0; i < 750; i++)
+            for (int i = 0; i < GenTicks.TickRareInterval; i++)
             {
-                Tick();
+                FXTick(GenTicks.TickRareInterval);
             }
         }
 
-        private void Tick()
+        private void FXTick(int tickInterval)
         {
             //Update Graphics
-            for (var i = 0; i < Overlays.Count; i++)
+            for (var i = 0; i < FXLayers.Count; i++)
             {
-                var g = Overlays[i];
-                g.Tick();
+                var g = FXLayers[i];
+                g.TickLayer(tickInterval);
+                g.TickEffecter(tickInterval);
             }
         }
 
         //Drawing
         private bool CanDraw(FXLayerArgs args)
         {
-            if (Overlays[args].data.skip) 
+            if (FXLayers[args].data.skip) 
                 return false;
             if (!DrawBool(args) || OpacityFloat(args) <= 0) 
                 return false;
@@ -178,7 +207,7 @@ namespace TeleCore
 
         private bool HasPower(FXLayerArgs args)
         {
-            if (Overlays[args].data.needsPower)
+            if (FXLayers[args].data.needsPower)
             {
                 var provider = PowerProvider(args);
                 if (provider is {PowerOn: true})
@@ -194,64 +223,73 @@ namespace TeleCore
         //Layer Data Getters
         public CompPowerTrader PowerProvider(FXLayerArgs args)
         {
-            return GetPowerProvider.Invoke(args);
+            return FXHolderByLayerIndex[args.index]?.FX_PowerProviderFor(args) ?? ParentPowerComp;
+            //return GetPowerProvider.Invoke(args);
         }
         
         public bool DrawBool(FXLayerArgs args)
         {
-            return GetShouldDraw.Invoke(args);
+            return FXHolderByLayerIndex[args.index]?.FX_ShouldDraw(args) ?? true;
+            //return GetShouldDraw.Invoke(args);
         }
 
         public float OpacityFloat(FXLayerArgs args)
         {
-            return GetOpacity.Invoke(args);
+            return FXHolderByLayerIndex[args.index]?.FX_GetOpacity(args) ?? 1f;
+            //return GetOpacity.Invoke(args);
         }
 
-        public float? ExtraRotation(FXLayerArgs args)
+        public float ExtraRotation(FXLayerArgs args)
         {
-            return GetRotation.Invoke(args);
+            return FXHolderByLayerIndex[args.index]?.FX_GetRotation(args) ?? 0;
+            //return GetRotation.Invoke(args);
         }
 
-        public float? AnimationSpeed(FXLayerArgs args)
+        public float AnimationSpeedFactor(FXLayerArgs args)
         {
-            return GetAnimationSpeed.Invoke(args);
+            return FXHolderByLayerIndex[args.index]?.FX_GetAnimationSpeedFactor(args) ?? 1;
+            //return GetAnimationSpeed.Invoke(args);
         }
         
         public Color? ColorOverride(FXLayerArgs args)
         {
-            return GetColor.Invoke(args);
+            return FXHolderByLayerIndex[args.index]?.FX_GetColor(args) ?? null;
+            //return GetColor.Invoke(args);
         }
 
-        public Vector3? DrawPosition(FXLayerArgs args)
+        public Vector3? DrawPositionOverride(FXLayerArgs args)
         {
-            return GetDrawPosition.Invoke(args);
+            return FXHolderByLayerIndex[args.index]?.FX_GetDrawPosition(args) ?? null;
+            //return GetDrawPosition.Invoke(args);
         }
 
         public Action<FXLayer> Action(FXLayerArgs args)
         {
-            return GetAction.Invoke(args);
+            return FXHolderByLayerIndex[args.index]?.FX_GetAction(args) ?? null!;
+            //return GetAction.Invoke(args);
         }
 
         public bool ShouldThrowEffects(EffecterLayerArgs args)
         {
-            return GetShouldThrowEffects.Invoke(args);
+            return FXHolderByLayerIndex[args.index]?.FX_ShouldThrowEffects(args) ?? true;
+            //return GetShouldThrowEffects.Invoke(args);
         }
         
-        public void OnEffectSpawned(FXEffecterArgs args)
+        public void OnEffectSpawned(EffecterEffectSpawnedArgs effectSpawnedArgs)
         {
-            EffectSpawned.Invoke(args);
+            EffectSpawned.Invoke(effectSpawnedArgs);
         }
         //
         public void DrawCarried(Vector3 loc)
         {
-            for (int i = 0; i < Overlays.Count; i++)
+            for (int i = 0; i < FXLayers.Count; i++)
             {
-                var args = Overlays[i].GetArgs();
-                if (Overlays[i].data.fxMode != FXMode.Static && CanDraw(args))
+                var args = FXLayers[i].GetArgs();
+                if (FXLayers[i].data.fxMode != FXMode.Static && CanDraw(args))
                 {
-                    var drawPos = DrawPosition(args);
+                    var drawPos = DrawPositionOverride(args);
                     var diff = drawPos - parent.DrawPos;
-                    Overlays[i].Draw(loc + diff);
+                    FXLayers[i].Draw(loc + diff);
                 }
             }
         }
@@ -259,11 +297,11 @@ namespace TeleCore
         public override void PostDraw()
         {
             base.PostDraw();
-            for (int i = 0; i < Overlays.Count; i++)
+            for (int i = 0; i < FXLayers.Count; i++)
             {
-                if (Overlays[i].data.fxMode != FXMode.Static && CanDraw(Overlays[i].GetArgs()))
+                if (FXLayers[i].data.fxMode != FXMode.Static && CanDraw(FXLayers[i].GetArgs()))
                 {
-                    Overlays[i].Draw();
+                    FXLayers[i].Draw();
                 }
             }
         }
@@ -271,11 +309,11 @@ namespace TeleCore
         public override void PostPrintOnto(SectionLayer layer)
         {
             base.PostPrintOnto(layer);
-            for (int i = 0; i < Overlays.Count; i++)
+            for (int i = 0; i < FXLayers.Count; i++)
             {
-                if (Overlays[i].data.fxMode == FXMode.Static && CanDraw(Overlays[i].GetArgs()))
+                if (FXLayers[i].data.fxMode == FXMode.Static && CanDraw(FXLayers[i].GetArgs()))
                 {
-                    Overlays[i].Print(layer);
+                    FXLayers[i].Print(layer);
                 }
             }
         }

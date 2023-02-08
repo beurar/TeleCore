@@ -355,7 +355,7 @@ public class SubEffecter_FX : SubEffecter
 			//Try Notify Parent
 			if (Def?.eventTag != null)
 			{
-				((Effecter_FX) parent)?.SpawnedEffect(new FXEffecterArgs()
+				((Effecter_FX) parent)?.SpawnedEffect(new EffecterEffectSpawnedArgs()
 				{
 					//Cant pass fleck on as there is no return value when creating
 					effecterTag = Def.eventTag,
@@ -406,7 +406,7 @@ public class SubEffecter_FX : SubEffecter
 			//Try Notify Parent
 			if (Def?.eventTag != null)
 			{
-				((Effecter_FX) parent)?.SpawnedEffect(new FXEffecterArgs()
+				((Effecter_FX) parent)?.SpawnedEffect(new EffecterEffectSpawnedArgs()
 				{
 					effecterTag = Def.eventTag,
 					mote = sustainedMote,

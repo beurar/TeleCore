@@ -2,7 +2,7 @@
 
 namespace TeleCore;
 
-public struct FXEffecterArgs
+public struct EffecterEffectSpawnedArgs
 {
     public string effecterTag;
     public FleckDef fleckDef;

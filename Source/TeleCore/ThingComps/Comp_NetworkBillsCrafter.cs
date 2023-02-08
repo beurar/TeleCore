@@ -17,7 +17,7 @@ namespace TeleCore
         //CompFX
         public Color CurColor => Color.clear;
 
-        public override bool FX_ShouldDraw(FXLayerArgs args)
+        public override bool? FX_ShouldDraw(FXLayerArgs args)
         {
             return args.index switch
             {
@@ -35,7 +35,7 @@ namespace TeleCore
             };
         }
 
-        public override bool FX_ShouldThrowEffects(string effecterTag)
+        public override bool? FX_ShouldThrowEffects(EffecterLayerArgs args)
         {
             return IsWorkedOn;
         }

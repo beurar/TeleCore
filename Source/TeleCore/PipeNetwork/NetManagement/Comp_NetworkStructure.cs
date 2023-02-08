@@ -44,13 +44,19 @@ namespace TeleCore
         public virtual bool IsActiveOverride => true;
 
         #region FX Implementation
-        
-        public CompPowerTrader FX_PowerProviderFor(FXLayerArgs args)
+
+        public virtual bool FX_ProvidesForLayer(FXLayerArgs args)
         {
-            throw new NotImplementedException();
+            return args.layerTag switch
+            {
+                FXLayerData._NetworkHolderTag => true,
+                _ => false,
+            };
         }
 
-        public virtual bool FX_ShouldDraw(FXLayerArgs args)
+        public virtual CompPowerTrader FX_PowerProviderFor(FXLayerArgs args) => null;
+
+        public virtual bool? FX_ShouldDraw(FXLayerArgs args)
         {
             return args.index switch
             {
@@ -59,7 +65,7 @@ namespace TeleCore
             };
         }
 
-        public virtual float FX_GetOpacity(FXLayerArgs args) => 1f;
+        public virtual float? FX_GetOpacity(FXLayerArgs args) => 1f;
 
         public virtual float? FX_GetRotation(FXLayerArgs args) => null;
         public virtual float? FX_GetAnimationSpeedFactor(FXLayerArgs args) => null;
@@ -79,8 +85,9 @@ namespace TeleCore
         }
         
         public virtual Action<FXLayer> FX_GetAction(FXLayerArgs args) => null!;
-        public virtual bool FX_ShouldThrowEffects(string effecterTag) => true;
-        public void FX_OnEffectSpawned(FXEffecterArgs args)
+        
+        public virtual bool? FX_ShouldThrowEffects(EffecterLayerArgs args) => true;
+        public void FX_OnEffectSpawned(EffecterEffectSpawnedArgs effectSpawnedArgs)
         {
         }
         

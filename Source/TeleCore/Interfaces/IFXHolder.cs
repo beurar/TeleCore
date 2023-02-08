@@ -22,10 +22,15 @@ namespace TeleCore
         #region MetaDataGetter
 
         /// <summary>
+        /// 
+        /// </summary>
+        bool FX_ProvidesForLayer(FXLayerArgs args);
+        
+        /// <summary>
         /// Allows you to override the default power getter with a custom reference, otherwise it defaults to the parent Thing's PowerComp (if it exists)
         /// </summary>
         CompPowerTrader FX_PowerProviderFor(FXLayerArgs args);
-
+        
         /*
         /// <summary>
         /// </summary>
@@ -37,12 +42,12 @@ namespace TeleCore
         /// <summary>
         /// Overrides whether a layer at the same index of that value is rendered or not.
         /// </summary>
-        bool FX_ShouldDraw(FXLayerArgs args);
+        bool? FX_ShouldDraw(FXLayerArgs args);
 
         /// <summary>
         /// Sets the opacity value of a layer at the same index as the value in the array.
         /// </summary>
-        float FX_GetOpacity(FXLayerArgs args);
+        float? FX_GetOpacity(FXLayerArgs args);
 
         /// <summary>
         /// Sets the rotation value of a layer at the same index as the value in the array.
@@ -68,20 +73,19 @@ namespace TeleCore
         /// Attaches a custom function to a layer, it is run before the layer is drawn.
         /// </summary>
         Action<FXLayer> FX_GetAction(FXLayerArgs args);
-        
-        
-        #region Effecter
 
+        #region MyRegion
+        
         /// <summary>
         /// Sets whether or not an attached Comp_FleckThrower should throw effects.
         /// </summary>
-        bool FX_ShouldThrowEffects(EffecterLayerArgs args);
+        bool? FX_ShouldThrowEffects(EffecterLayerArgs args);
         
         /// <summary>
         /// Allows you to hook into the effecter logic, and handle custom logic whenever a tagged effect is spawned.
         /// </summary>
-        void FX_OnEffectSpawned(FXEffecterArgs args);
-        
+        void FX_OnEffectSpawned(EffecterEffectSpawnedArgs args);
+
         #endregion
     }
 }

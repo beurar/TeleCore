@@ -4,11 +4,24 @@ namespace TeleCore;
 
 public class EffecterLayer
 {
-    public Effecter effecter;
-    public EffecterLayerData data;
+    private readonly Effecter _effecter;
+    private EffecterLayerData _data;
 
+    public EffecterLayer(EffecterLayerData data, CompFX fxComp = null)
+    {
+        this._data = data;
+        if (data.effecterDef is EffecterExtendedDef exDef)
+        {
+            _effecter = exDef.SpawnWithFX(fxComp);
+        }
+        else
+        {
+            _effecter = data.effecterDef.Spawn();
+        }
+    }
+    
     public void Tick(TargetInfo A, TargetInfo B)
     {
-        effecter.EffectTick(A, B);
+        _effecter.EffectTick(A, B);
     }
 }

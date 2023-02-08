@@ -278,8 +278,10 @@ namespace TeleCore
             return new FXLayerArgs
             {
                 index = layer.Index,
+                renderPriority = layer.RenderPriority,
                 layerTag = layer.data.layerTag,
-                categoryTag = layer.data.categoryTag
+                categoryTag = layer.data.categoryTag,
+
             };
         }
     }

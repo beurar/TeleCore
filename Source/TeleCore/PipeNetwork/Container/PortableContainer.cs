@@ -39,29 +39,21 @@ namespace TeleCore
         public bool HasValidTarget => currentDesignatedTarget.IsValid;
 
         //FX
-        public override bool FX_AffectsLayerAt(int index)
-        {
-            return true;
-        }
+        public override bool FX_ProvidesForLayer(FXLayerArgs args) => true;
 
-        public override bool FX_ShouldDrawAt(int index)
-        {
-            return true;
-        }
-        public override float FX_GetOpacityAt(int index)
-        {
-            return Container.StoredPercent;
-        }
+        public override bool? FX_ShouldDraw(FXLayerArgs args) => true;
 
-        public override Color? FX_GetColorAt(int index)
+        public override float? FX_GetOpacity(FXLayerArgs args) => Container.StoredPercent;
+
+        public override Color? FX_GetColor(FXLayerArgs args)
         {
-            return index switch
+            return args.layerTag switch
             {
-                0 => Container?.Color ?? Color.white
+                "Reserved.Network.ContainerFill" => Container?.Color ?? Color.white
             };
         }
 
-        public override Vector3? FX_GetDrawPositionAt(int index)
+        public override Vector3? FX_GetDrawPosition(FXLayerArgs args)
         {
             return DrawPos + Vector3.one;
         }

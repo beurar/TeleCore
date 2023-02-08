@@ -7,15 +7,20 @@ namespace TeleCore
 {
     public class FXLayerData
     {
+        internal const string _ThingHolderTag = "FXParentThing";
+        internal const string _NetworkHolderTag = "FXNetwork";
+
         //Main graphic
-        public GraphicData graphicData;
+        public GraphicData? graphicData;
+        public EffecterLayerData? effecterData;
         public List<DynamicTextureParameter> textureParams;
         
         public AltitudeLayer? altitude = null;
         public FXMode fxMode = FXMode.Static;
 
         //
-        public int? index;
+        public int? renderPriority; //Otherwise set by index
+        public string fxHolderTag = _ThingHolderTag;
         public string layerTag;
         public string categoryTag;
         public bool skip = false;
@@ -23,10 +28,10 @@ namespace TeleCore
         public int? drawLayer = null;
 
         //
-        public RotateProperties rotate;
-        public BlinkProperties blink;
-        public FadeProperties fade;
-        public ResizeProperties resize;
+        public RotateProperties? rotate;
+        public BlinkProperties? blink;
+        public FadeProperties? fade;
+        public ResizeProperties? resize;
 
         //Texture UV Data
         public Rect texCoords = new Rect(0, 0, 1, 1);
@@ -34,8 +39,7 @@ namespace TeleCore
         public Vector3 drawOffset = Vector3.zero;
         public Vector3? pivotOffset = null;
         public Vector3? pivotPixelOffset = null;
-        
-        
+
         //public List<EffecterDef> effecters;
 
         public Vector3? PivotOffset
