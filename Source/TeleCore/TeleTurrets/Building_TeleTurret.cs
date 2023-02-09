@@ -69,10 +69,11 @@ namespace TeleCore
         public virtual bool? FX_ShouldDraw(FXLayerArgs args) => null;
         public virtual float? FX_GetOpacity(FXLayerArgs args) => null;
         public virtual float? FX_GetRotation(FXLayerArgs args) => null;
+        public virtual float? FX_GetRotationSpeedOverride(FXLayerArgs args) => null;
         public virtual float? FX_GetAnimationSpeedFactor(FXLayerArgs args) => null;
         public virtual Color? FX_GetColor(FXLayerArgs args) => null;
         public virtual Vector3? FX_GetDrawPosition(FXLayerArgs args) => null;
-        public virtual Action<FXLayer> FX_GetAction(FXLayerArgs args) => null!;
+        public virtual Action<RoutedDrawArgs> FX_GetDrawAction(FXLayerArgs args) => null!;
         public virtual bool? FX_ShouldThrowEffects(FXLayerArgs args) => null;
         public virtual void FX_OnEffectSpawned(EffecterEffectSpawnedArgs effectSpawnedArgs) { }
         

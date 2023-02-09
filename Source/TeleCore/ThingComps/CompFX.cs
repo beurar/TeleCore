@@ -199,7 +199,7 @@ namespace TeleCore
         {
             if (FXLayers[args].data.skip) 
                 return false;
-            if (!DrawBool(args) || OpacityFloat(args) <= 0) 
+            if (!GetDrawBool(args) || GetOpacityFloat(args) <= 0) 
                 return false;
             if (!HasPower(args))
                 return false;
@@ -210,7 +210,7 @@ namespace TeleCore
         {
             if (FXLayers[args].data.needsPower)
             {
-                var provider = PowerProvider(args);
+                var provider = GetPowerProvider(args);
                 if (provider is {PowerOn: true})
                     return true;
                 if (ParentPowerComp is {PowerOn: true}) 
@@ -221,51 +221,56 @@ namespace TeleCore
         }
         
         //Layer Data Getters
-        public CompPowerTrader PowerProvider(FXLayerArgs args)
+        public CompPowerTrader GetPowerProvider(FXLayerArgs args)
         {
             return FXHolderByLayerIndex[args.index]?.FX_PowerProviderFor(args) ?? ParentPowerComp;
             //return GetPowerProvider.Invoke(args);
         }
         
-        public bool DrawBool(FXLayerArgs args)
+        public bool GetDrawBool(FXLayerArgs args)
         {
             return FXHolderByLayerIndex[args.index]?.FX_ShouldDraw(args) ?? true;
             //return GetShouldDraw.Invoke(args);
         }
 
-        public float OpacityFloat(FXLayerArgs args)
+        public float GetOpacityFloat(FXLayerArgs args)
         {
             return FXHolderByLayerIndex[args.index]?.FX_GetOpacity(args) ?? 1f;
             //return GetOpacity.Invoke(args);
         }
 
-        public float ExtraRotation(FXLayerArgs args)
+        public float? GetRotationSpeedOverride(FXLayerArgs args)
+        {
+            return FXHolderByLayerIndex[args.index]?.FX_GetRotationSpeedOverride(args);
+        }
+        
+        public float GetExtraRotation(FXLayerArgs args)
         {
             return FXHolderByLayerIndex[args.index]?.FX_GetRotation(args) ?? 0;
             //return GetRotation.Invoke(args);
         }
 
-        public float AnimationSpeedFactor(FXLayerArgs args)
+        public float GetAnimationSpeedFactor(FXLayerArgs args)
         {
             return FXHolderByLayerIndex[args.index]?.FX_GetAnimationSpeedFactor(args) ?? 1;
             //return GetAnimationSpeed.Invoke(args);
         }
         
-        public Color? ColorOverride(FXLayerArgs args)
+        public Color? GetColorOverride(FXLayerArgs args)
         {
             return FXHolderByLayerIndex[args.index]?.FX_GetColor(args) ?? null;
             //return GetColor.Invoke(args);
         }
 
-        public Vector3? DrawPositionOverride(FXLayerArgs args)
+        public Vector3? GetDrawPositionOverride(FXLayerArgs args)
         {
             return FXHolderByLayerIndex[args.index]?.FX_GetDrawPosition(args) ?? null;
             //return GetDrawPosition.Invoke(args);
         }
 
-        public Action<FXLayer> Action(FXLayerArgs args)
+        public Action<RoutedDrawArgs> GetDrawAction(FXLayerArgs args)
         {
-            return FXHolderByLayerIndex[args.index]?.FX_GetAction(args) ?? null!;
+            return FXHolderByLayerIndex[args.index]?.FX_GetDrawAction(args) ?? null!;
             //return GetAction.Invoke(args);
         }
 
@@ -287,7 +292,7 @@ namespace TeleCore
                 var args = FXLayers[i].GetArgs();
                 if (FXLayers[i].data.fxMode != FXMode.Static && CanDraw(args))
                 {
-                    var drawPos = DrawPositionOverride(args);
+                    var drawPos = GetDrawPositionOverride(args);
                     var diff = drawPos - parent.DrawPos;
                     FXLayers[i].Draw(loc + diff);
                 }

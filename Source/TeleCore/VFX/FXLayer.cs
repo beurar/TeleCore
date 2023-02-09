@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using UnityEngine;
 using Verse;
 
@@ -46,18 +47,20 @@ namespace TeleCore
 
         public bool HasEffecter => _effecterLayer != null;
         
-        public Rot4 ParentRot4 => parentInfo.ParentThing.Rotation;
-        public float TrueRotation => ExtraRotation + exactRotation;
-        public float TrueRotationSpeed => AnimationSpeed * (data.rotate?.rotationSpeed ?? 0);
+        private Rot4 ParentRot4 => parentInfo.ParentThing.Rotation;
         
-        //Getters
-        private float Opacity => Parent.OpacityFloat(Args);
-        private float ExtraRotation => Parent.ExtraRotation(Args);
-        //private float GetRotationSpeedFactor => Parent.RotationSpeedFactor(_selfArgs) ?? 1;
-        private float AnimationSpeed => Parent.AnimationSpeedFactor(Args);
-        private Color ColorOverride => Parent.ColorOverride(Args) ?? Color.white;
-        private Vector3 DrawPos => Parent.DrawPositionOverride(Args) ?? Parent.parent.DrawPos;
-        private Action<FXLayer> Action => Parent.Action(Args);
+        //Rotation
+        public float TrueRotation => Parent.GetExtraRotation(Args) + exactRotation;
+        public Vector3 DrawPos => Parent.GetDrawPositionOverride(Args) ?? Parent.parent.DrawPos;
+        private float RotationSpeedPerTick => AnimationSpeed * (Parent.GetRotationSpeedOverride(Args) ?? (data.rotate?.rotationSpeed ?? 0));
+        
+        
+        private Color ColorOverride => Parent.GetColorOverride(Args) ?? Color.white;
+        private float Opacity => Parent.GetOpacityFloat(Args);
+
+
+        private float AnimationSpeed => Parent.GetAnimationSpeedFactor(Args);
+        private Action<RoutedDrawArgs> DrawAction => Parent.GetDrawAction(Args);
 
         //Blink
         public bool ShouldBeBlinkingNow => blinkDuration > 0;
@@ -116,8 +119,8 @@ namespace TeleCore
             var tick = Find.TickManager.TicksGame;
 
             //Rotate
-            if (TrueRotationSpeed != 0)
-                exactRotation += TrueRotationSpeed * StaticData.DeltaTime;
+            if (RotationSpeedPerTick > 0)
+                exactRotation += RotationSpeedPerTick * StaticData.DeltaTime;
 
             //Blink
             TryTickBlink(tick);
@@ -261,9 +264,6 @@ namespace TeleCore
 
         public void Draw(Vector3? drawLocOverride = null)
         {
-            //Pre-Action
-            Action?.Invoke(this);
-            
             //
             var drawPos = drawLocOverride ?? DrawPos;
             GetDrawInfo(Graphic, ref drawPos, ParentRot4, parentInfo.Extension, parentInfo.ParentThing.def, out drawSize, out _drawMat, out drawMesh, out float extraRotation, out flipUV);
@@ -285,7 +285,7 @@ namespace TeleCore
 
             _materialProperties.SetColor(ShaderPropertyIDs.Color, graphicColor);
 
-            var rotationQuat = (ExtraRotation + extraRotation).ToQuat();
+            var rotationQuat = TrueRotation.ToQuat();
 
             if (data.PivotOffset != null)
             {
@@ -294,6 +294,17 @@ namespace TeleCore
                 drawPos = pivotPoint + (relativePos);
             }
 
+            //
+            DrawAction?.Invoke(new RoutedDrawArgs
+            {
+                graphic = Graphic,
+                drawPos = DrawPos,
+                altitude = _altitude,
+                rotation = TrueRotation,
+                mesh = drawMesh
+            });
+
+            //
             Graphics.DrawMesh(drawMesh, new Vector3(drawPos.x, _altitude, drawPos.z), rotationQuat, _drawMat, 0, null, 0, _materialProperties);
         }
 
@@ -304,7 +315,7 @@ namespace TeleCore
             GetDrawInfo(Graphic, ref drawPos, ParentRot4, parentInfo.Extension, parentInfo.ParentThing.def, out drawSize, out _drawMat, out drawMesh, out float extraRotation, out flipUV);
             if (!Parent.IgnoreDrawOff)
                 drawPos += data.drawOffset;
-            Printer_Plane.PrintPlane(layer, new Vector3(drawPos.x, _altitude, drawPos.z), drawSize, _drawMat, (ExtraRotation + extraRotation), flipUV);
+            Printer_Plane.PrintPlane(layer, new Vector3(drawPos.x, _altitude, drawPos.z), drawSize, _drawMat, TrueRotation, flipUV);
         }
     }
 }

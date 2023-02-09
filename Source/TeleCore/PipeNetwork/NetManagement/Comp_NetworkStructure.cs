@@ -66,8 +66,8 @@ namespace TeleCore
         }
 
         public virtual float? FX_GetOpacity(FXLayerArgs args) => 1f;
-
         public virtual float? FX_GetRotation(FXLayerArgs args) => null;
+        public virtual float? FX_GetRotationSpeedOverride(FXLayerArgs args) => null;
         public virtual float? FX_GetAnimationSpeedFactor(FXLayerArgs args) => null;
         
         public virtual Color? FX_GetColor(FXLayerArgs args)         
@@ -84,7 +84,7 @@ namespace TeleCore
             return parent.DrawPos;
         }
         
-        public virtual Action<FXLayer> FX_GetAction(FXLayerArgs args) => null!;
+        public virtual Action<RoutedDrawArgs> FX_GetDrawAction(FXLayerArgs args) => null!;
         
         public virtual bool? FX_ShouldThrowEffects(FXLayerArgs args) => true;
         public void FX_OnEffectSpawned(EffecterEffectSpawnedArgs effectSpawnedArgs)

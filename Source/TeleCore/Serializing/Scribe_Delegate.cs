@@ -159,7 +159,7 @@ namespace TeleCore
                     {
                         if (isAnonymousType)
                         {
-                            @delegate = scribeTimeMethod.CreateDelegate(typeof(TDelegate), null) as TDelegate;;   
+                            @delegate = (TDelegate) scribeTimeMethod.CreateDelegate(typeof(TDelegate), null);
                         }
                         else
                         {

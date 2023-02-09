@@ -55,6 +55,11 @@ namespace TeleCore
         float? FX_GetRotation(FXLayerArgs args);
 
         /// <summary>
+        /// 
+        /// </summary>
+        float? FX_GetRotationSpeedOverride(FXLayerArgs args);
+        
+        /// <summary>
         /// Sets the speed at which the layer processes dynamic images (rotating, blinking, moving)
         /// </summary>
         float? FX_GetAnimationSpeedFactor(FXLayerArgs args);
@@ -72,7 +77,7 @@ namespace TeleCore
         /// <summary>
         /// Attaches a custom function to a layer, it is run before the layer is drawn.
         /// </summary>
-        Action<FXLayer> FX_GetAction(FXLayerArgs args);
+        Action<RoutedDrawArgs> FX_GetDrawAction(FXLayerArgs args);
 
         #region MyRegion
         

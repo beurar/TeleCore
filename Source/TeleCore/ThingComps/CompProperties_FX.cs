@@ -13,7 +13,6 @@ namespace TeleCore
         //Layers
         public List<FXLayerData> fxLayers = new List<FXLayerData>();
         public IntRange tickOffset = new IntRange(0, 333);
-        public bool useParentClass = false;
 
         public override IEnumerable<string> ConfigErrors(ThingDef def)
         {
