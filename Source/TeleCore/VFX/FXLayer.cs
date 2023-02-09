@@ -29,8 +29,8 @@ namespace TeleCore
 
         //Dynamic Working Data
         private Vector2 drawSize = Vector2.one;
+        private Color drawColor = Color.white;
         private Mesh drawMesh;
-        private Color drawColor;
         private float exactRotation;
         private bool flipUV;
         private int ticksToBlink = 0;
@@ -38,7 +38,7 @@ namespace TeleCore
 
         public MaterialPropertyBlock PropertyBlock => _materialProperties;
         
-        public CompFX Parent { get; }
+        public CompFX CompFX { get; }
         public FXLayerArgs Args { get; }
         
         //
@@ -50,30 +50,39 @@ namespace TeleCore
         private Rot4 ParentRot4 => parentInfo.ParentThing.Rotation;
         
         //Rotation
-        public float TrueRotation => Parent.GetExtraRotation(Args) + exactRotation;
-        public Vector3 DrawPos => Parent.GetDrawPositionOverride(Args) ?? Parent.parent.DrawPos;
-        private float RotationSpeedPerTick => AnimationSpeed * (Parent.GetRotationSpeedOverride(Args) ?? (data.rotate?.rotationSpeed ?? 0));
+        public float TrueRotation => CompFX.GetExtraRotation(Args) + exactRotation;
+        public Vector3 DrawPos => CompFX.GetDrawPositionOverride(Args) ?? CompFX.parent.DrawPos;
+        private float RotationSpeedPerTick => AnimationSpeed * (CompFX.GetRotationSpeedOverride(Args) ?? (data.rotate?.rotationSpeed ?? 0));
         
         
-        private Color ColorOverride => Parent.GetColorOverride(Args) ?? Color.white;
-        private float Opacity => Parent.GetOpacityFloat(Args);
+        private Color ColorOverride => CompFX.GetColorOverride(Args) ?? Color.white;
+        private float Opacity => CompFX.GetOpacityFloat(Args);
 
 
-        private float AnimationSpeed => Parent.GetAnimationSpeedFactor(Args);
-        private Action<RoutedDrawArgs> DrawAction => Parent.GetDrawAction(Args);
+        private float AnimationSpeed => CompFX.GetAnimationSpeedFactor(Args);
+        private Action<RoutedDrawArgs> DrawAction => CompFX.GetDrawAction(Args);
 
+        private bool ShouldDoEffecter => CompFX.ShouldThrowEffects(Args);
+        private bool HasPower => CompFX.HasPower(Args);
+        
         //Blink
         public bool ShouldBeBlinkingNow => blinkDuration > 0;
         
         
-        public FXLayer(FXLayerData data, FXParentInfo info, int index)
+        public FXLayer(CompFX compFX, FXLayerData data, FXParentInfo info, int index)
         {
             TLog.Message($"Adding Layer {index}: {data.graphicData?.texPath} ({data.fxMode})");
             
+            //
+            _materialProperties = new MaterialPropertyBlock();
+            
+            //
             this.data = data;
-            parentInfo = info;
             _index = index;
+            parentInfo = info;
             renderPriority = data.renderPriority ?? index;
+            
+            CompFX = compFX;
             
             if (data.skip)
             {
@@ -115,7 +124,15 @@ namespace TeleCore
 
         public void TickLayer(int tickInterval)
         {
-            if (_inactive || _isEffecterLayer) return;
+            if (_inactive || !HasPower) return;
+            
+            if (ShouldDoEffecter)
+            {
+                _effecterLayer?.Tick(parentInfo.ParentThing, parentInfo.ParentThing);
+            }
+            
+            //Skip rest if its just the effect
+            if (_isEffecterLayer) return;
             var tick = Find.TickManager.TicksGame;
 
             //Rotate
@@ -128,11 +145,6 @@ namespace TeleCore
             TryTickFade(tick);
             //Resize
             TryTickSize(tick);
-        }
-
-        public void TickEffecter(int tickInterval)
-        {
-            _effecterLayer?.Tick(parentInfo.ParentThing, parentInfo.ParentThing);
         }
 
         private void TryTickBlink(int tick)
@@ -264,11 +276,13 @@ namespace TeleCore
 
         public void Draw(Vector3? drawLocOverride = null)
         {
+            if (_isEffecterLayer) return;
+            
             //
             var drawPos = drawLocOverride ?? DrawPos;
             GetDrawInfo(Graphic, ref drawPos, ParentRot4, parentInfo.Extension, parentInfo.ParentThing.def, out drawSize, out _drawMat, out drawMesh, out float extraRotation, out flipUV);
 
-            if(Parent.IgnoreDrawOff)
+            if(CompFX.IgnoreDrawOff)
                 drawPos += data.drawOffset;
             
             //Colors
@@ -310,10 +324,12 @@ namespace TeleCore
 
         public void Print(SectionLayer layer)
         {
+            if (_isEffecterLayer) return;
+            
             //
             var drawPos = DrawPos;
             GetDrawInfo(Graphic, ref drawPos, ParentRot4, parentInfo.Extension, parentInfo.ParentThing.def, out drawSize, out _drawMat, out drawMesh, out float extraRotation, out flipUV);
-            if (!Parent.IgnoreDrawOff)
+            if (!CompFX.IgnoreDrawOff)
                 drawPos += data.drawOffset;
             Printer_Plane.PrintPlane(layer, new Vector3(drawPos.x, _altitude, drawPos.z), drawSize, _drawMat, TrueRotation, flipUV);
         }

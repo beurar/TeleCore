@@ -12,17 +12,17 @@
 		</graphicData>
 		<comps>
 			<li Class="TeleCore.CompProperties_FX"> 
-				<fxLayerData>
+				<fxLayers>
 					<li>
-						<data>
+						<graphicData>
 							<texPath>Items/Network/PortableContainer/Overlay</texPath>
 							<graphicClass>Graphic_Single</graphicClass>
 							<shaderType>MoteGlow</shaderType>
 							<drawSize>(1,1)</drawSize>
-						</data>
-						<mode>Dynamic</mode>
+						</graphicData>
+						<fxMode>Dynamic</fxMode>
 					</li>
-				</fxLayerData>
+				</fxLayers>
 			</li>
 		</comps>
 		<drawerType>RealtimeOnly</drawerType>

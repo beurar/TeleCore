@@ -281,6 +281,7 @@ namespace TeleCore
                 renderPriority = layer.RenderPriority,
                 layerTag = layer.data.layerTag,
                 categoryTag = layer.data.categoryTag,
+                data = layer.data,
 
             };
         }

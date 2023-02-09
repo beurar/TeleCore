@@ -13,7 +13,7 @@ namespace TeleCore
     public class CompPowerPlant_Network : CompPowerPlant
     {
         private int powerTicksRemaining;
-        private float internalPowerOutput;
+        private float internalPowerOutput = 0f;
 
         private Comp_NetworkStructure _compNetworkStructure;
         private NetworkSubPart _networkComponent;
@@ -45,7 +45,7 @@ namespace TeleCore
         private void PowerTick()
         {
             base.CompTick();
-            if (!base.PowerOn || Props.valueToTickRules.NullOrEmpty())
+            if (!PowerOn || Props.valueToTickRules.NullOrEmpty())
             {
                 internalPowerOutput = 0f;
                 return;
@@ -58,7 +58,7 @@ namespace TeleCore
                     if (_networkComponent.Container.TotalStoredOf(conversion.valueDef) <= 0) continue;
                     if (_networkComponent.Container.TryConsume(conversion.valueDef, conversion.cost))
                     {
-                        powerTicksRemaining += Mathf.RoundToInt(conversion.secondPerCost.SecondsToTicks());
+                        powerTicksRemaining += Mathf.RoundToInt(conversion.seconds.SecondsToTicks());
                     }
                 }
             }
@@ -86,10 +86,10 @@ namespace TeleCore
         public List<ValueConversion> valueToTickRules;
     }
 
-    public struct ValueConversion
+    public class ValueConversion
     {
         public NetworkValueDef valueDef;
         public float cost;
-        public float secondPerCost;
+        public float seconds;
     }
 }

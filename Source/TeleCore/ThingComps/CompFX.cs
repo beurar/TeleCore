@@ -59,6 +59,7 @@ namespace TeleCore
         public CompPowerTrader ParentPowerComp { get; private set; }
         public FXDefExtension GraphicExtension { get; private set; }
         public List<FXLayer> FXLayers { get; private set; }
+        //public List<FXLayer> FXLayersLogical { get; private set; }
 
         public override void PostSpawnSetup(bool respawningAfterLoad)
         {
@@ -82,7 +83,7 @@ namespace TeleCore
                     
                     for (int i = 0; i < Props.fxLayers.Count; i++)
                     {
-                        FXLayers.Add(new FXLayer(Props.fxLayers[i], new FXParentInfo(tickOffset, spawnTick, GraphicExtension, parent), i));
+                        FXLayers.Add(new FXLayer(this, Props.fxLayers[i], new FXParentInfo(tickOffset, spawnTick, GraphicExtension, parent), i));
                     }
                     
                     //Resolve priority
@@ -183,21 +184,16 @@ namespace TeleCore
 
         private void FXTick(int tickInterval)
         {
-            //Update Graphics
-            for (var i = 0; i < FXLayers.Count; i++)
+            foreach (var g in FXLayers)
             {
-                var g = FXLayers[i];
                 g.TickLayer(tickInterval);
-                
-                if(ShouldThrowEffects(g.Args))
-                    g.TickEffecter(tickInterval);
             }
         }
 
         //Drawing
         private bool CanDraw(FXLayerArgs args)
         {
-            if (FXLayers[args].data.skip) 
+            if (args.data.skip) 
                 return false;
             if (!GetDrawBool(args) || GetOpacityFloat(args) <= 0) 
                 return false;
@@ -206,18 +202,20 @@ namespace TeleCore
             return true;
         }
 
-        private bool HasPower(FXLayerArgs args)
+        public bool HasPower(FXLayerArgs args)
         {
-            if (FXLayers[args].data.needsPower)
+            if (!args.data.needsPower) return true;
+            
+            var provider = GetPowerProvider(args);
+
+            if (provider is CompPowerPlant powerPlant)
             {
-                var provider = GetPowerProvider(args);
-                if (provider is {PowerOn: true})
-                    return true;
-                if (ParentPowerComp is {PowerOn: true}) 
-                    return true;
-                return false;
+                _ = powerPlant.PowerOn;
+                return powerPlant.PowerOutput > 0;
             }
-            return true;
+            if (provider is {PowerOn: true}) return true;
+
+            return ParentPowerComp is {PowerOn: true};
         }
         
         //Layer Data Getters
@@ -287,14 +285,13 @@ namespace TeleCore
         //
         public void DrawCarried(Vector3 loc)
         {
-            for (int i = 0; i < FXLayers.Count; i++)
+            foreach (var layer in FXLayers)
             {
-                var args = FXLayers[i].GetArgs();
-                if (FXLayers[i].data.fxMode != FXMode.Static && CanDraw(args))
+                if (layer.data.fxMode != FXMode.Static && CanDraw(layer.Args))
                 {
-                    var drawPos = GetDrawPositionOverride(args);
+                    var drawPos = GetDrawPositionOverride(layer.Args);
                     var diff = drawPos - parent.DrawPos;
-                    FXLayers[i].Draw(loc + diff);
+                    layer.Draw(loc + diff);
                 }
             }
         }
@@ -302,11 +299,11 @@ namespace TeleCore
         public override void PostDraw()
         {
             base.PostDraw();
-            for (int i = 0; i < FXLayers.Count; i++)
+            foreach (var layer in FXLayers)
             {
-                if (FXLayers[i].data.fxMode != FXMode.Static && CanDraw(FXLayers[i].GetArgs()))
+                if (layer.data.fxMode != FXMode.Static && CanDraw(layer.Args))
                 {
-                    FXLayers[i].Draw();
+                    layer.Draw();
                 }
             }
         }
@@ -314,11 +311,11 @@ namespace TeleCore
         public override void PostPrintOnto(SectionLayer layer)
         {
             base.PostPrintOnto(layer);
-            for (int i = 0; i < FXLayers.Count; i++)
+            foreach (var fxLayer in FXLayers)
             {
-                if (FXLayers[i].data.fxMode == FXMode.Static && CanDraw(FXLayers[i].GetArgs()))
+                if (fxLayer.data.fxMode == FXMode.Static && CanDraw(fxLayer.Args))
                 {
-                    FXLayers[i].Print(layer);
+                    fxLayer.Print(layer);
                 }
             }
         }

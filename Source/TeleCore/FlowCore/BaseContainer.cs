@@ -93,6 +93,7 @@ public class BaseContainer<T> : IExposable where T : FlowValueDef
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public float TotalStoredOf(T def)
     {
+        if (def == null) return 0;
         return _storedValues.GetValueOrDefault(def, 0f);
     }
     
