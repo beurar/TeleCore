@@ -89,11 +89,12 @@ namespace TeleCore
             */
 
             Scribe_Deep.Look(ref materialData, nameof(materialData));
-            Scribe_Rect.Look(ref texCoordsReference, nameof(texCoordsReference));
+            Scribe_Rect.Look(ref texCoordsReference, nameof(texCoordsReference), new Rect(0,0, 1,1));
             Scribe_Values.Look(ref attachScript, nameof(attachScript));
             Scribe_Values.Look(ref layerTag, nameof(layerTag));
             Scribe_Values.Look(ref layerIndex, nameof(layerIndex));
             Scribe_Values.Look(ref anchor, nameof(anchor));
+            Scribe_Values.Look(ref stretchMode, nameof(stretchMode));
 
             if (Scribe.mode == LoadSaveMode.LoadingVars)
             {

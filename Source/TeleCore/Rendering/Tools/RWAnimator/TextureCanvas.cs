@@ -230,6 +230,7 @@ namespace TeleCore
         }
 
         //Extra Windows
+        //TODO: Encapsulate into element class
         private void DrawAnimationMetaData()
         {
             Rect rect = MetaDataViewRect;
@@ -327,6 +328,8 @@ namespace TeleCore
                 }
             }
             Widgets.EndScrollView();
+            
+            //Add Part
             if (Widgets.ButtonText(animationButtonRect,  TranslationUtil.AnimationStrings.SettingsAddPart))
             {
                 var animation = AnimationData.Notify_CreateNewAnimationPart("NewPart", 1);
@@ -359,9 +362,11 @@ namespace TeleCore
                     curYNew += 20;
                 }
             }
+            
+            //Add Side
             if (Widgets.ButtonText(availableSetsButtonRect,  TranslationUtil.AnimationStrings.SettingsAddSide))
             {
-                Find.WindowStack.Add(new FloatMenu(RotationOptions().ToList()));
+                Find.WindowStack.Add(new FloatMenu(AddSideByRotationOptions().ToList()));
             }
         }
 
@@ -591,7 +596,7 @@ namespace TeleCore
             }
         }
 
-        private IEnumerable<FloatMenuOption> RotationOptions()
+        private IEnumerable<FloatMenuOption> AddSideByRotationOptions()
         {
             for (int i = 0; i < 4; i++)
             {

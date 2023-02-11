@@ -4,12 +4,234 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using RimWorld;
+using TeleCore.Rendering;
+using TeleCore.Static;
 using UnityEngine;
 using Verse;
+using WidgetRow = Verse.WidgetRow;
 
 namespace TeleCore
 {
-    internal class AnimationFileSaveLoader : Window
+    internal class Dialog_AnimationFileList : Dialog_FileList
+    {
+        private readonly TextureCanvas canvas;
+        private Task loadedAnimsTask;
+
+        public AnimationMetaData Context => canvas.AnimationData;
+        
+        //TODO: FIX CANVAS DEPENDENCY - MAKE ANIMATION TOOL DATA STRUCTURE SEPERATE => VIEW(VISUAL) <--> VIEWMODEL(DATA)
+        internal Dialog_AnimationFileList(TextureCanvas canvas)
+        {
+            this.canvas = canvas;
+
+            //
+            interactButLabel = TranslationUtil.AnimationStrings.LoadAnimFile;
+            deleteTipKey = TranslationUtil.AnimationStrings.DeleteAnimFile;
+
+            //Window Props
+            forcePause = true;
+            doCloseX = true;
+            absorbInputAroundWindow = true;
+            layer = WindowLayer.Super;
+        }
+
+        private static IEnumerable<FileInfo> AllAnimationFiles
+        {
+            get
+            {
+                DirectoryInfo directoryInfo = new DirectoryInfo(AnimationSaveUtility.SavedWorkingFilesFolderPath);
+                if (!directoryInfo.Exists)
+                {
+                    directoryInfo.Create();
+                }
+
+                return from f in directoryInfo.GetFiles()
+                    where f.Extension == ".anim"
+                    orderby f.LastWriteTime descending
+                    select f;
+            }
+        }
+
+        public override void DoFileInteraction(string fileName)
+        {
+            var file = AnimationSaveUtility.PathForAnimationFile(fileName);
+            TLog.Debug($"Init Loading {file}");
+            Scribe.loader.InitLoading(file);
+            try
+            {
+                if (!Scribe.EnterNode(AnimationSaveUtility._SavingNode))
+                {
+                    TLog.Error("Could not find animation XML node.");
+                    Scribe.ForceStop();
+                    return;
+                }
+                
+                
+                canvas.Reset();
+                canvas.AnimationData.LoadAnimation();
+                Scribe.loader.FinalizeLoading();
+            }
+            catch (Exception ex)
+            {
+                Scribe.ForceStop();
+                canvas.Reset();
+                
+                //
+                GenUI.ErrorDialog($"Could not load animation file '{fileName}'");
+                TLog.Error(ex.Message);
+            }
+        }
+
+        public override void ReloadFiles()
+        {
+            if (loadedAnimsTask != null && loadedAnimsTask.Status != TaskStatus.RanToCompletion)
+                loadedAnimsTask.Wait();
+
+            files.Clear();
+            foreach (var fileInfo in AllAnimationFiles)
+            {
+                try
+                {
+                    var item = new SaveFileInfo(fileInfo);
+                    files.Add(item);
+                }
+                catch (Exception ex)
+                {
+                    Log.Error($"Exception loading {fileInfo.Name}: {ex}");
+                }
+
+                loadedAnimsTask = Task.Run(ReloadFilesTask);
+            }
+        }
+
+        private void ReloadFilesTask()
+        {
+            Parallel.ForEach<SaveFileInfo>(this.files, delegate(SaveFileInfo file)
+            {
+                try
+                {
+                    file.LoadData();
+                }
+                catch (Exception ex)
+                {
+                    Log.Error($"Exception loading {file.FileInfo.Name}: {ex}");
+                }
+            });
+        }
+
+        #region SaveLoad IO
+
+        private void TrySaveAnimationDef()
+        {
+            try
+            {
+                AnimationSaveUtility.CreateAnimationDef($"{Context.defName}Def", "Defs", delegate
+                {
+                    var animationData = Context;
+                    var newDef = animationData.ConstructAnimationDef();
+                    Scribe_Deep.Look(ref newDef, $"{nameof(TeleCore)}.{nameof(AnimationDataDef)}");
+                });
+            }
+            catch (Exception arg)
+            {
+                TLog.Error($"Exception while saving animation Def: {arg}");
+            }
+        }
+
+        private void TrySaveAnimationFile()
+        {
+            try
+            {
+                AnimationSaveUtility.SaveWorkFile(Context.defName.TrimStart().TrimEnd(), "AnimationMetaData",
+                    delegate
+                    {
+                        var animationData = Context;
+                        Scribe_Deep.Look(ref animationData, AnimationSaveUtility._SavingNode);
+                    });
+            }
+            catch (Exception arg)
+            {
+                TLog.Error($"Exception while saving animation work file: {arg}");
+            }
+        }
+
+        #endregion
+
+
+        #region UI
+
+        public override void DoWindowContents(Rect inRect)
+        {
+            //Custom Menu Tabs
+            //TODO:Wrap RectAggregator into a "Rect Grid"
+            var rectAgg = new RectAggregator(new Rect(inRect.position, new Vector2(inRect.width, 0)), GetHashCode(),
+                new Vector2(0, 5));
+            var animRow = rectAgg.NewRow(24).Rect;
+            var defRow = rectAgg.NewRow(24).Rect;
+            var fileViewRow = rectAgg.NewRow(inRect.height - rectAgg.Rect.height);
+
+            //Animation Work File
+            //TODO: Add label seperators
+            WidgetRow row = new WidgetRow(animRow.x, animRow.y, gap: 0);
+
+            if (row.ButtonBox("Save .anim", TColor.White01, TColor.White025))
+            {
+                if (!Context.Initialized) return;
+                TrySaveAnimationFile();
+                ReloadFiles();
+            }
+
+            if (row.ButtonBox("Open Save Directory", TColor.White01, TColor.White025))
+            {
+                Application.OpenURL(AnimationSaveUtility.SavedWorkingFilesFolderPath);
+            }
+
+            if (row.ButtonBox("Reload", TColor.White01, TColor.White025))
+            {
+                ReloadFiles();
+            }
+
+
+            //Animation Def
+            WidgetRow row2 = new WidgetRow(defRow.x, defRow.y, gap: 0);
+            if (row2.ButtonBox("Create Def", TColor.White01, TColor.White025))
+            {
+                if (!Context.Initialized) return;
+                DirectoryInfo directoryInfo = new DirectoryInfo(AnimationSaveUtility.SavedAnimationDefsFolderPath);
+                if (!directoryInfo.Exists) directoryInfo.Create();
+
+                TrySaveAnimationDef();
+            }
+
+            if (row2.ButtonBox("Open Def Directory", TColor.White01, TColor.White025))
+            {
+                DirectoryInfo directoryInfo = new DirectoryInfo(AnimationSaveUtility.SavedAnimationDefsFolderPath);
+                if (!directoryInfo.Exists) directoryInfo.Create();
+
+                Application.OpenURL(AnimationSaveUtility.SavedAnimationDefsFolderPath);
+            }
+
+            if (row2.ButtonBox("Set Def Directory", TColor.White01, TColor.White025))
+            {
+                var selDirAction = (DirectoryInfo info) =>
+                {
+                    TeleCoreMod.Settings.SetAnimationDefLocation(info.FullName);
+                };
+                Find.WindowStack.Add(new Dialog_DirectoryBrowser(selDirAction, "Select Def Creation Directory",
+                    GenFilePaths.ModsFolderPath));
+            }
+
+            //Main Files Listing
+            //Rect filesViewRect = inRect.BottomPartPixels(inRect.height - rectAgg.Rect.height);
+            base.DoWindowContents(fileViewRow);
+        }
+
+        #endregion
+        
+    }
+
+    /*
+    internal class AnimationFileSaveLoaderWindow : Window
     {
         private TextureCanvas canvas;
 
@@ -28,7 +250,7 @@ namespace TeleCore
         {
             get
             {
-                DirectoryInfo directoryInfo = new DirectoryInfo(AnimationSaveUtility.SavedAnimationsFolderPath);
+                DirectoryInfo directoryInfo = new DirectoryInfo(AnimationSaveUtility.SavedWorkingFilesFolderPath);
                 if (!directoryInfo.Exists)
                 {
                     directoryInfo.Create();
@@ -43,7 +265,7 @@ namespace TeleCore
         //
         public override Vector2 InitialSize  => new Vector2(650, 500);
 
-        public AnimationFileSaveLoader(TextureCanvas canvas) : base()
+        public AnimationFileSaveLoaderWindow(TextureCanvas canvas) : base()
         {
             this.canvas = canvas;
 
@@ -96,7 +318,7 @@ namespace TeleCore
         {
             try
             {
-                AnimationSaveUtility.SaveDef($"{AnimationInfo.defName}Def", "Defs", delegate
+                AnimationSaveUtility.CreateAnimationDef($"{AnimationInfo.defName}Def", "Defs", delegate
                 {
                     var animationData = canvas.AnimationData;
                     var newDef = animationData.ConstructAnimationDef();
@@ -113,7 +335,7 @@ namespace TeleCore
         {
             try
             {
-                AnimationSaveUtility.Save(AnimationInfo.defName.TrimStart().TrimEnd(), "AnimationMetaData", delegate
+                AnimationSaveUtility.SaveWorkFile(AnimationInfo.defName.TrimStart().TrimEnd(), "AnimationMetaData", delegate
                 {
                     var animationData = canvas.AnimationData;
                     Scribe_Deep.Look(ref animationData, AnimationSaveUtility._SavingNode);
@@ -214,7 +436,7 @@ namespace TeleCore
             }
             if (row.ButtonBox("Open Save Directory", TColor.White01, TColor.White025))
             {
-                Application.OpenURL(AnimationSaveUtility.SavedAnimationsFolderPath);
+                Application.OpenURL(AnimationSaveUtility.SavedWorkingFilesFolderPath);
             }
             if (row.ButtonBox("Reload", TColor.White01, TColor.White025))
             {
@@ -316,4 +538,5 @@ namespace TeleCore
             }
         }
     }
+    */
 }

@@ -5,7 +5,7 @@ using Verse;
 
 namespace TeleCore;
 
-public class WidgetStackPanel
+public static class WidgetStackPanel
 {
 	private const float DistFromMouse = 26f;
 	private const float LabelColumnWidth = 130f;
@@ -15,19 +15,25 @@ public class WidgetStackPanel
 	private const float LineHeight = 24f;
 	private const float ThingIconSize = 22f;
 
-	private bool active;
-	private int numLines;
-	private Vector2 startPos;
-	private float width;
-	private float widthHalf;
+	private static bool active;
+	private static int numLines;
+	private static Vector2 startPos;
+	private static float width;
+	private static float widthHalf;
 	
 	//Dynamic
-	private Vector2 curXY;
+	private static Vector2 curXY;
 	
-	public Rect Rect => new Rect(curXY.x, curXY.y, width, LineHeight * numLines);
+	public static Rect Rect => new Rect(curXY.x, curXY.y, width, LineHeight * numLines);
 	
-	public void Begin(Rect rect)
+	public static void Begin(Rect rect)
 	{
+		if (active)
+		{
+			TLog.Warning("Trying to push new stackpanel while another is active");
+			return;
+		}
+		
 		numLines = 0;
 		active = true;
 		startPos = curXY = rect.position;
@@ -35,20 +41,20 @@ public class WidgetStackPanel
 		widthHalf = width / 2;
 	}
 
-	public void End()
+	public static void End()
 	{
 		numLines = 0;
 		active = false;
 	}
 
-	private void Increment(float y_Val = LineHeight)
+	private static void Increment(float y_Val = LineHeight)
 	{
 		numLines++;
 		curXY += new Vector2(0, y_Val);
 	}
 	
 	//
-	public void DrawHeader(string text)
+	public static void DrawHeader(string text)
 	{
 		//var curY = curXY.y + (numLines * LineHeight) + 12f - 8f;
 		var curY = curXY.y + Padding;
@@ -64,7 +70,7 @@ public class WidgetStackPanel
 		Increment(rectHeight);
 	}
 
-	public void DrawWidgetRow(WidgetRow row)
+	public static void DrawWidgetRow(WidgetRow row)
 	{
 		float num = numLines * 24f;
 		var curY = curXY.y + num + 12f;
@@ -72,7 +78,7 @@ public class WidgetStackPanel
 		row.Init(curXY.x, curY, UIDirection.RightThenDown, width);
 	}
 
-	public void DrawRow(string label, string info)
+	public static void DrawRow(string label, string info)
 	{
 		float num = numLines * LineHeight;
 		var curY = curXY.y + num + Padding;
@@ -97,7 +103,7 @@ public class WidgetStackPanel
 		Increment();
 	}
 
-	public void DrawThingRow(Thing thing)
+	public static void DrawThingRow(Thing thing)
 	{
 		float num = numLines * 24f;
 		List<object> selectedObjects = Find.Selector.SelectedObjects;
@@ -132,7 +138,7 @@ public class WidgetStackPanel
 		Increment();
 	}
 
-	public void DrawDivider()
+	public static void DrawDivider()
 	{
 		GUI.color = Color.gray;
 		Widgets.DrawLineHorizontal(curXY.x, curXY.y + Padding, width);

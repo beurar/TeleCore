@@ -147,7 +147,6 @@ namespace TeleCore
             }
 
             Scribe_Values.Look(ref defName, "defName");
-            Scribe_Values.Look(ref initialized, "initialized");
             Scribe_Values.Look(ref internalRot, "internalRot");
             Scribe_Deep.Look(ref internalDef, "internalDef");
 
@@ -169,7 +168,7 @@ namespace TeleCore
 
             if (internalDef != null)
             {
-                initialized = true;
+                Notify_Init();
                 _currentAnimation = CurrentAnimations[AnimationIndex];
             }
 
@@ -282,13 +281,16 @@ namespace TeleCore
             InternalFrames = new();
 
             int index = 0;
-            foreach (var keyFrame in animationPart.keyFrames)
+            foreach (var keyFrameCollection in animationPart.keyFrames)
             {
                 var texture = (TextureElement) uiElements[index];
                 InternalFrames.Add(texture, new Dictionary<int, KeyFrame>());
-                foreach (var frame in keyFrame.savedList)
+                if (!keyFrameCollection.NullOrEmpty())
                 {
-                    InternalFrames[texture].Add(frame.Frame, frame);
+                    foreach (var frame in keyFrameCollection.savedList)
+                    {
+                        InternalFrames[texture].Add(frame.Frame, frame);
+                    }
                 }
                 index++;
             }
@@ -302,6 +304,12 @@ namespace TeleCore
 
         public List<ScribeList<KeyFrame>> KeyFramesList(List<TextureData> orderBy)
         {
+            var copy = InternalFrames.Copy().Where(i => i.Value.Any());
+            var orderDesc = copy.OrderByDescending((x) => (orderBy.Count - 1) - orderBy.IndexOf((x.Key as TextureElement).GetData()));
+            var select = orderDesc.Select(parentDict => new ScribeList<KeyFrame>(parentDict.Value.Select(keyFrameDict => keyFrameDict.Value).ToList(), LookMode.Deep));
+            var toList = select.ToList();
+
+            return toList;
             return InternalFrames.Copy()
                 .OrderByDescending((x) => (orderBy.Count - 1) - orderBy.IndexOf((x.Key as TextureElement).GetData()))
                 .Select(parentDict => new ScribeList<KeyFrame>(parentDict.Value.Select(keyFrameDict => keyFrameDict.Value).ToList(), LookMode.Deep))

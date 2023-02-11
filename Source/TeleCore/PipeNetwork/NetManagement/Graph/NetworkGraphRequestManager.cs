@@ -110,7 +110,6 @@ public class NetworkGraphRequestManager
         {
             if (request._dirtyChecker(part))
             {
-                TLog.Debug("REQUEST GOT DIRTY CHECKED");
                 Notify_NodeStateChanged(part);
             }
         }

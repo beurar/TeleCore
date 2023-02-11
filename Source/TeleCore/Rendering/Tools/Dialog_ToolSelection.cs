@@ -49,7 +49,10 @@ namespace TeleCore
             List<ListableOption> list = new List<ListableOption>();
             foreach (var devTool in allDevTools)
             {
-                list.Add(new ListableOption(devTool.LabelCap, () => { Find.WindowStack.Add(devTool.GetWindow); }));
+                list.Add(new ListableOption(devTool.LabelCap, () =>
+                {
+                    Find.WindowStack.Add(devTool.GetWindow);
+                }));
             }
             OptionListingUtility.DrawOptionListing(new Rect(0, 0, 200, selectionRect.height), list);
             Widgets.EndGroup();

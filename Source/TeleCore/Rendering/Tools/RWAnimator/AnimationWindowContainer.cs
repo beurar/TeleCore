@@ -8,6 +8,7 @@ using Verse;
 
 namespace TeleCore
 {
+    //TODO: Data Layer Seperation From Views
     internal class AnimationWindowContainer : UIElement
     {
         private Window parentWindow;
@@ -19,7 +20,7 @@ namespace TeleCore
         //private readonly ToolBar toolBar;
         private readonly UITopBar topBar;
         //
-        private readonly AnimationFileSaveLoader fileSaveLoaderWindow;
+        private readonly Dialog_AnimationFileList dialogFileSaveLoading;
 
         private bool keepProject = false;
         
@@ -47,7 +48,7 @@ namespace TeleCore
             browser = new TextureBrowser(UIElementMode.Static);
             browser.SetVisibility(UIElementState.Closed);
 
-            fileSaveLoaderWindow = new AnimationFileSaveLoader(canvas);
+            dialogFileSaveLoading = new Dialog_AnimationFileList(canvas);
 
             //
             var buttonMenus = new List<TopBarButtonMenu>();
@@ -56,7 +57,7 @@ namespace TeleCore
             fileOptions.Add(new TopBarButtonOption("New",canvas.Reset));
             fileOptions.Add(new TopBarButtonOption("Save/Load", () =>
             {
-                Find.WindowStack.Add(fileSaveLoaderWindow);
+                Find.WindowStack.Add(dialogFileSaveLoading);
             }));
 
             buttonMenus.Add(new TopBarButtonMenu("File", fileOptions));
