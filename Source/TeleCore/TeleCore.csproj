@@ -98,6 +98,7 @@
 
   <ItemGroup>
     <Folder Include="Attributes" />
+    <Folder Include="Rendering\Tools\DefEditor" />
   </ItemGroup>
 
   <ItemGroup>

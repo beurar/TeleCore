@@ -17,6 +17,7 @@ public struct KeyFrame : IExposable
     }
 
     public float Second => frameTick.TicksToSeconds();
+    public bool IsValid => frameTick >= 0;
     public static KeyFrame Invalid => new(new KeyFrameData(), -1);
 
     public static bool operator ==(KeyFrame frame1, KeyFrame frame2)

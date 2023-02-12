@@ -174,5 +174,29 @@ namespace TeleCore
                 return true;
             }
         }
+        
+        
+        //
+        [HarmonyPatch(typeof(CameraDriver))]
+        [HarmonyPatch(nameof(CameraDriver.Update))]
+        internal static class CameraDriverPatch
+        {
+            public static void Postfix(CameraDriver __instance)
+            {
+                var r = __instance.config.sizeRange;
+                var value = Mathf.InverseLerp(r.min, r.max, __instance.rootSize);
+                Shader.SetGlobalFloat(TeleShaderIDs.CameraZoom, value);
+            }
+        }
+        
+        [HarmonyPatch(typeof(WindManager))]
+        [HarmonyPatch(nameof(WindManager.WindManagerTick))]
+        internal static class WindManagerPatch
+        {
+            public static void Postfix(WindManager __instance)
+            {
+                Shader.SetGlobalFloat(TeleShaderIDs.WindSpeed, __instance.cachedWindSpeed);
+            }
+        }
     }
 }
