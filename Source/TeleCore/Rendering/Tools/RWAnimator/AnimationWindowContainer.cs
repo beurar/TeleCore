@@ -9,6 +9,21 @@ using Verse;
 namespace TeleCore
 {
     //TODO: Data Layer Seperation From Views
+    //TODO: Animations re-structure:
+    //  [Sets] AnimationSet List //Up to four set elements
+    //      [Rot.0] type:AnimationSet //A set is based on a rotation, and can contain multiple animations
+    //          [Animation.0] type:AnimationPart //One animation like "action"
+    //              [Texture.0] => textures are index-mirrored to another list with keyframes for that texture
+    //              [Texture.1]
+    //          [Animation.1] type:AnimationPart //Another animation like "idle"
+    //              [Texture.0]
+    //              [Texture.1]
+    //          [Animation.2] type:AnimationPart //Could have a special animation that uses a different amount of textures
+    //              [Texture.0]
+    //              [Texture.1]
+    //              [Texture.2]
+    //      [Rot.2]
+    //          [Animation.0]
     internal class AnimationWindowContainer : UIElement
     {
         private Window parentWindow;

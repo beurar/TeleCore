@@ -7,8 +7,7 @@ using Verse;
 
 namespace TeleCore
 {
-    /*
-    public struct AnimationCollection
+    public struct RuntimeAnimationGroup
     {
         private Dictionary<(string, Rot4), RuntimeAnimation> animationsBySide;
         
@@ -25,7 +24,7 @@ namespace TeleCore
             }
         }
 
-        public AnimationCollection(AnimationDataDef def)
+        public RuntimeAnimationGroup(AnimationDataDef def)
         {
             animationsBySide = new Dictionary<(string, Rot4), RuntimeAnimation>();
             //Go  through each rotation
@@ -62,32 +61,12 @@ namespace TeleCore
         }
     }
     
-    public struct RuntimeAnimationSet
+    
+    public struct KeyFrameChain
     {
-        //Identification
-        private string animationTag;
-        private Rot4 rotation;
+        private int allocated;
+        private RuntimeKeyFrame[] internalChain;
         
-        private List<Material>[] materialsBySide;
-
-        public RuntimeAnimationSet(AnimationSet set)
-        {
-            
-        }
-        
-        public static RuntimeAnimation Invalid => new RuntimeAnimation
-        {
-            animationTag = String.Empty,
-            rotation = Rot4.Invalid,
-            materialsBySide = null,
-        };
-    }
-    */
-
-    public readonly struct KeyFrameChain
-    {
-        private readonly RuntimeKeyFrame[] internalChain;
-
         public RuntimeKeyFrame this[int index]
         {
             get
@@ -97,22 +76,23 @@ namespace TeleCore
                 return internalChain[index];
             }
         }
-
+        
         public RuntimeKeyFrame First => internalChain[0];
         public RuntimeKeyFrame Last => internalChain[internalChain.Length - 1];
 
-        public KeyFrameChain(List<KeyFrameData> keyframes)
+        //
+        public KeyFrameChain Allocate(int size)
         {
-            internalChain = new RuntimeKeyFrame[keyframes.Count];
-            
-            //Assume keyframes are ordered
-            for (var i = 0; i < keyframes.Count; i++)
-            {
-                var keyframe = keyframes[i];
-                internalChain[i] = new RuntimeKeyFrame(this, keyframe, i);
-            }
+            internalChain = new RuntimeKeyFrame[size];
+            return this;
         }
         
+        public KeyFrameChain SetNext(KeyFrameData keyframe)
+        {
+            internalChain[allocated] = new RuntimeKeyFrame(this, keyframe, allocated);
+            allocated++;
+            return this;
+        }
     }
 
     public readonly struct RuntimeKeyFrame
@@ -120,9 +100,6 @@ namespace TeleCore
         private readonly KeyFrameChain chain;
         
         public KeyFrameData KeyFrame { get; }
-        public TextureData Texture { get; }
-        public Material Material { get; }
-        
         public int Index { get; }
 
         public RuntimeKeyFrame Next => chain[Index + 1];
@@ -134,53 +111,35 @@ namespace TeleCore
             KeyFrame = data;
             Index = index;
         }
-
-        /*
-        public void Draw()
-        {
-            for (var i = 0; i < CurrentMaterials.Count; i++)
-            {
-                var material = CurrentMaterials[i];
-                var keyFrame = currentKeyFramesBySide[i];
-                var data = DataByMat[material];
-
-                var drawOffset = PixelToCellOffset(keyFrame.TPosition, drawSize);
-                var rotation = keyFrame.TRotation;
-
-                var size = keyFrame.TSize * keyFrame.TexCoords.size * drawSize;
-                var actualSize = keyFrame.TSize * data.TexCoordReference.size * drawSize;
-
-                if (CurrentFlipped)
-                {
-                    drawOffset.x = -drawOffset.x;
-                    rotation = -rotation;
-                }
-
-                var newDrawPos = origin + drawOffset;
-                newDrawPos += GenTransform.OffSetByCoordAnchor(actualSize, size, data.TexCoordAnchor);
-                if (keyFrame.PivotPoint != Vector2.zero)
-                {
-                    var pivotPoint = newDrawPos + PixelToCellOffset(keyFrame.PivotPoint, drawSize);
-                    Vector3 relativePos = rotation.ToQuat() * (newDrawPos - pivotPoint);
-                    newDrawPos = pivotPoint + relativePos;
-                }
-
-                material.SetTextureOffset("_MainTex", keyFrame.TexCoords.position);
-                material.SetTextureScale("_MainTex", keyFrame.TexCoords.size);
-
-                Mesh mesh = CurrentFlipped ? MeshPool.GridPlaneFlip(size) : MeshPool.GridPlane(size);
-                Graphics.DrawMesh(mesh, newDrawPos, rotation.ToQuat(), material, 0, null, 0);
-                curAlt -= Altitudes.AltInc;
-            }
-        }
-        */
     }
 
+    public struct RuntimeAnimation
+    {
+        public string animationTag;
+        public int curTick;
+        public IntRange range;
+
+        public bool IsActive => animationTag != null;
+
+        public static RuntimeAnimation Prepare()
+        {
+            return new RuntimeAnimation
+            {
+                animationTag = null,
+                curTick = 0,
+                range = default
+            };
+        }
+    }
+    
     public class Comp_AnimationRenderer : ThingComp
     {
-        private List<Material>[] materialsBySide;
-        private readonly List<KeyFrameData> currentKeyFramesBySide = new ();
+        //Dynamic cache
+        private Dictionary<(string, Rot4, int), KeyFrameChain> cachedKeyChains = new();
+        //private readonly List<KeyFrameData> cachedCurrentKeyFrames = new ();
         
+        //Static animation data
+        private List<Material>[] materialsBySide;
         private Dictionary<string, AnimationPart>[] TaggedAnimationsBySide;
         private Dictionary<string, Dictionary<Material, List<KeyFrame>>>[] TaggedAnimationFramesBySide;
 
@@ -273,15 +232,7 @@ namespace TeleCore
             if (currentAnim == null) return;
             
             //Check current frame
-            if (currentFrame < finalFrame)
-            {
-                currentFrame++;
-                currentKeyFramesBySide.Clear();
-                foreach (var material in CurrentMaterials)
-                {
-                    currentKeyFramesBySide.Add(GetCurrentDataFor(material));
-                }
-            }
+
 
             if (currentFrame >= finalFrame)
             {
@@ -292,6 +243,16 @@ namespace TeleCore
                 }
                 Stop();
             }
+        }
+
+        private KeyFrameChain KeyFrames(string tag, Rot4 rot)
+        {
+            if (!cachedKeyChains.TryGetValue((tag, rot), out var value))
+            {
+                value = GetCurrentDataFor(CurrentMaterials[rot.AsInt]);
+                cachedKeyChains.Add((tag, rot), value);
+            }
+            return value;
         }
 
         public override void PostSpawnSetup(bool respawningAfterLoad)
@@ -308,28 +269,67 @@ namespace TeleCore
             //Each side of a thing can have multiple animations
             //So: RuntimeAnimation belongs to a side, 
             
+            //Go through each side of the thing
             for (int i = 0; i < 4; i++)
             {
+                //Check if the side has an animationSet
                 var set = Props.animationDef.animationSets[i];
                 if (!(set.HasAnimations && set.HasTextures)) continue;
+                
+                //Go through each texture on the current animation set (each side has the same textures, for each animation)
                 foreach (var textureData in set.textureParts)
                 {
                     materialsBySide[i].Add(textureData.Material);
                     DataByMat.Add(textureData.Material, textureData);
                 }
 
+                //Now each side can have multiple animation parts
                 foreach (var animation in set.animations)
                 { 
                     Dictionary<Material, List<KeyFrame>> frames = new();
                     if (animation.keyFrames != null)
                     {
+                        //For each previously selected texture-part, we have a mirrored keyframe set
                         for (var k = 0; k < animation.keyFrames.Count; k++)
                         {
-                            var frameSet = animation.keyFrames[k];
-                            var list = frameSet?.savedList ?? new List<KeyFrame>();
-                            frames.Add(materialsBySide[i][k], list);
+                            //Working data
+                            int lastFrameIndex = 0;
+                            KeyFrame last = new KeyFrame();
+                            KeyFrame next = new KeyFrame();
+                            
+                            //get basic keyframes
+                            var keyFrames = animation.keyFrames[k]?.savedList ?? new List<KeyFrame>();
+                            
+                            //Generate chain with pre-cached interpolated frames
+                            KeyFrameChain chain = new KeyFrameChain();
+                            chain.Allocate(animation.frames);
+
+                            //TODO: DEBUG AT HOME
+                            KeyFrameData GetOrInterpolateKeyframe(int frame)
+                            {
+                                var keyFrame = keyFrames[frame];
+                                if (keyFrame.Frame == frame)
+                                {
+                                    last = keyFrame;
+                                    next = keyFrames[frame + 1];
+                                    lastFrameIndex = frame;
+                                    return keyFrame.Data;
+                                }
+                                return last.Data.Interpolated(next.Data, Mathf.InverseLerp(last.Frame, next.Frame, frame));
+                            }
+                            
+                            for (int f = animation.bounds.min; f < animation.bounds.max; f++)
+                            {
+                                chain.SetNext(GetOrInterpolateKeyframe(f));
+                            }
+                            
+                            cachedKeyChains.Add((animation.tag, new Rot4(i), k), chain);
+                            
+                            frames.Add(materialsBySide[i][k], keyFrames);
                         }
                     }
+                    
+                    //Add empty animations too
                     TaggedAnimationsBySide[i].Add(animation.tag, animation);
                     TaggedAnimationFramesBySide[i].Add(animation.tag, frames);
                 }
@@ -346,7 +346,6 @@ namespace TeleCore
         }
 
         //TODO: CACHE INTERPOLATED FRAMES BY FRAME KEY - the keychain approach doesnt work, except when creating a full animation chain with pre-generated interpolated frames
-        
         private bool GetCurrentKeyFrames(Material material, out KeyFrame frame1, out KeyFrame frame2, out float dist)
         {
             frame1 = frame2 = KeyFrame.Invalid;
@@ -363,7 +362,7 @@ namespace TeleCore
             return frame1.IsValid && frame2.IsValid;
         }
 
-        private KeyFrameData GetCurrentDataFor(Material material)
+        private KeyFrameChain GetCurrentDataFor(Material material)
         {
             if (GetCurrentKeyFrames(material, out var frame1, out var frame2, out var lerpVal))
                 return frame1.Data.Interpolated(frame2.Data, lerpVal);
@@ -386,21 +385,28 @@ namespace TeleCore
             var mat = CurrentMaterials[materialIndex];
             var frames = CurrentKeyFrames[currentAnim][mat];
         }
+
+        private RuntimeAnimationGroup CurrentAnimation;
         
         public override void PostDraw()
         {
             if (currentAnim == null) return;
-            float curAlt = parent.DrawPos.y + Altitudes.AltInc * CurrentMaterials.Count;
+            
+            //Base Information
+            //Start with top layer of animation texture stack
+            float currentLayer = parent.DrawPos.y + Altitudes.AltInc * CurrentMaterials.Count;
 
+            //Get transform
             var drawSize = UsedDrawSize;
-            var origin = new Vector3(UsedDrawPos.x, curAlt, UsedDrawPos.z);
+            var drawPos = new Vector3(UsedDrawPos.x, currentLayer, UsedDrawPos.z);
 
+            //Iterate through animation layers, starting with first
             for (var i = 0; i < CurrentMaterials.Count; i++)
             {
                 var material = CurrentMaterials[i];
                 var keyFrame = currentKeyFramesBySide[i];
                 var data = DataByMat[material];
-
+                
                 var drawOffset = PixelToCellOffset(keyFrame.TPosition, drawSize);
                 var rotation = keyFrame.TRotation;
 
@@ -413,7 +419,7 @@ namespace TeleCore
                     rotation = -rotation;
                 }
 
-                var newDrawPos = origin + drawOffset;
+                var newDrawPos = drawPos + drawOffset;
                 newDrawPos += GenTransform.OffSetByCoordAnchor(actualSize, size, data.TexCoordAnchor);
                 if (keyFrame.PivotPoint != Vector2.zero)
                 {
@@ -427,7 +433,7 @@ namespace TeleCore
 
                 Mesh mesh = CurrentFlipped ? MeshPool.GridPlaneFlip(size) : MeshPool.GridPlane(size);
                 Graphics.DrawMesh(mesh, newDrawPos, rotation.ToQuat(), material, 0, null, 0);
-                curAlt -= Altitudes.AltInc;
+                currentLayer -= Altitudes.AltInc;
             }
         }
 
