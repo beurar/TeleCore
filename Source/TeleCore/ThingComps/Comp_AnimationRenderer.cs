@@ -51,6 +51,7 @@ namespace TeleCore
 
         public RuntimeKeyFrame Next => chain[Index + 1];
         public RuntimeKeyFrame Previous => chain[Index - 1];
+        public static RuntimeKeyFrame Empty => new RuntimeKeyFrame();
 
         public RuntimeKeyFrame(KeyFrameChain chain, KeyFrameData data, int index)
         {
@@ -63,33 +64,18 @@ namespace TeleCore
     public class Comp_AnimationRenderer : ThingComp
     {
         //Dynamic cache
+        private RuntimeAnimation curAnimation;
         private AnimationPart[][] animationsBySide = new AnimationPart[4][];
-        private TextureData[][] materialsBySide = new TextureData[4][];
-        private readonly Dictionary<Rot4, HashSet<string>> animationTagsBySide = new(4);
-        private readonly Dictionary<(Rot4, string, int), KeyFrameChain> frameChainsByMaterialByTagBySide = new ();
+        private TextureData[][] texturesBySide = new TextureData[4][];
         
-        private string curAnimationTag = null;
-        private int currentFrame;
-        private int finalFrame;
-        private bool shouldSustain = false;
+        private readonly Dictionary<(Rot4 rotation, string tag), AnimationPart> animationLookUp = new(4);
+        //private readonly Dictionary<Rot4, HashSet<string>> animationTagsBySide = new(4);
+        private readonly Dictionary<(Rot4 rotation, string tag, int matInd), KeyFrameChain> frameChainsByMaterialByTagBySide = new ();
 
         //
         public CompProperties_AnimationRenderer Props => (CompProperties_AnimationRenderer) props;
         
         //
-        public int CurrentFrame => currentFrame;
-        private TextureData[] CurTextures => materialsBySide[UsedRotation.AsInt];
-
-        private KeyFrameChain KeyFramesFor(int matIndex)
-        {
-            if (frameChainsByMaterialByTagBySide.TryGetValue((UsedRotation, curAnimationTag, matIndex), out var chain))
-            {
-                return chain;
-            }
-
-            return KeyFrameChain.Empty;
-        }
-        
         private bool CurrentFlipped => parent.Rotation == Rot4.West;
         private Rot4 UsedRotation
         {
@@ -124,6 +110,21 @@ namespace TeleCore
                 return parent.Graphic.drawSize;
             }
         }
+        
+        //Current State
+        public TextureData[] CurrentTextures => texturesBySide[UsedRotation.AsInt];
+        public AnimationPart[] CurrentAnimations => animationsBySide[UsedRotation.AsInt];
+        public RuntimeKeyFrame CurrentKeyFrameFor(int matIndex)
+        {
+            if (frameChainsByMaterialByTagBySide.TryGetValue((UsedRotation, curAnimation.animationTag, matIndex), out var chain))
+            {
+                return chain[curAnimation.curFrame];
+            }
+
+            return RuntimeKeyFrame.Empty;
+        }
+
+        
 
         public struct RuntimeAnimation
         {
@@ -132,34 +133,61 @@ namespace TeleCore
             public int curFrame;
             public bool shouldSustain;
             
-        }
+            //
+            public bool IsEmpty => animationTag == null;
+            public bool IsRunning => !IsFinished;
+            public bool IsFinished => curFrame > bounds.max;
 
-        private RuntimeAnimation curAnimation;
+            public static RuntimeAnimation Start(AnimationPart animation, bool sustain)
+            {
+                return new RuntimeAnimation
+                {
+                    curFrame = 0,
+                    animationTag = animation.tag,
+                    bounds = animation.bounds,
+                    shouldSustain = sustain,
+                };
+            }
+            
+            public static RuntimeAnimation Clear()
+            {
+                return new RuntimeAnimation();
+            }
+
+            public void Restart()
+            {
+                curFrame = 0;
+            }
+
+            public static RuntimeAnimation operator ++(RuntimeAnimation animation)
+            {
+                animation.curFrame++;
+                return animation;
+            }
+
+            public static RuntimeAnimation operator +(RuntimeAnimation animation, int i)
+            {
+                animation.curFrame += i;
+                return animation;
+            }
+        }
 
         //
         public void Start(string tag, bool sustain = false)
         {
-            if (!animationTagsBySide[UsedRotation].Contains(tag))
+            if (!animationLookUp.TryGetValue((UsedRotation, tag), out var animation))
             {
                 TLog.Error($"{Props.animationDef} does not contain animation tag '{tag}'");
                 return;
             }
             
-            if(curAnimation.Sustain(tag))
-            if (curAnimationTag == tag && sustain) return;
-            currentFrame = 0;
-            curAnimationTag = tag;
-            finalFrame = CurrentAnimations[tag].frames;
-            shouldSustain = sustain;
+            if (curAnimation.shouldSustain) return;
+            curAnimation = RuntimeAnimation.Start(animation, sustain);
         }
 
         public void Stop()
         {
-            curAnimationTag = null;
-            currentFrame = 0;
-            finalFrame = 0;
-            shouldSustain = false;
-
+            curAnimation = RuntimeAnimation.Clear();
             if (Props.defaultAnimationTag != null)
             {
                 Start(Props.defaultAnimationTag, true);
@@ -170,21 +198,44 @@ namespace TeleCore
         private void Ticker()
         {
             //Skip when no animation selected
-            if (curAnimationTag == null) return;
-            
-            //Check current frame
+            if (curAnimation.IsEmpty) return;
 
-
-            if (currentFrame >= finalFrame)
+            if (curAnimation.IsRunning)
             {
-                if (shouldSustain)
+                curAnimation++;
+            }
+            
+            //Check Stop current frame
+            if (curAnimation.IsFinished)
+            {
+                if (curAnimation.shouldSustain)
                 {
-                    currentFrame = 0;
+                    curAnimation.Restart();
                     return;
                 }
                 Stop();
             }
         }
+        
+        //  at System.ThrowHelper.ThrowArgumentOutOfRangeException (System.ExceptionArgument argument, System.ExceptionResource resource) [0x00029] in <eae584ce26bc40229c1b1aa476bfa589>:0 
+  /*at System.ThrowHelper.ThrowArgumentOutOfRangeException () [0x00000] in <eae584ce26bc40229c1b1aa476bfa589>:0 
+  at System.Collections.Generic.List`1[T].get_Item (System.Int32 index) [0x00009] in <eae584ce26bc40229c1b1aa476bfa589>:0 
+  at TeleCore.Comp_AnimationRenderer.<PostSpawnSetup>g__GetOrInterpolateKeyframe|24_0 (System.Int32 frame, TeleCore.Comp_AnimationRenderer+<>c__DisplayClass24_0& ) [0x00001] in C:\Program Files (x86)\Steam\steamapps\common\RimWorld\Mods\TeleCore\Source\TeleCore\ThingComps\Comp_AnimationRenderer.cs:275 
+  at TeleCore.Comp_AnimationRenderer.PostSpawnSetup (System.Boolean respawningAfterLoad) [0x0018b] in C:\Program Files (x86)\Steam\steamapps\common\RimWorld\Mods\TeleCore\Source\TeleCore\ThingComps\Comp_AnimationRenderer.cs:288 
+  at Verse.ThingWithComps.SpawnSetup (Verse.Map map, System.Boolean respawningAfterLoad) [0x00020] in <c244b6dd611b4d909ce32a01989f4fb3>:0 
+  at Verse.Building.SpawnSetup (Verse.Map map, System.Boolean respawningAfterLoad) [0x00054] in <c244b6dd611b4d909ce32a01989f4fb3>:0 
+  at TeleCore.FXBuilding.SpawnSetup (Verse.Map map, System.Boolean respawningAfterLoad) [0x00001] in C:\Program Files (x86)\Steam\steamapps\common\RimWorld\Mods\TeleCore\Source\TeleCore\VFX\Implementations\FXBuilding.cs:43 
+  at TiberiumRim.TRBuilding.SpawnSetup (Verse.Map map, System.Boolean respawningAfterLoad) [0x00000] in <d882be2a59954b3fb9d1028973248ec4>:0 
+  at TiberiumRim.TiberiumProducer.SpawnSetup (Verse.Map map, System.Boolean respawningAfterLoad) [0x00000] in <d882be2a59954b3fb9d1028973248ec4>:0 
+  at TiberiumRim.Veinhole.SpawnSetup (Verse.Map map, System.Boolean respawningAfterLoad) [0x00020] in <d882be2a59954b3fb9d1028973248ec4>:0 
+  at Verse.GenSpawn.Spawn (Verse.Thing newThing, Verse.IntVec3 loc, Verse.Map map, Verse.Rot4 rot, Verse.WipeMode wipeMode, System.Boolean respawningAfterLoad) [0x00244] in <c244b6dd611b4d909ce32a01989f4fb3>:0 
+  at TeleCore.Designator_BuildGodMode.DesignateSingleCell (Verse.IntVec3 c) [0x0002e] in C:\Program Files (x86)\Steam\steamapps\common\RimWorld\Mods\TeleCore\Source\TeleCore\Rendering\UI\SpecialSubMenu\Designator_BuildGodMode.cs:34 
+  at Verse.DesignatorManager.ProcessInputEvents () [0x00058] in <c244b6dd611b4d909ce32a01989f4fb3>:0 
+  at RimWorld.MapInterface.HandleMapClicks () [0x0000f] in <c244b6dd611b4d909ce32a01989f4fb3>:0 
+  at (wrapper dynamic-method) RimWorld.UIRoot_Play.RimWorld.UIRoot_Play.UIRootOnGUI_Patch1(RimWorld.UIRoot_Play)
+  at (wrapper dynamic-method) Verse.Root.Verse.Root.OnGUI_Patch1(Verse.Root) 
+(Filename: C:\buildslave\unity\build\Runtime/Export/Debug/Debug.bindings.h Line: 39)*/
+        //
 
         public override void PostSpawnSetup(bool respawningAfterLoad)
         {
@@ -192,7 +243,7 @@ namespace TeleCore
             if (Props.animationDef == null) return;
 
             //
-            materialsBySide = new TextureData[4][];
+            texturesBySide = new TextureData[4][];
             //TaggedAnimationFramesBySide = new Dictionary<string, Dictionary<Material, List<KeyFrame>>>[4] {new(), new(), new(), new()};
             //TaggedAnimationsBySide = new Dictionary<string, AnimationPart>[4]{new(), new(), new(), new()};
             
@@ -207,17 +258,20 @@ namespace TeleCore
                 var set = Props.animationDef.animationSets[i];
                 if (!(set.HasAnimations && set.HasTextures)) continue;
 
-                materialsBySide[i] = new TextureData[set.textureParts.Count];
+                texturesBySide[i] = new TextureData[set.textureParts.Count];
                 //Go through each texture on the current animation set (each side has the same textures, for each animation)
                 for (var k = 0; k < set.textureParts.Count; k++)
                 {
                     var textureData = set.textureParts[k];
-                    materialsBySide[i][k] = (textureData);
+                    texturesBySide[i][k] = (textureData);
                 }
 
                 //Now each side can have multiple animation parts
                 foreach (var animation in set.animations)
                 { 
+                    //
+                    animationLookUp.Add((new Rot4(i), animation.tag), animation);
+                    
                     //Dictionary<Material, List<KeyFrame>> frames = new();
                     if (animation.keyFrames != null)
                     {
@@ -277,6 +331,7 @@ namespace TeleCore
         }
 
         //TODO: CACHE INTERPOLATED FRAMES BY FRAME KEY - the keychain approach doesnt work, except when creating a full animation chain with pre-generated interpolated frames
+        /*
         private bool GetCurrentKeyFrames(Material material, out KeyFrame frame1, out KeyFrame frame2, out float dist)
         {
             frame1 = frame2 = KeyFrame.Invalid;
@@ -305,44 +360,34 @@ namespace TeleCore
 
             return new KeyFrameData();
         }
-
-        private void PrepareAnimation(string tag)
-        {
-            
-        }
-
-        private KeyFrameData CurrentKeyFrame(int materialIndex)
-        {
-            var mat = CurrentMaterials[materialIndex];
-            var frames = CurrentKeyFrames[curAnimationTag][mat];
-        }
-
-        private RuntimeAnimationGroup CurrentAnimation;
+        */
         
         public override void PostDraw()
         {
-            if (curAnimationTag == null) return;
+            if (curAnimation.IsEmpty) return;
             
             //Base Information
             //Start with top layer of animation texture stack
-            float currentLayer = parent.DrawPos.y + Altitudes.AltInc * CurrentMaterials.Count;
+            var curTextures = CurrentTextures;
+            var curData = CurrentAnimations;
+            
+            float currentLayer = parent.DrawPos.y + Altitudes.AltInc * curTextures.Length;
 
             //Get transform
             var drawSize = UsedDrawSize;
             var drawPos = new Vector3(UsedDrawPos.x, currentLayer, UsedDrawPos.z);
 
             //Iterate through animation layers, starting with first
-            for (var i = 0; i < CurrentMaterials.Count; i++)
+            for (var i = 0; i < curTextures.Length; i++)
             {
-                var material = CurrentMaterials[i];
-                var keyFrame = currentKeyFramesBySide[i];
-                var data = DataByMat[material];
-                
+                var texture = curTextures[i];
+                var keyFrame = CurrentKeyFrameFor(i).KeyFrame;
+
                 var drawOffset = PixelToCellOffset(keyFrame.TPosition, drawSize);
                 var rotation = keyFrame.TRotation;
 
                 var size = keyFrame.TSize * keyFrame.TexCoords.size * drawSize;
-                var actualSize = keyFrame.TSize * data.TexCoordReference.size * drawSize;
+                var actualSize = keyFrame.TSize * texture.TexCoordReference.size * drawSize;
 
                 if (CurrentFlipped)
                 {
@@ -351,7 +396,7 @@ namespace TeleCore
                 }
 
                 var newDrawPos = drawPos + drawOffset;
-                newDrawPos += GenTransform.OffSetByCoordAnchor(actualSize, size, data.TexCoordAnchor);
+                newDrawPos += GenTransform.OffSetByCoordAnchor(actualSize, size, texture.TexCoordAnchor);
                 if (keyFrame.PivotPoint != Vector2.zero)
                 {
                     var pivotPoint = newDrawPos + PixelToCellOffset(keyFrame.PivotPoint, drawSize);
@@ -359,11 +404,11 @@ namespace TeleCore
                     newDrawPos = pivotPoint + relativePos;
                 }
 
-                material.SetTextureOffset("_MainTex", keyFrame.TexCoords.position);
-                material.SetTextureScale("_MainTex", keyFrame.TexCoords.size);
+                texture.Material.SetTextureOffset("_MainTex", keyFrame.TexCoords.position);
+                texture.Material.SetTextureScale("_MainTex", keyFrame.TexCoords.size);
 
                 Mesh mesh = CurrentFlipped ? MeshPool.GridPlaneFlip(size) : MeshPool.GridPlane(size);
-                Graphics.DrawMesh(mesh, newDrawPos, rotation.ToQuat(), material, 0, null, 0);
+                Graphics.DrawMesh(mesh, newDrawPos, rotation.ToQuat(), texture.Material, 0, null, 0);
                 currentLayer -= Altitudes.AltInc;
             }
         }
@@ -383,11 +428,11 @@ namespace TeleCore
                 action = delegate
                 {
                     var options = new List<FloatMenuOption>();
-                    foreach (var animationPart in CurrentAnimations.Keys)
+                    foreach (var animationPart in animationLookUp.Values)
                     {
                         options.Add(new FloatMenuOption($"Run {animationPart}", delegate
                         {
-                            Start(animationPart);
+                            Start(animationPart.tag);
                         }));
                     }
                     Find.WindowStack.Add(new FloatMenu(options));

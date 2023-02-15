@@ -143,7 +143,6 @@ public class SubEffecter_FX : SubEffecter
 				if (Rand.Value < num)
 					MakeMote(A, B);
 			} break;
-
 			case EffectThrowMode.Burst:
 			{
 				if (Def.burstInterval.Average > 0)
