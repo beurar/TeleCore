@@ -7,61 +7,6 @@ using Verse;
 
 namespace TeleCore
 {
-    public struct RuntimeAnimationGroup
-    {
-        private Dictionary<(string, Rot4), RuntimeAnimation> animationsBySide;
-        
-        public RuntimeAnimation this[string refId, Rot4 side]
-        {
-            get
-            {
-                if (animationsBySide.TryGetValue((refId, side), out var value))
-                {
-                    return value;
-                }
-
-                return RuntimeAnimation.Invalid;
-            }
-        }
-
-        public RuntimeAnimationGroup(AnimationDataDef def)
-        {
-            animationsBySide = new Dictionary<(string, Rot4), RuntimeAnimation>();
-            //Go  through each rotation
-            for (int i = 0; i < 4; i++)
-            {
-                //Get set
-                var set = def.animationSets[i];
-                if (!(set.HasAnimations && set.HasTextures)) continue;
-                
-                //
-                foreach (var textureData in set.textureParts)
-                {
-                    materialsBySide[i].Add(textureData.Material);
-                    DataByMat.Add(textureData.Material, textureData);
-                }
-
-                //
-                foreach (var animation in set.animations)
-                { 
-                    Dictionary<Material, List<KeyFrame>> frames = new();
-                    if (animation.keyFrames != null)
-                    {
-                        for (var k = 0; k < animation.keyFrames.Count; k++)
-                        {
-                            var frameSet = animation.keyFrames[k];
-                            var list = frameSet?.savedList ?? new List<KeyFrame>();
-                            frames.Add(materialsBySide[i][k], list);
-                        }
-                    }
-                    TaggedAnimationsBySide[i].Add(animation.tag, animation);
-                    TaggedAnimationFramesBySide[i].Add(animation.tag, frames);
-                }
-            }
-        }
-    }
-    
-    
     public struct KeyFrameChain
     {
         private int allocated;
@@ -80,6 +25,8 @@ namespace TeleCore
         public RuntimeKeyFrame First => internalChain[0];
         public RuntimeKeyFrame Last => internalChain[internalChain.Length - 1];
 
+        public static KeyFrameChain Empty = new KeyFrameChain();
+        
         //
         public KeyFrameChain Allocate(int size)
         {
@@ -113,63 +60,44 @@ namespace TeleCore
         }
     }
 
-    public struct RuntimeAnimation
-    {
-        public string animationTag;
-        public int curTick;
-        public IntRange range;
-
-        public bool IsActive => animationTag != null;
-
-        public static RuntimeAnimation Prepare()
-        {
-            return new RuntimeAnimation
-            {
-                animationTag = null,
-                curTick = 0,
-                range = default
-            };
-        }
-    }
-    
     public class Comp_AnimationRenderer : ThingComp
     {
         //Dynamic cache
-        private Dictionary<(string, Rot4, int), KeyFrameChain> cachedKeyChains = new();
-        //private readonly List<KeyFrameData> cachedCurrentKeyFrames = new ();
+        private AnimationPart[][] animationsBySide = new AnimationPart[4][];
+        private TextureData[][] materialsBySide = new TextureData[4][];
+        private readonly Dictionary<Rot4, HashSet<string>> animationTagsBySide = new(4);
+        private readonly Dictionary<(Rot4, string, int), KeyFrameChain> frameChainsByMaterialByTagBySide = new ();
         
-        //Static animation data
-        private List<Material>[] materialsBySide;
-        private Dictionary<string, AnimationPart>[] TaggedAnimationsBySide;
-        private Dictionary<string, Dictionary<Material, List<KeyFrame>>>[] TaggedAnimationFramesBySide;
-
-        private string currentAnim = null;
+        private string curAnimationTag = null;
         private int currentFrame;
         private int finalFrame;
-
         private bool shouldSustain = false;
 
-        public Comp_AnimationRenderer()
-        {
-        }
-
-        public int CurrentFrame => currentFrame;
-
+        //
         public CompProperties_AnimationRenderer Props => (CompProperties_AnimationRenderer) props;
+        
+        //
+        public int CurrentFrame => currentFrame;
+        private TextureData[] CurTextures => materialsBySide[UsedRotation.AsInt];
 
-        private Dictionary<Material, TextureData> DataByMat { get; } = new();
-        private Dictionary<string, AnimationPart> CurrentAnimations => TaggedAnimationsBySide[UsedRotation];
-        private Dictionary<string, Dictionary<Material, List<KeyFrame>>> CurrentKeyFrames => TaggedAnimationFramesBySide[UsedRotation];
-        private List<Material> CurrentMaterials => materialsBySide[UsedRotation];
+        private KeyFrameChain KeyFramesFor(int matIndex)
+        {
+            if (frameChainsByMaterialByTagBySide.TryGetValue((UsedRotation, curAnimationTag, matIndex), out var chain))
+            {
+                return chain;
+            }
 
+            return KeyFrameChain.Empty;
+        }
+        
         private bool CurrentFlipped => parent.Rotation == Rot4.West;
-        private int UsedRotation
+        private Rot4 UsedRotation
         {
             get
             {
                 if (CurrentFlipped)
-                    return Rot4.East.AsInt;
-                return parent.Rotation.AsInt;
+                    return Rot4.East;
+                return parent.Rotation;
             }
         }
 
@@ -197,24 +125,37 @@ namespace TeleCore
             }
         }
 
+        public struct RuntimeAnimation
+        {
+            public string animationTag;
+            public IntRange bounds;
+            public int curFrame;
+            public bool shouldSustain;
+            
+        }
+
+        private RuntimeAnimation curAnimation;
+
         //
         public void Start(string tag, bool sustain = false)
         {
-            if (!CurrentAnimations.ContainsKey(tag))
+            if (!animationTagsBySide[UsedRotation].Contains(tag))
             {
                 TLog.Error($"{Props.animationDef} does not contain animation tag '{tag}'");
                 return;
             }
-            if (currentAnim == tag && sustain) return;
+            
+            if(curAnimation.Sustain(tag))
+            if (curAnimationTag == tag && sustain) return;
             currentFrame = 0;
-            currentAnim = tag;
+            curAnimationTag = tag;
             finalFrame = CurrentAnimations[tag].frames;
-            this.shouldSustain = sustain;
+            shouldSustain = sustain;
         }
 
         public void Stop()
         {
-            currentAnim = null;
+            curAnimationTag = null;
             currentFrame = 0;
             finalFrame = 0;
             shouldSustain = false;
@@ -229,7 +170,7 @@ namespace TeleCore
         private void Ticker()
         {
             //Skip when no animation selected
-            if (currentAnim == null) return;
+            if (curAnimationTag == null) return;
             
             //Check current frame
 
@@ -245,25 +186,15 @@ namespace TeleCore
             }
         }
 
-        private KeyFrameChain KeyFrames(string tag, Rot4 rot)
-        {
-            if (!cachedKeyChains.TryGetValue((tag, rot), out var value))
-            {
-                value = GetCurrentDataFor(CurrentMaterials[rot.AsInt]);
-                cachedKeyChains.Add((tag, rot), value);
-            }
-            return value;
-        }
-
         public override void PostSpawnSetup(bool respawningAfterLoad)
         {
             base.PostSpawnSetup(respawningAfterLoad);
             if (Props.animationDef == null) return;
 
             //
-            materialsBySide = new List<Material>[4] {new(), new(), new(), new()};
-            TaggedAnimationFramesBySide = new Dictionary<string, Dictionary<Material, List<KeyFrame>>>[4] {new(), new(), new(), new()};
-            TaggedAnimationsBySide = new Dictionary<string, AnimationPart>[4]{new(), new(), new(), new()};
+            materialsBySide = new TextureData[4][];
+            //TaggedAnimationFramesBySide = new Dictionary<string, Dictionary<Material, List<KeyFrame>>>[4] {new(), new(), new(), new()};
+            //TaggedAnimationsBySide = new Dictionary<string, AnimationPart>[4]{new(), new(), new(), new()};
             
             //Construct data
             //Each side of a thing can have multiple animations
@@ -275,25 +206,25 @@ namespace TeleCore
                 //Check if the side has an animationSet
                 var set = Props.animationDef.animationSets[i];
                 if (!(set.HasAnimations && set.HasTextures)) continue;
-                
+
+                materialsBySide[i] = new TextureData[set.textureParts.Count];
                 //Go through each texture on the current animation set (each side has the same textures, for each animation)
-                foreach (var textureData in set.textureParts)
+                for (var k = 0; k < set.textureParts.Count; k++)
                 {
-                    materialsBySide[i].Add(textureData.Material);
-                    DataByMat.Add(textureData.Material, textureData);
+                    var textureData = set.textureParts[k];
+                    materialsBySide[i][k] = (textureData);
                 }
 
                 //Now each side can have multiple animation parts
                 foreach (var animation in set.animations)
                 { 
-                    Dictionary<Material, List<KeyFrame>> frames = new();
+                    //Dictionary<Material, List<KeyFrame>> frames = new();
                     if (animation.keyFrames != null)
                     {
-                        //For each previously selected texture-part, we have a mirrored keyframe set
+                        //For each previously selected texture-part, we have a mirrored keyframe set inside the animationpart
                         for (var k = 0; k < animation.keyFrames.Count; k++)
                         {
                             //Working data
-                            int lastFrameIndex = 0;
                             KeyFrame last = new KeyFrame();
                             KeyFrame next = new KeyFrame();
                             
@@ -312,26 +243,26 @@ namespace TeleCore
                                 {
                                     last = keyFrame;
                                     next = keyFrames[frame + 1];
-                                    lastFrameIndex = frame;
                                     return keyFrame.Data;
                                 }
                                 return last.Data.Interpolated(next.Data, Mathf.InverseLerp(last.Frame, next.Frame, frame));
                             }
                             
+                            //Generate KeyFrameChain
                             for (int f = animation.bounds.min; f < animation.bounds.max; f++)
                             {
                                 chain.SetNext(GetOrInterpolateKeyframe(f));
                             }
                             
-                            cachedKeyChains.Add((animation.tag, new Rot4(i), k), chain);
+                            frameChainsByMaterialByTagBySide.Add((new Rot4(i), animation.tag, k), chain);
                             
-                            frames.Add(materialsBySide[i][k], keyFrames);
+                            //frames.Add(materialsBySide[i][k], keyFrames);
                         }
                     }
                     
                     //Add empty animations too
-                    TaggedAnimationsBySide[i].Add(animation.tag, animation);
-                    TaggedAnimationFramesBySide[i].Add(animation.tag, frames);
+                    //TaggedAnimationsBySide[i].Add(animation.tag, animation);
+                    //TaggedAnimationFramesBySide[i].Add(animation.tag, frames);
                 }
             }
 
@@ -349,7 +280,7 @@ namespace TeleCore
         private bool GetCurrentKeyFrames(Material material, out KeyFrame frame1, out KeyFrame frame2, out float dist)
         {
             frame1 = frame2 = KeyFrame.Invalid;
-            var frames = CurrentKeyFrames[currentAnim][material];
+            var frames = CurrentKeyFrames[curAnimationTag][material];
             var framesMin = frames.Where(t => t.Frame <= CurrentFrame);
             var framesMax = frames.Where(t => t.Frame >= CurrentFrame);
             if (framesMin.TryMaxBy(t => t.Frame, out var value1))
@@ -383,14 +314,14 @@ namespace TeleCore
         private KeyFrameData CurrentKeyFrame(int materialIndex)
         {
             var mat = CurrentMaterials[materialIndex];
-            var frames = CurrentKeyFrames[currentAnim][mat];
+            var frames = CurrentKeyFrames[curAnimationTag][mat];
         }
 
         private RuntimeAnimationGroup CurrentAnimation;
         
         public override void PostDraw()
         {
-            if (currentAnim == null) return;
+            if (curAnimationTag == null) return;
             
             //Base Information
             //Start with top layer of animation texture stack
