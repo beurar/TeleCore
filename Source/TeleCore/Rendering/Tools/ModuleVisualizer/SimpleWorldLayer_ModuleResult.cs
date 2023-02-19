@@ -113,6 +113,7 @@ namespace TeleCore
                     num2++;
                 }
             }
+            
             FinalizeMesh(MeshParts.All);
             foreach (object obj3 in RegenerateMeshColliders())
             {

@@ -24,7 +24,7 @@
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <Version>1.2.5</Version>
     <SignAssembly>False</SignAssembly>
-    <PackageVersion>1.7.4.1</PackageVersion>
+    <PackageVersion>1.7.5.1</PackageVersion>
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
@@ -57,7 +57,7 @@
 	</ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Krafs.Rimworld.Ref" Version="1.4.3613" GeneratePathProperty="true">
+    <PackageReference Include="Krafs.Rimworld.Ref" Version="1.4.3641" GeneratePathProperty="true">
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
     

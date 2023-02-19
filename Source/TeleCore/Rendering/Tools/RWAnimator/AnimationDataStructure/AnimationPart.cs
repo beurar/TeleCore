@@ -21,6 +21,15 @@ namespace TeleCore
         //Loading
         public void ExposeData()
         {
+            if (Scribe.mode == LoadSaveMode.Saving)
+            {
+                //Sort keyframes by their frame, as it is not handled in the editor
+                foreach (var list in keyFrames)
+                {
+                    list.SortBy(k => k.Frame);
+                }
+            }
+            
             Scribe_Values.Look(ref tag, nameof(tag));
             Scribe_Values.Look(ref frames, nameof(frames), 0, true);
             Scribe_Values.Look(ref bounds, nameof(bounds), new IntRange(0, frames), true);
