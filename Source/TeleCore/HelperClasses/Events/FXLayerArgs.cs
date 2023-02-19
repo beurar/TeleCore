@@ -1,10 +1,22 @@
-﻿namespace TeleCore;
+﻿using System;
 
-public struct FXLayerArgs
+namespace TeleCore;
+
+public class FXArgs : EventArgs
 {
     public int index;
-    public int renderPriority;
     public string layerTag;
+    public bool needsPower;
+}
+
+public class FXEffecterArgs : FXArgs
+{
+    public FXEffecterData data;
+}
+
+public class FXLayerArgs : FXArgs
+{
+    public int renderPriority;
     public string categoryTag;
     public FXLayerData data;
 

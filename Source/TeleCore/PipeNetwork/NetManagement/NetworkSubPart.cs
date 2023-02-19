@@ -126,7 +126,8 @@ namespace TeleCore
             Scribe_Defs.Look(ref internalDef, "internalDef");
             if (Scribe.mode == LoadSaveMode.LoadingVars)
             {
-                Props = ((Comp_NetworkStructure) Parent).Props.networks.Find(p => p.networkDef == internalDef);
+                //TODO: Clean this up, shouldnt cast to comp
+                Props = ( (Comp_NetworkStructure)Parent).Props.networks.Find(p => p.networkDef == internalDef);
             }
 
             if (Props.containerProps != null)

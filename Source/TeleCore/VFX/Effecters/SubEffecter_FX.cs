@@ -273,7 +273,7 @@ public class SubEffecter_FX : SubEffecter
 		
 		//Set Velocity
 		float speed = def.speed.RandomInRange;
-		float angle = def.fleckUsesAngleForVelocity ? def.angle.RandomInRange + info.rotation : 0f;
+		float angle = def.angle.RandomInRange;
 
 		if (Def.affectedByWind)
 		{
@@ -354,7 +354,7 @@ public class SubEffecter_FX : SubEffecter
 			//Try Notify Parent
 			if (Def?.eventTag != null)
 			{
-				((Effecter_FX) parent)?.SpawnedEffect(new EffecterEffectSpawnedArgs()
+				((Effecter_FX) parent)?.SpawnedEffect(new FXEffecterSpawnedEffectEventArgs()
 				{
 					//Cant pass fleck on as there is no return value when creating
 					effecterTag = Def.eventTag,
@@ -405,7 +405,7 @@ public class SubEffecter_FX : SubEffecter
 			//Try Notify Parent
 			if (Def?.eventTag != null)
 			{
-				((Effecter_FX) parent)?.SpawnedEffect(new EffecterEffectSpawnedArgs()
+				((Effecter_FX) parent)?.SpawnedEffect(new FXEffecterSpawnedEffectEventArgs()
 				{
 					effecterTag = Def.eventTag,
 					mote = sustainedMote,

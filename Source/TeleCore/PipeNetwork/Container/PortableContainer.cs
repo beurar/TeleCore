@@ -39,7 +39,7 @@ namespace TeleCore
         public bool HasValidTarget => currentDesignatedTarget.IsValid;
 
         //FX
-        public override bool FX_ProvidesForLayer(FXLayerArgs args) => true;
+        public override bool FX_ProvidesForLayer(FXArgs args) => true;
 
         public override bool? FX_ShouldDraw(FXLayerArgs args) => true;
 

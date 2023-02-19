@@ -17,7 +17,9 @@ namespace TeleCore
         public override CompPowerTrader PowerComp => parentHub.PowerComp;
         public override CompMannable MannableComp => parentHub.MannableComp;
         public override StunHandler Stunner => parentHub.Stunner;
-        public override CompPower PowerProviderFor => PowerComp;
+        
+        //
+        public override CompPowerTrader FX_PowerProviderFor(FXArgs args) => PowerComp;
 
         public bool NeedsRepair => false;
         

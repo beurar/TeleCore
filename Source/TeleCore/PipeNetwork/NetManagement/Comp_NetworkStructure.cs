@@ -11,7 +11,7 @@ using Verse;
 namespace TeleCore
 {
     //TODO: Add leaking functionality, broken transmitters losing values
-    public class Comp_NetworkStructure : ThingComp, INetworkStructure, IFXHolder
+    public class Comp_NetworkStructure : FXThingComp, INetworkStructure
     {
         //
         private NetworkMapInfo networkInfo;
@@ -22,7 +22,7 @@ namespace TeleCore
 
         //Debug
         protected static bool DebugConnectionCells = false;
-        private IFXHolder ifxHolderImplementation;
+        private IFXLayerProvider ifxHolderImplementation;
 
         //
         public NetworkSubPart this[NetworkDef def] => networkPartByDef.TryGetValue(def, out var value) ? value : null;
@@ -44,8 +44,8 @@ namespace TeleCore
         public virtual bool IsActiveOverride => true;
 
         #region FX Implementation
-
-        public virtual bool FX_ProvidesForLayer(FXLayerArgs args)
+        
+        public override bool FX_ProvidesForLayer(FXArgs args)
         {
             return args.layerTag switch
             {
@@ -54,9 +54,9 @@ namespace TeleCore
             };
         }
 
-        public virtual CompPowerTrader FX_PowerProviderFor(FXLayerArgs args) => null;
+        public override CompPowerTrader FX_PowerProviderFor(FXArgs args) => null;
 
-        public virtual bool? FX_ShouldDraw(FXLayerArgs args)
+        public override bool? FX_ShouldDraw(FXLayerArgs args)
         {
             return args.index switch
             {
@@ -65,12 +65,12 @@ namespace TeleCore
             };
         }
 
-        public virtual float? FX_GetOpacity(FXLayerArgs args) => 1f;
-        public virtual float? FX_GetRotation(FXLayerArgs args) => null;
-        public virtual float? FX_GetRotationSpeedOverride(FXLayerArgs args) => null;
-        public virtual float? FX_GetAnimationSpeedFactor(FXLayerArgs args) => null;
+        public override float? FX_GetOpacity(FXLayerArgs args) => 1f;
+        public override float? FX_GetRotation(FXLayerArgs args) => null;
+        public override float? FX_GetRotationSpeedOverride(FXLayerArgs args) => null;
+        public override float? FX_GetAnimationSpeedFactor(FXLayerArgs args) => null;
         
-        public virtual Color? FX_GetColor(FXLayerArgs args)         
+        public override Color? FX_GetColor(FXLayerArgs args)         
         {
             return args.index switch
             {
@@ -79,15 +79,19 @@ namespace TeleCore
             };
         }
         
-        public virtual Vector3? FX_GetDrawPosition(FXLayerArgs args)  
+        public override Vector3? FX_GetDrawPosition(FXLayerArgs args)  
         {
             return parent.DrawPos;
         }
         
-        public virtual Action<RoutedDrawArgs> FX_GetDrawAction(FXLayerArgs args) => null!;
-        
-        public virtual bool? FX_ShouldThrowEffects(FXLayerArgs args) => true;
-        public void FX_OnEffectSpawned(EffecterEffectSpawnedArgs effectSpawnedArgs)
+        public override Action<RoutedDrawArgs> FX_GetDrawAction(FXLayerArgs args) => null!;
+
+        public override bool? FX_ShouldThrowEffects(FXEffecterArgs args)
+        {
+            return base.FX_ShouldThrowEffects(args);
+        }
+
+        public override void FX_OnEffectSpawned(FXEffecterSpawnedEffectEventArgs spawnedEffectEventArgs)
         {
         }
         

@@ -12,7 +12,6 @@ namespace TeleCore
 
         //Main graphic
         public GraphicData? graphicData;
-        public EffecterDef? effecterDef;
         public List<DynamicTextureParameter> textureParams;
         
         public AltitudeLayer? altitude = null;

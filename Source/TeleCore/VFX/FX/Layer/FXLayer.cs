@@ -18,10 +18,6 @@ namespace TeleCore
         private readonly int _index = 0;
         private readonly int renderPriority;
         private readonly float _altitude;
-        
-        //Effecter
-        private EffecterLayer? _effecterLayer;
-        private readonly bool _isEffecterLayer;
 
         //Data
         public readonly FXLayerData data;
@@ -45,8 +41,6 @@ namespace TeleCore
         public int Index => _index;
         public int RenderPriority => renderPriority;
 
-        public bool HasEffecter => _effecterLayer != null;
-        
         private Rot4 ParentRot4 => parentInfo.ParentThing.Rotation;
         
         //Rotation
@@ -61,63 +55,49 @@ namespace TeleCore
 
         private float AnimationSpeed => CompFX.GetAnimationSpeedFactor(Args);
         private Action<RoutedDrawArgs> DrawAction => CompFX.GetDrawAction(Args);
-
-        private bool ShouldDoEffecter => CompFX.ShouldThrowEffects(Args);
+        
         private bool HasPower => CompFX.HasPower(Args);
         
         //Blink
         public bool ShouldBeBlinkingNow => blinkDuration > 0;
-        
-        
+
+
         public FXLayer(CompFX compFX, FXLayerData data, FXParentInfo info, int index)
         {
             TLog.Message($"Adding Layer {index}: {data.graphicData?.texPath} ({data.fxMode})");
-            
+
             //
             _materialProperties = new MaterialPropertyBlock();
-            
+
             //
             this.data = data;
             _index = index;
             parentInfo = info;
             renderPriority = data.renderPriority ?? index;
-            
+
             CompFX = compFX;
-            
+
             if (data.skip)
             {
                 _inactive = true;
                 return;
             }
-
-            //Generate Effecter Layer
-            if(data.effecterDef != null)
-            {
-                _effecterLayer = new EffecterLayer(data.effecterDef);
-            }
             
-            //Generate Visual Layer
-            if (data.graphicData == null)
+            _altitude = (data.altitude ?? info.Def.altitudeLayer).AltitudeFor();
+            if (data.rotate != null)
             {
-                _isEffecterLayer = _effecterLayer != null;
+                exactRotation = data.rotate.startRotation.RandomInRange;
+            }
+
+            if (data.drawLayer != null)
+            {
+                _altitude += (data.drawLayer.Value * Altitudes.AltInc);
             }
             else
             {
-                _altitude = (data.altitude ?? info.Def.altitudeLayer).AltitudeFor();
-                if (data.rotate != null)
-                {
-                    exactRotation = data.rotate.startRotation.RandomInRange;
-                }
-                if (data.drawLayer != null)
-                {
-                    _altitude += (data.drawLayer.Value * Altitudes.AltInc);
-                }
-                else
-                {
-                    _altitude += ((index + 1) * Altitudes.AltInc);
-                }
+                _altitude += ((index + 1) * Altitudes.AltInc);
             }
-
+            
             //Set Args Cache
             Args = this.GetArgs();
         }
@@ -126,13 +106,6 @@ namespace TeleCore
         {
             if (_inactive || !HasPower) return;
             
-            if (ShouldDoEffecter)
-            {
-                _effecterLayer?.Tick(parentInfo.ParentThing, parentInfo.ParentThing);
-            }
-            
-            //Skip rest if its just the effect
-            if (_isEffecterLayer) return;
             var tick = Find.TickManager.TicksGame;
 
             //Rotate
@@ -276,8 +249,6 @@ namespace TeleCore
 
         public void Draw(Vector3? drawLocOverride = null)
         {
-            if (_isEffecterLayer) return;
-            
             //
             var drawPos = drawLocOverride ?? DrawPos;
             GetDrawInfo(Graphic, ref drawPos, ParentRot4, parentInfo.Extension, parentInfo.ParentThing.def, out drawSize, out _drawMat, out drawMesh, out float extraRotation, out flipUV);
@@ -324,8 +295,6 @@ namespace TeleCore
 
         public void Print(SectionLayer layer)
         {
-            if (_isEffecterLayer) return;
-            
             //
             var drawPos = DrawPos;
             GetDrawInfo(Graphic, ref drawPos, ParentRot4, parentInfo.Extension, parentInfo.ParentThing.def, out drawSize, out _drawMat, out drawMesh, out float extraRotation, out flipUV);

@@ -14,31 +14,59 @@ namespace TeleCore
     /// <para>You can implement this interface on multiple parts of a Thing instance, including the base <see cref="ThingDef.thingClass"/> and the <see cref="ThingDef.comps"/>.                                        </para>
     /// <para>If multiple implementations are active, the order of priority for selecting an interface for a layer via <see cref="FX_AffectsLayerAt"/> or for <see cref="IsMain"/> is done by <see cref="Priority"/>.   </para>
     /// </summary>
-    
-    
+
+
     // RenderPriority
     // #0  => Power Glow
     // #8  => Network Glow
     // #16 => Network Container Fill
     // #24 => Network "Lid"
     // #32 => 
+
+    //TODO: FX RE-STRUCTURE
+    //[Base]
+    //  []
+    //
+    //
     
-    public interface IFXHolder
+    //[FXArgs]  -> [FXEffecterArgs] 
+    //          -> [FXLayerArgs]
+    
+    public interface IFXBase
     {
         #region MetaDataGetter
 
         /// <summary>
         /// 
         /// </summary>
-        bool FX_ProvidesForLayer(FXLayerArgs args);
+        bool FX_ProvidesForLayer(FXArgs args);
         
         /// <summary>
         /// Allows you to override the default power getter with a custom reference, otherwise it defaults to the parent Thing's PowerComp (if it exists)
         /// </summary>
-        CompPowerTrader FX_PowerProviderFor(FXLayerArgs args);
+        CompPowerTrader FX_PowerProviderFor(FXArgs args);
 
         #endregion
-        
+    }
+
+    public interface IFXEffecterProvider : IFXBase
+    {
+        /// <summary>
+        /// Sets whether or not an attached Comp_FleckThrower should throw effects.
+        /// </summary>
+        bool? FX_ShouldThrowEffects(FXEffecterArgs args);
+
+        public TargetInfo FX_Effecter_TargetAOverride(FXEffecterArgs args);
+        public TargetInfo FX_Effecter_TargetBOverride(FXEffecterArgs args);
+
+        /// <summary>
+        /// Allows you to hook into the effecter logic, and handle custom logic whenever a tagged effect is spawned.
+        /// </summary>
+        void FX_OnEffectSpawned(FXEffecterSpawnedEffectEventArgs args);
+    }
+    
+    public interface IFXLayerProvider : IFXBase
+    {
         /// <summary>
         /// Overrides whether a layer at the same index of that value is rendered or not.
         /// </summary>
@@ -79,7 +107,8 @@ namespace TeleCore
         /// </summary>
         Action<RoutedDrawArgs> FX_GetDrawAction(FXLayerArgs args);
 
-        #region MyRegion
+        /*
+        #region Effecters
         
         /// <summary>
         /// Sets whether or not an attached Comp_FleckThrower should throw effects.
@@ -89,8 +118,9 @@ namespace TeleCore
         /// <summary>
         /// Allows you to hook into the effecter logic, and handle custom logic whenever a tagged effect is spawned.
         /// </summary>
-        void FX_OnEffectSpawned(EffecterEffectSpawnedArgs args);
+        void FX_OnEffectSpawned(FXEffecterSpawnedEffectEventArgs args);
 
         #endregion
+        */
     }
 }

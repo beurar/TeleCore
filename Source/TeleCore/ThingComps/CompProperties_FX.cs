@@ -12,6 +12,7 @@ namespace TeleCore
     {
         //Layers
         public List<FXLayerData> fxLayers = new List<FXLayerData>();
+        public List<FXEffecterData> effectLayers = new List<FXEffecterData>();
         public IntRange tickOffset = new IntRange(0, 333);
 
         public override IEnumerable<string> ConfigErrors(ThingDef def)

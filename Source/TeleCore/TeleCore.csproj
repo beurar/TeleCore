@@ -24,7 +24,7 @@
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <Version>1.2.5</Version>
     <SignAssembly>False</SignAssembly>
-    <PackageVersion>1.7.5.1</PackageVersion>
+    <PackageVersion>1.7.6.2</PackageVersion>
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
@@ -99,6 +99,7 @@
   <ItemGroup>
     <Folder Include="Attributes" />
     <Folder Include="Rendering\Tools\DefEditor" />
+    <Folder Include="VFX\Particles" />
   </ItemGroup>
 
   <ItemGroup>

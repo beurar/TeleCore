@@ -15,7 +15,7 @@ namespace TeleCore
     /// <summary>
     /// 
     /// </summary>
-    public class Building_TeleTurret : Building_Turret, ITurretHolder, IFXHolder
+    public class Building_TeleTurret : Building_Turret, ITurretHolder, IFXLayerProvider
     {
         private CompPowerTrader powerComp;
         private CompCanBeDormant dormantComp;
@@ -60,47 +60,44 @@ namespace TeleCore
         public virtual CompRefuelable RefuelComp => refuelComp;
         public virtual Comp_NetworkStructure NetworkComp => networkComp;
         public virtual StunHandler Stunner => stunner;
-
-        //FX
-        //Layers:
-        //[2] : TurretTopOverlay
-        public virtual bool FX_ProvidesForLayer(FXLayerArgs args) => true; //FXLayerData._ThingHolderTag;
-        public virtual CompPowerTrader FX_PowerProviderFor(FXLayerArgs args) => null!;
+        
+        #region FX Implementation
+        
+        //Basics
+        public virtual bool FX_ProvidesForLayer(FXArgs args) => true; //FXLayerData._ThingHolderTag;
+        public virtual CompPowerTrader FX_PowerProviderFor(FXArgs args) => null!;
+        
+        //Layer
         public virtual bool? FX_ShouldDraw(FXLayerArgs args) => null;
         public virtual float? FX_GetOpacity(FXLayerArgs args) => null;
-        public virtual float? FX_GetRotation(FXLayerArgs args) => null;
-        public virtual float? FX_GetRotationSpeedOverride(FXLayerArgs args) => null;
-        public virtual float? FX_GetAnimationSpeedFactor(FXLayerArgs args) => null;
-        public virtual Color? FX_GetColor(FXLayerArgs args) => null;
-        public virtual Vector3? FX_GetDrawPosition(FXLayerArgs args) => null;
-        public virtual Action<RoutedDrawArgs> FX_GetDrawAction(FXLayerArgs args) => null!;
-        public virtual bool? FX_ShouldThrowEffects(FXLayerArgs args) => null;
-        public virtual void FX_OnEffectSpawned(EffecterEffectSpawnedArgs effectSpawnedArgs) { }
-        
-        public bool IsMain => true;
-        public int Priority => 100;
-        public virtual bool ShouldDoEffects => true;
-        public virtual CompPower PowerProviderFor => null;
-
-        public virtual bool FX_AffectsLayerAt(int index) => true;
-        public virtual bool FX_ShouldDrawAt(int index) => true;
-        public virtual float FX_GetOpacityAt(int index) => 1f;
-
-        public virtual float? FX_GetRotationAt(int index)
+        public virtual float? FX_GetRotation(FXLayerArgs args)      
         {
-            return index switch
+            return args.index switch
             {
                 2 => MainGun?.TurretRotation,
                 _ => null
             };
         }
+        public virtual float? FX_GetRotationSpeedOverride(FXLayerArgs args) => null;
+        public virtual float? FX_GetAnimationSpeedFactor(FXLayerArgs args) => null;
+        public virtual Color? FX_GetColor(FXLayerArgs args) => null;
+        public virtual Vector3? FX_GetDrawPosition(FXLayerArgs args) => null;
+        public virtual Action<RoutedDrawArgs> FX_GetDrawAction(FXLayerArgs args) => null!;
 
-        public virtual float? FX_GetRotationSpeedAt(int index) => null;
-        public virtual Color? FX_GetColorAt(int index) => null;
-        public virtual Vector3? FX_GetDrawPositionAt(int index) => null;
-        public virtual Action<FXLayer> FX_GetActionAt(int index) => null;
-        public virtual void FX_OnEffectSpawned(string subEffecterTag) { }
+        //Effecters
+        public virtual bool? FX_ShouldThrowEffects(FXEffecterArgs args) => true;
 
+        public virtual TargetInfo FX_Effecter_TargetAOverride(FXEffecterArgs args) => null;
+
+        public virtual TargetInfo FX_Effecter_TargetBOverride(FXEffecterArgs args) => null;
+
+        public virtual void FX_OnEffectSpawned(FXEffecterSpawnedEffectEventArgs args)
+        {
+            
+        }
+        
+        #endregion
+        
         public override void ExposeData()
         {
             base.ExposeData();

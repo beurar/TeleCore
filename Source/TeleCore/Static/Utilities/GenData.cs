@@ -280,9 +280,9 @@ namespace TeleCore
                 index = layer.Index,
                 renderPriority = layer.RenderPriority,
                 layerTag = layer.data.layerTag,
+                needsPower = layer.data.needsPower,
                 categoryTag = layer.data.categoryTag,
                 data = layer.data,
-
             };
         }
     }

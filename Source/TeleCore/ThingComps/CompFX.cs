@@ -29,10 +29,11 @@ namespace TeleCore
     public class CompFX : ThingComp
     {
         private bool spawnedOnce = false;
-        private List<IFXHolder> allHeldFXComps;
+        private List<IFXLayerProvider> allHeldFXComps;
 
         //TODO: Performance comparision
-        private IFXHolder[] FXHolderByLayerIndex;
+        private IFXLayerProvider[] LayerProviderByLayerIndex;
+        private IFXEffecterProvider[] EffecterProviderByLayerIndex;
         
         //Events
         /*
@@ -59,7 +60,7 @@ namespace TeleCore
         public CompPowerTrader ParentPowerComp { get; private set; }
         public FXDefExtension GraphicExtension { get; private set; }
         public List<FXLayer> FXLayers { get; private set; }
-        //public List<FXLayer> FXLayersLogical { get; private set; }
+        public List<EffecterLayer> EffectLayers { get; private set; }
 
         public override void PostSpawnSetup(bool respawningAfterLoad)
         {
@@ -69,12 +70,14 @@ namespace TeleCore
             ParentPowerComp = parent.TryGetComp<CompPowerTrader>();
 
             //Resolve FX Parents
-            ResolveFXHolders();
+            ResolveFXLayerProviders();
+            ResolveFXEffecterProviders();
 
             //Setup Layers
             //Init Data On First Spawn
             if (!spawnedOnce)
             {
+                //Generate FXLayers
                 if (!Props.fxLayers.NullOrEmpty())
                 {
                     FXLayers = new List<FXLayer>();
@@ -89,6 +92,16 @@ namespace TeleCore
                     //Resolve priority
                     FXLayers.Sort((a,b) => a.RenderPriority < b.RenderPriority ? 1 : 0);
                 }
+
+                //Generate FXEffecters
+                if (!Props.effectLayers.NullOrEmpty())
+                {
+                    EffectLayers = new List<EffecterLayer>();
+                    for (int i = 0; i < Props.effectLayers.Count; i++)
+                    {
+                        EffectLayers.Add(new EffecterLayer(this, Props.effectLayers[i], i));
+                    }
+                }
             }
 
             //
@@ -100,12 +113,12 @@ namespace TeleCore
             base.PostExposeData();
         }
 
-        private void ResolveFXHolders()
+        private void ResolveFXLayerProviders()
         {
-            allHeldFXComps ??= new List<IFXHolder>();
+            allHeldFXComps ??= new List<IFXLayerProvider>();
 
             //Add parent if it implements the FX interface
-            if (parent is IFXHolder parentFX)
+            if (parent is IFXLayerProvider parentFX)
             {
                 allHeldFXComps.Add(parentFX);
                 PopulateEvents(parentFX);
@@ -114,7 +127,7 @@ namespace TeleCore
             //Populate Events
             foreach (var comp in parent.AllComps)
             {
-                if (comp is IFXHolder compFX)
+                if (comp is IFXLayerProvider compFX)
                 {
                     allHeldFXComps.Add(compFX);
                     PopulateEvents(compFX);
@@ -122,17 +135,17 @@ namespace TeleCore
             }
             
             //Resolve
-            FXHolderByLayerIndex = new IFXHolder[Props.fxLayers.Count];
+            LayerProviderByLayerIndex = new IFXLayerProvider[Props.fxLayers.Count];
             for (int i = 0; i < Props.fxLayers.Count; i++)
             {
                 var layerData = Props.fxLayers[i];
                 if (allHeldFXComps.NullOrEmpty())
                 {
-                    FXHolderByLayerIndex[i] = null!;
+                    LayerProviderByLayerIndex[i] = null!;
                     continue;
                 }
                 
-                FXHolderByLayerIndex[i] = allHeldFXComps.FirstOrFallback(fx => (bool)fx?.FX_ProvidesForLayer(new FXLayerArgs
+                LayerProviderByLayerIndex[i] = allHeldFXComps.FirstOrFallback(fx => (bool)fx?.FX_ProvidesForLayer(new FXLayerArgs
                 {
                     index = i,
                     renderPriority = -1,
@@ -142,7 +155,47 @@ namespace TeleCore
             }
         }
         
-        private void PopulateEvents(IFXHolder fxHolder)
+        private void ResolveFXEffecterProviders()
+        {
+            var effectProviders = new List<IFXEffecterProvider>();
+
+            //Add parent if it implements the FX interface
+            if (parent is IFXEffecterProvider parentFX)
+            {
+                effectProviders.Add(parentFX);
+                PopulateEvents(parentFX);
+            }
+
+            //Populate Events
+            foreach (var comp in parent.AllComps)
+            {
+                if (comp is IFXEffecterProvider compFX)
+                {
+                    effectProviders.Add(compFX);
+                    PopulateEvents(compFX);
+                }
+            }
+            
+            //Resolve
+            EffecterProviderByLayerIndex = new IFXEffecterProvider[Props.fxLayers.Count];
+            for (int i = 0; i < Props.effectLayers.Count; i++)
+            {
+                var effectData = Props.effectLayers[i];
+                if (allHeldFXComps.NullOrEmpty())
+                {
+                    LayerProviderByLayerIndex[i] = null!;
+                    continue;
+                }
+                
+                LayerProviderByLayerIndex[i] = allHeldFXComps.FirstOrFallback(fx => (bool)fx?.FX_ProvidesForLayer(new FXEffecterArgs()
+                {
+                    index = i,
+                    layerTag = effectData.layerTag,
+                }), null)!;
+            }
+        }
+        
+        private void PopulateEvents(IFXBase fxProvider)
         {
             // GetPowerProvider += fxHolder.FX_PowerProviderFor;
             // GetShouldDraw += fxHolder.FX_ShouldDraw;
@@ -154,9 +207,12 @@ namespace TeleCore
             // GetAction += fxHolder.FX_GetAction;
             //
             // GetShouldThrowEffects += fxHolder.FX_ShouldThrowEffects;
-            
-            //
-            EffectSpawned += fxHolder.FX_OnEffectSpawned;
+
+            if (fxProvider is IFXEffecterProvider effectProvider)
+            {
+                //
+                EffectSpawned += effectProvider.FX_OnEffectSpawned;
+            }
         }
 
         //Notification
@@ -184,9 +240,20 @@ namespace TeleCore
 
         private void FXTick(int tickInterval)
         {
-            foreach (var g in FXLayers)
+            if (FXLayers.Any())
             {
-                g.TickLayer(tickInterval);
+                foreach (var g in FXLayers)
+                {
+                    g.TickLayer(tickInterval);
+                }
+            }
+
+            if (EffectLayers.Any())
+            {
+                foreach (var effectLayer in EffectLayers)
+                {   
+                    effectLayer.Tick();
+                }
             }
         }
 
@@ -202,9 +269,9 @@ namespace TeleCore
             return true;
         }
 
-        public bool HasPower(FXLayerArgs args)
+        public bool HasPower(FXArgs args)
         {
-            if (!args.data.needsPower) return true;
+            if (!args.needsPower) return true;
             
             var provider = GetPowerProvider(args);
 
@@ -217,71 +284,95 @@ namespace TeleCore
 
             return ParentPowerComp is {PowerOn: true};
         }
-        
-        //Layer Data Getters
-        public CompPowerTrader GetPowerProvider(FXLayerArgs args)
+
+        #region Base Properties
+
+        //
+        public CompPowerTrader GetPowerProvider(FXArgs args)
         {
-            return FXHolderByLayerIndex[args.index]?.FX_PowerProviderFor(args) ?? ParentPowerComp;
-            //return GetPowerProvider.Invoke(args);
+            return LayerProviderByLayerIndex[args.index]?.FX_PowerProviderFor(args) ?? ParentPowerComp;
+        }
+
+        #endregion
+
+        #region Effecter Properties
+
+        //
+        public TargetInfo TargetAOverride(FXEffecterArgs args)
+        {
+            return EffecterProviderByLayerIndex[args.index]?.FX_Effecter_TargetAOverride(args) ?? parent;
         }
         
+        //
+        public TargetInfo TargetBOverride(FXEffecterArgs args)
+        {
+            return EffecterProviderByLayerIndex[args.index]?.FX_Effecter_TargetBOverride(args) ?? parent;
+        }
+        
+        public bool ShouldThrowEffects(FXEffecterArgs args)
+        {
+            return EffecterProviderByLayerIndex[args.index]?.FX_ShouldThrowEffects(args) ?? true;
+        }
+        
+        //
+        public void OnEffectSpawned(FXEffecterSpawnedEffectEventArgs spawnedEffectEventArgs)
+        {
+            EffectSpawned.Invoke(spawnedEffectEventArgs);
+        }
+
+        #endregion
+
+        #region Layer Properties
+
         public bool GetDrawBool(FXLayerArgs args)
         {
-            return FXHolderByLayerIndex[args.index]?.FX_ShouldDraw(args) ?? true;
+            return LayerProviderByLayerIndex[args.index]?.FX_ShouldDraw(args) ?? true;
             //return GetShouldDraw.Invoke(args);
         }
 
         public float GetOpacityFloat(FXLayerArgs args)
         {
-            return FXHolderByLayerIndex[args.index]?.FX_GetOpacity(args) ?? 1f;
+            return LayerProviderByLayerIndex[args.index]?.FX_GetOpacity(args) ?? 1f;
             //return GetOpacity.Invoke(args);
         }
 
         public float? GetRotationSpeedOverride(FXLayerArgs args)
         {
-            return FXHolderByLayerIndex[args.index]?.FX_GetRotationSpeedOverride(args);
+            return LayerProviderByLayerIndex[args.index]?.FX_GetRotationSpeedOverride(args);
         }
         
         public float GetExtraRotation(FXLayerArgs args)
         {
-            return FXHolderByLayerIndex[args.index]?.FX_GetRotation(args) ?? 0;
+            return LayerProviderByLayerIndex[args.index]?.FX_GetRotation(args) ?? 0;
             //return GetRotation.Invoke(args);
         }
 
         public float GetAnimationSpeedFactor(FXLayerArgs args)
         {
-            return FXHolderByLayerIndex[args.index]?.FX_GetAnimationSpeedFactor(args) ?? 1;
+            return LayerProviderByLayerIndex[args.index]?.FX_GetAnimationSpeedFactor(args) ?? 1;
             //return GetAnimationSpeed.Invoke(args);
         }
         
         public Color? GetColorOverride(FXLayerArgs args)
         {
-            return FXHolderByLayerIndex[args.index]?.FX_GetColor(args) ?? null;
+            return LayerProviderByLayerIndex[args.index]?.FX_GetColor(args) ?? null;
             //return GetColor.Invoke(args);
         }
 
         public Vector3? GetDrawPositionOverride(FXLayerArgs args)
         {
-            return FXHolderByLayerIndex[args.index]?.FX_GetDrawPosition(args) ?? null;
+            return LayerProviderByLayerIndex[args.index]?.FX_GetDrawPosition(args) ?? null;
             //return GetDrawPosition.Invoke(args);
         }
 
         public Action<RoutedDrawArgs> GetDrawAction(FXLayerArgs args)
         {
-            return FXHolderByLayerIndex[args.index]?.FX_GetDrawAction(args) ?? null!;
+            return LayerProviderByLayerIndex[args.index]?.FX_GetDrawAction(args) ?? null!;
             //return GetAction.Invoke(args);
         }
 
-        public bool ShouldThrowEffects(FXLayerArgs args)
-        {
-            return FXHolderByLayerIndex[args.index]?.FX_ShouldThrowEffects(args) ?? true;
-            //return GetShouldThrowEffects.Invoke(args);
-        }
-        
-        public void OnEffectSpawned(EffecterEffectSpawnedArgs effectSpawnedArgs)
-        {
-            EffectSpawned.Invoke(effectSpawnedArgs);
-        }
+        #endregion
+
         //
         public void DrawCarried(Vector3 loc)
         {

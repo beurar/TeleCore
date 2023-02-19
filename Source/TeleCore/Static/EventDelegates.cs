@@ -23,4 +23,4 @@ public delegate Vector3? FXGetDrawPositionEvent(FXLayerArgs args);
 public delegate Action<FXLayer> FXGeActionEvent(FXLayerArgs args);
 public delegate bool FXShouldThrowEffectsEvent(EffecterLayerArgs args);
 */
-public delegate void OnEffectSpawnedEvent(EffecterEffectSpawnedArgs effectSpawnedArgs);
+public delegate void OnEffectSpawnedEvent(FXEffecterSpawnedEffectEventArgs spawnedEffectEventArgs);
