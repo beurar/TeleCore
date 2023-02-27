@@ -382,11 +382,41 @@ public abstract class ValueContainerBase<TValue> : IExposable where TValue : Flo
         if (other == null) return false;
         if (!other.CanReceiveValue(valueType)) return false;
 
-        if (CanResolveTransfer(other, valueType, value, out var possibleTransfer) && TryRemoveValue(valueType, possibleTransfer, out float actualValue))
+        if (CanResolveTransfer(other, valueType, value, out var possibleTransfer))
         {
-            //If passed, try to add the actual weight removed from this container, to the other.
-            other.TryAddValue(valueType, actualValue, out actualTransferedValue);
+            if (TryRemoveValue(valueType, possibleTransfer, out float actualValue))
+            {
+                //If passed, try to add the actual weight removed from this container, to the other.
+                return other.TryAddValue(valueType, actualValue, out actualTransferedValue);;
+            }
+
+        }
+        return false;
+    }
+    
+    public bool TryConsume(float wantedValue)
+    {
+        if (TotalStored >= wantedValue)
+        {
+            float value = wantedValue;
+            var allTypes = AllStoredTypes.ToArray();
+            foreach (TValue type in allTypes)
+            {
+                if (value > 0f && TryRemoveValue(type, value, out float leftOver))
+                {
+                    value = leftOver;
+                }
+            }
             return true;
+        }
+        return false;
+    }
+
+    public bool TryConsume(TValue valueDef, float wantedValue)
+    {
+        if (StoredValueOf(valueDef) >= wantedValue)
+        {
+            return TryRemoveValue(valueDef, wantedValue, out float leftOver);
         }
         return false;
     }
