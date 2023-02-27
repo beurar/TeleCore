@@ -67,30 +67,35 @@ namespace TeleCore
         }
     }
 
-    public struct DefValue<T, V> where T : Def
+    /// <summary>
+    /// Wraps any <see cref="Def"/> Type into a struct, attaching a numeric value
+    /// </summary>
+    /// <typeparam name="TDef">The <see cref="Def"/> Type of the value.</typeparam>
+    /// <typeparam name="TValue">A numeric Type, can be <see cref="int"/> or <see cref="float"/></typeparam>
+    public struct DefValue<TDef, TValue> where TDef : Def
     {
-        public T Def { get; }
-        public V Value { get; set; }
+        public TDef Def { get; }
+        public TValue Value { get; set; }
         
-        public static explicit operator DefValue<T,V>(DefValueDef<T,V> defValue)
+        public static explicit operator DefValue<TDef,TValue>(DefValueDef<TDef,TValue> defValue)
         {
-            return new DefValue<T,V>(defValue);
+            return new DefValue<TDef,TValue>(defValue);
         }
 
-        public DefValue(DefValueDef<T,V> defValue)
+        public DefValue(DefValueDef<TDef,TValue> defValue)
         {
             this.Def = defValue.def;
             this.Value = defValue.value;
         }
 
-        public DefValue(T def, V value)
+        public DefValue(TDef def, TValue value)
         {
             this.Def = def;
             this.Value = value;
         }
 
         //Float
-        public static DefValue<T, float> operator +(DefValue<T, V> a, float b)
+        public static DefValue<TDef, float> operator +(DefValue<TDef, TValue> a, float b)
         {
             var value1 = a.Value switch
             {
@@ -99,10 +104,10 @@ namespace TeleCore
                 _ => 0
             };
 
-            return new DefValue<T, float>(a.Def, value1 + b);
+            return new DefValue<TDef, float>(a.Def, value1 + b);
         }
 
-        public static DefValue<T, float> operator -(DefValue<T, V> a, float b)
+        public static DefValue<TDef, float> operator -(DefValue<TDef, TValue> a, float b)
         {
             var value1 = a.Value switch
             {
@@ -111,21 +116,21 @@ namespace TeleCore
                 _ => 0
             };
 
-            return new DefValue<T, float>(a.Def, value1 - b);
+            return new DefValue<TDef, float>(a.Def, value1 - b);
         }
 
-        public static DefValue<T,float> operator +(DefValue<T,V> a, DefValue<T,float> b)
+        public static DefValue<TDef,float> operator +(DefValue<TDef,TValue> a, DefValue<TDef,float> b)
         {
             return a + b.Value;
         }
 
-        public static DefValue<T, float> operator -(DefValue<T, V> a, DefValue<T, float> b)
+        public static DefValue<TDef, float> operator -(DefValue<TDef, TValue> a, DefValue<TDef, float> b)
         {
             return a - b.Value;
         }
 
         //Integer
-        public static DefValue<T, int> operator +(DefValue<T, V> a, int b)
+        public static DefValue<TDef, int> operator +(DefValue<TDef, TValue> a, int b)
         {
             var value1 = a.Value switch
             {
@@ -134,20 +139,20 @@ namespace TeleCore
                 _ => 0
             };
 
-            return new DefValue<T, int>(a.Def, value1 + b);
+            return new DefValue<TDef, int>(a.Def, value1 + b);
         }
 
-        public static DefValue<T, int> operator -(DefValue<T, V> a, int b)
+        public static DefValue<TDef, int> operator -(DefValue<TDef, TValue> a, int b)
         {
             return a + (-b);
         }
 
-        public static DefValue<T, int> operator +(DefValue<T, V> a, DefValue<T, int> b)
+        public static DefValue<TDef, int> operator +(DefValue<TDef, TValue> a, DefValue<TDef, int> b)
         {
             return a + b.Value;
         }
 
-        public static DefValue<T, int> operator -(DefValue<T, V> a, DefValue<T, int> b)
+        public static DefValue<TDef, int> operator -(DefValue<TDef, TValue> a, DefValue<TDef, int> b)
         {
             return a - b.Value;
         }

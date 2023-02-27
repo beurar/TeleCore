@@ -34,9 +34,9 @@ namespace TeleCore
             return Targets(pawn.Map);
         }
 
-        private IEnumerable<Thing> Targets(Map map)
+        private static IEnumerable<Thing> Targets(Map map)
         {
-            return map.TeleCore().ThingGroupCacheInfo.ThingsOfGroup(ThingGroupDefOf.NetworkBillCrafters);
+            return map.ThingGroupCache().ThingsOfGroup(ThingGroupDefOf.NetworkBillCrafters);
         }
 
         public override bool ShouldSkip(Pawn pawn, bool forced = false)

@@ -102,6 +102,7 @@ namespace TeleCore
         private void DeregisterThingGroup(ThingGroupDef groupDef, object obj)
         {
             if (groupDef == null) return;
+            
             switch (obj)
             {
                 case Thing thing:

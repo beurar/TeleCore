@@ -23,7 +23,7 @@ public static class NetworkTransactionUtility
 
             if (Validators.StoreEvenly_EQ_Check(sender, receiver))
             {
-                ContainerTransferUtility.TryEqualizeAll(sender.Container, receiver.Container);
+                ContainerTransferUtility.TryEqualizeAll<NetworkValueDef, IContainerHolderNetwork, NetworkContainer>(sender.Container, receiver.Container);
             }
         }
         

@@ -63,15 +63,17 @@ public class ContainerTransferUtility
     }
 
     //
-    public static void TryEqualizeAll<T>(BaseContainer<T> from, BaseContainer<T> to) where T : FlowValueDef
+    public static void TryEqualizeAll<T, TH, TC>(TC from, TC to) where T : FlowValueDef
+    where TH : IContainerHolder<T, TH, TC>
+    where TC : BaseContainer<T, TH, TC>
     {
         if (!NeedsEqualizing<T>(from, to, out var flow, out var diffPct))
         {
             return;
         }
 
-        BaseContainer<T> sender   = flow == ValueFlowDirection.Positive ? from : to;
-        BaseContainer<T> receiver = flow == ValueFlowDirection.Positive ? to : from;
+        var sender   = (flow == ValueFlowDirection.Positive ? from : to);
+        var receiver = (flow == ValueFlowDirection.Positive ? to : from);
 
         var tempTypes = StaticListHolder<T>.RequestSet("EqualizingTempSet");
         tempTypes.AddRange(sender.AllStoredTypes);

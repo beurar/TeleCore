@@ -16,7 +16,7 @@ namespace TeleCore
 
         public override IEnumerable<Thing> PotentialWorkThingsGlobal(Pawn pawn)
         {
-            return pawn.Map.TeleCore().ThingGroupCacheInfo.ThingsOfGroup(TeleDefOf.NetworkPortableContainers);
+            return pawn.Map.ThingGroupCache().ThingsOfGroup(TeleDefOf.NetworkPortableContainers);
         }
 
         public override bool ShouldSkip(Pawn pawn, bool forced = false)
@@ -26,7 +26,7 @@ namespace TeleCore
         public override bool HasJobOnThing(Pawn pawn, Thing t, bool forced = false)
         {
             if (!HaulAIUtility.PawnCanAutomaticallyHaulFast(pawn, t, forced)) return false;
-            if (t is PortableContainer container)
+            if (t is PortableContainerThing container)
             {
                 return container.HasValidTarget;
             }
@@ -36,7 +36,7 @@ namespace TeleCore
 
         public override Job JobOnThing(Pawn pawn, Thing t, bool forced = false)
         {
-            PortableContainer container = t as PortableContainer;
+            PortableContainerThing container = t as PortableContainerThing;
             var job = new Job(TeleDefOf.EmptyPortableContainer, container, container.TargetToEmptyAt, container.TargetToEmptyAt.Cell);
             job.haulMode = HaulMode.Undefined;
             return job;

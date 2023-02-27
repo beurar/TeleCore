@@ -134,8 +134,36 @@ namespace TeleCore
                     return NetworkIOMode.None;
             }
         }
-
+        
+        
         private void AddIOCell<TValue>(Dictionary<char, TValue[]> forDict, NetworkIOMode mode, TValue cell)
+        {
+            // Get the key for the specified mode
+            var modeChar = CharForMode(mode);
+
+            // Try to retrieve the existing array for the mode
+            if (forDict.TryGetValue(modeChar, out TValue[] existingArr))
+            {
+                // If the array already exists, create a new array with enough space for the new cell
+                TValue[] newArr = new TValue[existingArr.Length + 1];
+
+                // Copy the existing cells into the new array
+                Array.Copy(existingArr, newArr, existingArr.Length);
+
+                // Add the new cell to the end of the new array
+                newArr[existingArr.Length] = cell;
+
+                // Replace the existing array with the new array in the dictionary
+                forDict[modeChar] = newArr;
+            }
+            else
+            {
+                TValue[] newArr = { cell };
+                forDict.Add(modeChar, newArr);
+            }
+        }
+
+        /*private void AddIOCell<TValue>(Dictionary<char, TValue[]> forDict, NetworkIOMode mode, TValue cell)
         {
             //Get Mode Key
             var modeChar = CharForMode(mode);
@@ -159,7 +187,7 @@ namespace TeleCore
             //Set new array
             newArr ??= new TValue[1] {cell};
             forDict[modeChar] = newArr;
-        }
+        }*/
 
         //
         private void GenerateIOCells()

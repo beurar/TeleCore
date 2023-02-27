@@ -282,8 +282,8 @@ namespace TeleCore
                 if (newStack.TotalValue > 0)
                 {
                     TLog.Warning($"Stack not empty ({newStack.TotalValue}) after refunding... dropping container.");
-                    PortableContainer container = (PortableContainer)ThingMaker.MakeThing(portableDef);
-                    container.SetupProperties(netComp.NetworkDef, new NetworkContainer(container, newStack),new ContainerProperties()
+                    PortableContainerThing container = (PortableContainerThing)ThingMaker.MakeThing(portableDef);
+                    container.SetupProperties(netComp.NetworkDef, newStack,new ContainerProperties()
                     {
                         maxStorage = Mathf.RoundToInt(newStack.TotalValue)
                     });

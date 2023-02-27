@@ -51,12 +51,18 @@ namespace TeleCore
             teleMapComps[mapComp.map.uniqueID] = mapComp;
         }
 
+        //
         public static MapComponent_TeleCore TeleCore(this Map map)
         {
             if (map != null) return teleMapComps[map.uniqueID];
             
             TLog.Warning("Map is null for TeleCore MapComp getter");
             return null;
+        }
+        
+        public static ThingGroupCacheInfo ThingGroupCache(this Map map)
+        {
+            return map.TeleCore().ThingGroupCacheInfo;
         }
 
         public static WorldComp_Tele WorldCompTele()

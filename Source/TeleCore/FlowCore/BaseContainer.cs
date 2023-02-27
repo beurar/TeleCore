@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using UnityEngine;
@@ -12,40 +13,35 @@ internal enum ContainerMode
     ByCapacity
 }
 
-public struct ContainerFilterSettings
+public struct FlowValueFilterSettings
 {
     public bool canReceive = true;
     public bool canStore = true;
 
-    public ContainerFilterSettings()
+    public FlowValueFilterSettings()
     {
     }
 }
 
-public class BaseContainer<T> : IExposable where T : FlowValueDef
+public abstract class BaseContainer<TValue> : IExposable where TValue : FlowValueDef
 {
     //Local Set Data
-    private IContainerHolder<T> _parentHolder = null!;
-
-    //
     private float _capacity;
-    private List<T> _acceptedTypes;
+    private List<TValue> _acceptedTypes;
 
     //
     protected Color _colorInt;
     protected float _totalStoredCache;
-    protected HashSet<T> _storedTypeCache = new();
-    protected Dictionary<T, ContainerFilterSettings> filterSettings = new();
-    protected Dictionary<T, float> _storedValues = new();
+    protected HashSet<TValue> _storedTypeCache = new();
+    protected Dictionary<TValue, FlowValueFilterSettings> filterSettings = new();
+    protected Dictionary<TValue, float> _storedValues = new();
 
-    public DefValueStack<T> ValueStack { get; protected set; }
+    public DefValueStack<TValue> ValueStack { get; protected set; }
 
     //
-    public IContainerHolder<T> Parent => _parentHolder;
-    public IContainerHolderThing<T> ThingParent => _parentHolder as IContainerHolderThing<T> ?? null!;
-    public IContainerHolderRoom<T> RoomParent => _parentHolder as IContainerHolderRoom<T> ?? null!;
+    public IContainerHolderUniversal<TValue, BaseContainer<TValue>> Parent { get; private set; }
     
-    public Thing ParentThing => ThingParent.Thing ?? null!;
+    
     public ContainerProperties? Props => Parent?.ContainerProps;
     public string Title => Parent.ContainerTitle;
     public Color Color => _colorInt;
@@ -60,24 +56,17 @@ public class BaseContainer<T> : IExposable where T : FlowValueDef
     public bool Empty => TotalStored <= 0;
     public bool Full => TotalStored >= Capacity;
 
-    //
+    //States
     public bool ContainsForbiddenType => AllStoredTypes.Any(t => !CanHoldValue(t));
-
+    
     //
-    public bool HasThingParent => _parentHolder is IContainerHolderThing<T>;
-    public bool HasNetworkParent => _parentHolder is IContainerHolderNetworkPart<T>;
-    public bool HasRoomParent => _parentHolder is IContainerHolderRoom<T>;
+    public TValue CurrentMainValueType => _storedValues.MaxBy(x => x.Value).Key;
+    public Dictionary<TValue, float> StoredValuesByType => _storedValues;
+    public Dictionary<TValue, FlowValueFilterSettings> FilterSettings => filterSettings;
 
-    public T MainValueDef => _storedValues.MaxBy(x => x.Value).Key;
-    public Dictionary<T, float> StoredValuesByType => _storedValues;
-    public Dictionary<T, ContainerFilterSettings> FilterSettings => filterSettings;
+    public HashSet<TValue> AllStoredTypes => _storedTypeCache;
 
-    public HashSet<T> AllStoredTypes
-    {
-        get { return _storedTypeCache ??= new HashSet<T>(); }
-    }
-
-    public List<T> AcceptedTypes
+    public List<TValue> AcceptedTypes
     {
         get => _acceptedTypes;
         set => _acceptedTypes = value;
@@ -85,86 +74,81 @@ public class BaseContainer<T> : IExposable where T : FlowValueDef
 
     //Type-Based States
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public virtual float CapacityOf(T def)
+    public virtual float CapacityOf(TValue def)
     {
         return _capacity;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public float TotalStoredOf(T def)
+    public float TotalStoredOf(TValue def)
     {
         if (def == null) return 0;
         return _storedValues.GetValueOrDefault(def, 0f);
     }
     
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public float TotalStoredOfMany(IEnumerable<T> defs)
+    public float TotalStoredOfMany(IEnumerable<TValue> defs)
     {
         return defs.Sum(TotalStoredOf);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public float StoredPercentOf(T def)
+    public float StoredPercentOf(TValue def)
     {
         return TotalStoredOf(def) / Mathf.Ceil(CapacityOf(def));
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public bool IsFull(T def)
+    public bool IsFull(TValue def)
     {
         if (def.sharesCapacity) return Full;
         return TotalStoredOf(def) >= _capacity;
     }
 
     #region Constructors
-    
-    public BaseContainer()
-    {
-    }
 
-    public BaseContainer(IContainerHolder<T> parent)
+    public BaseContainer(THolder parent)
     {
-        _parentHolder = parent;
+        Parent = parent;
         _capacity = Props?.maxStorage ?? 0;
     }
 
-    public BaseContainer(IContainerHolder<T> parent, DefValueStack<T> valueStack)
+    public BaseContainer(THolder parent, DefValueStack<TValue> valueStack)
     {
-        _parentHolder = parent;
+        Parent = parent;
         _capacity = Props.maxStorage;
         AcceptedTypes = valueStack.AllTypes.ToList();
         foreach (var type in AcceptedTypes)
         {
-            FilterSettings.Add(type, new ContainerFilterSettings());
+            FilterSettings.Add(type, new FlowValueFilterSettings());
         }
 
         //
         Data_LoadFromStack(valueStack);
     }
 
-    public BaseContainer(IContainerHolder<T> parent, List<T> acceptedTypes)
+    public BaseContainer(THolder parent, List<TValue> acceptedTypes)
     {
-        _parentHolder = parent;
+        Parent = parent;
         _capacity = Props.maxStorage;
         if (!acceptedTypes.NullOrEmpty())
         {
             AcceptedTypes = acceptedTypes;
             foreach (var type in AcceptedTypes)
             {
-                FilterSettings.Add(type, new ContainerFilterSettings());
+                FilterSettings.Add(type, new FlowValueFilterSettings());
             }
         }
         else
         {
-            TLog.Warning($"Created NetworkContainer for {ParentThing} without any allowed types!");
+            TLog.Warning($"Created NetworkContainer without any allowed types!");
         }
-        //TLog.Message($"Creating new container for {Parent?.Thing} with capacity {Capacity} | acceptedTypes: {this.AcceptedTypes.ToStringSafeEnumerable()}");
     }
     
     #endregion
     
     //
-    public virtual void Notify_AddedValue(T valueType, float value)
+    public virtual void Notify_AddedValue(TValue valueType, float value)
     {
         _totalStoredCache += value;
         AllStoredTypes.Add(valueType);
@@ -173,7 +157,7 @@ public class BaseContainer<T> : IExposable where T : FlowValueDef
         UpdateContainerState();
     }
 
-    public virtual void Notify_RemovedValue(T valueType, float value)
+    public virtual void Notify_RemovedValue(TValue valueType, float value)
     {
         _totalStoredCache -= value;
         if (AllStoredTypes.Contains(valueType) && TotalStoredOf(valueType) <= 0)
@@ -199,7 +183,7 @@ public class BaseContainer<T> : IExposable where T : FlowValueDef
     public void Data_Fill(float toCapacity)
     {
         float val = toCapacity / AcceptedTypes.Count;
-        foreach (T def in AcceptedTypes)
+        foreach (TValue def in AcceptedTypes)
         {
             TryAddValue(def, val, out float e);
         }
@@ -210,7 +194,7 @@ public class BaseContainer<T> : IExposable where T : FlowValueDef
         _capacity = newCapacity;
     }
 
-    public void Data_LoadFromStack(DefValueStack<T> stack)
+    public void Data_LoadFromStack(DefValueStack<TValue> stack)
     {
         Data_Clear();
         foreach (var def in stack.values)
@@ -224,25 +208,32 @@ public class BaseContainer<T> : IExposable where T : FlowValueDef
         Parent?.Notify_ContainerFull();
     }
     
-    public void Notify_FilterChanged(T def, ContainerFilterSettings settings)
+    public void Notify_FilterChanged(TValue def, FlowValueFilterSettings settings)
     {
         FilterSettings[def] = settings;
     }
 
     //
-    public BaseContainer<T> Copy(IContainerHolder<T> newHolder = null!)
+    public TOtherContainer Copy<TOtherContainer, TOtherHolder>(IContainerHolderBase newHolder)
+    where TOtherContainer : BaseContainer<TValue, TOtherHolder, TOtherContainer>
+    where TOtherHolder : IContainerHolder<TValue, TOtherHolder, TOtherContainer>
     {
-        BaseContainer<T> newContainer = new BaseContainer<T>();
-        newContainer._parentHolder = newHolder ?? _parentHolder;
+        var newContainer = (TOtherContainer) Activator.CreateInstance(typeof(TOtherContainer), newHolder);
+        newContainer.Parent = (TOtherHolder)newHolder;
+        if (newContainer.Parent == null)
+        {
+            newContainer.Parent = (TOtherHolder?) (Parent as IContainerHolder<TValue, TOtherHolder, TOtherContainer>) ?? default!;
+
+        }
         newContainer._capacity = _capacity;
         newContainer._totalStoredCache = TotalStored;
         newContainer._colorInt = _colorInt;
 
         //Copy Lists
-        _acceptedTypes ??= new List<T>();
-        _storedTypeCache ??= new HashSet<T>();
-        filterSettings ??= new Dictionary<T, ContainerFilterSettings>();
-        _storedValues ??= new Dictionary<T, float>();
+        _acceptedTypes ??= new List<TValue>();
+        _storedTypeCache ??= new HashSet<TValue>();
+        filterSettings ??= new Dictionary<TValue, FlowValueFilterSettings>();
+        _storedValues ??= new Dictionary<TValue, float>();
         newContainer._acceptedTypes.AddRange(_acceptedTypes);
         newContainer._storedTypeCache.AddRange(_storedTypeCache);
         newContainer.filterSettings.AddRange(filterSettings);
@@ -253,30 +244,35 @@ public class BaseContainer<T> : IExposable where T : FlowValueDef
         newContainer.UpdateContainerState(true);
         return newContainer;
     }
+    
+    public TContainer Copy(IContainerHolderBase newHolder = default)
+    {
+        return Copy<TContainer, THolder>(newHolder);
+    }
 
     //Value Funcs
-    public virtual bool AcceptsValue(T valueType)
+    public virtual bool AcceptsValue(TValue valueType)
     {
         return FilterSettings.TryGetValue(valueType, out var settings) && settings.canReceive;
     }
     
-    public virtual bool CanHoldValue(T valueType)
+    public virtual bool CanHoldValue(TValue valueType)
     {
         return FilterSettings.TryGetValue(valueType, out var settings) && settings.canStore;
     }
 
-    public bool CanFullyTransferTo(BaseContainer<T> other, float value)
+    public bool CanFullyTransferTo(TContainer other, float value)
     {
         return other.TotalStored + value <= other.Capacity;
     }
-    public bool CanFullyTransferTo(BaseContainer<T> other, T valueDef, float value)
+    public bool CanFullyTransferTo(TContainer other, TValue valueDef, float value)
     {
         //Check Tag Rules
         if (_storedValues.TryGetValue(valueDef) < value) return false;
         return other.TotalStoredOf(valueDef) + value <= other.CapacityOf(valueDef);
     }
     
-    public virtual bool CanAccept(T valueDef)
+    public virtual bool CanAccept(TValue valueDef)
     {
         if (IsFull(valueDef)) return false;
           
@@ -295,7 +291,7 @@ public class BaseContainer<T> : IExposable where T : FlowValueDef
         return true;
     }
     
-    public bool PotentialCapacityFull(T valueType, float potentialVal, out bool overfilled)
+    public bool PotentialCapacityFull(TValue valueType, float potentialVal, out bool overfilled)
     {
         float val = potentialVal;
         foreach (var type2 in AllStoredTypes)
@@ -318,13 +314,13 @@ public class BaseContainer<T> : IExposable where T : FlowValueDef
     }
     */
 
-    public float GetMaxTransferRate(T valueDef, float desiredValue)
+    public float GetMaxTransferRate(TValue valueDef, float desiredValue)
     {
         return Mathf.Clamp(desiredValue, 0, CapacityOf(valueDef) - TotalStoredOf(valueDef));
     }
     
     // Value Functions
-    public bool TryAddValue(T valueType, float wantedValue, out float actualValue)
+    public bool TryAddValue(TValue valueType, float wantedValue, out float actualValue)
     {
         if (!ShouldAddValue(valueType, wantedValue))
         {
@@ -360,7 +356,7 @@ public class BaseContainer<T> : IExposable where T : FlowValueDef
         return true;
     }
 
-    public bool TryRemoveValue(T valueType, float wantedValue, out float actualValue)
+    public bool TryRemoveValue(TValue valueType, float wantedValue, out float actualValue)
     {
         if (!ShouldRemoveValue(valueType, wantedValue))
         {
@@ -392,18 +388,18 @@ public class BaseContainer<T> : IExposable where T : FlowValueDef
     }
     
     //
-    protected virtual bool ShouldAddValue(T valueType, float wantedValue)
+    protected virtual bool ShouldAddValue(TValue valueType, float wantedValue)
     {
         return true;
     }
     
-    protected virtual bool ShouldRemoveValue(T valueType, float wantedValue)
+    protected virtual bool ShouldRemoveValue(TValue valueType, float wantedValue)
     {
         return true;
     }
 
     //
-    public void TransferAllTo(BaseContainer<T> otherContainer)
+    public void TransferAllTo(TContainer otherContainer)
     {
         foreach (var type in AllStoredTypes)
         {
@@ -411,7 +407,7 @@ public class BaseContainer<T> : IExposable where T : FlowValueDef
         }
     }
     
-    public void TryTransferTo(BaseContainer<T> otherContainer, float value)
+    public void TryTransferTo(TContainer otherContainer, float value)
     {
         for (int i = AllStoredTypes.Count - 1; i >= 0; i--)
         {
@@ -419,7 +415,7 @@ public class BaseContainer<T> : IExposable where T : FlowValueDef
         }
     }
 
-    public bool TryTransferTo(BaseContainer<T> otherContainer, T valueType, float value, out float actualTransferedValue)
+    public bool TryTransferTo(TContainer otherContainer, TValue valueType, float value, out float actualTransferedValue)
     {
         //Attempt to transfer a weight to another container
         //Check if anything of that type is stored, check if transfer of weight is possible without loss, try remove the weight from this container
@@ -440,7 +436,7 @@ public class BaseContainer<T> : IExposable where T : FlowValueDef
         {
             float value = wantedValue;
             var allTypes = AllStoredTypes.ToArray();
-            foreach (T type in allTypes)
+            foreach (TValue type in allTypes)
             {
                 if (value > 0f && TryRemoveValue(type, value, out float leftOver))
                 {
@@ -452,7 +448,7 @@ public class BaseContainer<T> : IExposable where T : FlowValueDef
         return false;
     }
 
-    public bool TryConsume(T valueDef, float wantedValue)
+    public bool TryConsume(TValue valueDef, float wantedValue)
     {
         if (TotalStoredOf(valueDef) >= wantedValue)
         {
@@ -462,16 +458,22 @@ public class BaseContainer<T> : IExposable where T : FlowValueDef
     }
     
     //Visual
-    public virtual Color ColorFor(T def)
+    public virtual Color ColorFor(TValue def)
     {
         return Color.white;
     }
 
     public virtual void UpdateContainerState(bool updateMetaData = false)
     {
-        //Set Stack
-        ValueStack = new DefValueStack<T>(_storedValues);
+        //Cache previous stack
+        var previous = ValueStack;
+        
+        //Set New Values Onto Stack
+        ValueStack = new DefValueStack<TValue>(_storedValues);
 
+        //Get Delta
+        var stackDelta = previous - ValueStack;
+        
         //Update metadata
         if (updateMetaData)
         {
@@ -488,9 +490,9 @@ public class BaseContainer<T> : IExposable where T : FlowValueDef
                 _colorInt += ColorFor(value.Key) * (value.Value / Capacity);
             }
         }
-
+        
         //
-        Parent?.Notify_ContainerStateChanged();
+        Parent?.Notify_ContainerStateChanged(new NotifyContainerChangedArgs<TValue>(stackDelta, ValueStack));
     }
 
     //

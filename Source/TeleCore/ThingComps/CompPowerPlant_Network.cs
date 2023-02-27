@@ -7,89 +7,89 @@ using RimWorld;
 using UnityEngine;
 using Verse;
 
-namespace TeleCore
+namespace TeleCore;
+
+public class CompPowerPlant_Network : CompPowerPlant
 {
-    //TODO: YouTrack TR-6
-    public class CompPowerPlant_Network : CompPowerPlant
+    private int powerTicksRemaining;
+    private float internalPowerOutput = 0f;
+
+    private Comp_NetworkStructure _compNetworkStructure;
+    private NetworkSubPart _networkComponent;
+
+    public new CompProperties_NetworkStructurePowerPlant Props =>
+        (CompProperties_NetworkStructurePowerPlant) base.Props;
+
+    public bool GeneratesPowerNow => powerTicksRemaining > 0;
+    public override float DesiredPowerOutput => internalPowerOutput;
+
+    public override void PostExposeData()
     {
-        private int powerTicksRemaining;
-        private float internalPowerOutput = 0f;
+        base.PostExposeData();
+        //Scribe_Values.Look(ref powerProductionTicks, "powerTicks");
+    }
 
-        private Comp_NetworkStructure _compNetworkStructure;
-        private NetworkSubPart _networkComponent;
-        
-        public new CompProperties_NetworkStructurePowerPlant Props => (CompProperties_NetworkStructurePowerPlant)base.Props;
+    public override void PostSpawnSetup(bool respawningAfterLoad)
+    {
+        base.PostSpawnSetup(respawningAfterLoad);
+        _compNetworkStructure = parent.GetComp<Comp_NetworkStructure>();
+        _networkComponent = _compNetworkStructure[Props.fromNetwork];
+    }
 
-        public bool GeneratesPowerNow => powerTicksRemaining > 0;
-        public override float DesiredPowerOutput => internalPowerOutput;
+    public override void CompTick()
+    {
+        base.CompTick();
+        PowerTick();
+    }
 
-        public override void PostExposeData()
+    private void PowerTick()
+    {
+        base.CompTick();
+        if (!PowerOn || Props.valueToTickRules.NullOrEmpty())
         {
-            base.PostExposeData();
-            //Scribe_Values.Look(ref powerProductionTicks, "powerTicks");
+            internalPowerOutput = 0f;
+            return;
         }
 
-        public override void PostSpawnSetup(bool respawningAfterLoad)
+        if (_networkComponent.Container.NotEmpty)
         {
-            base.PostSpawnSetup(respawningAfterLoad);
-            _compNetworkStructure = parent.GetComp<Comp_NetworkStructure>();
-            _networkComponent = _compNetworkStructure[Props.fromNetwork];
-        }
-
-        public override void CompTick()
-        {
-            base.CompTick();
-            PowerTick();
-        }
-
-        private void PowerTick()
-        {
-            base.CompTick();
-            if (!PowerOn || Props.valueToTickRules.NullOrEmpty())
+            foreach (var conversion in Props.valueToTickRules)
             {
-                internalPowerOutput = 0f;
-                return;
-            }
-
-            if (_networkComponent.Container.NotEmpty)
-            {
-                foreach (var conversion in Props.valueToTickRules)
+                if (_networkComponent.Container.TotalStoredOf(conversion.valueDef) <= 0) continue;
+                if (_networkComponent.Container.TryConsume(conversion.valueDef, conversion.cost))
                 {
-                    if (_networkComponent.Container.TotalStoredOf(conversion.valueDef) <= 0) continue;
-                    if (_networkComponent.Container.TryConsume(conversion.valueDef, conversion.cost))
-                    {
-                        powerTicksRemaining += Mathf.RoundToInt(conversion.seconds.SecondsToTicks());
-                    }
+                    powerTicksRemaining += Mathf.RoundToInt(conversion.seconds.SecondsToTicks());
                 }
             }
-
-            if (powerTicksRemaining > 0)
-            {
-                internalPowerOutput = -base.Props.basePowerConsumption;
-                powerTicksRemaining--;
-            }
         }
 
-        public override string CompInspectStringExtra()
+        if (powerTicksRemaining > 0)
         {
-            StringBuilder sb = new StringBuilder();
-            sb.AppendLine(base.CompInspectStringExtra());
-            if (GeneratesPowerNow)
-                sb.AppendLine("TR_PowerLeft".Translate(powerTicksRemaining.ToStringTicksToPeriod()));
-            return sb.ToString().TrimEndNewlines();
+            internalPowerOutput = -base.Props.basePowerConsumption;
+            powerTicksRemaining--;
         }
     }
-    
-    public class CompProperties_NetworkStructurePowerPlant : CompProperties_Power
-    {
-        public NetworkDef fromNetwork;
-        public List<ValueConversion> valueToTickRules;
-    }
 
-    public class ValueConversion
+    public override string CompInspectStringExtra()
     {
-        public NetworkValueDef valueDef;
-        public float cost;
-        public float seconds;
+        StringBuilder sb = new StringBuilder();
+        sb.AppendLine(base.CompInspectStringExtra());
+        if (GeneratesPowerNow)
+            sb.AppendLine("TR_PowerLeft".Translate(powerTicksRemaining.ToStringTicksToPeriod()));
+        return sb.ToString().TrimEndNewlines();
     }
 }
+
+public class CompProperties_NetworkStructurePowerPlant : CompProperties_Power
+{
+    public NetworkDef fromNetwork;
+    public List<ValueConversion> valueToTickRules;
+}
+
+public class ValueConversion
+{
+    public NetworkValueDef valueDef;
+    public float cost;
+    public float seconds;
+}
+

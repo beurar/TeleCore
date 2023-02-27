@@ -13,27 +13,26 @@ namespace TeleCore
     /// <summary>
     /// Temporary <see cref="NetworkContainer"/> holder spawned upon deconstruction of a <see cref="Building"/> containing a <see cref="Comp_NetworkStructure"/> comp.
     /// </summary>
-    public class PortableContainer : FXThing, IContainerHolder<NetworkValueDef>
+    public class PortableContainerThing : FXThing, IContainerHolderNetworkThing
     {
         private NetworkDef networkDef;
-        private NetworkContainer container;
+        private NetworkContainerThing container;
         private ContainerProperties containerProps;
 
         //Target Request
         private TargetingParameters paramsInt;
         private LocalTargetInfo currentDesignatedTarget = LocalTargetInfo.Invalid;
 
+        //Container Holder
         public string ContainerTitle => "TELE.PortableContainer.Title".Translate();
+        public ContainerProperties ContainerProps => containerProps;
+        public NetworkContainerThing Container => container;
         public Thing Thing => this;
+        public bool ShowStorageForThingGizmo => true;
 
         public NetworkDef NetworkDef => networkDef;
-        public ContainerProperties ContainerProps => containerProps;
         public float EmptyPercent => Container.StoredPercent - 1f;
 
-        //
-        BaseContainer<NetworkValueDef> IContainerHolder<NetworkValueDef>.Container => Container;
-        public NetworkContainer Container => container;
-        
         //Target Request
         public LocalTargetInfo TargetToEmptyAt => currentDesignatedTarget;
         public bool HasValidTarget => currentDesignatedTarget.IsValid;
@@ -67,12 +66,21 @@ namespace TeleCore
         }
 
         //Setup
-        public void SetupProperties(NetworkDef networkDef, NetworkContainer container, ContainerProperties props)
+        public void SetupProperties(NetworkDef previousNetwork, NetworkContainer container, ContainerProperties props)
         {
-            this.networkDef = networkDef;
-            this.container = container;
+            this.networkDef = previousNetwork;
+            this.container = container.Copy<NetworkContainerThing, IContainerHolderNetworkThing>(this);
             this.containerProps = props.Copy();
             this.containerProps.leaveContainer = false;
+        }
+        
+        public void SetupProperties(NetworkDef networkDef, DefValueStack<NetworkValueDef> valueStack, ContainerProperties props)
+        {
+            this.networkDef = networkDef;
+            this.container = new NetworkContainerThing(this, valueStack);
+            this.containerProps = props.Copy();
+            this.containerProps.leaveContainer = false;
+
         }
 
         //

@@ -232,24 +232,30 @@ namespace TeleCore
                 var contentRect = UILayout["ContentRect"];
                 var selectorRect = contentRect.LeftHalf().TopPartPixels(25);
 
-                if (Widgets.ButtonText(selectorRect, parentComp.RequesterMode.ToString()))
+                if (Widgets.ButtonText(selectorRect, parentComp.Requester.Mode.ToString()))
                 {
                     FloatMenu menu = new FloatMenu(new List<FloatMenuOption>()
                     {
-                        new (RequesterMode.Automatic.ToString(), delegate { parentComp.RequesterMode = RequesterMode.Automatic;}),
-                        new (RequesterMode.Manual.ToString(), delegate { parentComp.RequesterMode = RequesterMode.Manual;}),
+                        new (RequesterMode.Automatic.ToString(), delegate { parentComp.Requester.SetMode(RequesterMode.Automatic);}),
+                        new (RequesterMode.Manual.ToString(), delegate { parentComp.Requester.SetMode(RequesterMode.Manual);}),
                     }, cachedStrings[3], true);
                     menu.vanishIfMouseDistant = true;
                     Find.WindowStack.Add(menu);
                 }
 
                 //Threshold
-                var requestArrowRect = UILayout["RequestSelectionRect"];
-                var getVal = parentComp.RequestedCapacityPercent;
-                Widgets.DrawLineHorizontal(requestArrowRect.x, requestArrowRect.y + requestArrowRect.height / 2, requestArrowRect.width);
-                TWidgets.DrawBarMarkerAt(requestArrowRect, getVal);
-                var setVal = (float)Math.Round(GUI.HorizontalSlider(requestArrowRect, getVal, 0.1f, 1f, GUIStyle.none, GUIStyle.none), 1);  // Widgets.HorizontalSlider(requestArrowRect, getVal, 0, 1f, true, roundTo: 0.01f);
-                parentComp.RequestedCapacityPercent = setVal;
+                var requestSliderRect = UILayout["RequestSelectionRect"];
+                /*
+                var getVal = parentComp.Requester.RequestedRange;
+                Widgets.DrawLineHorizontal(requestSliderRect.x, requestSliderRect.y + requestSliderRect.height / 2, requestSliderRect.width);
+                
+                TWidgets.DrawBarMarkerAt(requestSliderRect, getVal);
+                var setVal = (float)Math.Round(GUI.HorizontalSlider(requestSliderRect, getVal, 0.1f, 1f, GUIStyle.none, GUIStyle.none), 1);  // Widgets.HorizontalSlider(requestArrowRect, getVal, 0, 1f, true, roundTo: 0.01f);
+                 */
+                //Do min-to-max range
+                var requestRange = parentComp.Requester.RequestedRange; // = setVal;
+                Widgets.FloatRange(requestSliderRect, parentComp.GetHashCode(), ref requestRange, 0.01f, 1f);
+                parentComp.Requester.SetRange(requestRange);
             }
 
             if (parentComp.HasContainer)
@@ -357,18 +363,18 @@ namespace TeleCore
                         Rect typeFilterRect = new Rect(curX, typeSliderSetting.y - 10, 10, 10);
                         Widgets.DrawBoxSolid(typeRect, type.valueColor);
 
-                        var previous = parentComp.RequestedTypes[type];
+                        var previous = parentComp.Requester.RequestedTypes[type];
                         var previousValue = previous.Item2;
                         var previousBool = previous.Item1;
 
                         //
-                        var newValue = TWidgets.VerticalSlider(typeSliderSetting, previousValue, 0, 1f, 0.01f, parentComp.RequesterMode == RequesterMode.Manual);
+                        var newValue = TWidgets.VerticalSlider(typeSliderSetting, previousValue, 0, 1f, 0.01f, parentComp.Requester.Mode == RequesterMode.Manual);
                         Widgets.Checkbox(typeFilterRect.position, ref previousBool, 10);
                         TooltipHandler.TipRegion(typeSliderSetting, $"Value: {newValue}");
 
-                        parentComp.RequestedTypes[type] = (previousBool, newValue);
+                        parentComp.Requester.RequestedTypes[type] = (previousBool, newValue);
 
-                        var totalRequested = parentComp.RequestedTypes.Values.Sum(v => v.Item2);
+                        var totalRequested = parentComp.Requester.RequestedTypes.Values.Sum(v => v.Item2);
                         if (totalRequested > Container.Capacity)
                         {
                             if (previousValue < newValue)
@@ -376,9 +382,9 @@ namespace TeleCore
                                 foreach (var type2 in allowedTypes)
                                 {
                                     if (type2 == type) continue;
-                                    var val = parentComp.RequestedTypes[type2].Item2;
+                                    var val = parentComp.Requester.RequestedTypes[type2].Item2;
                                     val = Mathf.Lerp(val, 0, 1f - newValue);
-                                    parentComp.RequestedTypes[type2] = (parentComp.RequestedTypes[type2].Item1, val);
+                                    parentComp.Requester.RequestedTypes[type2] = (parentComp.Requester.RequestedTypes[type2].Item1, val);
                                     //val = Mathf.Lerp(0, val, 1f - Mathf.InverseLerp(0, Container.Capacity, newValue));
                                     //parentComp.RequestedTypes[type2] = Mathf.Clamp(parentComp.RequestedTypes[type2] - (diff / (parentComp.RequestedTypes.Count - 1)), 0, Container.Capacity);
                                 }
@@ -469,7 +475,7 @@ namespace TeleCore
                             itemRow.Label($"{acceptedType.LabelCap.CapitalizeFirst().Colorize(acceptedType.valueColor)}: ", 84);
                             itemRow.Highlight(84);
 
-                            parentComp.Container.Notify_FilterChanged(acceptedType, new ContainerFilterSettings()
+                            parentComp.Container.Notify_FilterChanged(acceptedType, new FlowValueFilterSettings()
                             {
                                 canReceive = canReceive,
                                 canStore = canStore
@@ -491,7 +497,7 @@ namespace TeleCore
                     }
 
                     //Paste Option
-                    var clipBoard = ClipBoardUtility.TryGetClipBoard<Dictionary<NetworkValueDef, ContainerFilterSettings>>(StringCache.NetworkFilterClipBoard);
+                    var clipBoard = ClipBoardUtility.TryGetClipBoard<Dictionary<NetworkValueDef, FlowValueFilterSettings>>(StringCache.NetworkFilterClipBoard);
                     bool clipBoardInsertActive = clipBoard != null && clipBoard.All(t => Container.AcceptedTypes.Contains(t.Key));
                     GUI.color = clipBoardInsertActive ? Color.white : Color.gray;
                     if (clipBoardInsertActive)

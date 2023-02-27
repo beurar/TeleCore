@@ -11,13 +11,13 @@ namespace TeleCore
     public class JobDriver_EmptyPortableContainer : JobDriver
     {
         //A - Container
-        private PortableContainer PortableContainer => TargetA.Thing as PortableContainer;
+        private PortableContainerThing PortableContainerThingContainer => TargetA.Thing as PortableContainerThing;
         //B - Network
         private ThingWithComps NetworkParent => TargetB.Thing as ThingWithComps;
 
-        private NetworkContainer Container => PortableContainer.Container;
+        private NetworkContainer Container => PortableContainerThingContainer.Container;
         private Comp_NetworkStructure NetworkComp => NetworkParent.GetComp<Comp_NetworkStructure>();
-        private NetworkSubPart NetworkPart => NetworkComp[PortableContainer.NetworkDef];
+        private NetworkSubPart NetworkPart => NetworkComp[PortableContainerThingContainer.NetworkDef];
         private NetworkContainer TargetContainer => NetworkPart.Container;
 
         public override bool TryMakePreToilReservations(bool errorOnFailed)
@@ -27,7 +27,7 @@ namespace TeleCore
 
         private JobCondition TransferToContainer()
         {
-            if (PortableContainer.Container.Empty) return JobCondition.Succeeded;
+            if (PortableContainerThingContainer.Container.Empty) return JobCondition.Succeeded;
             if (TargetContainer.Full) return JobCondition.Incompletable;
 
             for (int i = Container.AllStoredTypes.Count - 1; i >= 0; i--)
@@ -71,14 +71,14 @@ namespace TeleCore
                 var condition = TransferToContainer();
                 if (condition is JobCondition.Succeeded or JobCondition.Incompletable)
                 {
-                    var thing = PortableContainer;
+                    var thing = PortableContainerThingContainer;
                     EndJobWith(condition);
 
                     //
                     thing.Notify_FinishEmptyingToTarget();
                 }
             };
-            emptyContainer.WithProgressBar(TargetIndex.A, () => PortableContainer.EmptyPercent);
+            emptyContainer.WithProgressBar(TargetIndex.A, () => PortableContainerThingContainer.EmptyPercent);
             emptyContainer.defaultCompleteMode = ToilCompleteMode.Never;
             yield return emptyContainer;
         }

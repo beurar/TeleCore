@@ -12,7 +12,7 @@ using Verse;
 
 namespace TeleCore
 {
-    public class NetworkSubPart : INetworkSubPart, IContainerHolderNetworkPart<NetworkValueDef>, IExposable
+    public class NetworkSubPart : IExposable, INetworkSubPart, INetworkRequester, IContainerHolderNetwork
     {
         //
         private Gizmo_NetworkInfo networkInfoGizmo;
@@ -22,15 +22,13 @@ namespace TeleCore
         protected NetworkContainer container;
         protected NetworkPartSet directPartSet;
 
+        //Role Workers
+        private NetworkRequestWorker _requesterInt;
+        
         private NetworkDef internalDef;
         private int lastReceivedTick;
         private int receivingTicks;
         private bool drawNetworkInfo = false;
-
-        //Settings
-        private Dictionary<NetworkValueDef, (bool, float)> requestedTypes;
-        private float requestedCapacityPercent = 0.5f;
-        private RequesterMode requesterMode = RequesterMode.Automatic;
 
         //
 
@@ -40,10 +38,12 @@ namespace TeleCore
         //
         public NetworkSubPartProperties Props { get; private set; }
         public Thing Thing => Parent.Thing;
-        
+        public bool ShowStorageForThingGizmo => false;
+
         public NetworkDef NetworkDef => internalDef;
         public NetworkRole NetworkRole => Props.NetworkRole;
         public PipeNetwork Network { get; set; }
+        public INetworkSubPart Part { get; set; }
         public INetworkStructure Parent { get; private set; }
         public INetworkSubPart NetworkPart => this;
 
@@ -83,32 +83,26 @@ namespace TeleCore
         //Container
         public string ContainerTitle => "_Obsolete_";
         public ContainerProperties ContainerProps => Props.containerProps;
+
+        //BaseContainer<NetworkValueDef, IContainerHolder<NetworkValueDef>> IContainerHolder<NetworkValueDef>.Container => container1;
+
         public NetworkContainerSet ContainerSet => Network.ContainerSet;
 
-        BaseContainer<NetworkValueDef> IContainerHolder<NetworkValueDef>.Container => Container;
+        //BaseContainer<NetworkValueDef, IContainerHolder<NetworkValueDef>> IContainerHolder<NetworkValueDef>.Container => Container;
+        
         public NetworkContainer Container
         {
             get => container;
             private set => container = value;
         }
 
-        //Requester
-        public Dictionary<NetworkValueDef, (bool, float)> RequestedTypes => requestedTypes;
+        //Role Workers
+        public NetworkRequestWorker Requester => _requesterInt;
 
-        public float RequestedCapacityPercent
-        {
-            get => requestedCapacityPercent;
-            set => requestedCapacityPercent = Mathf.Clamp01(value);
-        }
-
-        public RequesterMode RequesterMode
-        {
-            get => requesterMode;
-            set => requesterMode = value;
-        }
+        #region Constructors
 
         public NetworkSubPart(){}
-
+        
         public NetworkSubPart(INetworkStructure parent)
         {
             Parent = parent;
@@ -121,6 +115,8 @@ namespace TeleCore
             internalDef = properties.networkDef;
         }
 
+        #endregion
+
         public virtual void ExposeData()
         {
             Scribe_Defs.Look(ref internalDef, "internalDef");
@@ -130,9 +126,12 @@ namespace TeleCore
                 Props = ( (Comp_NetworkStructure)Parent).Props.networks.Find(p => p.networkDef == internalDef);
             }
 
+            Scribe_Deep.Look(ref _requesterInt, nameof(_requesterInt));
+            
             if (Props.containerProps != null)
             {
-                Scribe_Values.Look(ref requestedCapacityPercent, "requesterPercent");
+                //Scribe_Values.Look(ref requestedCapacityPercent, "requesterPercent");
+                //Scribe_Values.Look(ref requestedCpacityRange, "requestedCpacityRange");
                 Scribe_Deep.Look(ref container, "container", this, Props.AllowedValues);
             }
         }
@@ -142,8 +141,9 @@ namespace TeleCore
             //Generate components
             directPartSet = new NetworkPartSet(NetworkDef, this);
 
-            RolePropertySetup();
+            RolePropertySetup(respawningAfterLoad);
             GetDirectlyAjdacentNetworkParts();
+            
             if (respawningAfterLoad) return; // IGNORING EXPOSED CONSTRUCTORS
             if (HasContainer)
                 Container = new NetworkContainer(this, Props.AllowedValues);
@@ -176,15 +176,13 @@ namespace TeleCore
             //Network.Notify_RemovePart(this);
         }
 
-        private void RolePropertySetup()
+        private void RolePropertySetup(bool respawningAfterLoad)
         {
+            if (respawningAfterLoad) return;
+            
             if (NetworkRole.HasFlag(NetworkRole.Requester))
             {
-                requestedTypes = new Dictionary<NetworkValueDef, (bool, float)>();
-                foreach (var allowedValue in Props.AllowedValuesByRole[NetworkRole.Requester])
-                {
-                    requestedTypes.Add(allowedValue, (true, 0));
-                }
+                _requesterInt = new NetworkRequestWorker(this);
             }
         }
 
@@ -282,51 +280,12 @@ namespace TeleCore
         {
         }
 
+        /// <summary>
+        /// When using the Requester NetworkRole, will pull values in according to <see cref="RequestedCpacityRange"/>.
+        /// </summary>
         protected virtual void RequesterTick()
         {
-            if (RequesterMode == RequesterMode.Automatic)
-            {
-                //Resolve..
-                //var maxVal = RequestedCapacityPercent * Container.Capacity;
-                var maxPercent = requestedCapacityPercent;
-                foreach (var valType in Props.AllowedValuesByRole[NetworkRole.Requester])
-                {
-                    //var requestedTypeValue = container.ValueForType(valType);
-                    var requestedTypeNetworkValue = Network.TotalValueFor(valType, NetworkRole.Storage);
-                    if(requestedTypeNetworkValue > 0)
-                    {
-                        var setValue = Mathf.Min(maxPercent, requestedTypeNetworkValue/Container.Capacity);
-                        var tempVal = RequestedTypes[valType];
-                        
-                        tempVal.Item2 = setValue;
-                        RequestedTypes[valType] = tempVal;
-                        maxPercent = Mathf.Clamp(maxPercent - setValue, 0, maxPercent);
-                    }
-                }
-            }
-
-            //
-            if (Container.StoredPercent >= RequestedCapacityPercent) return;
-            foreach (var requestedType in RequestedTypes)
-            {
-                //If not requested, skip
-                if (!requestedType.Value.Item1) continue;
-                if (Container.StoredPercentOf(requestedType.Key) < requestedType.Value.Item2)
-                {
-                    NetworkTransactionUtility.DoTransaction(new TransactionRequest(this,
-                        NetworkRole.Requester, NetworkRole.Storage,
-                        part =>
-                        {
-                            var partContainer = part.Container;
-                            if (partContainer.Empty) return;
-                            if (partContainer.TotalStoredOf(requestedType.Key) <= 0) return;
-                            if (partContainer.TryTransferTo(Container, requestedType.Key, 1, out _))
-                            {
-                                Notify_ReceivedValue();
-                            }
-                        }));
-                }
-            }
+            
 
             /*
             if (RequesterMode == RequesterMode.Automatic)
@@ -661,7 +620,7 @@ namespace TeleCore
         }
         
         internal static bool Debug_DrawFlowDir = false;
-        
+
         private Rot4 FlowDir
         {
             get;
