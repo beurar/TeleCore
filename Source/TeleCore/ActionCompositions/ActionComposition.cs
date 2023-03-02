@@ -55,13 +55,13 @@ namespace TeleCore
             finalAction = action;
         }
 
-        public void AddPart(Action<ActionPart> action, float? atSecond, float duration = 0)
+        public void AddPart(Action<ActionPart>? action, float? atSecond, float duration = 0)
         {
             actionParts.Add(new ActionPart(action, StartTime(atSecond), duration));
             //TLog.Debug("[" + compositionName + "]Adding Action Part at " + time + " for " + playTime + "s");
         }
 
-        public void AddPart(Action<ActionPart> action, SoundDef sound, SoundInfo info, float? atSecond, float duration = 0)
+        public void AddPart(Action<ActionPart>? action, SoundDef sound, SoundInfo info, float? atSecond, float duration = 0)
         {
             actionParts.Add(new ActionPart(action, sound, info, StartTime(atSecond), duration));
             //TLog.Debug("[" + compositionName + "]Adding Action/Sound Part at " + time + " for " + playTime + "s");

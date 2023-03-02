@@ -51,11 +51,11 @@ public class CompPowerPlant_Network : CompPowerPlant
             return;
         }
 
-        if (_networkComponent.Container.NotEmpty)
+        if (_networkComponent.Container.FillState != ContainerFillState.Empty)
         {
             foreach (var conversion in Props.valueToTickRules)
             {
-                if (_networkComponent.Container.TotalStoredOf(conversion.valueDef) <= 0) continue;
+                if (_networkComponent.Container.StoredValueOf(conversion.valueDef) <= 0) continue;
                 if (_networkComponent.Container.TryConsume(conversion.valueDef, conversion.cost))
                 {
                     powerTicksRemaining += Mathf.RoundToInt(conversion.seconds.SecondsToTicks());

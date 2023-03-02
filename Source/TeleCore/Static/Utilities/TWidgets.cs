@@ -590,7 +590,7 @@ namespace TeleCore
             Vector2 size = new Vector2(10, 10);
             foreach (var type in container.AllStoredTypes)
             {
-                Vector2 typeSize = Text.CalcSize($"{type.labelShort}: {container.TotalStoredOf(type)} ({container.StoredPercentOf(type).ToStringPercent()})");
+                Vector2 typeSize = Text.CalcSize($"{type.labelShort}: {container.StoredValueOf(type)} ({container.StoredPercentOf(type).ToStringPercent()})");
                 size.y += 10 + 2;
                 var sizeX = typeSize.x + 20;
                 if (size.x <= sizeX)
@@ -642,7 +642,7 @@ namespace TeleCore
             Text.Anchor = TextAnchor.UpperLeft;
             foreach (var type in container.AllStoredTypes)
             {
-                string label = $"{type.labelShort}: {container.TotalStoredOf(type)} ({container.StoredPercentOf(type).ToStringPercent()})";
+                string label = $"{type.labelShort}: {container.StoredValueOf(type)} ({container.StoredPercentOf(type).ToStringPercent()})";
                 Rect typeRect = new Rect(5, height, 10, 10);
                 Vector2 typeSize = Text.CalcSize(label);
                 Rect typeLabelRect = new Rect(20, height - 2, typeSize.x, typeSize.y);

@@ -94,6 +94,8 @@ namespace TeleCore
             this.Value = value;
         }
 
+        public static implicit operator DefValue<TDef, TValue>((TDef Def, TValue Value) value) => new (value.Def, value.Value);
+
         //Float
         public static DefValue<TDef, float> operator +(DefValue<TDef, TValue> a, float b)
         {

@@ -118,7 +118,8 @@ namespace TeleCore
             stack[value.Def] -= value;
             return stack;
         }
-        
+
+
         #endregion
 
         #region Stack Math

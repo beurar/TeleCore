@@ -38,6 +38,7 @@ namespace TeleCore
         //
         public NetworkSubPartProperties Props { get; private set; }
         public Thing Thing => Parent.Thing;
+        public bool ShowStorageGizmo { get; }
         public bool ShowStorageForThingGizmo => false;
 
         public NetworkDef NetworkDef => internalDef;
@@ -57,7 +58,7 @@ namespace TeleCore
         public bool NetworkActive => Network.IsWorking || !Props.requiresController;
         
         //
-        public bool HasContainer => Props.containerProps != null;
+        public bool HasContainer => Props.containerConfig != null;
         public bool HasConnection => DirectPartSet[NetworkRole.Transmitter]?.Count > 0;
         public bool HasLeak => false;
 
@@ -82,10 +83,6 @@ namespace TeleCore
 
         //Container
         public string ContainerTitle => "_Obsolete_";
-        public ContainerProperties ContainerProps => Props.containerProps;
-
-        //BaseContainer<NetworkValueDef, IContainerHolder<NetworkValueDef>> IContainerHolder<NetworkValueDef>.Container => container1;
-
         public NetworkContainerSet ContainerSet => Network.ContainerSet;
 
         //BaseContainer<NetworkValueDef, IContainerHolder<NetworkValueDef>> IContainerHolder<NetworkValueDef>.Container => Container;
@@ -128,7 +125,7 @@ namespace TeleCore
 
             Scribe_Deep.Look(ref _requesterInt, nameof(_requesterInt));
             
-            if (Props.containerProps != null)
+            if (Props.containerConfig != null)
             {
                 //Scribe_Values.Look(ref requestedCapacityPercent, "requesterPercent");
                 //Scribe_Values.Look(ref requestedCpacityRange, "requestedCpacityRange");
@@ -146,7 +143,7 @@ namespace TeleCore
             
             if (respawningAfterLoad) return; // IGNORING EXPOSED CONSTRUCTORS
             if (HasContainer)
-                Container = new NetworkContainer(this, Props.AllowedValues);
+                Container = new NetworkContainer(Props.containerConfig, this);
         }
 
         private void GetDirectlyAjdacentNetworkParts()
@@ -260,7 +257,7 @@ namespace TeleCore
                 ClearForbiddenTypesSubTick();
             }
             
-            if (ContainerProps.storeEvenly && Network.HasGraph)
+            if (Container.Config.storeEvenly && Network.HasGraph)
             {
                 NetworkTransactionUtility.DoTransaction(new TransactionRequest(this,
                     NetworkRole.Storage, NetworkRole.Storage,
@@ -336,12 +333,14 @@ namespace TeleCore
 
         private void ClearForbiddenTypesSubTick()
         {
-            if (Container.Empty) return;
+            if (Container.FillState == ContainerFillState.Empty) return;
             NetworkTransactionUtility.DoTransaction(new TransactionRequest(this,
                 NetworkRole.Storage, NetworkRole.Consumer,
                 part => NetworkTransactionUtility.Actions.TransferToOtherPurge(this, part),
-                part => NetworkTransactionUtility.Validators.PartValidator_Sender(this, part, 
-                    ePart => Container.FilterSettings.Any(pair => !pair.Value.canStore && ePart.Container.CanHoldValue(pair.Key)))));
+                part => NetworkTransactionUtility.Validators.PartValidator_Sender(this, part,
+                    ePart => FlowValueUtils.CanExchangeForbidden(Container, ePart.Container))));
+            // Container.AllStoredTypes.Any(v => !ePart.Container.GetFilterFor(v).canStore)
+            // Container.FilterSettings.Any(pair => !pair.Value.canStore && ePart.Container.CanHoldValue(pair.Key)))));
         }
         
         private void DoNetworkAction(INetworkSubPart fromPart, INetworkSubPart previous, NetworkRole ofRole, Action<INetworkSubPart> funcOnPart, Predicate<INetworkSubPart> validator)
@@ -382,7 +381,7 @@ namespace TeleCore
                 }
 
                 if (!subPart.NetworkRole.HasFlag(ofRole)) continue;
-                if (Container.Empty || subPart.Container.Full) continue;
+                if (Container.FillState == ContainerFillState.Empty || subPart.Container.FillState == ContainerFillState.Full) continue;
                 for (int i = usedTypes.Count - 1; i >= 0; i--)
                 {
                     var type = usedTypes[i];
@@ -416,16 +415,9 @@ namespace TeleCore
         }
 
         //Data Notifiers
-        public virtual void Notify_ContainerFull()
+        public virtual void Notify_ContainerStateChanged(NotifyContainerChangedArgs<NetworkValueDef> args)
         {
-        }
-
-        public virtual void Notify_ContainerStateChanged()
-        {
-        }
-
-        public void Notify_AddedContainerValue(NetworkValueDef def, float value)
-        {
+            
         }
 
         public void Notify_ReceivedValue()
@@ -499,7 +491,7 @@ namespace TeleCore
         {
             if (HasContainer && Parent.AcceptsValue(value))
             {
-                if (Container.AcceptsValue(value))
+                if (Container.CanReceiveValue(value))
                 {
                     return true;
                 }

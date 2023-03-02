@@ -26,7 +26,7 @@ namespace TeleCore
         public override bool HasJobOnThing(Pawn pawn, Thing t, bool forced = false)
         {
             if (!HaulAIUtility.PawnCanAutomaticallyHaulFast(pawn, t, forced)) return false;
-            if (t is PortableContainerThing container)
+            if (t is PortableNetworkContainer container)
             {
                 return container.HasValidTarget;
             }
@@ -36,8 +36,8 @@ namespace TeleCore
 
         public override Job JobOnThing(Pawn pawn, Thing t, bool forced = false)
         {
-            PortableContainerThing container = t as PortableContainerThing;
-            var job = new Job(TeleDefOf.EmptyPortableContainer, container, container.TargetToEmptyAt, container.TargetToEmptyAt.Cell);
+            PortableNetworkContainer networkContainer = t as PortableNetworkContainer;
+            var job = new Job(TeleDefOf.EmptyPortableContainer, networkContainer, networkContainer.TargetToEmptyAt, networkContainer.TargetToEmptyAt.Cell);
             job.haulMode = HaulMode.Undefined;
             return job;
         }

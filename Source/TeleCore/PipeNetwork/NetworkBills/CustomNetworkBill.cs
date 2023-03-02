@@ -217,16 +217,16 @@ namespace TeleCore
             DefValueStack<NetworkValueDef> stack = new DefValueStack<NetworkValueDef>();
             foreach (var value in networkCost)
             {
-                stack.PushNew(value.Def, value.Value);
+                stack += new DefValue<NetworkValueDef, float>(value.Def, value.Value);
             }
 
             foreach (var storage in storages)
             {
-                foreach (var value in stack.values)
+                foreach (var value in stack)
                 {
-                    if (storage.TotalStoredOf(value.Def) > 0 && storage.TryRemoveValue(value.Def, value.Value, out float actualVal))
+                    if (storage.StoredValueOf(value.Def) > 0 && storage.TryRemoveValue(value.Def, value.Value, out float actualVal))
                     {
-                        stack -= new DefValue<NetworkValueDef, float>(value.Def, actualVal);
+                        stack -= (value.Def, actualVal);
                     }
 
                     if (stack.TotalValue <= 0)
@@ -256,16 +256,16 @@ namespace TeleCore
             foreach (var value in networkCost)
             {
                 if(value.Def.networkDef == comp.NetworkDef)
-                    stack.PushNew(value.Def, value.Value);
+                    stack += (value.Def, value.Value);
             }
 
             foreach (var storage in storages)
             {
-                foreach (var value in stack.values)
+                foreach (var value in stack)
                 {
                     if (storage.TryAddValue(value.Def, value.Value, out float actualValue))
                     {
-                        stack -= new DefValue<NetworkValueDef, float>(value.Def, actualValue);
+                        stack -= (value.Def, actualValue);
                     }
                 }
             }
@@ -282,14 +282,7 @@ namespace TeleCore
                 if (newStack.TotalValue > 0)
                 {
                     TLog.Warning($"Stack not empty ({newStack.TotalValue}) after refunding... dropping container.");
-                    PortableContainerThing container = (PortableContainerThing)ThingMaker.MakeThing(portableDef);
-                    container.SetupProperties(netComp.NetworkDef, newStack,new ContainerProperties()
-                    {
-                        maxStorage = Mathf.RoundToInt(newStack.TotalValue)
-                    });
-                    //
-                    container.Container.UpdateContainerState(true);
-                    GenPlace.TryPlaceThing(container, billStack.ParentBuilding.Position, billStack.ParentBuilding.Map, ThingPlaceMode.Near);
+                    GenPlace.TryPlaceThing(PortableNetworkContainer.CreateFromStack(portableDef, newStack), billStack.ParentBuilding.Position, billStack.ParentBuilding.Map, ThingPlaceMode.Near);
                 }
             }
         }

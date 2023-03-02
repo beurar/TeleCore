@@ -23,4 +23,10 @@ internal static class TranslationUtil
         public static readonly string DeleteAnimFile = "TELE.AnimationTool.IO.DeleteFile".Translate();
         public static readonly string SaveAnimDef    = "TELE.AnimationTool.IO.SaveDefFile".Translate();
     }
+    
+    //
+    internal static class NetworkStrings
+    {
+        public static readonly string PortableContainer = "TELE.PortableContainer.Title".Translate();
+    }
 }

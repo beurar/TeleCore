@@ -1,41 +1,59 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using UnityEngine;
+using Verse;
 
 namespace TeleCore;
 
-
-public class NetworkContainer : BaseContainer<NetworkValueDef>
+public interface IContainerHolderNetworkThing : IContainerHolderThing<NetworkValueDef>
 {
-    #region Constructors
+    public NetworkDef NetworkDef { get; }
+}
+
+public interface IContainerHolderNetwork : IContainerHolderNetworkThing
+{
+    INetworkSubPart NetworkPart { get; }
+    NetworkContainerSet ContainerSet { get; }
+}
+
+public class NetworkContainerThing<THolder> : ValueContainerThing<NetworkValueDef, THolder>
+    where THolder : IContainerHolderNetworkThing
+{
+    public NetworkContainerThing(ContainerConfig config, THolder holder) : base(config, holder)
+    {
+    }
+}
+
+public class NetworkContainer : NetworkContainerThing<IContainerHolderNetwork>
+{
+    public NetworkContainer(ContainerConfig config, IContainerHolderNetwork holder) : base(config, holder)
+    {
+    }
     
-
-    #endregion
-
     public void Notify_ParentDestroyed(DestroyMode mode, Map previousMap)
     {
-        if (Parent == null || TotalStored <= 0 || mode == DestroyMode.Vanish) return;
+        if (Holder == null || TotalStored <= 0 || mode == DestroyMode.Vanish) return;
 
-        if (mode is DestroyMode.Deconstruct or DestroyMode.Refund && Props.leaveContainer &&
-            Parent.NetworkPart.NetworkDef.portableContainerDef != null)
+        if (mode is DestroyMode.Deconstruct or DestroyMode.Refund && Config.leaveContainer &&
+            Holder.NetworkPart.NetworkDef.portableContainerDef != null)
         {
-            var container = (PortableContainerThing) ThingMaker.MakeThing(Parent.NetworkPart.NetworkDef.portableContainerDef);
-            //var containerCopy = Copy<NetworkContainerPortable, IContainerHolderNetworkPortable>(Parent);
-            container.SetupProperties(Parent.NetworkPart.NetworkDef, this, Props);
-            GenSpawn.Spawn(container, ParentThing.Position, previousMap);
+            GenSpawn.Spawn(PortableNetworkContainer.Create(this), ParentThing.Position, previousMap);
         }
 
         if (mode is DestroyMode.KillFinalize)
         {
-            if (Props.explosionProps != null)
+            if (Config.explosionProps != null)
                 if (TotalStored > 0)
                     //float radius = Props.explosionProps.explosionRadius * StoredPercent;
                     //int damage = (int)(10 * StoredPercent);
                     //var mainTypeDef = MainValueType.dropThing;
-                    Props.explosionProps.DoExplosion(ParentThing.Position, previousMap, ParentThing);
+                    Config.explosionProps.DoExplosion(ParentThing.Position, previousMap, ParentThing);
             //GenExplosion.DoExplosion(Parent.Thing.Position, previousMap, radius, DamageDefOf.Bomb, Parent.Thing, damage, 5, null, null, null, null, mainTypeDef, 0.18f);
-            if (Props.dropContents)
+            if (Config.dropContents)
             {
                 var i = 0;
-                var drops = Get_ThingDrops().ToList();
+                var drops = GetThingDrops().ToList();
                 Predicate<IntVec3> pred = c => c.InBounds(previousMap) && c.GetEdifice(previousMap) == null;
                 var action = delegate(IntVec3 c)
                 {
@@ -55,11 +73,11 @@ public class NetworkContainer : BaseContainer<NetworkValueDef>
             }
         }
 
-        Data_Clear();
+        Clear();
     }
 
     //Virtual Functions
-    public override IEnumerable<Thing> Get_ThingDrops()
+    public override IEnumerable<Thing> GetThingDrops()
     {
         foreach (var storedValue in StoredValuesByType)
         {
@@ -72,32 +90,17 @@ public class NetworkContainer : BaseContainer<NetworkValueDef>
 
     public override void Notify_AddedValue(NetworkValueDef valueType, float value)
     {
-        Parent?.ContainerSet?.Notify_AddedValue(valueType, value, Parent.NetworkPart);
+        Holder?.ContainerSet?.Notify_AddedValue(valueType, value, Holder.NetworkPart);
         base.Notify_AddedValue(valueType, value);
 
         //
-        Parent.NetworkPart.Notify_ReceivedValue();
+        Holder.NetworkPart.Notify_ReceivedValue();
     }
 
     public override void Notify_RemovedValue(NetworkValueDef valueType, float value)
     {
-        Parent?.ContainerSet?.Notify_RemovedValue(valueType, value, Parent.NetworkPart);
+        Holder?.ContainerSet?.Notify_RemovedValue(valueType, value, Holder.NetworkPart);
         base.Notify_RemovedValue(valueType, value);
-    }
-}
-
-public class NetworkContainerThing : NetworkContainerBase<IContainerHolderNetworkThing, NetworkContainerThing>
-{
-    public NetworkContainerThing(IContainerHolderNetworkThing parent) : base(parent)
-    {
-    }
-
-    public NetworkContainerThing(IContainerHolderNetworkThing parent, DefValueStack<NetworkValueDef> valueStack) : base(parent, valueStack)
-    {
-    }
-
-    public NetworkContainerThing(IContainerHolderNetworkThing parent, List<NetworkValueDef> acceptedTypes) : base(parent, acceptedTypes)
-    {
     }
 }
 

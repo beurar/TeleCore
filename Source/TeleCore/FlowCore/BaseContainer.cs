@@ -13,16 +13,8 @@ internal enum ContainerMode
     ByCapacity
 }
 
-public struct FlowValueFilterSettings
-{
-    public bool canReceive = true;
-    public bool canStore = true;
 
-    public FlowValueFilterSettings()
-    {
-    }
-}
-
+/*
 public abstract class BaseContainer<TValue> : IExposable where TValue : FlowValueDef
 {
     //Local Set Data
@@ -287,7 +279,7 @@ public abstract class BaseContainer<TValue> : IExposable where TValue : FlowValu
                 return (1 - valPct) > totalPct;
             }
         }
-        */
+        #1#
         return true;
     }
     
@@ -312,7 +304,7 @@ public abstract class BaseContainer<TValue> : IExposable where TValue : FlowValu
         //var maxCap = other.CapacityOf(valueType) - other.TotalStoredOf(valueType);
         return Mathf.Clamp(desiredValue, 0, other.CapacityOf(valueDef) - other.TotalStoredOf(valueDef));
     }
-    */
+    #1#
 
     public float GetMaxTransferRate(TValue valueDef, float desiredValue)
     {
@@ -518,3 +510,4 @@ public abstract class BaseContainer<TValue> : IExposable where TValue : FlowValu
         yield break;
     }
 }
+*/

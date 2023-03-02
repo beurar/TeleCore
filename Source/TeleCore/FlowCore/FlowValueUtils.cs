@@ -1,17 +1,22 @@
-﻿using System.Collections.Generic;
+﻿using System.ComponentModel;
+using TeleCore.Static;
+using TeleCore.Static.Utilities;
 using UnityEngine;
 using Verse;
 
-namespace TeleCore.Static.Utilities;
+namespace TeleCore;
 
-/*
-public class ContainerTransferUtility
+public static class FlowValueUtils
 {
-    public const float MIN_EQ_VAL = 2;
-    public const float MIN_FLOAT_COMPARE = 0.01f; //0.00390625F; //0.001953125F;
-
+    internal const float MIN_EQ_VAL = 2;
+    internal const float MIN_FLOAT_COMPARE = 0.01f; //0.00390625F; //0.001953125F;
     
-    public static bool NeedsEqualizing<T,V>(BaseContainer<T> containerA, BaseContainer<V> containerB, out ValueFlowDirection flow, out float diffPct) where T : FlowValueDef where V : FlowValueDef
+    /// <summary>
+    /// Checks whether or not two containers need to be equalized.
+    /// </summary>
+    /// <param name="flow">The flow direction output relative to the first container.</param>
+    /// <param name="diffPct">The difference in content by percentage.</param>
+    public static bool NeedsEqualizing<T>(ValueContainerBase<T> containerA, ValueContainerBase<T> containerB, out ValueFlowDirection flow, out float diffPct) where T : FlowValueDef
     {
         flow = ValueFlowDirection.None;
         diffPct = 0f;
@@ -33,18 +38,13 @@ public class ContainerTransferUtility
         //return Mathf.Abs(diffPct) >= MIN_FLOAT_COMPARE;
     }
 
-    public static bool NeedsEqualizing<T>(BaseContainer<T> containerA, BaseContainer<T> containerB, out ValueFlowDirection flow, out float diffPct) where T : FlowValueDef
-    {
-        return NeedsEqualizing<T, T>(containerA, containerB, out flow, out diffPct);
-    }
-
-    public static bool NeedsEqualizing<T>(BaseContainer<T> containerA, BaseContainer<T> containerB, T def, float minDiffMargin, out ValueFlowDirection flow, out float diffPct) where T : FlowValueDef
+    public static bool NeedsEqualizing<T>(ValueContainerBase<T> containerA, ValueContainerBase<T> containerB, T def, float minDiffMargin, out ValueFlowDirection flow, out float diffPct) where T : FlowValueDef
     {
         flow = ValueFlowDirection.None;
         diffPct = 0f;
         //if (roomA.IsOutdoors && roomB.IsOutdoors) return false;
-        var fromTotal = containerA.TotalStoredOf(def);
-        var toTotal = containerB.TotalStoredOf(def);
+        var fromTotal = containerA.StoredValueOf(def);
+        var toTotal = containerB.StoredValueOf(def);
 
         var fromPct = containerA.StoredPercentOf(def);
         var toPct = containerB.StoredPercentOf(def);
@@ -63,12 +63,28 @@ public class ContainerTransferUtility
         return totalDiff >= minDiffMargin;
     }
 
-    //
-    public static void TryEqualizeAll<T, TH, TC>(TC from, TC to) where T : FlowValueDef
-    where TH : IContainerHolder<T, TH, TC>
-    where TC : BaseContainer<T, TH, TC>
+    public static bool CanExchangeForbidden<TValue>(ValueContainerBase<TValue> holder, ValueContainerBase<TValue> receiver)
+        where TValue : FlowValueDef
     {
-        if (!NeedsEqualizing<T>(from, to, out var flow, out var diffPct))
+        if (holder.FillState == ContainerFillState.Empty) return false;
+        if (!holder.ContainsForbiddenType) return false;
+        foreach (var type in holder.AcceptedTypes)
+        {
+            var filter = holder.GetFilterFor(type);
+            var filterOther = receiver.GetFilterFor(type);
+            if (!filter.canStore && filterOther.canReceive)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+    
+    //
+    public static void TryEqualizeAll<TValue>(ValueContainerBase<TValue> from, ValueContainerBase<TValue> to) where TValue : FlowValueDef
+    {
+        if (!NeedsEqualizing<TValue>(from, to, out var flow, out var diffPct))
         {
             return;
         }
@@ -76,31 +92,31 @@ public class ContainerTransferUtility
         var sender   = (flow == ValueFlowDirection.Positive ? from : to);
         var receiver = (flow == ValueFlowDirection.Positive ? to : from);
 
-        var tempTypes = StaticListHolder<T>.RequestSet("EqualizingTempSet");
+        var tempTypes = StaticListHolder<TValue>.RequestSet("EqualizingTempSet");
         tempTypes.AddRange(sender.AllStoredTypes);
         
         var smoothVal = receiver.Capacity * 0.1f * diffPct;
         foreach (var valueDef in tempTypes)
         {
-            smoothVal = (smoothVal * valueDef.FlowRate) / sender.ValueStack.values.Length;
+            smoothVal = (smoothVal * valueDef.FlowRate) / sender.ValueStack.Length;
             smoothVal = receiver.GetMaxTransferRate(valueDef, smoothVal);
             _ = sender.TryTransferTo(receiver, valueDef, smoothVal, out _); 
         }
         tempTypes.Clear();
     }
     
-    public static void TryEqualize<T>(BaseContainer<T> from, BaseContainer<T> to, T valueDef) where T : FlowValueDef
+    public static void TryEqualize<TValue>(ValueContainerBase<TValue> from, ValueContainerBase<TValue> to, TValue valueDef) where TValue : FlowValueDef
     {
         if (!NeedsEqualizing(from, to, valueDef, MIN_EQ_VAL, out var flow, out var diffPct))
         {
             return;
         }
 
-        BaseContainer<T> sender   = flow == ValueFlowDirection.Positive ? from : to;
-        BaseContainer<T> receiver = flow == ValueFlowDirection.Positive ? to : from;
+        var sender   = flow == ValueFlowDirection.Positive ? from : to;
+        var receiver = flow == ValueFlowDirection.Positive ? to : from;
 
         //Get base transfer part
-        var value = sender.TotalStoredOf(valueDef) * 0.5f;
+        var value = sender.StoredValueOf(valueDef) * 0.5f;
         var flowAmount = receiver.GetMaxTransferRate(valueDef, Mathf.CeilToInt(value * diffPct * valueDef.FlowRate));
 
         //
@@ -109,6 +125,7 @@ public class ContainerTransferUtility
             //...
         }
         
+        /*
         if (sender.CanFullyTransferTo(receiver, valueDef, flowAmount))
         {
             if (sender.TryRemoveValue(valueDef, flowAmount, out float actualVal))
@@ -116,6 +133,6 @@ public class ContainerTransferUtility
                 receiver.TryAddValue(valueDef, actualVal, out _);
             }
         }
+        */
     }
 }
-*/

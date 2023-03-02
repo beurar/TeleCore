@@ -268,7 +268,7 @@ namespace TeleCore
                 Widgets.DrawBoxSolid(BarRect, TColor.White025);
                 foreach (NetworkValueDef type in Container.AllStoredTypes)
                 {
-                    float percent = (Container.TotalStoredOf(type) / Container.Capacity);
+                    float percent = (Container.StoredValueOf(type) / Container.Capacity);
                     Rect typeRect = new Rect(xPos, BarRect.y, BarRect.width * percent, BarRect.height);
                     Color color = type.valueColor;
                     xPos += BarRect.width * percent;
@@ -276,7 +276,7 @@ namespace TeleCore
                 }
 
                 //Draw Hovered Readout
-                if (!Container.Empty && Mouse.IsOver(containerRect))
+                if (Container.FillState != ContainerFillState.Empty && Mouse.IsOver(containerRect))
                 {
                     var mousePos = Event.current.mousePosition;
                     var containerReadoutSize = TWidgets.GetNetworkValueReadoutSize(Container);
@@ -463,7 +463,7 @@ namespace TeleCore
                         float curY = scrollViewRect.y + 24;
                         foreach (var acceptedType in parentComp.Container.AcceptedTypes)
                         {
-                            var settings = parentComp.Container.FilterSettings[acceptedType];
+                            var settings = parentComp.Container.GetFilterFor(acceptedType);
                             var canReceive = settings.canReceive;
                             var canStore = settings.canStore;
                          
@@ -475,7 +475,7 @@ namespace TeleCore
                             itemRow.Label($"{acceptedType.LabelCap.CapitalizeFirst().Colorize(acceptedType.valueColor)}: ", 84);
                             itemRow.Highlight(84);
 
-                            parentComp.Container.Notify_FilterChanged(acceptedType, new FlowValueFilterSettings()
+                            parentComp.Container.SetFilterFor(acceptedType, new FlowValueFilterSettings()
                             {
                                 canReceive = canReceive,
                                 canStore = canStore
@@ -489,24 +489,25 @@ namespace TeleCore
                     }
                     Widgets.EndScrollView();
 
+                    var filterClipboardID = StringCache.NetworkFilterClipBoard + $"_{Container.ParentThing.ThingID}";
                     //Copy
                     if (Widgets.ButtonImageFitted(clipboardRect, TeleContent.Copy, Color.white))
                     {
-                        ClipBoardUtility.TrySetClipBoard(StringCache.NetworkFilterClipBoard, Container.FilterSettings.Copy());
+                        ClipBoardUtility.TrySetClipBoard(filterClipboardID, Container.GetFilterCopy());
                         SoundDefOf.Tick_High.PlayOneShotOnCamera(null);
                     }
 
                     //Paste Option
-                    var clipBoard = ClipBoardUtility.TryGetClipBoard<Dictionary<NetworkValueDef, FlowValueFilterSettings>>(StringCache.NetworkFilterClipBoard);
-                    bool clipBoardInsertActive = clipBoard != null && clipBoard.All(t => Container.AcceptedTypes.Contains(t.Key));
-                    GUI.color = clipBoardInsertActive ? Color.white : Color.gray;
-                    if (clipBoardInsertActive)
+                    //TODO: DEBUG TEST VALUE
+                    if (ClipBoardUtility.IsActive(filterClipboardID))
                     {
+                        GUI.color = Color.gray;
                         if (Widgets.ButtonImage(clipboardInsertRect, TeleContent.Paste))
                         {
+                            var clipBoard = ClipBoardUtility.TryGetClipBoard<Dictionary<NetworkValueDef, FlowValueFilterSettings>>(filterClipboardID);
                             foreach (var b in clipBoard)
                             {
-                                Container.Notify_FilterChanged(b.Key, b.Value);
+                                Container.SetFilterFor(b.Key, b.Value);
                             }
                         }
                     }
@@ -533,7 +534,7 @@ namespace TeleCore
         [SyncMethod]
         private void Debug_Clear()
         {
-            Container.Data_Clear();
+            Container.Clear();
         }
 
         [SyncMethod]

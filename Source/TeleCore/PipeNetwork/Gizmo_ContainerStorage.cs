@@ -9,10 +9,9 @@ using Verse;
 
 namespace TeleCore;
 
-public class Gizmo_ContainerStorage<TValue, THolder, TContainer> : Gizmo
-    where TValue : FlowValueDef 
-    where THolder : IContainerHolderThing<TValue, THolder, TContainer>
-    where TContainer : ContainerForThing<TValue, THolder, TContainer>
+public class Gizmo_ContainerStorage<TValue, TContainer> : Gizmo
+    where TValue : FlowValueDef
+    where TContainer : ValueContainerBase<TValue>
 {
     private TContainer container;
 
@@ -64,7 +63,7 @@ public class Gizmo_ContainerStorage<TValue, THolder, TContainer> : Gizmo
             */
             Text.Font = GameFont.Tiny;
             Text.Anchor = TextAnchor.UpperCenter;
-            Widgets.Label(rect, container.Title);
+            Widgets.Label(rect, container.Label);
             Text.Anchor = TextAnchor.MiddleCenter;
             Text.Font = GameFont.Small;
             Widgets.Label(rect, $"{Math.Round(container.TotalStored, 0)}/{container.Capacity}");
@@ -81,7 +80,7 @@ public class Gizmo_ContainerStorage<TValue, THolder, TContainer> : Gizmo
                 Widgets.DrawBoxSolid(BarRect, new Color(0.25f, 0.25f, 0.25f));
                 foreach (var type in container.AllStoredTypes)
                 {
-                    float percent = (container.TotalStoredOf(type) / container.Capacity);
+                    float percent = (container.StoredValueOf(type) / container.Capacity);
                     Rect typeRect = new Rect(2.5f + xPos, BarRect.y, BarRect.width * percent, BarRect.height);
                     Color color = type.valueColor;
                     xPos += BarRect.width * percent;
@@ -118,7 +117,7 @@ public class Gizmo_ContainerStorage<TValue, THolder, TContainer> : Gizmo
     [SyncMethod]
     private void Debug_Clear()
     {
-        container.Data_Clear();
+        container.Clear();
     }
 
     [SyncMethod]

@@ -17,15 +17,15 @@ namespace TeleCore
 {
     public class ScribeDelegate<TDelegate> : IExposable where TDelegate : Delegate
     {
-        public TDelegate @delegate;
+        public TDelegate? @delegate;
 
         public object Target => @delegate.Target;
         
-        public static explicit operator TDelegate(ScribeDelegate<TDelegate> e) => e.@delegate;
+        public static explicit operator TDelegate?(ScribeDelegate<TDelegate> e) => e.@delegate;
 
         public ScribeDelegate(){}
 
-        public ScribeDelegate(TDelegate action)
+        public ScribeDelegate(TDelegate? action)
         {
             @delegate = action;
         }
@@ -33,11 +33,11 @@ namespace TeleCore
         //Temp Scribe Data
         private static byte[] _TempBytes;
 
-        private object[] universal;
-        private List<LookMode> lookModes;
-        private List<Type> types;
+        private object[]? universal;
+        private List<LookMode>? lookModes;
+        private List<Type>? types;
 
-        private MethodInfo loadedMethod;
+        private MethodInfo? loadedMethod;
 
         public void ExposeData()
         {
@@ -46,7 +46,7 @@ namespace TeleCore
             var isCrossRef = Scribe.mode == LoadSaveMode.ResolvingCrossRefs;
             var isPostLoad = Scribe.mode == LoadSaveMode.PostLoadInit;
 
-            MethodInfo scribeTimeMethod = loadedMethod;
+            MethodInfo? scribeTimeMethod = loadedMethod;
             
             //## LoadSaving Method
             if (isSaving)
@@ -184,7 +184,7 @@ namespace TeleCore
             }
         }
 
-        private (List<Type>, List<LookMode>) LookModes(object target, FieldInfo[] infos)
+        private (List<Type>, List<LookMode>?) LookModes(object target, FieldInfo[] infos)
         {
             LookMode[] looks = new LookMode[infos.Length];
             Type[] types = new Type[infos.Length];
@@ -240,7 +240,7 @@ namespace TeleCore
     
     internal sealed class MethodConstructor
     {
-        public static byte[] Serialize(Delegate d)
+        public static byte[] Serialize(Delegate? d)
         {
             return Serialize(d.Method);
         }
@@ -253,7 +253,7 @@ namespace TeleCore
             return stream.ToArray();
         }
 
-        public static MethodInfo Deserialize(byte[] data)
+        public static MethodInfo? Deserialize(byte[] data)
         {
             using MemoryStream stream = new MemoryStream(data);
             var method = (MethodInfo)new BinaryFormatter().Deserialize(stream);

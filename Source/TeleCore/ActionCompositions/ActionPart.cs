@@ -18,7 +18,7 @@ public class ActionPart : IExposable
     private bool completed = false;
 
     //
-    private Action<ActionPart> action = null;
+    private Action<ActionPart>? action = null;
     private SoundPart sound = SoundPart.Empty;
 
     public int StartTick => startTick;
@@ -40,7 +40,7 @@ public class ActionPart : IExposable
         
     }
 
-    private ScribeDelegate<Action<ActionPart>> _ScribedDelegate;
+    private ScribeDelegate<Action<ActionPart>?> _ScribedDelegate;
 
     public void ExposeData()
     {
@@ -54,7 +54,7 @@ public class ActionPart : IExposable
         //Method
         if (Scribe.mode == LoadSaveMode.Saving)
         {
-            _ScribedDelegate = new ScribeDelegate<Action<ActionPart>>(action);
+            _ScribedDelegate = new ScribeDelegate<Action<ActionPart>?>(action);
         }
 
         Scribe_Deep.Look(ref _ScribedDelegate, "partAction");
@@ -66,7 +66,7 @@ public class ActionPart : IExposable
     }
 
     //Action Only
-    public ActionPart(Action<ActionPart> action, float startSeconds, float duration = 0f)
+    public ActionPart(Action<ActionPart>? action, float startSeconds, float duration = 0f)
     {
         this.action = action;
         this.startTick = startSeconds.SecondsToTicks();
@@ -88,7 +88,7 @@ public class ActionPart : IExposable
     }
 
     //Action & Sounds
-    public ActionPart(Action<ActionPart> action, SoundDef sound, SoundInfo info, float time, float duration = 0f)
+    public ActionPart(Action<ActionPart>? action, SoundDef sound, SoundInfo info, float time, float duration = 0f)
     {
         this.action = action;
         this.sound = new SoundPart(sound, info);

@@ -23,7 +23,8 @@ public static class NetworkTransactionUtility
 
             if (Validators.StoreEvenly_EQ_Check(sender, receiver))
             {
-                ContainerTransferUtility.TryEqualizeAll<NetworkValueDef, IContainerHolderNetwork, NetworkContainer>(sender.Container, receiver.Container);
+                FlowValueUtils.TryEqualizeAll(sender.Container, receiver.Container);
+                //ContainerTransferUtility.TryEqualizeAll(sender.Container, receiver.Container);
             }
         }
         
@@ -66,11 +67,11 @@ public static class NetworkTransactionUtility
                 TLog.Warning("Transaction receiver is null.");
                 return;
             }
-
-            var usedTypes = sender.Container.FilterSettings;
-            foreach (var type in usedTypes.Where(type => !type.Value.canStore))
+            
+            foreach (var type in sender.Container.AllStoredTypes)
             {
-                TransferToOtherSpecific(sender, receiver, type.Key);
+                if(!sender.Container.GetFilterFor(type).canStore)
+                    TransferToOtherSpecific(sender, receiver, type);
             }
         }
         
@@ -106,17 +107,17 @@ public static class NetworkTransactionUtility
             if (!sender.HasContainer || !receiver.HasContainer) return false;
             
             //Only send - we cannot request without special cases (checking path for directionality)
-            return sender.Container.StoredPercent - receiver.Container.StoredPercent >= ContainerTransferUtility.MIN_FLOAT_COMPARE;
+            return sender.Container.StoredPercent - receiver.Container.StoredPercent >= FlowValueUtils.MIN_FLOAT_COMPARE;
         }
 
         internal static bool PartValidator_Sender(INetworkSubPart sender, INetworkSubPart receiver, Predicate<INetworkSubPart> extraValidator = null)
         {
-            return (receiver.HasContainer && !receiver.Container.Full) && sender.Container.NotEmpty && (extraValidator?.Invoke(receiver) ?? true);
+            return (receiver.HasContainer && receiver.Container.FillState != ContainerFillState.Full) && sender.Container.FillState != ContainerFillState.Empty && (extraValidator?.Invoke(receiver) ?? true);
         }
         
         internal static bool PartValidator_Receiver(INetworkSubPart receiver, INetworkSubPart sender, Predicate<INetworkSubPart> extraValidator = null)
         {
-            return (sender.HasContainer && sender.Container.NotEmpty) && !receiver.Container.Full && (extraValidator?.Invoke(sender) ?? true);
+            return (sender.HasContainer && sender.Container.FillState != ContainerFillState.Empty) && receiver.Container.FillState != ContainerFillState.Full && (extraValidator?.Invoke(sender) ?? true);
         }
         
         internal static bool PartValidator_AnyWithContainer(INetworkSubPart part)

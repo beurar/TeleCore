@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -14,36 +15,48 @@ public enum ContainerFillState
     Empty
 }
 
-//Base container for value processing only
+public struct FlowValueFilterSettings
+{
+    public bool canReceive = true;
+    public bool canStore = true;
+
+    public FlowValueFilterSettings()
+    {
+    }
+}
+
+//Base Container Template for Values
 public abstract class ValueContainerBase<TValue> : IExposable where TValue : FlowValueDef
 {
     //
-    public readonly ContainerConfig _config;
+    private readonly ContainerConfig _config;
     
     //Dynamic settings
-    protected float _capacity;
+    protected float capacity;
     
     //Dynamic Data
-    protected Color _colorInt;
-    protected float _totalStoredCache;
-    protected Dictionary<TValue, float> _storedValues = new();
+    protected Color colorInt;
+    protected float totalStoredCache;
+    protected Dictionary<TValue, float> storedValues = new();
     protected Dictionary<TValue, FlowValueFilterSettings> filterSettings = new();
     
     //
     public virtual string Label => _config.containerLabel;
-    public Color Color => _colorInt;
+    public Color Color => colorInt;
     
     //Capacity Values
-    public float Capacity => _capacity;
-    public float TotalStored => _totalStoredCache;
+    public float Capacity => capacity;
+    public float TotalStored => totalStoredCache;
     public float StoredPercent => TotalStored / Capacity;
+
+    public ContainerConfig Config => _config;
     
-    //State
+    //Capacity State
     public ContainerFillState FillState
     {
         get
         {
-            return _totalStoredCache switch
+            return totalStoredCache switch
             {
                 0 => ContainerFillState.Empty,
                 var n when n >= Capacity => ContainerFillState.Full,
@@ -55,10 +68,10 @@ public abstract class ValueContainerBase<TValue> : IExposable where TValue : Flo
     public bool ContainsForbiddenType => AllStoredTypes.Any(t => !CanHoldValue(t));
 
     //Value Stuff
-    public Dictionary<TValue, float> StoredValuesByType => _storedValues;
-    public IReadOnlyCollection<TValue> AllStoredTypes => _storedValues.Keys;
+    public Dictionary<TValue, float> StoredValuesByType => storedValues;
+    public IReadOnlyCollection<TValue> AllStoredTypes => storedValues.Keys;
 
-    public TValue CurrentMainValueType => _storedValues.MaxBy(x => x.Value).Key;
+    public TValue CurrentMainValueType => storedValues.MaxBy(x => x.Value).Key;
     
     //Stack Cache
     public DefValueStack<TValue> ValueStack { get; set; }
@@ -77,7 +90,7 @@ public abstract class ValueContainerBase<TValue> : IExposable where TValue : Flo
     public float StoredValueOf(TValue def)
     {
         if (def == null) return 0;
-        return _storedValues.GetValueOrDefault(def, 0f);
+        return storedValues.GetValueOrDefault(def, 0f);
     }
     
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -107,7 +120,7 @@ public abstract class ValueContainerBase<TValue> : IExposable where TValue : Flo
     public ValueContainerBase(ContainerConfig config)
     {
         _config = config;
-        _capacity = config.baseCapacity;
+        capacity = config.baseCapacity;
         
         //Cache Types
         AcceptedTypes = new List<TValue>((IEnumerable<TValue>) config.valueDefs);
@@ -117,7 +130,13 @@ public abstract class ValueContainerBase<TValue> : IExposable where TValue : Flo
     
     public void ExposeData()
     {
+        Scribe_Collections.Look(ref filterSettings, "typeFilter");
+        Scribe_Collections.Look(ref storedValues, "storedValues");
         
+        if (Scribe.mode == LoadSaveMode.PostLoadInit)
+        {
+            Notify_ContainerStateChanged(true);
+        }
     }
 
     #region Helper Methods
@@ -185,13 +204,15 @@ public abstract class ValueContainerBase<TValue> : IExposable where TValue : Flo
         filterSettings[value] = filter;
     }
 
+    public Dictionary<TValue, FlowValueFilterSettings> GetFilterCopy() => filterSettings.Copy();
+
     #endregion
 
     #region State Notifiers
 
     public virtual void Notify_AddedValue(TValue valueType, float value)
     {
-        _totalStoredCache += value;
+        totalStoredCache += value;
 
         //Update stack state
         Notify_ContainerStateChanged();
@@ -199,10 +220,10 @@ public abstract class ValueContainerBase<TValue> : IExposable where TValue : Flo
 
     public virtual void Notify_RemovedValue(TValue valueType, float value)
     {
-        _totalStoredCache -= value;
-        if (_storedValues[valueType] <= 0)
+        totalStoredCache -= value;
+        if (storedValues[valueType] <= 0)
         {
-            _storedValues.Remove(valueType);
+            storedValues.Remove(valueType);
         }
 
         //Update stack state
@@ -215,7 +236,7 @@ public abstract class ValueContainerBase<TValue> : IExposable where TValue : Flo
         var previous = ValueStack;
         
         //Set New Values Onto Stack
-        ValueStack = new DefValueStack<TValue>(_storedValues);
+        ValueStack = new DefValueStack<TValue>(storedValues);
 
         //Get Delta
         var stackDelta = previous - ValueStack;
@@ -223,16 +244,16 @@ public abstract class ValueContainerBase<TValue> : IExposable where TValue : Flo
         //Update metadata
         if (updateMetaData)
         {
-            _totalStoredCache = ValueStack.TotalValue;
+            totalStoredCache = ValueStack.TotalValue;
         }
 
         //
-        _colorInt = Color.clear;
-        if (_storedValues.Count > 0)
+        colorInt = Color.clear;
+        if (storedValues.Count > 0)
         {
-            foreach (var value in _storedValues)
+            foreach (var value in storedValues)
             {
-                _colorInt += ColorFor(value.Key) * (value.Value / Capacity);
+                colorInt += ColorFor(value.Key) * (value.Value / Capacity);
             }
         }
 
@@ -244,15 +265,22 @@ public abstract class ValueContainerBase<TValue> : IExposable where TValue : Flo
     
     #region Data Handling
 
-    public void Debug_Data_Clear()
+    /// <summary>
+    /// Clears all values inside the container.
+    /// </summary>
+    public void Clear()
     {
-        foreach (TValue def in _storedValues.Keys)
+        foreach (TValue def in storedValues.Keys)
         {
-            TryRemoveValue(def, _storedValues[def], out _);
+            TryRemoveValue(def, storedValues[def], out _);
         }
     }
 
-    public void Debug_Data_Fill(float toCapacity)
+    /// <summary>
+    /// Fills the container equally until reaching a desired capacity.
+    /// </summary>
+    /// <param name="toCapacity"></param>
+    public void Fill(float toCapacity)
     {
         float totalValue = toCapacity - TotalStored;
         float valuePerType = totalValue / AcceptedTypes.Count;
@@ -263,19 +291,35 @@ public abstract class ValueContainerBase<TValue> : IExposable where TValue : Flo
         }
     }
 
-    public void Data_ChangeCapacity(int newCapacity)
+    public void ChangeCapacity(int newCapacity)
     {
-        _capacity = newCapacity;
+        capacity = newCapacity;
     }
 
-    public void Data_LoadFromStack(DefValueStack<TValue> stack)
+    public void LoadFromStack(DefValueStack<TValue> stack)
     {
-        //Data_Clear();
-        _storedValues.Clear();
+        Clear();
         foreach (var def in stack)
         {
             TryAddValue(def.Def, def.Value, out _);
         }
+    }
+
+    public virtual TCopy Copy<TCopy>(ContainerConfig configOverride = null)
+    where TCopy : ValueContainerBase<TValue>
+    {
+        var newContainer = (TCopy) Activator.CreateInstance(typeof(TCopy), _config);
+        newContainer.LoadFromStack(ValueStack);
+        
+        //Copy Settings
+        newContainer.filterSettings = filterSettings;
+
+        return newContainer;
+    }
+
+    public void CopyTo(ValueContainerBase<TValue> other)
+    {
+        other.LoadFromStack(ValueStack);
     }
 
     #endregion
@@ -314,13 +358,13 @@ public abstract class ValueContainerBase<TValue> : IExposable where TValue : Flo
 
         // Add the actual value to the stored values dictionary
         actualValue = wantedValue;
-        if (_storedValues.TryGetValue(valueType, out var currentValue))
+        if (storedValues.TryGetValue(valueType, out var currentValue))
         {
-            _storedValues[valueType] = currentValue + actualValue;
+            storedValues[valueType] = currentValue + actualValue;
         }
         else
         {
-            _storedValues.Add(valueType, actualValue);
+            storedValues.Add(valueType, actualValue);
         }
 
         // Notify that a value has been added
@@ -331,7 +375,7 @@ public abstract class ValueContainerBase<TValue> : IExposable where TValue : Flo
     public bool TryRemoveValue(TValue valueType, float wantedValue, out float actualValue)
     {
         if (!CanRemoveValue(valueType, wantedValue) || 
-            !_storedValues.TryGetValue(valueType, out float storedValue))
+            !storedValues.TryGetValue(valueType, out float storedValue))
         {
             actualValue = 0;
             return false;
@@ -339,11 +383,11 @@ public abstract class ValueContainerBase<TValue> : IExposable where TValue : Flo
 
         actualValue = Mathf.Min(storedValue, wantedValue); // Actual removed value can't exceed the stored value
     
-        _storedValues[valueType] -= actualValue;
+        storedValues[valueType] -= actualValue;
     
-        if (_storedValues[valueType] <= 0)
+        if (storedValues[valueType] <= 0)
         {
-            _storedValues.Remove(valueType);
+            storedValues.Remove(valueType);
         }
     
         Notify_RemovedValue(valueType, actualValue);
@@ -393,18 +437,41 @@ public abstract class ValueContainerBase<TValue> : IExposable where TValue : Flo
         }
         return false;
     }
+
+    public enum ValueMode
+    {
+        Equal,
+        TakeFirst
+    }
+
+    //TODO: Implement way to dynamically process any request function with different value approaches
+    private void Processor(Action<TValue, float> action,ValueMode mode)
+    {
+        switch (mode)
+        {
+            case ValueMode.Equal:
+                break;
+            case ValueMode.TakeFirst:
+                break;
+            default:
+                throw new ArgumentOutOfRangeException(nameof(mode), mode, null);
+        }
+        
+        
+    }
     
+    //TODO: Assume equal for now
     public bool TryConsume(float wantedValue)
     {
         if (TotalStored >= wantedValue)
         {
-            float value = wantedValue;
-            var allTypes = AllStoredTypes.ToArray();
-            foreach (TValue type in allTypes)
+            var allTypes = AllStoredTypes;
+            var equalSplit = wantedValue/allTypes.Count;
+            foreach (var type in allTypes)
             {
-                if (value > 0f && TryRemoveValue(type, value, out float leftOver))
+                if (wantedValue > 0f && TryRemoveValue(type, equalSplit, out float leftOver))
                 {
-                    value = leftOver;
+                    wantedValue = leftOver;
                 }
             }
             return true;
@@ -435,17 +502,88 @@ public abstract class ValueContainerBase<TValue> : IExposable where TValue : Flo
     }
 }
 
-//Holder Implementer
+//Container Template implementing IContainerHolder
 public abstract class ValueContainer<TValue, THolder> : ValueContainerBase<TValue>
     where TValue : FlowValueDef
-    where THolder : ITestHolder
+    where THolder : IContainerHolderBase<TValue>
 {
     public THolder Holder { get; }
 
-    protected ValueContainer(ContainerConfig config) : base(config) { }
-    
-    protected ValueContainer(ContainerConfig config, THolder holder) : this(config)
+    protected ValueContainer(ContainerConfig config, THolder holder) : base(config)
     {
         Holder = holder;
+    }
+}
+
+public abstract class ValueContainerThing<TValue, THolder> : ValueContainer<TValue, THolder>
+    where TValue : FlowValueDef
+    where THolder : IContainerHolderThing<TValue>
+{
+    //Cache
+    private Gizmo_ContainerStorage<TValue, ValueContainerThing<TValue, THolder>> containerGizmoInt = null;
+
+
+    public Gizmo_ContainerStorage<TValue, ValueContainerThing<TValue, THolder>> ContainerGizmo
+    {
+        get
+        {
+            return containerGizmoInt ??= new Gizmo_ContainerStorage<TValue, ValueContainerThing<TValue, THolder>>(this);
+        }
+    }
+    
+    public Thing ParentThing => Holder.Thing;
+    
+    protected ValueContainerThing(ContainerConfig config, THolder holder) : base(config, holder)
+    {
+    }
+    
+    public override IEnumerable<Gizmo> GetGizmos()
+    {
+        if (Capacity <= 0) yield break;
+
+
+        if (Holder.ShowStorageGizmo)
+        {
+            if (Find.Selector.NumSelected == 1 && Find.Selector.IsSelected(ParentThing)) yield return ContainerGizmo;
+        }
+        
+        /*
+        if (DebugSettings.godMode)
+        {
+            yield return new Command_Action
+            {
+                defaultLabel = $"DEBUG: Container Options {Props.maxStorage}",
+                icon = TiberiumContent.ContainMode_TripleSwitch,
+                action = delegate
+                {
+                    List<FloatMenuOption> list = new List<FloatMenuOption>();
+                    list.Add(new FloatMenuOption("Add ALL", delegate
+                    {
+                        foreach (var type in AcceptedTypes)
+                        {
+                            TryAddValue(type, 500, out _);
+                        }
+                    }));
+                    list.Add(new FloatMenuOption("Remove ALL", delegate
+                    {
+                        foreach (var type in AcceptedTypes)
+                        {
+                            TryRemoveValue(type, 500, out _);
+                        }
+                    }));
+                    foreach (var type in AcceptedTypes)
+                    {
+                        list.Add(new FloatMenuOption($"Add {type}", delegate
+                        {
+                            TryAddValue(type, 500, out var _);
+                        }));
+                    }
+                    FloatMenu menu = new FloatMenu(list, $"Add NetworkValue", true);
+                    menu.vanishIfMouseDistant = true;
+                    Find.WindowStack.Add(menu);
+                }
+            };
+        }
+        */
     }
 }

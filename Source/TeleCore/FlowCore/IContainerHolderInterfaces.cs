@@ -11,51 +11,6 @@ namespace TeleCore;
 //TODO:                                 > room
 //
 
-public interface IContainerHolderBase
-{
-    
-}
-
-/// <summary>
-/// Implements a <see cref="BaseContainer{TValue}"/> as a generic universal 
-/// </summary>
-/// <typeparam name="TValue"></typeparam>
-/// <typeparam name="TContainer"></typeparam>
-public interface IContainerHolderUniversal<TValue, out TContainer> : IContainerHolderBase
-    where TValue : FlowValueDef
-    where TContainer : BaseContainer<TValue>
-{
-    //Properties
-    public string ContainerTitle { get; }
-    public ContainerProperties ContainerProperties { get; }
-    public TContainer Container { get; }
-    
-    //Methods
-    void Notify_ContainerStateChanged(NotifyContainerChangedArgs<TValue> args);
-}
-
-
-/// <summary>
-/// Container Implementation extension which allows you to expose a <see cref="Thing"/> reference
-/// </summary>
-public interface IContainerHolderThing<TValue, out TContainer> : IContainerHolderUniversal<TValue, TContainer>
-    where TValue : FlowValueDef
-    where TContainer : BaseContainer<TValue>
-{
-    public Thing Thing { get; }
-    public bool ShowStorageForThingGizmo { get; }
-}
-
-/// <summary>
-/// Implements a container for a <see cref="Room"/>
-/// </summary>
-public interface IContainerHolderRoom<TValue, out TContainer> : IContainerHolderUniversal<TValue, TContainer>
-    where TValue : FlowValueDef
-    where TContainer : BaseContainer<TValue>
-{
-    public RoomComponent RoomComponent { get; }
-}
-
 public struct ContainerArgs
 {
     public string Name { get; }
@@ -88,25 +43,6 @@ where TValue : FlowValueDef
         if ((final.Full ?? false) && delta > 0)
             Action = NotifyContainerChangedAction.Filled;
     }
-}
-
-//Network
-public interface IContainerHolderNetworkBase<THolder, TContainer> : IContainerHolderThing<NetworkValueDef, THolder, TContainer>
-    where THolder : IContainerHolderThing<NetworkValueDef, THolder, TContainer>
-    where TContainer : ContainerForThing<NetworkValueDef, THolder, TContainer>
-{
-    
-}
-
-public interface IContainerHolderNetworkThing : IContainerHolderNetworkBase<IContainerHolderNetworkThing, NetworkContainerThing>
-{
-    
-}
-
-public interface IContainerHolderNetwork : IContainerHolderNetworkBase<IContainerHolderNetwork, NetworkContainer>
-{
-    INetworkSubPart NetworkPart { get; }
-    NetworkContainerSet ContainerSet { get; }
 }
 
 /*public class ClassA<TInterface, TClass> 

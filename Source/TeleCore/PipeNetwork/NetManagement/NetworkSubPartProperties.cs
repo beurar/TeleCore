@@ -25,7 +25,7 @@ namespace TeleCore
         //Loaded from XML
         public Type workerType = typeof(NetworkSubPart);
         public NetworkDef networkDef;
-        public ContainerProperties containerProps;
+        public ContainerConfig containerConfig;
         private NetworkValueFilter defFilter;
         //TODO: Shared Container Set Pool - to track capacity sharing
         public List<NetworkDef> shareCapacityWith;

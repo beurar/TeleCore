@@ -11,13 +11,13 @@ namespace TeleCore
     public class JobDriver_EmptyPortableContainer : JobDriver
     {
         //A - Container
-        private PortableContainerThing PortableContainerThingContainer => TargetA.Thing as PortableContainerThing;
+        private PortableNetworkContainer PortableNetworkContainerContainer => TargetA.Thing as PortableNetworkContainer;
         //B - Network
         private ThingWithComps NetworkParent => TargetB.Thing as ThingWithComps;
 
-        private NetworkContainer Container => PortableContainerThingContainer.Container;
+        private NetworkContainerThing<IContainerHolderNetworkThing> Container => PortableNetworkContainerContainer.Container;
         private Comp_NetworkStructure NetworkComp => NetworkParent.GetComp<Comp_NetworkStructure>();
-        private NetworkSubPart NetworkPart => NetworkComp[PortableContainerThingContainer.NetworkDef];
+        private NetworkSubPart NetworkPart => NetworkComp[PortableNetworkContainerContainer.NetworkDef];
         private NetworkContainer TargetContainer => NetworkPart.Container;
 
         public override bool TryMakePreToilReservations(bool errorOnFailed)
@@ -27,8 +27,8 @@ namespace TeleCore
 
         private JobCondition TransferToContainer()
         {
-            if (PortableContainerThingContainer.Container.Empty) return JobCondition.Succeeded;
-            if (TargetContainer.Full) return JobCondition.Incompletable;
+            if (PortableNetworkContainerContainer.Container.FillState == ContainerFillState.Empty) return JobCondition.Succeeded;
+            if (TargetContainer.FillState == ContainerFillState.Full) return JobCondition.Incompletable;
 
             for (int i = Container.AllStoredTypes.Count - 1; i >= 0; i--)
             {
@@ -71,14 +71,11 @@ namespace TeleCore
                 var condition = TransferToContainer();
                 if (condition is JobCondition.Succeeded or JobCondition.Incompletable)
                 {
-                    var thing = PortableContainerThingContainer;
                     EndJobWith(condition);
-
-                    //
-                    thing.Notify_FinishEmptyingToTarget();
+                    PortableNetworkContainerContainer.Notify_FinishEmptyingToTarget();
                 }
             };
-            emptyContainer.WithProgressBar(TargetIndex.A, () => PortableContainerThingContainer.EmptyPercent);
+            emptyContainer.WithProgressBar(TargetIndex.A, () => PortableNetworkContainerContainer.EmptyPercent);
             emptyContainer.defaultCompleteMode = ToilCompleteMode.Never;
             yield return emptyContainer;
         }

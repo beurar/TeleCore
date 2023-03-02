@@ -6,11 +6,12 @@ namespace TeleCore;
 
 public class ContainerConfig
 {
-    public Type containerClass = typeof(BaseContainer<FlowValueDef>);
+    public Type containerClass = typeof(ValueContainerBase<FlowValueDef>);
         
     public int baseCapacity = 0;
     public string containerLabel;
         
+    //TODO: 
     public bool storeEvenly = false;
     public bool dropContents = false;
     public bool leaveContainer = false;

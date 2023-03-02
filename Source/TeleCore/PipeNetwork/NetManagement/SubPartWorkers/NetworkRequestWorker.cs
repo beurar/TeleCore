@@ -138,8 +138,8 @@ public class NetworkRequestWorker : IExposable
                     part =>
                     {
                         var partContainer = part.Container;
-                        if (partContainer.Empty) return;
-                        if (partContainer.TotalStoredOf(setting.Key) <= 0) return;
+                        if (partContainer.FillState == ContainerFillState.Empty) return;
+                        if (partContainer.StoredValueOf(setting.Key) <= 0) return;
                         if (partContainer.TryTransferTo(container, setting.Key, 1, out _))
                         {
                             _ = true;
