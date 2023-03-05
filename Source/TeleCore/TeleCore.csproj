@@ -24,7 +24,7 @@
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <Version>1.2.5</Version>
     <SignAssembly>False</SignAssembly>
-    <PackageVersion>1.7.6.2</PackageVersion>
+    <PackageVersion>1.7.7.3</PackageVersion>
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
@@ -33,7 +33,9 @@
     <WarningLevel>4</WarningLevel>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-    <OutputPath>bin\Release\</OutputPath>
+    <OutputPath>C:\Program Files (x86)\Steam\steamapps\common\RimWorld\Mods\TeleCore\Assemblies\Release\</OutputPath>
+    <DebugType>none</DebugType>
+    <DocumentationFile>bin\Release\TeleCore.xml</DocumentationFile>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
@@ -43,6 +45,7 @@
     <DebugType>full</DebugType>
     <OutputPath>C:\Program Files (x86)\Steam\steamapps\common\RimWorld\Mods\TeleCore\Assemblies</OutputPath>
     <Optimize>false</Optimize>
+    <DocumentationFile>C:\Program Files (x86)\Steam\steamapps\common\RimWorld\Mods\TeleCore\Assemblies\TeleCore.xml</DocumentationFile>
   </PropertyGroup>
 
 	<PropertyGroup>

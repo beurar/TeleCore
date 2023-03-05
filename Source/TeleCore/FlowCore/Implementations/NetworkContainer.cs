@@ -4,7 +4,7 @@ using System.Linq;
 using UnityEngine;
 using Verse;
 
-namespace TeleCore;
+namespace TeleCore.FlowCore.Implementations;
 
 public interface IContainerHolderNetworkThing : IContainerHolderThing<NetworkValueDef>
 {
@@ -94,7 +94,7 @@ public class NetworkContainer : NetworkContainerThing<IContainerHolderNetwork>
         base.Notify_AddedValue(valueType, value);
 
         //
-        Holder.NetworkPart.Notify_ReceivedValue();
+        Holder.NetworkPart?.Notify_ReceivedValue();
     }
 
     public override void Notify_RemovedValue(NetworkValueDef valueType, float value)

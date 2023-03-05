@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using RimWorld;
+using TeleCore.FlowCore;
 using UnityEngine;
 using Verse;
 
@@ -42,7 +43,7 @@ public static class NetworkTransactionUtility
             {
                 var type = usedTypes[i];
                 if (!receiver.Parent.AcceptsValue(type)) continue;
-                if (sender.Container.TryTransferTo(receiver.Container, type, 1, out var val))
+                if (sender.Container.TryTransferValue(receiver.Container, type, 1, out var val))
                 {
                     receiver.Notify_ReceivedValue();
                     MoteMaker.ThrowText(receiver.Parent.Thing.DrawPos, sender.Parent.Thing.Map, $"{val}", Color.green);
@@ -53,7 +54,7 @@ public static class NetworkTransactionUtility
         internal static void TransferToOtherSpecific(INetworkSubPart sender, INetworkSubPart receiver, NetworkValueDef def)
         {
             if (!receiver.Parent.AcceptsValue(def)) return;
-            if (sender.Container.TryTransferTo(receiver.Container, def, 1, out var val))
+            if (sender.Container.TryTransferValue(receiver.Container, def, 1, out var val))
             {
                 receiver.Notify_ReceivedValue();
                 MoteMaker.ThrowText(receiver.Parent.Thing.DrawPos, sender.Parent.Thing.Map, $"{val}", Color.green);
@@ -68,7 +69,7 @@ public static class NetworkTransactionUtility
                 return;
             }
             
-            foreach (var type in sender.Container.AllStoredTypes)
+            foreach (var type in sender.Container.StoredDefs)
             {
                 if(!sender.Container.GetFilterFor(type).canStore)
                     TransferToOtherSpecific(sender, receiver, type);
@@ -88,7 +89,7 @@ public static class NetworkTransactionUtility
             {
                 var type = usedTypes[i];
                 if (!receiver.NeedsValue(type, ofRole)) continue;
-                if (sender.Container.TryTransferTo(receiver.Container, type, 1, out var val))
+                if (sender.Container.TryTransferValue(receiver.Container, type, 1, out var val))
                 {
                     receiver.Notify_ReceivedValue();
                     MoteMaker.ThrowText(receiver.Parent.Thing.DrawPos, sender.Parent.Thing.Map, $"{val}", Color.green);

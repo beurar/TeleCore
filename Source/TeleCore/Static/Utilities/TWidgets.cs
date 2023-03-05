@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using RimWorld;
+using TeleCore.FlowCore.Implementations;
 using UnityEngine;
 using UnityEngine.UIElements;
 using Verse;
@@ -588,7 +589,7 @@ namespace TeleCore
         public static Vector2 GetNetworkValueReadoutSize(NetworkContainer container)
         {
             Vector2 size = new Vector2(10, 10);
-            foreach (var type in container.AllStoredTypes)
+            foreach (var type in container.StoredDefs)
             {
                 Vector2 typeSize = Text.CalcSize($"{type.labelShort}: {container.StoredValueOf(type)} ({container.StoredPercentOf(type).ToStringPercent()})");
                 size.y += 10 + 2;
@@ -640,7 +641,7 @@ namespace TeleCore
             Widgets.BeginGroup(rect);
             Text.Font = GameFont.Tiny;
             Text.Anchor = TextAnchor.UpperLeft;
-            foreach (var type in container.AllStoredTypes)
+            foreach (var type in container.StoredDefs)
             {
                 string label = $"{type.labelShort}: {container.StoredValueOf(type)} ({container.StoredPercentOf(type).ToStringPercent()})";
                 Rect typeRect = new Rect(5, height, 10, 10);

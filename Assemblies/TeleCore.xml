@@ -1,0 +1,551 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>TeleCore</name>
+    </assembly>
+    <members>
+        <member name="M:TeleCore.ComputeGrid`1.Dispose">
+            <summary>
+            Clear internal <see cref="T:UnityEngine.ComputeBuffer"/>
+            </summary>
+        </member>
+        <member name="M:TeleCore.ComputeGrid`1.SetValues_Array(System.Collections.Generic.IEnumerable{Verse.IntVec3},System.Func{Verse.IntVec3,`0})">
+            <summary>
+            Sets data to the grid array and does not invoke the ComputeBuffer update.
+            </summary>
+        </member>
+        <member name="M:TeleCore.ComputeGrid`1.SetValue_Array(Verse.IntVec3,`0)">
+            <summary>
+            Sets data to the grid array and does not invoke the ComputeBuffer update.
+            </summary>
+        </member>
+        <member name="M:TeleCore.GPUTools.CopyRenderTexture(UnityEngine.Texture,UnityEngine.RenderTexture)">
+            Copy the contents of one render texture into another. Assumes textures are the same size.
+        </member>
+        <member name="T:TeleCore.ProjectileDefExtension">
+            <summary>
+            If set on a projectile's def, on Impact, all of these effects will be created - if available.
+            </summary>
+        </member>
+        <member name="M:TeleCore.FlowCore.FlowValueUtils.NeedsEqualizing``2(TeleCore.FlowCore.ValueContainerBase{``0},TeleCore.FlowCore.ValueContainerBase{``1},TeleCore.FlowCore.ValueFlowDirection@,System.Single@)">
+            <summary>
+            Checks whether or not two containers need to be equalized.
+            </summary>
+            <param name="flow">The flow direction output relative to the first container.</param>
+            <param name="diffPct">The difference in content by percentage.</param>
+        </member>
+        <member name="T:TeleCore.FlowCore.Implementations.IContainerHolderThing`1">
+            <summary>
+            Container Implementation extension which allows you to expose a <see cref="P:TeleCore.FlowCore.Implementations.IContainerHolderThing`1.Thing"/> reference
+            </summary>
+        </member>
+        <member name="T:TeleCore.FlowCore.Implementations.IContainerHolderRoom`1">
+            <summary>
+            Implements a container for a <see cref="P:TeleCore.FlowCore.Implementations.IContainerHolderRoom`1.Room"/>
+            </summary>
+        </member>
+        <member name="T:TeleCore.FlowCore.ValueState">
+            <summary>
+            The resulting state of a <see cref="T:TeleCore.FlowCore.ValueContainerBase`1"/> value-change operation.
+            </summary>
+        </member>
+        <member name="T:TeleCore.FlowCore.ValueResult`1">
+            <summary>
+            The result of a <see cref="T:TeleCore.FlowCore.ValueContainerBase`1"/> Value-Change operation.
+            </summary>
+        </member>
+        <member name="M:TeleCore.FlowCore.ValueContainerBase`1.CanAddValue(TeleCore.DefValue{`0,System.Single})">
+            <summary>
+            Provides an extra condition to check against when trying to add a value.
+            </summary>
+        </member>
+        <member name="M:TeleCore.FlowCore.ValueContainerBase`1.CanRemoveValue(TeleCore.DefValue{`0,System.Single})">
+            <summary>
+            Provides an extra condition to check against when trying to remove a value.
+            </summary>
+        </member>
+        <member name="M:TeleCore.FlowCore.ValueContainerBase`1.CanReceiveValue(`0)">
+            <summary>
+            Checks the <see cref="F:TeleCore.FlowCore.FlowValueFilterSettings.canReceive"/> boolean.
+            Determines whether or not this value can be received during a transaction./>
+            </summary>
+        </member>
+        <member name="M:TeleCore.FlowCore.ValueContainerBase`1.CanHoldValue(`0)">
+            <summary>
+            Checks the <see cref="F:TeleCore.FlowCore.FlowValueFilterSettings.canStore"/> boolean.
+            Determines whether or not this value needs to be purged from this container./>
+            </summary>
+        </member>
+        <member name="M:TeleCore.FlowCore.ValueContainerBase`1.OnContainerStateChanged(System.Boolean)">
+            <summary>
+            Internal container state logic notifier.
+            </summary>
+        </member>
+        <member name="M:TeleCore.FlowCore.ValueContainerBase`1.Clear">
+            <summary>
+            Clears all values inside the container.
+            </summary>
+        </member>
+        <member name="M:TeleCore.FlowCore.ValueContainerBase`1.Fill(System.Single)">
+            <summary>
+            Fills the container evenly until reaching a desired capacity.
+            </summary>
+        </member>
+        <member name="M:TeleCore.FlowCore.ValueContainerBase`1.ChangeCapacity(System.Int32)">
+            <summary>
+            Sets a new capacity value, overwriting the <see cref="P:TeleCore.FlowCore.ValueContainerBase`1.Config"/> capacity.
+            </summary>
+        </member>
+        <member name="M:TeleCore.FlowCore.ValueContainerBase`1.LoadFromStack(TeleCore.DefValueStack{`0})">
+            <summary>
+            Sets the container values to be sourced by a stack input.
+            </summary>
+            <param name="stack">Stack to provide values for the container.</param>
+        </member>
+        <member name="M:TeleCore.FlowCore.ValueContainerBase`1.TryAddValue(`0,System.Single)">
+            <summary>
+            Wrapper for <see cref="!:TryAddValue2"/>.
+            </summary>
+        </member>
+        <member name="M:TeleCore.FlowCore.ValueContainerBase`1.TryTransferValue(TeleCore.FlowCore.ValueContainerBase{`0},`0,System.Single,System.Single@)">
+            <summary>
+            Attempts to transfer the desired value and amount to another container, returns how much was transfered
+            </summary>
+        </member>
+        <member name="M:TeleCore.FlowCore.ValueContainerBase`1.TryTransferTo(TeleCore.FlowCore.ValueContainerBase{`0},System.Single,TeleCore.DefValueStack{`0}@)">
+            <summary>
+            Attempts to transfer any held value to the other container, split evenly.
+            </summary>
+        </member>
+        <member name="M:TeleCore.FlowCore.ValueContainerBase`1.TryConsume(System.Collections.Generic.IEnumerable{TeleCore.DefValue{`0,System.Single}})">
+            <summary>
+            Attempts to consume each given value.
+            </summary>
+        </member>
+        <member name="M:TeleCore.FlowCore.ValueContainerBase`1.TryConsume(System.Single)">
+            <summary>
+            Consumes a set amount, using any value from the container.
+            </summary>
+        </member>
+        <member name="M:TeleCore.FlowCore.ValueContainerBase`1.TryConsume(TeleCore.DefValue{`0,System.Single})">
+            <summary>
+            Consumes a fixed given value.
+            </summary>
+        </member>
+        <member name="T:TeleCore.DefValue`2">
+            <summary>
+            Wraps any <see cref="P:TeleCore.DefValue`2.Def"/> Type into a struct, attaching a numeric value
+            </summary>
+            <typeparam name="TDef">The <see cref="P:TeleCore.DefValue`2.Def"/> Type of the value.</typeparam>
+            <typeparam name="TValue">A numeric Type, can be <see cref="T:System.Int32"/> or <see cref="T:System.Single"/></typeparam>
+        </member>
+        <member name="T:TeleCore.DefValueStack`1">
+            <summary>
+            Manages any Def as a numeric value in a stack.
+            Only supports DefValues with TValue set as <see cref="T:System.Single"/>.
+            </summary>
+            <typeparam name="TDef">The <see cref="T:Verse.Def"/> of the stack.</typeparam>
+        </member>
+        <member name="T:TeleCore.ScribeList`1">
+            <summary>
+            A wrapper to expose generic lists as values. I.e: A <see cref="T:System.Collections.Generic.List`1"/> of <see cref="T:TeleCore.ScribeList`1"/>
+            </summary>
+            <typeparam name="T"></typeparam>
+        </member>
+        <member name="T:TeleCore.ThingValue">
+            <summary>
+            Define a Def with various values for dynamic and versatile uses.
+            XML Notation: <defName>value, chance, QualityCategory, stuffDef</defName>
+            </summary>
+        </member>
+        <member name="T:TeleCore.IFXBase">
+            <summary>
+            <para>Implementing this on a <see cref="T:Verse.ThingComp"/> or <see cref="T:Verse.Thing"/> allows you to affect the layers in a <see cref="T:TeleCore.CompFX"/> attached to the same Thing instance.                                      </para>
+            <para>You can implement this interface on multiple parts of a Thing instance, including the base <see cref="F:Verse.ThingDef.thingClass"/> and the <see cref="F:Verse.ThingDef.comps"/>.                                        </para>
+            <para>If multiple implementations are active, the order of priority for selecting an interface for a layer via <see cref="!:FX_AffectsLayerAt"/> or for <see cref="!:IsMain"/> is done by <see cref="!:Priority"/>.   </para>
+            </summary>
+        </member>
+        <member name="M:TeleCore.IFXBase.FX_ProvidesForLayer(TeleCore.FXArgs)">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="M:TeleCore.IFXBase.FX_PowerProviderFor(TeleCore.FXArgs)">
+            <summary>
+            Allows you to override the default power getter with a custom reference, otherwise it defaults to the parent Thing's PowerComp (if it exists)
+            </summary>
+        </member>
+        <member name="M:TeleCore.IFXEffecterProvider.FX_ShouldThrowEffects(TeleCore.FXEffecterArgs)">
+            <summary>
+            Sets whether or not an attached Comp_FleckThrower should throw effects.
+            </summary>
+        </member>
+        <member name="M:TeleCore.IFXEffecterProvider.FX_OnEffectSpawned(TeleCore.FXEffecterSpawnedEffectEventArgs)">
+            <summary>
+            Allows you to hook into the effecter logic, and handle custom logic whenever a tagged effect is spawned.
+            </summary>
+        </member>
+        <member name="M:TeleCore.IFXLayerProvider.FX_ShouldDraw(TeleCore.FXLayerArgs)">
+            <summary>
+            Overrides whether a layer at the same index of that value is rendered or not.
+            </summary>
+        </member>
+        <member name="M:TeleCore.IFXLayerProvider.FX_GetOpacity(TeleCore.FXLayerArgs)">
+            <summary>
+            Sets the opacity value of a layer at the same index as the value in the array.
+            </summary>
+        </member>
+        <member name="M:TeleCore.IFXLayerProvider.FX_GetRotation(TeleCore.FXLayerArgs)">
+            <summary>
+            Sets the rotation value of a layer at the same index as the value in the array.
+            </summary>
+        </member>
+        <member name="M:TeleCore.IFXLayerProvider.FX_GetRotationSpeedOverride(TeleCore.FXLayerArgs)">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="M:TeleCore.IFXLayerProvider.FX_GetAnimationSpeedFactor(TeleCore.FXLayerArgs)">
+            <summary>
+            Sets the speed at which the layer processes dynamic images (rotating, blinking, moving)
+            </summary>
+        </member>
+        <member name="M:TeleCore.IFXLayerProvider.FX_GetColor(TeleCore.FXLayerArgs)">
+            <summary>
+            Overrides the draw color of the layer at the index of the value.
+            </summary>
+        </member>
+        <member name="M:TeleCore.IFXLayerProvider.FX_GetDrawPosition(TeleCore.FXLayerArgs)">
+            <summary>
+            Sets the exact render position of the layer at the index of that value.
+            </summary>
+        </member>
+        <member name="M:TeleCore.IFXLayerProvider.FX_GetDrawAction(TeleCore.FXLayerArgs)">
+            <summary>
+            Attaches a custom function to a layer, it is run before the layer is drawn.
+            </summary>
+        </member>
+        <member name="T:TeleCore.RegionPatches">
+            <summary>
+            Main handling of changes in regions and rooms of RimWorld
+            </summary>
+        </member>
+        <member name="M:TeleCore.MapInformation.InfoInit(System.Boolean)">
+            <summary>
+            Initializier run on MapComponent.FinalizeInit
+            </summary>
+            <param name="initAfterReload"></param>
+        </member>
+        <member name="M:TeleCore.MapInformation.ThreadSafeInit">
+            <summary>
+            Thread safe initializer for data on the main game thread
+            </summary>
+        </member>
+        <member name="M:TeleCore.MapInformation.OnMapGenerated">
+            <summary>
+            Runs on MapComponent.MapGenerated
+            </summary>
+        </member>
+        <member name="M:TeleCore.MapInformation.TeleTick">
+            <summary>
+            This tick is called by the TeleRoot Monobehaviour, offloading work from the RW Root.
+            </summary>
+        </member>
+        <member name="M:TeleCore.MapInformation.CellSteadyEffect(Verse.IntVec3)">
+            <summary>
+            Allows to run code on each cell on a map, similar to GameConditions.
+            </summary>
+            <param name="c">Affected Celll</param>
+        </member>
+        <member name="M:TeleCore.MapInformation.UpdateOnGUI">
+            <summary>
+            Allows to run custom UI render code.
+            </summary>
+        </member>
+        <member name="M:TeleCore.MapInformation.Update">
+            <summary>
+            Allows to run custom map rendering code.
+            </summary>
+        </member>
+        <member name="M:TeleCore.MapInformation.TeleUpdate">
+            <summary>
+            This update is called from the TeleRoot Monobehaviour, offloading rendering from the RW Root.
+            </summary>
+        </member>
+        <member name="T:TeleCore.ThingTrackerMapInfo">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="T:TeleCore.ThingTrackerComp">
+            <summary>
+            Provides an abstract base for custom Thing-tracking worker classes which process Thing-Data on Spawn/Despawn/State change events
+            </summary>
+        </member>
+        <member name="T:TeleCore.PortableNetworkContainer">
+            <summary>
+            Temporary <see cref="T:TeleCore.FlowCore.Implementations.NetworkContainer"/> Thing spawned upon deconstruction of a <see cref="T:Verse.Building"/> containing a <see cref="T:TeleCore.Comp_NetworkStructure"/> comp.
+            </summary>
+        </member>
+        <member name="P:TeleCore.PortableNetworkContainer.ForSelf">
+            <summary>
+            TargetParams for structures to fill this into
+            </summary>
+        </member>
+        <member name="M:TeleCore.NetworkSubPart.RequesterTick">
+            <summary>
+            When using the Requester NetworkRole, will pull values in according to <see cref="!:RequestedCpacityRange"/>.
+            </summary>
+        </member>
+        <member name="T:TeleCore.NetworkReceiverWorker">
+            <summary>
+            Handles how a <see cref="T:TeleCore.NetworkSubPart"/> manages receiving values.
+            </summary>
+        </member>
+        <member name="T:TeleCore.NetworkRequestWorker">
+            <summary>
+            Manages the requesting process as a state machine
+            </summary>
+        </member>
+        <member name="P:TeleCore.NetworkRequestWorker.RequestedRange">
+            <summary>
+            This range defines the Requester behaviour.
+            </summary>
+            <param name="min">The minimum amount that may be reached before starting to request.</param>
+            <param name="max">The maximum amount that can be requested.</param>
+        </member>
+        <member name="T:TeleCore.NetworkContainerSet">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="T:TeleCore.PlaceWorker_Pipe">
+            <summary>
+            A default placeworker for network pipes, uses the ThingDef.uiIconPath as the ghost render texture.
+            </summary>
+        </member>
+        <member name="T:TeleCore.PlaceWorker_TurretGunTop">
+            <summary>
+            Renders all turrets defined in TeleDefExtension ontop of the placable thing.
+            </summary>
+        </member>
+        <member name="F:TeleCore.AnimationPart.keyFrames">
+            <summary>
+            The list of keyframe collections for each material defined by the parent textureParts list
+            </summary>
+        </member>
+        <member name="M:TeleCore.AnimationSaveUtility.SaveWorkFile(System.String,System.String,System.Action)">
+            <summary>
+            Saves the custom .anim file for working on the animation.
+            </summary>
+        </member>
+        <member name="M:TeleCore.AnimationSaveUtility.CreateAnimationDef(System.String,System.String,System.Action)">
+            <summary>
+            Creates a new AnimationDef file.
+            </summary>
+        </member>
+        <member name="T:TeleCore.DesignationTexturePack">
+            <summary>
+            The texture pack provides textures for the custom build menu
+            </summary>
+        </member>
+        <member name="T:TeleCore.UILayout">
+            <summary>
+            A cachable Rect set, allows you to set rects with a tag and access them via a string tag indexer;
+            </summary>
+        </member>
+        <member name="T:TeleCore.RoomOverlayRenderer">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="T:TeleCore.ApplicationQuitUtility">
+            <summary>
+            Provides extensions to register custom events whenever the application closes.
+            </summary>
+        </member>
+        <member name="M:TeleCore.ApplicationQuitUtility.RegisterQuitEvent(System.Action)">
+            <summary>
+            Adds a new event to the quit-event chain.
+            </summary>
+        </member>
+        <member name="T:TeleCore.TeleRoot">
+            <summary>
+            Experimental Updating of custom core related parts
+            </summary>
+        </member>
+        <member name="T:TeleCore.TeleUpdateManager">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="T:TeleCore.ClipBoardUtility">
+            <summary>
+            Dynamic Clipboard utility, allows you to save any type via a string tag, and retrieve it the same way.
+            </summary>
+        </member>
+        <member name="M:TeleCore.Static.Utilities.NetworkTransactionUtility.Validators.StoreEvenly_EQ_Check(TeleCore.INetworkSubPart,TeleCore.INetworkSubPart)">
+            <summary>
+            Determines whether there should be a equalization between two network parts.
+            </summary>
+        </member>
+        <member name="M:TeleCore.CellGen.SectorCells(Verse.IntVec3,Verse.Map,System.Single,System.Single,System.Single,System.Boolean,System.Predicate{Verse.IntVec3})">
+            <summary>
+            Calculates a circular sector of <see cref="T:Verse.IntVec3"/> cells. Recommended to cache the result.
+            </summary>
+            <param name="center">Center of circle.</param>
+            <param name="map">Map reference.</param>
+            <param name="radius">Radius of circle.</param>
+            <param name="angle">Angle size of the sector.</param>
+            <param name="rotation">Rotation of the sector, 0 would make the sector "go" upwards.</param>
+            <param name="useCenter">Uses the center cells as part of the sector.</param>
+            <param name="validator">Additional validator to exclude or include cells.</param>
+        </member>
+        <member name="M:TeleCore.CellGen.OffsetIntvecs(System.Collections.Generic.IEnumerable{Verse.IntVec3},Verse.IntVec3)">
+            <summary>
+            Offsets a list of cells by a given reference cell.
+            </summary>
+        </member>
+        <member name="M:TeleCore.CellGen.CornerVec3s(Verse.IntVec3)">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="M:TeleCore.CellGen.CornerVecs(Verse.IntVec3)">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="M:TeleCore.CellGen.PointsOnLineOfSightWithHeight(UnityEngine.Vector3,UnityEngine.Vector3,System.Single)">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="M:TeleCore.CellUtils.Rot4Relative(Verse.IntVec3,Verse.IntVec3)">
+            <summary>
+            Compares two directly adjacent cells to determine the <see cref="T:Verse.Rot4"/> direction of <paramref name="other"/> relative of <paramref name="cell"/>.
+            </summary>
+            <returns>The <see cref="T:Verse.Rot4"/> from <paramref name="cell"/> 'looking' towards <paramref name="other"/>.</returns>
+        </member>
+        <member name="M:TeleCore.GenData.RegisterTickAction(System.Action)">
+            <summary>
+            Registers an action to be ticked every single tick.
+            </summary>
+        </member>
+        <member name="M:TeleCore.GenData.AddTaggedAction(System.Action,TeleCore.TeleUpdateManager.TaggedActionType,System.String)">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="M:TeleCore.GenData.EnqueueActionForMainThread(System.Action)">
+            <summary>
+            Enqueues an action to be run once on the main thread when available.
+            </summary>
+        </member>
+        <member name="M:TeleCore.GenData.IsElectricallyPowered(Verse.ThingWithComps,System.Boolean@)">
+            <summary>
+            Defines whether a structure is powered by electricity and returns whether it actually uses power.
+            </summary>
+        </member>
+        <member name="M:TeleCore.GenData.IsPoweredOn(Verse.ThingWithComps)">
+            <summary>
+            If the thing uses a PowerComp, returns the PowerOn property, otherwise returns true if no PowerComp exists.
+            </summary>
+        </member>
+        <member name="M:TeleCore.GenData.IsReserved(Verse.Thing,Verse.Map,Verse.Pawn@)">
+            <summary>
+            Checks whether a thing is reserved by any pawn.
+            </summary>
+        </member>
+        <member name="M:TeleCore.GenData.NeighborRoomOf(Verse.Building,Verse.Room)">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="M:TeleCore.GenData.GetRoomFast(Verse.IntVec3,Verse.Map)">
+            <summary>
+            Returns the current room at a position.
+            </summary>
+        </member>
+        <member name="M:TeleCore.GenData.GetRoomIndirect(Verse.Thing)">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="M:TeleCore.GenData.GetMapInfo``1(Verse.Map)">
+            <summary>
+            Get the desired <see cref="T:TeleCore.MapInformation"/> based on type of <typeparamref name="T"/>.
+            </summary>
+        </member>
+        <member name="M:TeleCore.GenData.GetDesignatorFor``1(Verse.ThingDef)">
+            <summary>
+            Get the desired <see cref="T:Verse.Designator"/> based on type of <typeparamref name="T"/>.
+            </summary>
+        </member>
+        <member name="M:TeleCore.GenData.RoomTracker(Verse.Room)">
+            <returns>The main <see cref="T:TeleCore.RoomTracker"/> object of the <paramref name="room"/>.</returns>
+        </member>
+        <member name="M:TeleCore.GenData.GetRoomComp``1(Verse.Room)">
+            <summary>
+            Get the desired <see cref="T:TeleCore.RoomComponent"/> based on type of <typeparamref name="T"/>.
+            </summary>
+        </member>
+        <member name="M:TeleCore.TeleFlooder.Flood(Verse.Map,Verse.CellRect,System.Action{Verse.IntVec3},System.Predicate{Verse.IntVec3},System.Int32)">
+            <summary>
+            Floods an area from an initial <see cref="T:Verse.CellRect"/>, processing and validating cells as it goes.
+            </summary>
+        </member>
+        <member name="M:TeleCore.TWidgets.RectOnPos(UnityEngine.Vector2,UnityEngine.Vector2)">
+            <summary>
+            Creates a rect on a given position with a size.
+            </summary>
+            <param name="pos">Center of the new Rect.</param>
+            <param name="size">Size of the new Rect.</param>
+        </member>
+        <member name="M:TeleCore.TWidgets.AbsorbInput(UnityEngine.Rect)">
+            <summary>
+            If clicked inside of this, the event is consumed and wont be used later in the current frame.
+            </summary>
+        </member>
+        <member name="T:TeleCore.Building_TeleTurret">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="T:TeleCore.CompProperties_NetworkStructure">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="M:TeleCore.Verb_Tele.AdjustedTarget(Verse.LocalTargetInfo,Verse.ShootLine@,Verse.ProjectileHitFlags@)">
+            <summary>
+            Applies the vanilla target "miss" chance on an intended target
+            </summary>
+        </member>
+        <member name="T:TeleCore.DynamicTextureParameter">
+            <summary>
+            Allows you to set <see cref="T:UnityEngine.Texture2D"/> parameters depending on the <see cref="T:Verse.Graphic"/> type for custom shaders
+            </summary>
+        </member>
+        <member name="T:TeleCore.ThrownEffectInfo">
+            <summary>
+            Holds and builds upon initial effect spawn data, providing necessary references down the line
+            </summary>
+        </member>
+        <member name="T:TeleCore.FXBuilding">
+            <summary>
+            A basic implementation of the <see cref="T:TeleCore.IFXLayerProvider"/> interface, uses <see cref="T:Verse.Building"/> as a base class.
+            </summary>
+        </member>
+        <member name="T:TeleCore.FXPawn">
+            <summary>
+            A basic implementation of the <see cref="T:TeleCore.IFXLayerProvider"/> interface, uses <see cref="T:Verse.Pawn"/> as a base class.
+            </summary>
+        </member>
+        <member name="T:TeleCore.FXThing">
+            <summary>
+            A basic implementation of the <see cref="T:TeleCore.IFXLayerProvider"/> interface, uses <see cref="T:Verse.ThingWithComps"/> as a base class.
+            </summary>
+        </member>
+    </members>
+</doc>

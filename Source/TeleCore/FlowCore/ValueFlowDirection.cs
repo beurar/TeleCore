@@ -1,4 +1,4 @@
-﻿namespace TeleCore;
+﻿namespace TeleCore.FlowCore;
 
 public enum ValueFlowDirection
 {

@@ -1,10 +1,7 @@
 ﻿using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Collections.Specialized;
 using Verse;
 
-namespace TeleCore;
+namespace TeleCore.FlowCore;
 
 //TODO:Reduce generics to one level <TValue> : FlowValueDef
 //TODO:Make inherited Holder chain base > thing > network
@@ -42,6 +39,11 @@ where TValue : FlowValueDef
             Action = NotifyContainerChangedAction.Emptied;
         if ((final.Full ?? false) && delta > 0)
             Action = NotifyContainerChangedAction.Filled;
+    }
+
+    public override string ToString()
+    {
+        return $"Action: {Action}:\n{ValueDelta}";
     }
 }
 

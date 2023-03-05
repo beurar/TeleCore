@@ -3,10 +3,12 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Text;
+using TeleCore.FlowCore.Implementations;
 using UnityEngine;
 using Verse;
 
-namespace TeleCore;
+namespace TeleCore.FlowCore;
 
 public enum ContainerFillState
 {
@@ -19,9 +21,114 @@ public struct FlowValueFilterSettings
 {
     public bool canReceive = true;
     public bool canStore = true;
+    public bool canTransfer = true;
 
     public FlowValueFilterSettings()
     {
+    }
+}
+
+/// <summary>
+/// The resulting state of a <see cref="ValueContainerBase{TValue}"/> value-change operation.
+/// </summary>
+public enum ValueState
+{
+    Incomplete,
+    Completed,
+    CompletedWithExcess,
+    CompletedWithShortage,
+    Failed
+}
+
+/// <summary>
+/// The result of a <see cref="ValueContainerBase{TValue}"/> Value-Change operation.
+/// </summary>
+public struct ValueResult<TValue>
+where TValue : FlowValueDef
+{
+    public ValueState State { get; private set; }
+    //Initial desire value
+    public float DesiredAmount { get; private set; }
+    //Actual resulting value
+    public float ActualAmount { get; private set; }
+
+    public float LeftOver => DesiredAmount - ActualAmount;
+    public float Diff { get; private set; }
+
+    public DefValueStack<TValue> FullDiff { get; private set; }
+    
+    public static implicit operator bool(ValueResult<TValue> result)
+    {
+        return result.State != ValueState.Failed;
+    }
+
+    public ValueResult()
+    {
+    }
+
+    public static ValueResult<TValue> InitFail(float desiredAmount)
+    {
+        return new ValueResult<TValue>
+        {
+            State = ValueState.Failed,
+            DesiredAmount = desiredAmount,
+            ActualAmount = 0,
+        };
+    }
+
+    public static ValueResult<TValue> Init(float desiredAmount, ICollection<TValue> usedDefs)
+    {
+        return new ValueResult<TValue>
+        {
+            State = ValueState.Incomplete,
+            DesiredAmount = desiredAmount,
+            ActualAmount = 0,
+            FullDiff = new DefValueStack<TValue>(usedDefs)
+        };
+    }
+    
+    public ValueResult<TValue> SetActual(float actual)
+    {
+        ActualAmount = actual;
+        return this;
+    }
+    
+    public ValueResult<TValue> SetDiff(float diff)
+    {
+        Diff = diff;
+        return this;
+    }
+
+    public ValueResult<TValue> Fail()
+    {
+        State = ValueState.Failed;
+        return this;
+    }
+    
+    public ValueResult<TValue> Break(float? curActual = null)
+    {
+        State = ValueState.CompletedWithExcess;
+        return this;
+    }
+    
+    public ValueResult<TValue> Complete(float? finalActual = null)
+    {
+        State = ValueState.Completed;
+        ActualAmount = finalActual ?? -1;
+        return this;
+    }
+
+    public ValueResult<TValue> TryComplete()
+    {
+        if (ActualAmount == DesiredAmount)
+            State = ValueState.Completed;
+        return this;
+    }
+
+    public ValueResult<TValue> AddDiff(TValue def, float diffAmount)
+    {
+        FullDiff += (def, diffAmount);
+        return this;
     }
 }
 
@@ -64,12 +171,15 @@ public abstract class ValueContainerBase<TValue> : IExposable where TValue : Flo
             };
         }
     }
+
+    public bool Full => FillState == ContainerFillState.Full;
+    public bool Empty => FillState == ContainerFillState.Empty;
     
-    public bool ContainsForbiddenType => AllStoredTypes.Any(t => !CanHoldValue(t));
+    public bool ContainsForbiddenType => StoredDefs.Any(t => !CanHoldValue(t));
 
     //Value Stuff
     public Dictionary<TValue, float> StoredValuesByType => storedValues;
-    public IReadOnlyCollection<TValue> AllStoredTypes => storedValues.Keys;
+    public ICollection<TValue> StoredDefs => storedValues.Keys;
 
     public TValue CurrentMainValueType => storedValues.MaxBy(x => x.Value).Key;
     
@@ -123,7 +233,15 @@ public abstract class ValueContainerBase<TValue> : IExposable where TValue : Flo
         capacity = config.baseCapacity;
         
         //Cache Types
-        AcceptedTypes = new List<TValue>((IEnumerable<TValue>) config.valueDefs);
+        AcceptedTypes = new List<TValue>(config.valueDefs.Cast<TValue>());
+        
+        //Setup Filter
+        foreach (var value in AcceptedTypes)
+        {
+            filterSettings.Add(value, new FlowValueFilterSettings());
+        }
+
+        ValueStack = new DefValueStack<TValue>(AcceptedTypes, capacity);
     }
 
     #endregion
@@ -135,7 +253,7 @@ public abstract class ValueContainerBase<TValue> : IExposable where TValue : Flo
         
         if (Scribe.mode == LoadSaveMode.PostLoadInit)
         {
-            Notify_ContainerStateChanged(true);
+            OnContainerStateChanged(true);
         }
     }
 
@@ -153,13 +271,19 @@ public abstract class ValueContainerBase<TValue> : IExposable where TValue : Flo
         return Color.white;
     }
 
-    //
-    protected virtual bool CanAddValue(TValue valueType, float wantedValue)
+    
+    /// <summary>
+    /// Provides an extra condition to check against when trying to add a value.
+    /// </summary>
+    protected virtual bool CanAddValue(DefValue<TValue, float> value)
     {
         return true;
     }
     
-    protected virtual bool CanRemoveValue(TValue valueType, float wantedValue)
+    /// <summary>
+    /// Provides an extra condition to check against when trying to remove a value.
+    /// </summary>
+    protected virtual bool CanRemoveValue(DefValue<TValue, float> value)
     {
         return true;
     }
@@ -183,7 +307,7 @@ public abstract class ValueContainerBase<TValue> : IExposable where TValue : Flo
         return filterSettings.TryGetValue(valueType, out var settings) && settings.canStore;
     }
 
-    public bool CanResolveTransfer(ValueContainerBase<TValue> other, TValue type, float value, out float actualTransfer)
+    private bool CanResolveTransfer(ValueContainerBase<TValue> other, TValue type, float value, out float actualTransfer)
     {
         var remainingCapacity = type.sharesCapacity
             ? other.CapacityOf(type) - other.StoredValueOf(type)
@@ -215,7 +339,7 @@ public abstract class ValueContainerBase<TValue> : IExposable where TValue : Flo
         totalStoredCache += value;
 
         //Update stack state
-        Notify_ContainerStateChanged();
+        OnContainerStateChanged();
     }
 
     public virtual void Notify_RemovedValue(TValue valueType, float value)
@@ -227,19 +351,23 @@ public abstract class ValueContainerBase<TValue> : IExposable where TValue : Flo
         }
 
         //Update stack state
-        Notify_ContainerStateChanged();
+        OnContainerStateChanged();
     }
+    
+    public abstract void Notify_ContainerStateChanged(NotifyContainerChangedArgs<TValue> stateChangeArgs);
 
-    public virtual void Notify_ContainerStateChanged(bool updateMetaData = false)
+    /// <summary>
+    /// Internal container state logic notifier.
+    /// </summary>
+    private void OnContainerStateChanged(bool updateMetaData = false)
     {
         //Cache previous stack
         var previous = ValueStack;
         
-        //Set New Values Onto Stack
-        ValueStack = new DefValueStack<TValue>(storedValues);
-
-        //Get Delta
-        var stackDelta = previous - ValueStack;
+        //TODO: internal dictionary is a reference type, and thus is passed on into the operator -
+        //TODO: this then applies changes by ref rather than by value, funny isnt it
+        ValueStack = new DefValueStack<TValue>(storedValues); //Set new stack
+        var stackDelta = ValueStack - previous; //Get stack delta
         
         //Update metadata
         if (updateMetaData)
@@ -257,8 +385,7 @@ public abstract class ValueContainerBase<TValue> : IExposable where TValue : Flo
             }
         }
 
-        //TODO: Add In Inherited Holder
-        //Parent?.Notify_ContainerStateChanged(new NotifyContainerChangedArgs<TValue>(stackDelta, ValueStack));
+        Notify_ContainerStateChanged(new NotifyContainerChangedArgs<TValue>(stackDelta, ValueStack));
     }
 
     #endregion
@@ -272,14 +399,13 @@ public abstract class ValueContainerBase<TValue> : IExposable where TValue : Flo
     {
         foreach (TValue def in storedValues.Keys)
         {
-            TryRemoveValue(def, storedValues[def], out _);
+            _ = TryRemoveValue(def, storedValues[def]);
         }
     }
 
     /// <summary>
-    /// Fills the container equally until reaching a desired capacity.
+    /// Fills the container evenly until reaching a desired capacity.
     /// </summary>
-    /// <param name="toCapacity"></param>
     public void Fill(float toCapacity)
     {
         float totalValue = toCapacity - TotalStored;
@@ -287,21 +413,28 @@ public abstract class ValueContainerBase<TValue> : IExposable where TValue : Flo
     
         foreach (TValue def in AcceptedTypes)
         {
-            TryAddValue(def, valuePerType, out _);
+            _ = TryAddValue(def, valuePerType);
         }
     }
 
+    /// <summary>
+    /// Sets a new capacity value, overwriting the <see cref="Config"/> capacity.
+    /// </summary>
     public void ChangeCapacity(int newCapacity)
     {
         capacity = newCapacity;
     }
 
+    /// <summary>
+    /// Sets the container values to be sourced by a stack input.
+    /// </summary>
+    /// <param name="stack">Stack to provide values for the container.</param>
     public void LoadFromStack(DefValueStack<TValue> stack)
     {
         Clear();
         foreach (var def in stack)
         {
-            TryAddValue(def.Def, def.Value, out _);
+            _ = TryAddValue(def.Def, def.Value);
         }
     }
 
@@ -321,78 +454,144 @@ public abstract class ValueContainerBase<TValue> : IExposable where TValue : Flo
     {
         other.LoadFromStack(ValueStack);
     }
-
+    
     #endregion
     
     #region Processor Methods
 
-    public bool TryAddValue(TValue valueType, float wantedValue, out float actualValue)
+    /// <summary>
+    /// Wrapper for <see cref="TryAddValue2"/>.
+    /// </summary>
+    public ValueResult<TValue> TryAddValue(TValue valueDef, float amount)
     {
-        actualValue = 0;
-        
-        if (!CanAddValue(valueType, wantedValue))
-        {
-            return false;
-        }
-        
-        // If the container is full or doesn't accept the type, we don't add anything
-        if (IsFull(valueType) || !CanReceiveValue(valueType))
-        {
-            return false;
-        }
+        return TryAddValue((valueDef, amount));
+    }
+    
+    public ValueResult<TValue> TryAddValue(DefValue<TValue, float> value)
+    {
+        var desired = value.Value; //Local cache for desired value
+        var result = ValueResult<TValue>.Init(desired, AcceptedTypes); //ValueResult Init
 
-        // Calculate excess value if we add more than we can contain
-        var excessValue = Mathf.Max(TotalStored + wantedValue - Capacity, 0);
-
-        // If we cannot add the full wanted value, adjust it to fit within the available capacity
-        if (wantedValue - excessValue > 0 && excessValue > 0)
+        //Lazy sanity checks for failure
+        if (!CanAddValue(value) || IsFull(value) || !CanReceiveValue(value))
         {
-            wantedValue -= excessValue;
+            return result.Fail();
         }
 
-        // If there's no wanted value left, return false
-        if (wantedValue <= 0)
+        //Calculate excess and adjust our actual possible addable value
+        var excessValue = Mathf.Max(TotalStored + desired - Capacity, 0);
+        var actual = desired - excessValue;
+
+        //Fail if resulting actual value is <= 0
+        if (actual <= 0)
         {
-            return false;
+            return result.Fail();
         }
 
-        // Add the actual value to the stored values dictionary
-        actualValue = wantedValue;
-        if (storedValues.TryGetValue(valueType, out var currentValue))
+        //Otherwise continue to add the value
+        if (storedValues.TryGetValue(value, out var currentValue))
         {
-            storedValues[valueType] = currentValue + actualValue;
+            storedValues[value] = currentValue + actual;
+            result.AddDiff(value, actual);
         }
         else
         {
-            storedValues.Add(valueType, actualValue);
+            storedValues.Add(value, actual);
+        }
+
+        Notify_AddedValue(value, actual); //Notify internal logic updates
+        
+        //On the result, set actual added value and resolve completion status
+        return result.SetActual(actual).TryComplete();
+    }
+    
+    [Obsolete]
+    public ValueResult<TValue> TryAddValueDeprecated(DefValue<TValue, float> value)
+    {
+        float desired = value.Value;
+        float actual = 0;
+        //Result is inited with the desired value
+        var result = ValueResult<TValue>.Init(desired,AcceptedTypes); //Init new result process
+
+        //If we cant add the value, the operation fails
+        if (!CanAddValue(value))
+        {
+            return result.Fail();
+        }
+        
+        // If the container is full or doesn't accept the type, we don't add anything
+        if (IsFull(value) || !CanReceiveValue(value))
+        {
+            return result.Fail(); //ValueResult<TValue>.Failed(desired);
+        }
+
+        // Calculate excess value if we add more than we can contain
+        var excessValue = Mathf.Max(TotalStored + desired - Capacity, 0);
+
+        // If we cannot add the full wanted value, adjust it to fit within the available capacity
+        actual = value.Value - excessValue;
+        if (desired - excessValue > 0 && excessValue > 0)
+        {
+            actual = desired - excessValue;
+        }
+
+        // If the excess is equivalent to the desired amount - we cannot add more and thus quit
+        if (desired <= 0)
+        {
+            //TODO: This case technically should never happen due to the IsFull check
+            return result.Fail();
+        }
+
+        // Add the actual value to the stored values dictionary
+        if (storedValues.TryGetValue(value, out var currentValue))
+        {
+            storedValues[value] = currentValue + actual;
+            result.AddDiff(value, actual);
+        }
+        else
+        {
+            storedValues.Add(value, actual);
         }
 
         // Notify that a value has been added
-        Notify_AddedValue(valueType, actualValue);
-        return true;
+        Notify_AddedValue(value, actual);
+        return result.SetActual(actual).TryComplete();
     }
 
-    public bool TryRemoveValue(TValue valueType, float wantedValue, out float actualValue)
+    public ValueResult<TValue> TryRemoveValue(TValue valueDef, float value)
     {
-        if (!CanRemoveValue(valueType, wantedValue) || 
-            !storedValues.TryGetValue(valueType, out float storedValue))
+        return TryRemoveValue((valueDef, value));
+    }
+
+    public ValueResult<TValue> TryRemoveValue(DefValue<TValue, float> value)
+    {
+        var desired = value.Value; //Local cache for desired value
+        var result = ValueResult<TValue>.Init(desired,AcceptedTypes); //ValueResult Init
+
+        //Lazy sanity checks for failure
+        if (!CanRemoveValue(value) || !storedValues.TryGetValue(value, out float available))
         {
-            actualValue = 0;
-            return false;
+            return result.Fail();
         }
 
-        actualValue = Mathf.Min(storedValue, wantedValue); // Actual removed value can't exceed the stored value
-    
-        storedValues[valueType] -= actualValue;
-    
-        if (storedValues[valueType] <= 0)
+        //Calculate the actual removeable value
+        var actual = Mathf.Min(available, desired);
+
+        //Remove the value from the dictionary or update the value if there is still some left
+        if (available - actual <= 0)
         {
-            storedValues.Remove(valueType);
+            storedValues.Remove(value);
         }
-    
-        Notify_RemovedValue(valueType, actualValue);
-        return true;
-        
+        else
+        {
+            storedValues[value] -= actual;
+        }
+
+        Notify_RemovedValue(value, actual); //Notify internal logic updates
+
+        //On the result, set actual removed value and resolve completion status
+        return result.AddDiff(value, -actual).SetActual(actual).TryComplete();
+
         /*
         actualValue = wantedValue;
         if (_storedValues.TryGetValue(valueType, out float value) && value > 0)
@@ -417,78 +616,127 @@ public abstract class ValueContainerBase<TValue> : IExposable where TValue : Flo
         */
     }
     
-    public bool TryTransferTo(ValueContainerBase<TValue> other, TValue valueType, float value, out float actualTransferedValue)
+    //What are settings on a container value operation?
+    //Manipulation Kind - Add, Remove -- extended to --> Transfer (remove from and add to) // Consume (remove desired amount) // Clear (remove all) //
+    //Type value selection - Equal/Even (same amount for each desired type); First Available (take any of the first available)
+
+    /// <summary>
+    /// Attempts to transfer the desired value and amount to another container, returns how much was transfered
+    /// </summary>
+    public bool TryTransferValue(ValueContainerBase<TValue> other, TValue valueDef, float amount, out float actualTransferedAmount)
     {
         //Attempt to transfer a weight to another container
         //Check if anything of that type is stored, check if transfer of weight is possible without loss, try remove the weight from this container
-        actualTransferedValue = 0;
+        actualTransferedAmount = 0;
 
         if (other == null) return false;
-        if (!other.CanReceiveValue(valueType)) return false;
+        if (!other.CanReceiveValue(valueDef)) return false;
 
-        if (CanResolveTransfer(other, valueType, value, out var possibleTransfer))
+        if (CanResolveTransfer(other, valueDef, amount, out var possibleTransfer))
         {
-            if (TryRemoveValue(valueType, possibleTransfer, out float actualValue))
+            var remResult = TryRemoveValue(valueDef, possibleTransfer);
+            if (remResult)
             {
                 //If passed, try to add the actual weight removed from this container, to the other.
-                return other.TryAddValue(valueType, actualValue, out actualTransferedValue);;
+                return other.TryAddValue(valueDef, remResult.ActualAmount);
             }
-
         }
         return false;
     }
 
-    public enum ValueMode
+    /// <summary>
+    /// Attempts to transfer any held value to the other container, split evenly.
+    /// </summary>
+    public ValueResult<TValue> TryTransferTo(ValueContainerBase<TValue> other, float amount, out DefValueStack<TValue> transferedDiff)
     {
-        Equal,
-        TakeFirst
+        //Even split for each value
+        var evenAmount = amount / StoredDefs.Count;
+        transferedDiff = new DefValueStack<TValue>(StoredDefs);
+        foreach (var def in StoredDefs)
+        {
+            if (TryTransferValue(other, def, evenAmount, out var tempActual))
+            {
+                transferedDiff += (def, tempActual);
+            }
+            else
+            {
+                //If we cannot transfer, we break and check our current state
+                break;
+            }
+        }
+
+        //Resolve result state
+        return transferedDiff switch
+        {
+            0 => ValueResult<TValue>.InitFail(amount),
+            > 0 => ValueResult<TValue>.Init(amount, AcceptedTypes).Complete(transferedDiff.TotalValue),
+            var n when n == amount => ValueResult<TValue>.Init(amount, AcceptedTypes).Complete(amount),
+        };
     }
 
-    //TODO: Implement way to dynamically process any request function with different value approaches
-    private void Processor(Action<TValue, float> action,ValueMode mode)
+    /// <summary>
+    /// Attempts to consume each given value.
+    /// </summary>
+    public bool TryConsume(IEnumerable<DefValue<TValue, float>> values)
     {
-        switch (mode)
+        foreach (var value in values)
         {
-            case ValueMode.Equal:
-                break;
-            case ValueMode.TakeFirst:
-                break;
-            default:
-                throw new ArgumentOutOfRangeException(nameof(mode), mode, null);
+            if (TryConsume(value))
+            {
+                
+            }
         }
-        
-        
+        return true;
     }
     
-    //TODO: Assume equal for now
-    public bool TryConsume(float wantedValue)
+    /// <summary>
+    /// Consumes a set amount, using any value from the container.
+    /// </summary>
+    public ValueResult<TValue> TryConsume(float wantedValue)
     {
         if (TotalStored >= wantedValue)
         {
-            var allTypes = AllStoredTypes;
+            var allTypes = StoredDefs;
             var equalSplit = wantedValue/allTypes.Count;
+            float actualConsumed = 0;
             foreach (var type in allTypes)
             {
-                if (wantedValue > 0f && TryRemoveValue(type, equalSplit, out float leftOver))
+                var remResult = TryRemoveValue(type, equalSplit);
+                if (actualConsumed < wantedValue && remResult)
                 {
-                    wantedValue = leftOver;
+                    actualConsumed += equalSplit - remResult.ActualAmount;
+                    wantedValue = remResult.ActualAmount;
                 }
             }
-            return true;
+            
+            //Resolve result state
+            return wantedValue switch
+            {
+                0 => ValueResult<TValue>.InitFail(wantedValue),
+                > 0 => ValueResult<TValue>.Init(wantedValue,AcceptedTypes).Complete(actualConsumed),
+                var n when n == wantedValue => ValueResult<TValue>.Init(wantedValue, AcceptedTypes).Complete(actualConsumed),
+            };
         }
-        return false;
+        return ValueResult<TValue>.InitFail(wantedValue);
     }
 
-    public bool TryConsume(TValue valueDef, float wantedValue)
+    public ValueResult<TValue> TryConsume(TValue def, float amount)
     {
-        if (StoredValueOf(valueDef) >= wantedValue)
-        {
-            return TryRemoveValue(valueDef, wantedValue, out float leftOver);
-        }
-        return false;
+        return TryConsume((def, amount));
     }
-    
-    
+
+    /// <summary>
+    /// Consumes a fixed given value.
+    /// </summary>
+    public ValueResult<TValue> TryConsume(DefValue<TValue, float> value)
+    {
+        if (StoredValueOf(value) >= (float)value)
+        {
+            return TryRemoveValue(value);
+        }
+        return ValueResult<TValue>.InitFail((float)value);
+    }
+
     #endregion
     
     public virtual IEnumerable<Thing> GetThingDrops()
@@ -499,6 +747,17 @@ public abstract class ValueContainerBase<TValue> : IExposable where TValue : Flo
     public virtual IEnumerable<Gizmo> GetGizmos()
     {
         yield break;
+    }
+
+    public override string ToString()
+    {
+        StringBuilder sb = new StringBuilder();
+        sb.AppendLine($"Capacity: {Capacity}");
+        sb.AppendLine($"ValueStack:\n{ValueStack}");
+        sb.AppendLine($"StoredDefs: {StoredDefs.ToStringSafeEnumerable()}");
+        sb.AppendLine($"StoredValues: {StoredValuesByType.ToStringSafeEnumerable()}");
+        sb.AppendLine($"FillSate: {FillState}");
+        return sb.ToString();
     }
 }
 
@@ -513,6 +772,12 @@ public abstract class ValueContainer<TValue, THolder> : ValueContainerBase<TValu
     {
         Holder = holder;
     }
+
+    public override void Notify_ContainerStateChanged(NotifyContainerChangedArgs<TValue> stateChangeArgs)
+    {
+        Holder?.Notify_ContainerStateChanged(stateChangeArgs);
+    }
+    
 }
 
 public abstract class ValueContainerThing<TValue, THolder> : ValueContainer<TValue, THolder>

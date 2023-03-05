@@ -1,6 +1,4 @@
-﻿using TeleCore.Static.Utilities;
-
-namespace TeleCore;
+﻿namespace TeleCore.FlowCore;
 
 public struct FlowResult
 {

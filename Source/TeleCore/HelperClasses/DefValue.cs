@@ -10,13 +10,14 @@ using Verse;
 
 namespace TeleCore
 {
-    public class DefValueDef<T,V> where T : Def
+    public class DefValueDef<TDef,TValue> where TDef : Def
+    where TValue : struct
     {
-        public T def;
-        public V value;
+        public TDef def;
+        public TValue value;
 
-        public T Def => def;
-        public V Value
+        public TDef Def => def;
+        public TValue Value
         {
             get => value;
             set => this.value = value;
@@ -24,12 +25,12 @@ namespace TeleCore
 
         public bool IsValid => def != null && value is float or int;
 
-        public static implicit operator DefValue<T, V>(DefValueDef<T, V> d) => new(d.Def, d.value);
-        public static explicit operator DefValueDef<T, V>(DefValue<T, V> d) => new (d.Def, d.Value);
+        public static implicit operator DefValue<TDef, TValue>(DefValueDef<TDef, TValue> d) => new(d.Def, d.value);
+        public static explicit operator DefValueDef<TDef, TValue>(DefValue<TDef, TValue> d) => new (d.Def, d.Value);
 
         public DefValueDef() { }
 
-        public DefValueDef(T def, V value)
+        public DefValueDef(TDef def, TValue value)
         {
             this.def = def;
             this.value = value;
@@ -44,14 +45,14 @@ namespace TeleCore
                 string s = Regex.Replace(innerValue, @"\s+", "");
                 string[] array = s.Split(',');
                 DirectXmlCrossRefLoader.RegisterObjectWantsCrossRef(this, $"{nameof(def)}", array[0]);
-                value = ParseHelper.FromString<V>(array.Length > 1 ? array[1] : "1");
+                value = ParseHelper.FromString<TValue>(array.Length > 1 ? array[1] : "1");
             }
 
             //InLined
             else
             {
                 DirectXmlCrossRefLoader.RegisterObjectWantsCrossRef(this, $"{nameof(def)}", xmlRoot.Name);
-                value = ParseHelper.FromString<V>(xmlRoot.FirstChild.Value);
+                value = ParseHelper.FromString<TValue>(xmlRoot.FirstChild.Value);
             }
         }
 
@@ -73,14 +74,19 @@ namespace TeleCore
     /// <typeparam name="TDef">The <see cref="Def"/> Type of the value.</typeparam>
     /// <typeparam name="TValue">A numeric Type, can be <see cref="int"/> or <see cref="float"/></typeparam>
     public struct DefValue<TDef, TValue> where TDef : Def
+    where TValue : struct
     {
-        public TDef Def { get; }
+        public TDef Def { get; private set; }
         public TValue Value { get; set; }
         
         public static explicit operator DefValue<TDef,TValue>(DefValueDef<TDef,TValue> defValue)
         {
             return new DefValue<TDef,TValue>(defValue);
         }
+        public static implicit operator DefValue<TDef, TValue>((TDef Def, TValue Value) value) => new (value.Def, value.Value);
+
+        public static implicit operator TDef(DefValue<TDef, TValue> value) => value.Def;
+        public static explicit operator TValue(DefValue<TDef, TValue> value) => value.Value;
 
         public DefValue(DefValueDef<TDef,TValue> defValue)
         {
@@ -93,8 +99,6 @@ namespace TeleCore
             this.Def = def;
             this.Value = value;
         }
-
-        public static implicit operator DefValue<TDef, TValue>((TDef Def, TValue Value) value) => new (value.Def, value.Value);
 
         //Float
         public static DefValue<TDef, float> operator +(DefValue<TDef, TValue> a, float b)
@@ -123,12 +127,20 @@ namespace TeleCore
 
         public static DefValue<TDef,float> operator +(DefValue<TDef,TValue> a, DefValue<TDef,float> b)
         {
-            return a + b.Value;
+            return new DefValue<TDef, float>
+            {
+                Def = a.Def ?? b.Def,
+                Value = (a + b.Value).Value
+            };
         }
-
+        
         public static DefValue<TDef, float> operator -(DefValue<TDef, TValue> a, DefValue<TDef, float> b)
         {
-            return a - b.Value;
+            return new DefValue<TDef, float>
+            {
+                Def = a.Def ?? b.Def,
+                Value = (a - b.Value).Value
+            };
         }
 
         //Integer
@@ -161,7 +173,7 @@ namespace TeleCore
 
         public override string ToString()
         {
-            return $"({Def}, {Value})";
+            return $"(({Def.GetType()}):{Def}, {Value})";
         }
     }
 }

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using TeleCore.FlowCore.Implementations;
 using Verse;
 
 namespace TeleCore
@@ -104,9 +105,11 @@ namespace TeleCore
             foreach (var type in Cost.AcceptedValueTypes)
             {
                 var container = structure[type.networkDef].Container;
-                if (container.TryRemoveValue(type, totalCost, out float actualVal))
+                
+                var result = container.TryRemoveValue(type, totalCost);
+                if (result)
                 {
-                    totalCost -= actualVal;
+                    totalCost -= result.ActualAmount;
                 }
             }
 
@@ -131,9 +134,10 @@ namespace TeleCore
 
                 foreach (var type in Cost.AcceptedValueTypes)
                 {
-                    if (storage.Container.TryRemoveValue(type, totalCost, out float actualVal))
+                    var result = storage.Container.TryRemoveValue(type, totalCost);
+                    if (result)
                     {
-                        totalCost -= actualVal;
+                        totalCost -= result.ActualAmount;
                     }
                 }
             }

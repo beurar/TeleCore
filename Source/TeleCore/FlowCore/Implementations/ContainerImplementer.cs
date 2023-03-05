@@ -1,8 +1,6 @@
-﻿using TeleCore.Static;
-using UnityEngine;
-using Verse;
+﻿using Verse;
 
-namespace TeleCore;
+namespace TeleCore.FlowCore.Implementations;
 
 //Implementer - glues both the holder and the container together and exposes a Container Property
 public interface IContainerImplementer<TValue, THolder, out TContainer>
@@ -38,6 +36,7 @@ public interface IContainerHolderThing<TValue> : IContainerHolderBase<TValue>
 public interface IContainerHolderRoom<TValue> : IContainerHolderBase<TValue>
 where TValue : FlowValueDef
 {
+    public Room Room { get; }
     public RoomComponent RoomComponent { get; }
 }
 
@@ -54,4 +53,5 @@ public class ClassWithContainer : IContainerImplementer<FlowValueDef, IContainer
             
         }
     }
+    
 }

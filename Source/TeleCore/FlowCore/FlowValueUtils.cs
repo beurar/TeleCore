@@ -1,10 +1,8 @@
-﻿using System.ComponentModel;
-using TeleCore.Static;
-using TeleCore.Static.Utilities;
+﻿using TeleCore.Static;
 using UnityEngine;
 using Verse;
 
-namespace TeleCore;
+namespace TeleCore.FlowCore;
 
 public static class FlowValueUtils
 {
@@ -16,8 +14,34 @@ public static class FlowValueUtils
     /// </summary>
     /// <param name="flow">The flow direction output relative to the first container.</param>
     /// <param name="diffPct">The difference in content by percentage.</param>
-    public static bool NeedsEqualizing<T>(ValueContainerBase<T> containerA, ValueContainerBase<T> containerB, out ValueFlowDirection flow, out float diffPct) where T : FlowValueDef
+    public static bool NeedsEqualizing<T, T2>(ValueContainerBase<T> containerA, ValueContainerBase<T2> containerB, out ValueFlowDirection flow, out float diffPct) 
+        where T : FlowValueDef
+        where T2 : FlowValueDef
     {
+        flow = ValueFlowDirection.None;
+        diffPct = 0f;
+        
+        var fromPct = containerA.StoredPercent;
+        var toPct   = containerB.StoredPercent;
+        
+        diffPct = fromPct - toPct;
+        flow = diffPct switch
+        {
+            > 0 => ValueFlowDirection.Positive,
+            < 0 => ValueFlowDirection.Negative,
+            _ => ValueFlowDirection.None
+        };
+        
+        //diffPct = Mathf.Abs(diffPct);
+        var relativeDiff = Mathf.Abs(diffPct / ((fromPct + toPct) / 2)); // relative difference calculation
+        return relativeDiff >= 0.01f;
+        //return Mathf.Abs(diffPct) >= MIN_FLOAT_COMPARE;
+    }
+    
+
+    public static bool NeedsEqualizing2<T>(ValueContainerBase<T> containerA, ValueContainerBase<T> containerB, out ValueFlowDirection flow, out float diffPct) where T : FlowValueDef
+    {
+        return NeedsEqualizing(containerA, containerB, out flow, out diffPct);
         flow = ValueFlowDirection.None;
         diffPct = 0f;
         
@@ -84,7 +108,7 @@ public static class FlowValueUtils
     //
     public static void TryEqualizeAll<TValue>(ValueContainerBase<TValue> from, ValueContainerBase<TValue> to) where TValue : FlowValueDef
     {
-        if (!NeedsEqualizing<TValue>(from, to, out var flow, out var diffPct))
+        if (!NeedsEqualizing(from, to, out var flow, out var diffPct))
         {
             return;
         }
@@ -93,14 +117,14 @@ public static class FlowValueUtils
         var receiver = (flow == ValueFlowDirection.Positive ? to : from);
 
         var tempTypes = StaticListHolder<TValue>.RequestSet("EqualizingTempSet");
-        tempTypes.AddRange(sender.AllStoredTypes);
+        tempTypes.AddRange(sender.StoredDefs);
         
         var smoothVal = receiver.Capacity * 0.1f * diffPct;
         foreach (var valueDef in tempTypes)
         {
             smoothVal = (smoothVal * valueDef.FlowRate) / sender.ValueStack.Length;
             smoothVal = receiver.GetMaxTransferRate(valueDef, smoothVal);
-            _ = sender.TryTransferTo(receiver, valueDef, smoothVal, out _); 
+            _ = sender.TryTransferValue(receiver, valueDef, smoothVal, out _); 
         }
         tempTypes.Clear();
     }
@@ -120,7 +144,7 @@ public static class FlowValueUtils
         var flowAmount = receiver.GetMaxTransferRate(valueDef, Mathf.CeilToInt(value * diffPct * valueDef.FlowRate));
 
         //
-        if (sender.TryTransferTo(receiver, valueDef, flowAmount, out _))
+        if (sender.TryTransferValue(receiver, valueDef, flowAmount, out _))
         {
             //...
         }

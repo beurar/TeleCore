@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Multiplayer.API;
+using TeleCore.FlowCore;
 using UnityEngine;
 using Verse;
 
@@ -78,7 +79,7 @@ public class Gizmo_ContainerStorage<TValue, TContainer> : Gizmo
                 float xPos = 0f;
                 Widgets.DrawBoxSolid(BGRect, new Color(0.05f, 0.05f, 0.05f));
                 Widgets.DrawBoxSolid(BarRect, new Color(0.25f, 0.25f, 0.25f));
-                foreach (var type in container.AllStoredTypes)
+                foreach (var type in container.StoredDefs)
                 {
                     float percent = (container.StoredValueOf(type) / container.Capacity);
                     Rect typeRect = new Rect(2.5f + xPos, BarRect.y, BarRect.width * percent, BarRect.height);
@@ -110,7 +111,7 @@ public class Gizmo_ContainerStorage<TValue, TContainer> : Gizmo
     {
         foreach (var type in container.AcceptedTypes)
         {
-            container.TryAddValue(type, part, out _);
+            container.TryAddValue(type, part);
         }
     }
 
@@ -123,7 +124,7 @@ public class Gizmo_ContainerStorage<TValue, TContainer> : Gizmo
     [SyncMethod]
     private void Debug_AddType(TValue type, float part)
     {
-        container.TryAddValue(type, part, out _);
+        container.TryAddValue(type, part);
     }
 
     public override IEnumerable<FloatMenuOption> RightClickFloatMenuOptions

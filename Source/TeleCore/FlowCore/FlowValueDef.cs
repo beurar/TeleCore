@@ -2,7 +2,7 @@
 using UnityEngine;
 using Verse;
 
-namespace TeleCore;
+namespace TeleCore.FlowCore;
 
 public class FlowValueDef : Def
 {

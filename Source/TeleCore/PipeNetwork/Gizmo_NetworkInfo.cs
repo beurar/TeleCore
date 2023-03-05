@@ -5,6 +5,8 @@ using System.Text;
 using System.Threading.Tasks;
 using Multiplayer.API;
 using RimWorld;
+using TeleCore.FlowCore;
+using TeleCore.FlowCore.Implementations;
 using TeleCore.Static;
 using UnityEngine;
 using Verse;
@@ -266,7 +268,7 @@ namespace TeleCore
                 float xPos = BarRect.x;
                 Widgets.DrawBoxSolid(containerRect, TColor.Black);
                 Widgets.DrawBoxSolid(BarRect, TColor.White025);
-                foreach (NetworkValueDef type in Container.AllStoredTypes)
+                foreach (NetworkValueDef type in Container.StoredDefs)
                 {
                     float percent = (Container.StoredValueOf(type) / Container.Capacity);
                     Rect typeRect = new Rect(xPos, BarRect.y, BarRect.width * percent, BarRect.height);
@@ -527,7 +529,7 @@ namespace TeleCore
         {
             foreach (var type in Container.AcceptedTypes)
             {
-                Container.TryAddValue(type, part, out _);
+                Container.TryAddValue(type, part);
             }
         }
 
@@ -540,7 +542,7 @@ namespace TeleCore
         [SyncMethod]
         private void Debug_AddType(NetworkValueDef type, float part)
         {
-            Container.TryAddValue(type, part, out _);
+            Container.TryAddValue(type, part);
         }
 
         public override IEnumerable<FloatMenuOption> RightClickFloatMenuOptions

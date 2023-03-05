@@ -6,6 +6,8 @@ using System.Text;
 using System.Threading.Tasks;
 using HarmonyLib;
 using RimWorld;
+using TeleCore.FlowCore;
+using TeleCore.FlowCore.Implementations;
 using TeleCore.Static.Utilities;
 using UnityEngine;
 using Verse;
@@ -386,7 +388,7 @@ namespace TeleCore
                 {
                     var type = usedTypes[i];
                     if (!subPart.NeedsValue(type, ofRole)) continue;
-                    if (Container.TryTransferTo(subPart.Container, type, 1, out _))
+                    if (Container.TryTransferValue(subPart.Container, type, 1, out _))
                     {
                         subPart.Notify_ReceivedValue();
                     }
@@ -407,7 +409,7 @@ namespace TeleCore
             {
                 var type = usedTypes[i];
                 if (!part.NeedsValue(type, ofRole)) continue;
-                if (Container.TryTransferTo(part.Container, type, 1, out _))
+                if (Container.TryTransferValue(part.Container, type, 1, out _))
                 {
                     part.Notify_ReceivedValue();
                 }
@@ -446,7 +448,7 @@ namespace TeleCore
         //
         public void SendFirstValue(INetworkSubPart other)
         {
-            Container.TryTransferTo(other.Container, Container.AllStoredTypes.FirstOrDefault(), 1, out _);
+            Container.TryTransferValue(other.Container, Container.StoredDefs.FirstOrDefault(), 1, out _);
         }
 
         //

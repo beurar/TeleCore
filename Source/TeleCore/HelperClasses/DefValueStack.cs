@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using RimWorld;
+using TeleCore.FlowCore;
 using UnityEngine;
 using Verse;
 
@@ -19,7 +20,8 @@ namespace TeleCore
     public struct DefValueStack<TDef> : IEnumerable<DefValue<TDef, float>> where TDef : Def
     {
         private readonly float? _maxCapacity;
-        private readonly OrderedDictionary<TDef, DefValue<TDef, float>> _values;
+        //private readonly Hashtable tabletest;
+        private readonly OrderedDictionary<TDef, DefValue<TDef, float>> _values = new();
         private float _totalValue;
 
         //States
@@ -28,11 +30,15 @@ namespace TeleCore
         public bool? Full => _maxCapacity == null ? null :  _totalValue >= _maxCapacity;
         
         //Stack Info
-        public IEnumerable<TDef> AllTypes => _values.Keys;
+        public IEnumerable<TDef> Defs => _values.Keys;
+        public IEnumerable<DefValue<TDef, float>> Values => _values.Values;
         public float TotalValue => _totalValue;
         public int Length => _values.Count;
 
-        public DefValue<TDef, float> this[int index] => _values[index];
+        public DefValue<TDef, float> this[int index]
+        {
+            get { return _values[index]; }
+        }
 
         public DefValue<TDef, float> this[TDef def]
         {
@@ -59,15 +65,18 @@ namespace TeleCore
             var delta = previous - _values[value.Def];
             _totalValue += delta.Value;
         }
-        
-        public DefValueStack(float? maxCapacity = null)
+
+        public DefValueStack()
+        {
+        }
+
+        public DefValueStack(float? maxCapacity = null) : this()
         {
             _maxCapacity = maxCapacity;
         }
         
         public DefValueStack(IDictionary<TDef, float> source, float? maxCapacity = null) : this(maxCapacity)
         {
-            _values = new OrderedDictionary<TDef, DefValue<TDef, float>>();
             foreach (var value in source)
             {
                 _values.Add(value.Key, new DefValue<TDef, float>(value.Key, value.Value));
@@ -75,7 +84,15 @@ namespace TeleCore
             }
         }
 
-        public static DefValueStack<TDef> Invalid => new(null, null)
+        public DefValueStack(ICollection<TDef> defs, float? maxCapacity = null) : this(maxCapacity)
+        {
+            foreach (var value in defs)
+            {
+                _values.Add(value, new DefValue<TDef, float>(value, 0));
+            }
+        }
+
+        public static DefValueStack<TDef> Invalid => new()
         {
             _totalValue = -1,
         };
@@ -103,6 +120,17 @@ namespace TeleCore
             return GetEnumerator();
         }
 
+        public void Reset()
+        {
+            _totalValue = 0;
+            foreach (DictionaryEntry value in _values)
+            {
+                if (value.Value is DefValue<TDef, float> dv)
+                {
+                    _values[value.Key] = (dv.Def, 0);
+                }
+            }
+        }
 
         //Math
         #region DefValue Math
@@ -156,7 +184,24 @@ namespace TeleCore
             return stack._totalValue > value;
         }
 
+        public static bool operator ==(DefValueStack<TDef> stack, float value)
+        {
+            return Math.Abs(stack._totalValue - value) < 0.001;
+        }
+
+        public static bool operator !=(DefValueStack<TDef> stack, float value)
+        {
+            return !(stack == value);
+        }
+
         #endregion
+
+        //TODO: Incoming headache
+        //TODO: Clone? or redoe the stack struct?
+        public DefValueStack<TValue> Clone<TValue>() where TValue : FlowValueDef
+        {
+            return new DefValueStack<TValue>(this._values.Clone, )
+        }
     }
 
     /*

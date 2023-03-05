@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using TeleCore.FlowCore;
+using TeleCore.FlowCore.Implementations;
 using Verse;
 using Verse.AI;
 
@@ -30,11 +32,11 @@ namespace TeleCore
             if (PortableNetworkContainerContainer.Container.FillState == ContainerFillState.Empty) return JobCondition.Succeeded;
             if (TargetContainer.FillState == ContainerFillState.Full) return JobCondition.Incompletable;
 
-            for (int i = Container.AllStoredTypes.Count - 1; i >= 0; i--)
+            for (int i = Container.StoredDefs.Count - 1; i >= 0; i--)
             {
-                var type = Container.AllStoredTypes.ElementAt(i);
+                var type = Container.StoredDefs.ElementAt(i);
                 if (!NetworkPart.NeedsValue(type, NetworkRole.Storage)) continue;
-                if (Container.TryTransferTo(NetworkPart.Container, type, 1, out _))
+                if (Container.TryTransferValue(NetworkPart.Container, type, 1, out _))
                 {
                     NetworkPart.Notify_ReceivedValue();
                 }

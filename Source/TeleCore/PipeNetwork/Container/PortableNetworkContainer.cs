@@ -4,6 +4,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using RimWorld;
+using TeleCore.FlowCore;
+using TeleCore.FlowCore.Implementations;
 using TeleCore.Static;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -83,7 +85,7 @@ namespace TeleCore
                     var n = twc.TryGetComp<Comp_NetworkStructure>();
                     if (n == null) return false;
                     if (!n[networkDef].NetworkRole.HasFlag(NetworkRole.Storage)) return false;
-                    if (!Container.AllStoredTypes.Any(n.AcceptsValue)) return false;
+                    if (!Container.StoredDefs.Any(n.AcceptsValue)) return false;
                     if (n[networkDef].Container.FillState == ContainerFillState.Full) return false;
                     return true;
                 }
@@ -145,7 +147,7 @@ namespace TeleCore
                 storeEvenly = true,
                 dropContents = false,
                 leaveContainer = false,
-                valueDefs = new List<FlowValueDef>(stack.AllTypes),
+                valueDefs = new List<FlowValueDef>(stack.Defs),
             }, portable);
             portable.Container.LoadFromStack(stack);
             return portable;

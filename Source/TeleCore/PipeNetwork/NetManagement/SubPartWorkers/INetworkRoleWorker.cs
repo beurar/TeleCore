@@ -1,4 +1,6 @@
-﻿namespace TeleCore;
+﻿using TeleCore.FlowCore.Implementations;
+
+namespace TeleCore;
 
 public interface INetworkRoleWorker
 {

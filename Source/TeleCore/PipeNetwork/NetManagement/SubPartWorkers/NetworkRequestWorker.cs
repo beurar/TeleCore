@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.ComponentModel;
+using TeleCore.FlowCore;
 using TeleCore.Static.Utilities;
 using UnityEngine;
 using Verse;
@@ -140,7 +141,7 @@ public class NetworkRequestWorker : IExposable
                         var partContainer = part.Container;
                         if (partContainer.FillState == ContainerFillState.Empty) return;
                         if (partContainer.StoredValueOf(setting.Key) <= 0) return;
-                        if (partContainer.TryTransferTo(container, setting.Key, 1, out _))
+                        if (partContainer.TryTransferValue(container, setting.Key, 1, out _))
                         {
                             _ = true;
                             //Notify_ReceivedValue();

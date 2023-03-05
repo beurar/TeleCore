@@ -224,9 +224,10 @@ namespace TeleCore
             {
                 foreach (var value in stack)
                 {
-                    if (storage.StoredValueOf(value.Def) > 0 && storage.TryRemoveValue(value.Def, value.Value, out float actualVal))
+                    var remResult = storage.TryRemoveValue(value.Def, value.Value);
+                    if (storage.StoredValueOf(value.Def) > 0 && remResult)
                     {
-                        stack -= (value.Def, actualVal);
+                        stack -= (value.Def, remResult.ActualAmount);
                     }
 
                     if (stack.TotalValue <= 0)
@@ -263,9 +264,10 @@ namespace TeleCore
             {
                 foreach (var value in stack)
                 {
-                    if (storage.TryAddValue(value.Def, value.Value, out float actualValue))
+                    var addReslt = storage.TryAddValue(value.Def, value.Value);
+                    if (addReslt)
                     {
-                        stack -= (value.Def, actualValue);
+                        stack -= (value.Def, addReslt.ActualAmount);
                     }
                 }
             }

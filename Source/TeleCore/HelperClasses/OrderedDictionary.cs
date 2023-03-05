@@ -1,15 +1,18 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Collections.Specialized;
+using System.Linq;
 
 namespace TeleCore;
 
 public class OrderedDictionary<TKey, TValue> : OrderedDictionary
 {
     //
-    public ICollection<TKey> Keys => (ICollection<TKey>) base.Keys;
-    public ICollection<TValue> Values => (ICollection<TValue>) base.Keys;
-    
+    public IEnumerable<TKey> Keys => base.Keys.Cast<TKey>();
+    public IEnumerable<TValue> Values => base.Values.Cast<TValue>();
+
     public new TValue this[int index]
     {
         get => (TValue)base[index];
@@ -18,7 +21,7 @@ public class OrderedDictionary<TKey, TValue> : OrderedDictionary
     
     public TValue this[TKey key]
     {
-        get => (TValue)base[key];
+        get => base.Contains(key) ? (TValue)base[key] : default;
         set => base[key] = value;
     }
         
