@@ -19,50 +19,76 @@ namespace TeleCore
     /// <typeparam name="TDef">The <see cref="Def"/> of the stack.</typeparam>
     public struct DefValueStack<TDef> : IEnumerable<DefValue<TDef, float>> where TDef : Def
     {
+        //private readonly OrderedDictionary<TDef, DefValue<TDef, float>> _values = new();
         private readonly float? _maxCapacity;
-        //private readonly Hashtable tabletest;
-        private readonly OrderedDictionary<TDef, DefValue<TDef, float>> _values = new();
+        private DefValue<TDef, float>[] _stack;
         private float _totalValue;
-
+        
         //States
-        public bool IsValid => _values != null;
+        public bool IsValid => _stack != null;
         public bool Empty => _totalValue == 0f;
         public bool? Full => _maxCapacity == null ? null :  _totalValue >= _maxCapacity;
         
         //Stack Info
-        public IEnumerable<TDef> Defs => _values.Keys;
-        public IEnumerable<DefValue<TDef, float>> Values => _values.Values;
+        public IEnumerable<TDef> Defs => _stack.Select(value => value.Def);
+        public IEnumerable<DefValue<TDef, float>> Values => _stack;
+        
         public float TotalValue => _totalValue;
-        public int Length => _values.Count;
+        public int Length => _stack.Length;
 
-        public DefValue<TDef, float> this[int index]
-        {
-            get { return _values[index]; }
-        }
+        public DefValue<TDef, float> this[int index] => _stack[index];
 
         public DefValue<TDef, float> this[TDef def]
         {
-            get => _values[def];
+            get => TryGetWithFallback(def, (def, 0));
             private set => TryAddOrSet(value);
         }
 
-        private void TryAddOrSet(DefValue<TDef, float> value)
+        private int IndexOf(TDef def)
         {
-            //Get previous value
-            var previous = _values[value.Def];
-            
-            //Set new value
-            if (_values.Contains(value.Def))
+            for (var i = 0; i < _stack.Length; i++)
             {
-                _values[value.Def] = value;
+                if (_stack[i].Def == def) return i;
+            }
+            return -1;
+        }
+
+        public DefValue<TDef, float> TryGetWithFallback(TDef key, DefValue<TDef, float> fallback)
+        {
+            return TryGetValue(key, out _, out var value) ? value : fallback;
+        }
+
+        public bool TryGetValue(TDef key, out int index, out DefValue<TDef, float> value)
+        {
+            index = -1;
+            value = new DefValue<TDef, float>(key, float.NaN);
+            for (var i = 0; i < _stack.Length; i++)
+            {
+                value = _stack[i];
+                if (value.Def != key) continue;
+                index = i;
+                return true;
+            }
+            return false;
+        }
+
+        private void TryAddOrSet(DefValue<TDef, float> newValue)
+        {
+            if (!TryGetValue(newValue.Def, out var index, out var previous))
+            {
+                //Set new value
+                index = _stack.Length;
+                _stack = _stack.Extend(1);
+                _stack[index] = newValue;
             }
             else
             {
-                _values.Add(value.Def, value);
+                //Or add value
+                _stack[index] += newValue.Value;
             }
-
+            
             //Get Delta
-            var delta = previous - _values[value.Def];
+            var delta = previous - _stack[index];
             _totalValue += delta.Value;
         }
 
@@ -77,18 +103,23 @@ namespace TeleCore
         
         public DefValueStack(IDictionary<TDef, float> source, float? maxCapacity = null) : this(maxCapacity)
         {
+            _stack = new DefValue<TDef, float>[source.Count];
+            var i = 0;
             foreach (var value in source)
             {
-                _values.Add(value.Key, new DefValue<TDef, float>(value.Key, value.Value));
+                _stack[i] = new DefValue<TDef, float>(value.Key, value.Value);
                 _totalValue += value.Value;
+                i++;
             }
         }
 
         public DefValueStack(ICollection<TDef> defs, float? maxCapacity = null) : this(maxCapacity)
         {
-            foreach (var value in defs)
+            var i = 0;
+            foreach (var def in defs)
             {
-                _values.Add(value, new DefValue<TDef, float>(value, 0));
+                _stack[i] = new DefValue<TDef, float>(def, 0);
+                i++;
             }
         }
 
@@ -99,11 +130,11 @@ namespace TeleCore
         
         public override string ToString()
         {
-            if (_values == null || Length == 0) return "Empty Stack";
+            if (_stack == null || Length == 0) return "Empty Stack";
             StringBuilder sb = new StringBuilder();
             for (var i = 0; i < Length; i++)
             {
-                var value = _values[i];
+                var value = _stack[i];
                 sb.AppendLine($"[{i}] {value}");
             }
             return sb.ToString();
@@ -111,7 +142,7 @@ namespace TeleCore
 
         public IEnumerator<DefValue<TDef, float>> GetEnumerator()
         {
-            return _values.Values.GetEnumerator();
+            return (IEnumerator<DefValue<TDef, float>>)_stack.GetEnumerator();
         }
 
         
@@ -123,12 +154,9 @@ namespace TeleCore
         public void Reset()
         {
             _totalValue = 0;
-            foreach (DictionaryEntry value in _values)
+            for (int i = 0; i < _stack.Length; i++)
             {
-                if (value.Value is DefValue<TDef, float> dv)
-                {
-                    _values[value.Key] = (dv.Def, 0);
-                }
+                _stack[i].Value = 0;
             }
         }
 
@@ -154,7 +182,7 @@ namespace TeleCore
 
         public static DefValueStack<TDef> operator +(DefValueStack<TDef> stack , DefValueStack<TDef> other)
         {
-            foreach (var value in other._values.Keys)
+            foreach (var value in other._stack)
             {
                 stack[value] += other[value];
             }
@@ -163,7 +191,7 @@ namespace TeleCore
 
         public static DefValueStack<TDef> operator -(DefValueStack<TDef> stack , DefValueStack<TDef> other)
         {
-            foreach (var value in other._values.Keys)
+            foreach (var value in other._stack)
             {
                 stack[value] -= other[value];
             }
@@ -195,13 +223,6 @@ namespace TeleCore
         }
 
         #endregion
-
-        //TODO: Incoming headache
-        //TODO: Clone? or redoe the stack struct?
-        public DefValueStack<TValue> Clone<TValue>() where TValue : FlowValueDef
-        {
-            return new DefValueStack<TValue>(this._values.Clone, )
-        }
     }
 
     /*
