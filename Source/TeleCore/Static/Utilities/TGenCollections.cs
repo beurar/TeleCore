@@ -10,16 +10,6 @@ namespace TeleCore
 {
     public static class TGenCollections
     {
-        public static T[] Extend<T>(this T[] array, int positions)
-        {
-            var arr = new T[array.Length + positions];
-            for (var i = 0; i < array.Length; i++)
-            {
-                arr[i] = array[i];
-            }
-            return arr;
-        }
-        
         public static void Populate<T>(this T[] array, IEnumerable<T> values)
         {
             int i = 0;

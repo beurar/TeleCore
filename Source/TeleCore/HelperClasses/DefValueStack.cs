@@ -7,6 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using RimWorld;
 using TeleCore.FlowCore;
+using Unity.Collections;
 using UnityEngine;
 using Verse;
 
@@ -21,6 +22,8 @@ namespace TeleCore
     {
         //private readonly OrderedDictionary<TDef, DefValue<TDef, float>> _values = new();
         private readonly float? _maxCapacity;
+        //TODO: TEST NATIVE ARR
+        private NativeArray<DefValue<TDef, float>> _stackArr;
         private DefValue<TDef, float>[] _stack;
         private float _totalValue;
         
@@ -44,6 +47,12 @@ namespace TeleCore
             private set => TryAddOrSet(value);
         }
 
+        public DefValueStack(DefValueStack<TDef> other)
+        {
+            _stack = (DefValue<TDef,float>[])other._stack.Clone();
+            _totalValue = other._totalValue;
+        }
+        
         private int IndexOf(TDef def)
         {
             for (var i = 0; i < _stack.Length; i++)
@@ -78,13 +87,14 @@ namespace TeleCore
             {
                 //Set new value
                 index = _stack.Length;
-                _stack = _stack.Extend(1);
+                Array.Resize(ref _stack, _stack.Length + 1);
                 _stack[index] = newValue;
             }
             else
             {
                 //Or add value
                 _stack[index] += newValue.Value;
+                _ = _stack;
             }
             
             //Get Delta
@@ -115,6 +125,7 @@ namespace TeleCore
 
         public DefValueStack(ICollection<TDef> defs, float? maxCapacity = null) : this(maxCapacity)
         {
+            _stack = new DefValue<TDef, float>[defs.Count];
             var i = 0;
             foreach (var def in defs)
             {
@@ -132,6 +143,7 @@ namespace TeleCore
         {
             if (_stack == null || Length == 0) return "Empty Stack";
             StringBuilder sb = new StringBuilder();
+            sb.AppendLine($"[TOTAL: {TotalValue}]");
             for (var i = 0; i < Length; i++)
             {
                 var value = _stack[i];
@@ -165,12 +177,14 @@ namespace TeleCore
 
         public static DefValueStack<TDef> operator +(DefValueStack<TDef> stack, DefValue<TDef, float> value)
         {
+            stack = new DefValueStack<TDef>(stack);
             stack[value.Def] += value;
             return stack;
         }
 
         public static DefValueStack<TDef> operator -(DefValueStack<TDef> stack, DefValue<TDef, float> value)
         {
+            stack = new DefValueStack<TDef>(stack);
             stack[value.Def] -= value;
             return stack;
         }
@@ -182,6 +196,7 @@ namespace TeleCore
 
         public static DefValueStack<TDef> operator +(DefValueStack<TDef> stack , DefValueStack<TDef> other)
         {
+            stack = new DefValueStack<TDef>(stack);
             foreach (var value in other._stack)
             {
                 stack[value] += other[value];
@@ -191,13 +206,14 @@ namespace TeleCore
 
         public static DefValueStack<TDef> operator -(DefValueStack<TDef> stack , DefValueStack<TDef> other)
         {
+            stack = new DefValueStack<TDef>(stack);
             foreach (var value in other._stack)
             {
                 stack[value] -= other[value];
             }
             return stack;
         }
-
+        
         #endregion
 
         #region Comparision
@@ -224,6 +240,7 @@ namespace TeleCore
 
         #endregion
     }
+}
 
     /*
     public struct DefValueStack<TDef> where TDef : Def
@@ -390,4 +407,3 @@ namespace TeleCore
         }
     }
     */
-}

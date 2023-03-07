@@ -364,8 +364,6 @@ public abstract class ValueContainerBase<TValue> : IExposable where TValue : Flo
         //Cache previous stack
         var previous = ValueStack;
         
-        //TODO: internal dictionary is a reference type, and thus is passed on into the operator -
-        //TODO: this then applies changes by ref rather than by value, funny isnt it
         ValueStack = new DefValueStack<TValue>(storedValues); //Set new stack
         var stackDelta = ValueStack - previous; //Get stack delta
         
