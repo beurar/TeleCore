@@ -24,7 +24,7 @@
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <Version>1.2.5</Version>
     <SignAssembly>False</SignAssembly>
-    <PackageVersion>1.7.7.3</PackageVersion>
+    <PackageVersion>1.7.7.5</PackageVersion>
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
@@ -44,7 +44,7 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <DebugType>full</DebugType>
     <OutputPath>C:\Program Files (x86)\Steam\steamapps\common\RimWorld\Mods\TeleCore\Assemblies</OutputPath>
-    <Optimize>false</Optimize>
+    <Optimize>true</Optimize>
     <DocumentationFile>C:\Program Files (x86)\Steam\steamapps\common\RimWorld\Mods\TeleCore\Assemblies\TeleCore.xml</DocumentationFile>
   </PropertyGroup>
 

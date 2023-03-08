@@ -457,9 +457,11 @@ public abstract class ValueContainerBase<TValue> : IExposable where TValue : Flo
     
     #region Processor Methods
 
-    /// <summary>
-    /// Wrapper for <see cref="TryAddValue2"/>.
-    /// </summary>
+    public bool TryAddValue(TValue valueDef, float amount, out ValueResult<TValue> result)
+    {
+        return result = TryAddValue((valueDef, amount));
+    }
+    
     public ValueResult<TValue> TryAddValue(TValue valueDef, float amount)
     {
         return TryAddValue((valueDef, amount));
@@ -554,6 +556,11 @@ public abstract class ValueContainerBase<TValue> : IExposable where TValue : Flo
         // Notify that a value has been added
         Notify_AddedValue(value, actual);
         return result.SetActual(actual).TryComplete();
+    }
+    
+    public bool TryRemoveValue(TValue valueDef, float amount, out ValueResult<TValue> result)
+    {
+        return result = TryRemoveValue((valueDef, amount));
     }
 
     public ValueResult<TValue> TryRemoveValue(TValue valueDef, float value)

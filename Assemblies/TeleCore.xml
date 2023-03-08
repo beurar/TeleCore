@@ -102,11 +102,6 @@
             </summary>
             <param name="stack">Stack to provide values for the container.</param>
         </member>
-        <member name="M:TeleCore.FlowCore.ValueContainerBase`1.TryAddValue(`0,System.Single)">
-            <summary>
-            Wrapper for <see cref="!:TryAddValue2"/>.
-            </summary>
-        </member>
         <member name="M:TeleCore.FlowCore.ValueContainerBase`1.TryTransferValue(TeleCore.FlowCore.ValueContainerBase{`0},`0,System.Single,System.Single@)">
             <summary>
             Attempts to transfer the desired value and amount to another container, returns how much was transfered

@@ -23,7 +23,7 @@ namespace TeleCore
         //private readonly OrderedDictionary<TDef, DefValue<TDef, float>> _values = new();
         private readonly float? _maxCapacity;
         //TODO: TEST NATIVE ARR
-        private NativeArray<DefValue<TDef, float>> _stackArr;
+        //private NativeArray<DefValue<TDef, float>> _stackArr;
         private DefValue<TDef, float>[] _stack;
         private float _totalValue;
         

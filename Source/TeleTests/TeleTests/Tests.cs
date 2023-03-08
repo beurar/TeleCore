@@ -135,13 +135,17 @@ namespace TeleTests
         public void ProfileTest1()
         {
             var values = new List<DefValue<NetworkValueDef, float>>();
-            for (int i = 0; i < 1000; i++)
+            for (int i = 0; i < 100; i++)
             {
                 values.Add(new DefValue<NetworkValueDef, float>(ValueDefs[0], 1+i));
             }
             
             Console.WriteLine("Running 100 additions.");
+            
+            //PROFILING
             var stopwatch = new Stopwatch();
+            
+            //PROFILE CONTAINER ADDITION
             stopwatch.Start();
             var failCount = 0;
             foreach (var value in values)
@@ -150,12 +154,32 @@ namespace TeleTests
                 if (result.State == ValueState.Failed)
                     failCount++;
             }
-
             stopwatch.Stop();
+            var ellapsedFirst = stopwatch.ElapsedMilliseconds;
+            
+            stopwatch.Restart();
+            var localStack = new DefValueStack<NetworkValueDef>(ValueDefs);
+            localStack += new DefValue<NetworkValueDef,float>(ValueDefs[0], 1);
+            for (int i = 0; i < 100; i++)
+            {
+                localStack += localStack;
+            }
+            stopwatch.Stop();
+            var ellapsedSecond = stopwatch.ElapsedMilliseconds;
+            
+            stopwatch.Restart();
+            float totalTest = 0;
+            foreach (var value in values)
+            {
+                totalTest += value.Value;
+            }
+            stopwatch.Stop();
+            
             Console.WriteLine($"Container value:\n{TestContainer}");
-            Console.WriteLine($"Execution time: {stopwatch.ElapsedMilliseconds} ms with {failCount} failures to add");
+            Console.WriteLine($"Execution time: {ellapsedFirst} ms with {failCount} failures to add");
+            Console.WriteLine($"Execution time: {ellapsedSecond} ms");
+            Console.WriteLine($"Execution time: {stopwatch.ElapsedMilliseconds} ms");
+
         }
-        
-        
     }
 }
