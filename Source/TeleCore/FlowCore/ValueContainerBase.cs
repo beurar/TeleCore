@@ -306,14 +306,26 @@ public abstract class ValueContainerBase<TValue> : IExposable where TValue : Flo
     {
         return filterSettings.TryGetValue(valueType, out var settings) && settings.canStore;
     }
+    
+    public bool CanTransferAmountTo(ValueContainerBase<TValue> other, float amount)
+    {
+        return other.TotalStored + amount <= other.Capacity;
+    }
+    
+    public bool CanTransferAmountTo(ValueContainerBase<TValue> other, TValue valueDef, float amount)
+    {
+        if (storedValues.TryGetValue(valueDef) < amount) return false;
+        return other.StoredValueOf(valueDef) + amount <= other.CapacityOf(valueDef);
+    }
 
-    private bool CanResolveTransfer(ValueContainerBase<TValue> other, TValue type, float value, out float actualTransfer)
+    
+    private bool CanResolveTransfer(ValueContainerBase<TValue> other, TValue type, float amount, out float actualTransfer)
     {
         var remainingCapacity = type.sharesCapacity
             ? other.CapacityOf(type) - other.StoredValueOf(type)
             : other.Capacity - other.TotalStored;
 
-        actualTransfer = Mathf.Min(value, remainingCapacity);
+        actualTransfer = Mathf.Min(amount, remainingCapacity);
 
         return actualTransfer > 0;
     }
