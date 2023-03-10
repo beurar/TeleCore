@@ -15,7 +15,7 @@ namespace TeleCore
         private string costLabel;
 
         public List<string> tags;
-        public List<DefCount<CustomRecipeRatioDef>> desiredResources;
+        public List<DefCountDef<CustomRecipeRatioDef>> desiredResources;
 
         public List<ThingDefCount> Results => cachedResults;
         public string CostLabel => costLabel;

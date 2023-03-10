@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -10,6 +11,14 @@ using Verse;
 
 namespace TeleCore
 {
+    public class DefFloatDef<T> : DefValueDef<T, float> where T : Def
+    {
+    }
+
+    public class DefCountDef<T> : DefValueDef<T, int> where T : Def
+    {
+    }
+    
     public class DefValueDef<TDef,TValue> where TDef : Def
     where TValue : struct
     {
@@ -68,6 +77,16 @@ namespace TeleCore
         }
     }
 
+    [StructLayout(LayoutKind.Explicit)]
+    public struct DefFloat<TDef>
+        where TDef : Def
+    {
+        private int defID;
+
+        public TDef Def => defID.ToDef<TDef>();
+        public float Value { get; set; }
+    }
+    
     /// <summary>
     /// Wraps any <see cref="Def"/> Type into a struct, attaching a numeric value
     /// </summary>

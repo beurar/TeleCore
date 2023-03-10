@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
@@ -8,6 +9,7 @@ using System.Threading.Tasks;
 using HarmonyLib;
 using Multiplayer.API;
 using RimWorld;
+using UnityEngine.Assertions;
 using Verse;
 
 namespace TeleCore
@@ -26,59 +28,66 @@ namespace TeleCore
                 MP.RegisterAll();
             }
             
-            //
+            //Process Defs after load
             ApplyDefChangesPostLoad();
         }
 
-        internal static void ApplyDefChangesPostLoad()
+        private static void ApplyDefChangesPostLoad()
         {
             //Load Translation Libraries
             //LoadStaticTranslationLibraries();
             
             //
             var allInjectors = DefInjectors()?.ToArray();
+            var skipInjectors = allInjectors is not { Length: > 0 };
 
-            //All Buildables
-            foreach (var def in DefDatabase<BuildableDef>.AllDefsListForReading)
+            foreach (var def in DefDatabase<Def>.AllDefsListForReading)
             {
-                DefExtensionCache.TryRegister(def);
+                var bDef = def as BuildableDef;
+                var tDef = def as ThingDef;
+                var isBuildable = bDef != null;
+                var isThing = tDef != null;
 
-                //
-                if (allInjectors == null) continue;
+                //Register ID
+                StaticData.RegisterDefID(def);
+
+                if (isBuildable)
+                {
+                    DefExtensionCache.TryRegister(def);
+                }
+
+                if (isThing)
+                {
+                    if (tDef.HasSubMenuExtension(out var extension))
+                    {
+                        SubMenuThingDefList.Add(tDef, extension);
+                    }
+                }
+
+                if (skipInjectors) continue;
                 foreach (var injector in allInjectors)
                 {
-                    injector.OnBuildableDefInject(def);
+                    if (isBuildable)
+                    {
+                        injector.OnBuildableDefInject(bDef);
+                    }
+
+                    if (isThing)
+                    {
+                        //Injections
+                        injector.OnThingDefInject(tDef);
+
+                        //Pawn Check
+                        if (tDef?.thingClass != null && (tDef.thingClass == typeof(Pawn) || tDef.thingClass.IsSubclassOf(typeof(Pawn))))
+                        {
+                            tDef.comps ??= new List<CompProperties>();
+                            injector.OnPawnInject(tDef);
+                        }
+                    }
                 }
             }
 
-            //All Pawns
-            foreach (var def in DefDatabase<ThingDef>.AllDefsListForReading)
-            {
-                //
-                //Sub Menu
-                if (def.HasSubMenuExtension(out var extension))
-                {
-                    SubMenuThingDefList.Add(def, extension);
-                }
-                
-                if (allInjectors == null) continue;
-                foreach (var injector in allInjectors)
-                {
-                    //Injections
-                    injector.OnThingDefInject(def);
-
-                    //Pawn Check
-                    if (def?.thingClass == null) continue;
-                    Type thingClass = def.thingClass;
-                    if (!thingClass.IsSubclassOf(typeof(Pawn)) && thingClass != typeof(Pawn)) continue;
-                    if (def.comps == null)
-                        def.comps = new List<CompProperties>();
-
-                    injector.OnPawnInject(def);
-                }
-            }
-
-            if (allInjectors == null) return;
+            if (skipInjectors) return;
             foreach (var injector in allInjectors)
             {
                 injector.Dispose();
@@ -88,12 +97,7 @@ namespace TeleCore
         //
         private static IEnumerable<DefInjectBase> DefInjectors()
         {
-            var allSubclasses = typeof(DefInjectBase).AllSubclassesNonAbstract();
-            if (allSubclasses.Any())
-            {
-                return allSubclasses.Select(t => (DefInjectBase)Activator.CreateInstance(t));
-            }
-            return null;
+            return typeof(DefInjectBase).AllSubclassesNonAbstract().Select(type => (DefInjectBase)Activator.CreateInstance(type));
         }
 
         /*

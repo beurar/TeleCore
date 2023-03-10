@@ -7,7 +7,7 @@ namespace TeleCore
 {
     internal static class NetworkBillUtility
     {
-        public static DefValue<NetworkValueDef, float>[] ConstructCustomCost(List<DefCount<CustomRecipeRatioDef>> list)
+        public static DefValue<NetworkValueDef, float>[] ConstructCustomCost(List<DefCountDef<CustomRecipeRatioDef>> list)
         {
             var allValues = list.SelectMany(t =>
                 t.Def.inputRatio.Select(r => new DefValue<NetworkValueDef, float>(r.def, r.value * t.Value)));
