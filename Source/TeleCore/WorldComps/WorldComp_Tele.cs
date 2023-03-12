@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using RimWorld.Planet;
+﻿using RimWorld.Planet;
 using Verse;
 
 namespace TeleCore
@@ -11,7 +6,8 @@ namespace TeleCore
     public class WorldComp_Tele : WorldComponent
     {
         //Discovery
-        internal ThingDataCache thingDataCache;
+        internal DiscoveryTable _discoveries;
+        internal UISettingsTable _uiSettingsTable;
 
         public WorldComp_Tele(World world) : base(world)
         {
@@ -22,7 +18,8 @@ namespace TeleCore
         {
             base.ExposeData();
             StaticData.ExposeStaticData();
-            Scribe_Deep.Look(ref thingDataCache, "DiscoveryTable");
+            Scribe_Deep.Look(ref _discoveries, "DiscoveryTable");
+            Scribe_Deep.Look(ref _uiSettingsTable, "UISettings");
 
             if (Scribe.mode == LoadSaveMode.PostLoadInit)
             {
@@ -33,7 +30,8 @@ namespace TeleCore
 
         private void GenerateInfos()
         {
-            thingDataCache ??= new ThingDataCache();
+            _discoveries ??= new DiscoveryTable();
+            _uiSettingsTable ??= new UISettingsTable();
         }
     }
 }

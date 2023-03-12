@@ -1,79 +1,98 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Collections.Specialized;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
-using System.Threading.Tasks;
-using RimWorld;
-using TeleCore.FlowCore;
 using Unity.Collections;
-using UnityEngine;
+using Unity.Collections.LowLevel.Unsafe;
 using Verse;
 
 namespace TeleCore
 {
+    [StructLayout(LayoutKind.Auto)]
+    public unsafe struct UnsafeDefValueStack<TDef>
+        where TDef : Def
+    {
+        private fixed ushort _stackPart1[4095];
+        private fixed float _stackPart2[4095];
+
+        public DefFloat<TDef> At(int index)
+        {
+            return new DefFloat<TDef>(_stackPart1[index].ToDef<TDef>(), _stackPart2[index]);
+        }
+    }
+    
     /// <summary>
     /// Manages any Def as a numeric value in a stack.
     /// Only supports DefValues with TValue set as <see cref="float"/>.
     /// </summary>
     /// <typeparam name="TDef">The <see cref="Def"/> of the stack.</typeparam>
-    public struct DefValueStack<TDef> : IEnumerable<DefValue<TDef, float>> where TDef : Def
+    public unsafe struct DefValueStack<TDef> : IEnumerable<DefFloat<TDef>> where TDef : Def
     {
         //private readonly OrderedDictionary<TDef, DefValue<TDef, float>> _values = new();
         private readonly float? _maxCapacity;
         //TODO: TEST NATIVE ARR
-        //private NativeArray<DefValue<TDef, float>> _stackArr;
-        private DefValue<TDef, float>[] _stack;
+        private NativeArray<DefFloat<TDef>> _stackArr;
+        private DefFloat<TDef>* _ptr;
+        //private DefFloat<TDef>[] _stack;
         private float _totalValue;
         
+        
         //States
-        public bool IsValid => _stack != null;
+        public bool IsValid => _ptr != null;
         public bool Empty => _totalValue == 0f;
         public bool? Full => _maxCapacity == null ? null :  _totalValue >= _maxCapacity;
         
         //Stack Info
-        public IEnumerable<TDef> Defs => _stack.Select(value => value.Def);
-        public IEnumerable<DefValue<TDef, float>> Values => _stack;
+        public IEnumerable<TDef> Defs => _stackArr.Select(value => value.Def);
+        public IEnumerable<DefFloat<TDef>> Values => _stackArr;
         
         public float TotalValue => _totalValue;
-        public int Length => _stack.Length;
+        public int Length => _stackArr.Length;
 
-        public DefValue<TDef, float> this[int index] => _stack[index];
+        public DefFloat<TDef> this[int index] => _stackArr[index];
 
-        public DefValue<TDef, float> this[TDef def]
+        public DefFloat<TDef> this[TDef def]
         {
-            get => TryGetWithFallback(def, (def, 0));
+            get => TryGetWithFallback(def, new DefFloat<TDef>(def, 0));
             private set => TryAddOrSet(value);
         }
-
+        
         public DefValueStack(DefValueStack<TDef> other)
         {
-            _stack = (DefValue<TDef,float>[])other._stack.Clone();
+            _stackArr = new NativeArray<DefFloat<TDef>>(other._stackArr.Length, Allocator.Temp);
+            _ptr = (DefFloat<TDef>*)_stackArr.GetUnsafePtr();
+            //_stack = new DefFloat<TDef>[other._stack.Length];
+            for (var i = 0; i < _stackArr.Length; i++)
+            {
+                _ptr[i] = other._ptr[i];
+               //_stack[i] = other._stack[i];
+            }
             _totalValue = other._totalValue;
         }
         
         private int IndexOf(TDef def)
         {
-            for (var i = 0; i < _stack.Length; i++)
+            for (var i = 0; i < _stackArr.Length; i++)
             {
-                if (_stack[i].Def == def) return i;
+                if (_ptr[i].Def == def) return i;
             }
             return -1;
         }
-
-        public DefValue<TDef, float> TryGetWithFallback(TDef key, DefValue<TDef, float> fallback)
+        
+        public DefFloat<TDef> TryGetWithFallback(TDef key, DefFloat<TDef> fallback)
         {
             return TryGetValue(key, out _, out var value) ? value : fallback;
         }
 
-        public bool TryGetValue(TDef key, out int index, out DefValue<TDef, float> value)
+        public bool TryGetValue(TDef key, out int index, out DefFloat<TDef> value)
         {
             index = -1;
-            value = new DefValue<TDef, float>(key, float.NaN);
-            for (var i = 0; i < _stack.Length; i++)
+            value = new DefFloat<TDef>(key, float.NaN);
+            for (var i = 0; i < _stackArr.Length; i++)
             {
-                value = _stack[i];
+                value = _ptr[i];
                 if (value.Def != key) continue;
                 index = i;
                 return true;
@@ -81,24 +100,30 @@ namespace TeleCore
             return false;
         }
 
-        private void TryAddOrSet(DefValue<TDef, float> newValue)
+        private void TryAddOrSet(DefFloat<TDef> newValue)
         {
             if (!TryGetValue(newValue.Def, out var index, out var previous))
             {
                 //Set new value
-                index = _stack.Length;
-                Array.Resize(ref _stack, _stack.Length + 1);
-                _stack[index] = newValue;
+                index = _stackArr.Length;
+                var oldArr = _stackArr;
+                _stackArr = new NativeArray<DefFloat<TDef>>(_stackArr.Length + 1, Allocator.Temp);
+                _ptr = (DefFloat<TDef>*)_stackArr.GetUnsafePtr();
+                for (int i = 0; i < index; i++)
+                {
+                    _ptr[i] = oldArr[i];
+                }
+                
+                _ptr[index] = newValue;
             }
             else
             {
                 //Or add value
-                _stack[index] += newValue.Value;
-                _ = _stack;
+                _ptr[index] += newValue.Value;
             }
             
             //Get Delta
-            var delta = previous - _stack[index];
+            var delta = previous - _ptr[index];
             _totalValue += delta.Value;
         }
 
@@ -113,23 +138,27 @@ namespace TeleCore
         
         public DefValueStack(IDictionary<TDef, float> source, float? maxCapacity = null) : this(maxCapacity)
         {
-            _stack = new DefValue<TDef, float>[source.Count];
+            _stackArr = new NativeArray<DefFloat<TDef>>(source.Count, Allocator.Temp);
+            _ptr = (DefFloat<TDef>*)_stackArr.GetUnsafePtr();
+            //_stack = new DefFloat<TDef>[source.Count];
             var i = 0;
             foreach (var value in source)
             {
-                _stack[i] = new DefValue<TDef, float>(value.Key, value.Value);
+                _ptr[i] = new DefFloat<TDef>(value.Key, value.Value);
                 _totalValue += value.Value;
                 i++;
             }
         }
-
+        
         public DefValueStack(ICollection<TDef> defs, float? maxCapacity = null) : this(maxCapacity)
         {
-            _stack = new DefValue<TDef, float>[defs.Count];
+            _stackArr = new NativeArray<DefFloat<TDef>>(defs.Count, Allocator.Temp);
+            _ptr = (DefFloat<TDef>*)_stackArr.GetUnsafePtr();
+            //_stack = new DefFloat<TDef>[defs.Count];
             var i = 0;
             foreach (var def in defs)
             {
-                _stack[i] = new DefValue<TDef, float>(def, 0);
+                _ptr[i] = new DefFloat<TDef>(def, 0);
                 i++;
             }
         }
@@ -141,20 +170,20 @@ namespace TeleCore
         
         public override string ToString()
         {
-            if (_stack == null || Length == 0) return "Empty Stack";
+            if (_ptr == null || Length == 0) return "Empty Stack";
             StringBuilder sb = new StringBuilder();
             sb.AppendLine($"[TOTAL: {TotalValue}]");
             for (var i = 0; i < Length; i++)
             {
-                var value = _stack[i];
+                var value = _ptr[i];
                 sb.AppendLine($"[{i}] {value}");
             }
             return sb.ToString();
         }
 
-        public IEnumerator<DefValue<TDef, float>> GetEnumerator()
+        public IEnumerator<DefFloat<TDef>> GetEnumerator()
         {
-            return (IEnumerator<DefValue<TDef, float>>)_stack.GetEnumerator();
+            return (IEnumerator<DefFloat<TDef>>)_stackArr.GetEnumerator();
         }
 
         
@@ -166,23 +195,23 @@ namespace TeleCore
         public void Reset()
         {
             _totalValue = 0;
-            for (int i = 0; i < _stack.Length; i++)
+            for (int i = 0; i < _stackArr.Length; i++)
             {
-                _stack[i].Value = 0;
+                _ptr[i].Value = 0;
             }
         }
 
         //Math
         #region DefValue Math
 
-        public static DefValueStack<TDef> operator +(DefValueStack<TDef> stack, DefValue<TDef, float> value)
+        public static DefValueStack<TDef> operator +(DefValueStack<TDef> stack, DefFloat<TDef> value)
         {
             stack = new DefValueStack<TDef>(stack);
             stack[value.Def] += value;
             return stack;
         }
 
-        public static DefValueStack<TDef> operator -(DefValueStack<TDef> stack, DefValue<TDef, float> value)
+        public static DefValueStack<TDef> operator -(DefValueStack<TDef> stack, DefFloat<TDef> value)
         {
             stack = new DefValueStack<TDef>(stack);
             stack[value.Def] -= value;
@@ -197,7 +226,7 @@ namespace TeleCore
         public static DefValueStack<TDef> operator +(DefValueStack<TDef> stack , DefValueStack<TDef> other)
         {
             stack = new DefValueStack<TDef>(stack);
-            foreach (var value in other._stack)
+            foreach (var value in other._stackArr)
             {
                 stack[value] += other[value];
             }
@@ -207,7 +236,7 @@ namespace TeleCore
         public static DefValueStack<TDef> operator -(DefValueStack<TDef> stack , DefValueStack<TDef> other)
         {
             stack = new DefValueStack<TDef>(stack);
-            foreach (var value in other._stack)
+            foreach (var value in other._stackArr)
             {
                 stack[value] -= other[value];
             }
@@ -237,6 +266,17 @@ namespace TeleCore
         {
             return !(stack == value);
         }
+        
+        public static bool operator ==(DefValueStack<TDef> left, DefValueStack<TDef> right)
+        {
+            return left.Equals(right);
+        }
+
+        public static bool operator !=(DefValueStack<TDef> left, DefValueStack<TDef> right)
+        {
+            return !(left == right);
+        }
+
 
         #endregion
     }

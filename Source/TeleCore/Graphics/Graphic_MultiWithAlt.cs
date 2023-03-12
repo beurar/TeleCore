@@ -15,7 +15,7 @@ public class Graphic_MultiWithAlt : Graphic_Multi
 
     public override Material MatAt(Rot4 rot, Thing thing = null)
     {
-        if (thing != null && thing.def.TeleExtension().GraphicAltWorker.NeedsAlt(rot, thing))
+        if (thing != null && thing.def.TeleExtension().AlternateGraphicWorker.NeedsAlt(rot, thing))
         {
             return rot.AsInt switch
             {

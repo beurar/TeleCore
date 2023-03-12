@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace TeleCore
+﻿namespace TeleCore
 {
     /// <summary>
     /// This class manages all adjacent <see cref="NetworkSubPart"/> nodes of a specific NetworkComponent within a <see cref="PipeNetwork"/> graph. Especially for directional edges.

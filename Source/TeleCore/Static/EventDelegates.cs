@@ -1,8 +1,4 @@
-﻿using System;
-using RimWorld;
-using UnityEngine;
-
-namespace TeleCore;
+﻿namespace TeleCore;
 
 public delegate void ThingSpawnedEvent(ThingStateChangedEventArgs args);
 public delegate void ThingDespawnedEvent(ThingStateChangedEventArgs args);

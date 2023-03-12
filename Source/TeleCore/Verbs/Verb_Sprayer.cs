@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace TeleCore.Verbs
+﻿namespace TeleCore
 {
     public class Verb_Sprayer : Verb_Tele
     {

@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using TeleCore.Static;
+using Verse;
 
 namespace TeleCore.FlowCore;
 
-public class ContainerConfig
+public class ContainerConfig : IExposable
 {
     public Type containerClass = typeof(ValueContainerBase<FlowValueDef>);
         
@@ -13,12 +15,26 @@ public class ContainerConfig
     //TODO: 
     public bool storeEvenly = false;
     public bool dropContents = false;
+    
+    //Assumed for Networks only
     public bool leaveContainer = false;
+    public ThingDef droppedContainerDef;
 
     public List<FlowValueDef> valueDefs;
         
     public ExplosionProperties explosionProps;
 
+    public void ExposeData()
+    {
+        Scribe_Values.Look(ref baseCapacity, nameof(baseCapacity));
+        Scribe_Values.Look(ref containerLabel, nameof(containerLabel));
+        Scribe_Values.Look(ref storeEvenly, nameof(storeEvenly));
+        Scribe_Values.Look(ref dropContents, nameof(dropContents));
+        Scribe_Values.Look(ref leaveContainer, nameof(leaveContainer));
+        Scribe_Collections.Look(ref valueDefs, nameof(valueDefs), LookMode.Def);
+        Scribe_Deep.Look(ref explosionProps, nameof(explosionProps));
+    }
+    
     public ContainerConfig Copy()
     {
         return new ContainerConfig

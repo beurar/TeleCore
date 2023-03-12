@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
 using TeleCore.Static;
 using Verse;
 
@@ -22,13 +18,13 @@ namespace TeleCore
         //General Label
         public string containerLabel;
 
-        // Loaded from XML
-        public ThingDef portableContainerDef = TeleDefOf.PortableContainer;
-
         //
         public GraphicData transmitterGraphic;
         public GraphicData overlayGraphic;
 
+        //
+        public ThingDef portableContainerDefFallback = TeleDefOf.PortableContainer;
+        
         //Structure Ruleset
         public ThingDef controllerDef;
         public ThingDef transmitterDef;

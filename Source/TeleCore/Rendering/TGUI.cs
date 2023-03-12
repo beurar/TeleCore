@@ -2,7 +2,6 @@
 using UnityEngine;
 using Verse;
 using Verse.Sound;
-using GridLayout = Verse.GridLayout;
 
 namespace TeleCore.Rendering;
 

@@ -1,10 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using RimWorld;
-using TeleCore.Static;
 using UnityEngine;
 using Verse;
 using Verse.Sound;
@@ -21,7 +18,7 @@ namespace TeleCore
         //Custom
         public string billName;
         public float workAmountTotal;
-        public DefValue<NetworkValueDef, float>[] networkCost;
+        public DefFloat<NetworkValueDef>[] networkCost;
         public List<ThingDefCount> results = new List<ThingDefCount>();
 
         private BillRepeatModeDef repeatMode = BillRepeatModeDefOf.Forever;
@@ -35,7 +32,7 @@ namespace TeleCore
         private bool hasBeenPaid = false;
 
         //
-        private List<DefValue<NetworkValueDef, float>> scribedListInt;
+        private List<DefFloat<NetworkValueDef>> scribedListInt;
 
         private static float borderWidth = 5;
         private static float contentHeight = 0;
@@ -217,7 +214,7 @@ namespace TeleCore
             DefValueStack<NetworkValueDef> stack = new DefValueStack<NetworkValueDef>();
             foreach (var value in networkCost)
             {
-                stack += new DefValue<NetworkValueDef, float>(value.Def, value.Value);
+                stack += new DefFloat<NetworkValueDef>(value.Def, value.Value);
             }
 
             foreach (var storage in storages)
@@ -278,7 +275,7 @@ namespace TeleCore
         {
             foreach (var netComp in billStack.ParentNetParts)
             {
-                var portableDef = netComp.NetworkDef.portableContainerDef;
+                var portableDef = netComp.NetworkDef.portableContainerDefFallback;
                 if (portableDef == null) continue;
                 var newStack = StackFor(netComp);
                 if (newStack.TotalValue > 0)
@@ -428,7 +425,7 @@ namespace TeleCore
             bill.repeatCount = repeatCount;
             bill.billName = billName + "_Copy";
             bill.repeatMode = repeatMode;
-            bill.networkCost = new DefValue<NetworkValueDef, float>[networkCost.Length];
+            bill.networkCost = new DefFloat<NetworkValueDef>[networkCost.Length];
             networkCost.CopyTo(bill.networkCost);
             bill.results = new List<ThingDefCount>(results);
             return bill;

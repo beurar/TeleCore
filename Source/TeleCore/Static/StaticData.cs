@@ -1,30 +1,39 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using UnityEngine;
+using System.Runtime.CompilerServices;
 using Verse;
 
 namespace TeleCore
 {
-    public static class DefIDStack<TDef>
-        where TDef : Def
+    public class DefIDStack<TDef> where TDef : Def
     {
-        //private static int _DefID;
-        private static Dictionary<Type, int> _MasterIDs;
-        internal static Dictionary<TDef, int> DefToID;
-        internal static Dictionary<int, TDef> IDToDef;
-
-        static DefIDStack()
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static ushort GetID(TDef def)
         {
-            _MasterIDs = new Dictionary<Type, int>();
-            DefToID = new Dictionary<TDef, int>();
-            IDToDef = new Dictionary<int, TDef>();
+            return def.index;
         }
 
-        private static int GetNextID(TDef def)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static TDef GetDef(ushort index)
         {
+            return DefDatabase<TDef>.AllDefsListForReading[index];
+        }
+        
+        /*public static string StackReadout 
+        {
+            get
+            {
+                return $"IDs: {_MasterIDs.ToStringSafeEnumerable()}\n" +
+                       $"DefToID: {DefToID.ToStringSafeEnumerable()}\n" +
+                       $"IDToDef: {IDToDef.ToStringSafeEnumerable()}";
+            }
+        }
+
+        public static int Count => _MasterIDs.Count;
+
+        private static ushort GetNextID(TDef def)
+        {
+            def.index
             if (_MasterIDs.TryGetValue(def.GetType(), out var id))
             {
                 return id;
@@ -42,12 +51,13 @@ namespace TeleCore
         public static void RegisterDef(TDef def)
         {
             var nextID = GetNextID(def);
-            if (DefToID.TryAdd(def, nextID))
+            if (!DefToID.ContainsKey(def))
             {
+                DefToID.Add(def, nextID);
                 IDToDef.Add(nextID, def);
                 IncrementID(def);
             }
-        }
+        }*/
     }
     
     public static class StaticData
@@ -60,7 +70,8 @@ namespace TeleCore
         internal static Dictionary<int, MapComponent_TeleCore> teleMapComps;
         internal static Dictionary<ThingDef, Designator> cachedDesignators;
 
-        //
+        //Static Props
+        public static WorldComp_Tele TeleWorldComp { get; internal set; }
 
         public static MapComponent_TeleCore TeleMapComp(int mapInt) => teleMapComps[mapInt];
 
@@ -76,7 +87,7 @@ namespace TeleCore
         
         internal static void Notify_Reload()
         {
-            TLog.Message("Clearing StaticData!");
+            //TLog.Message("Clearing StaticData!");
             teleMapComps = new Dictionary<int, MapComponent_TeleCore>();
             cachedDesignators = new Dictionary<ThingDef, Designator>();
             windowsByDef = new Dictionary<SubBuildMenuDef, SubBuildMenu>();
@@ -93,23 +104,38 @@ namespace TeleCore
             teleMapComps[mapComp.map.uniqueID] = mapComp;
         }
 
-        internal static void RegisterDefID<TDef>(TDef def)
-            where TDef : Def
+        internal static void Notify_NewTeleWorldComp(WorldComp_Tele worldComp)
         {
-            DefIDStack<TDef>.RegisterDef(def);
+            TeleWorldComp ??= worldComp;
         }
 
         //TODO:Could be useful to others, needs documentation
-        public static TDef ToDef<TDef>(this int id)
+        
+        /// <summary>
+        /// Returns the relative Def object assignable to the provided ID.
+        /// </summary>
+        /// <param name="id">The ID of the Def.</param>
+        /// <typeparam name="TDef">The Def type to search through.</typeparam>
+        /// <returns>A unique Def instance as identified by the id.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static TDef ToDef<TDef>(this ushort id)
             where TDef:Def
         {
-            return DefIDStack<TDef>.IDToDef[id];
+            return DefIDStack<TDef>.GetDef(id);
         }
 
-        public static int ToID<TDef>(this TDef def)
+        /// <summary>
+        /// Turns a Def to its relative ID.
+        /// <para>Can be used to handle Defs in a more lightweight way without assigning references to objects.</para>
+        /// </summary>
+        /// <param name="def">The Def instance.</param>
+        /// <typeparam name="TDef">The Def type to assign the ID from.</typeparam>
+        /// <returns>A unique ID for the Def instance of the given Def type.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static ushort ToID<TDef>(this TDef def)
             where TDef : Def
         {
-            return DefIDStack<TDef>.DefToID[def];
+            return DefIDStack<TDef>.GetID(def);
         }
 
         //

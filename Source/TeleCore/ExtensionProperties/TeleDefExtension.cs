@@ -1,11 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Text.RegularExpressions;
-using System.Threading.Tasks;
-using System.Xml;
-using TeleCore.Static;
 using Verse;
 
 namespace TeleCore
@@ -13,19 +7,21 @@ namespace TeleCore
     public class TeleDefExtension : DefModExtension
     {
         //
-        private GraphicAlternateWorker _graphicAltWorkerInt;
+        private AlternateGraphicWorker _altGraphicWorkerInt;
         
         //
         public ThingGroupCollection thingGroups = new ThingGroupCollection();
         public List<GraphicData> extraGraphics;
         public ProjectileDefExtension projectile;
         public Type graphicAlternateWorkerType;
+        
+        public DiscoveryProperties discovery;
 
-        public GraphicAlternateWorker GraphicAltWorker
+        public AlternateGraphicWorker AlternateGraphicWorker
         {
             get
             {
-                return _graphicAltWorkerInt ??= (GraphicAlternateWorker)Activator.CreateInstance(graphicAlternateWorkerType);
+                return _altGraphicWorkerInt ??= (AlternateGraphicWorker)Activator.CreateInstance(graphicAlternateWorkerType);
             }
         }
     }

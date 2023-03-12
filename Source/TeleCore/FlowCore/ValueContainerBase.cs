@@ -1,10 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
-using TeleCore.FlowCore.Implementations;
 using UnityEngine;
 using Verse;
 
@@ -231,7 +229,13 @@ public abstract class ValueContainerBase<TValue> : IExposable where TValue : Flo
     {
         _config = config;
         capacity = config.baseCapacity;
-        
+
+        if (config.valueDefs == null)
+        {
+            TLog.Warning($"Could not correctly instantiate {this} - Missing valueDefs");
+            return;
+        }
+
         //Cache Types
         AcceptedTypes = new List<TValue>(config.valueDefs.Cast<TValue>());
         
@@ -245,9 +249,14 @@ public abstract class ValueContainerBase<TValue> : IExposable where TValue : Flo
     }
 
     #endregion
-    
+
     public void ExposeData()
     {
+        if (Scribe_Container.InvalidState)
+        {
+            TLog.Error($"{this} should be scribed with {typeof(Scribe_Container)}!");
+        }
+        
         Scribe_Collections.Look(ref filterSettings, "typeFilter");
         Scribe_Collections.Look(ref storedValues, "storedValues");
         
@@ -275,7 +284,7 @@ public abstract class ValueContainerBase<TValue> : IExposable where TValue : Flo
     /// <summary>
     /// Provides an extra condition to check against when trying to add a value.
     /// </summary>
-    protected virtual bool CanAddValue(DefValue<TValue, float> value)
+    protected virtual bool CanAddValue(DefFloat<TValue> value)
     {
         return true;
     }
@@ -283,7 +292,7 @@ public abstract class ValueContainerBase<TValue> : IExposable where TValue : Flo
     /// <summary>
     /// Provides an extra condition to check against when trying to remove a value.
     /// </summary>
-    protected virtual bool CanRemoveValue(DefValue<TValue, float> value)
+    protected virtual bool CanRemoveValue(DefFloat<TValue> value)
     {
         return true;
     }
@@ -479,7 +488,7 @@ public abstract class ValueContainerBase<TValue> : IExposable where TValue : Flo
         return TryAddValue((valueDef, amount));
     }
     
-    public ValueResult<TValue> TryAddValue(DefValue<TValue, float> value)
+    public ValueResult<TValue> TryAddValue(DefFloat<TValue> value)
     {
         var desired = value.Value; //Local cache for desired value
         var result = ValueResult<TValue>.Init(desired, AcceptedTypes); //ValueResult Init
@@ -518,7 +527,7 @@ public abstract class ValueContainerBase<TValue> : IExposable where TValue : Flo
     }
     
     [Obsolete]
-    public ValueResult<TValue> TryAddValueDeprecated(DefValue<TValue, float> value)
+    public ValueResult<TValue> TryAddValueDeprecated(DefFloat<TValue> value)
     {
         float desired = value.Value;
         float actual = 0;
@@ -580,7 +589,7 @@ public abstract class ValueContainerBase<TValue> : IExposable where TValue : Flo
         return TryRemoveValue((valueDef, value));
     }
 
-    public ValueResult<TValue> TryRemoveValue(DefValue<TValue, float> value)
+    public ValueResult<TValue> TryRemoveValue(DefFloat<TValue> value)
     {
         var desired = value.Value; //Local cache for desired value
         var result = ValueResult<TValue>.Init(desired,AcceptedTypes); //ValueResult Init
@@ -640,12 +649,13 @@ public abstract class ValueContainerBase<TValue> : IExposable where TValue : Flo
     /// <summary>
     /// Attempts to transfer the desired value and amount to another container, returns how much was transfered
     /// </summary>
-    public bool TryTransferValue(ValueContainerBase<TValue> other, TValue valueDef, float amount, out float actualTransferedAmount)
+    public bool TryTransferValue(ValueContainerBase<TValue> other, TValue valueDef, float amount, out ValueResult<TValue> result)
     {
         //Attempt to transfer a weight to another container
         //Check if anything of that type is stored, check if transfer of weight is possible without loss, try remove the weight from this container
-        actualTransferedAmount = 0;
-
+        result = ValueResult<TValue>.InitFail(amount);
+        
+        
         if (other == null) return false;
         if (!other.CanReceiveValue(valueDef)) return false;
 
@@ -655,10 +665,11 @@ public abstract class ValueContainerBase<TValue> : IExposable where TValue : Flo
             if (remResult)
             {
                 //If passed, try to add the actual weight removed from this container, to the other.
-                return other.TryAddValue(valueDef, remResult.ActualAmount);
+                return  result = other.TryAddValue(valueDef, remResult.ActualAmount);
             }
         }
-        return false;
+
+        return result;
     }
 
     /// <summary>
@@ -671,9 +682,9 @@ public abstract class ValueContainerBase<TValue> : IExposable where TValue : Flo
         transferedDiff = new DefValueStack<TValue>(StoredDefs);
         foreach (var def in StoredDefs)
         {
-            if (TryTransferValue(other, def, evenAmount, out var tempActual))
+            if (TryTransferValue(other, def, evenAmount, out var tempResult))
             {
-                transferedDiff += (def, tempActual);
+                transferedDiff += (def, tempResult.ActualAmount);
             }
             else
             {
@@ -694,7 +705,7 @@ public abstract class ValueContainerBase<TValue> : IExposable where TValue : Flo
     /// <summary>
     /// Attempts to consume each given value.
     /// </summary>
-    public bool TryConsume(IEnumerable<DefValue<TValue, float>> values)
+    public bool TryConsume(IEnumerable<DefFloat<TValue>> values)
     {
         foreach (var value in values)
         {
@@ -745,7 +756,7 @@ public abstract class ValueContainerBase<TValue> : IExposable where TValue : Flo
     /// <summary>
     /// Consumes a fixed given value.
     /// </summary>
-    public ValueResult<TValue> TryConsume(DefValue<TValue, float> value)
+    public ValueResult<TValue> TryConsume(DefFloat<TValue> value)
     {
         if (StoredValueOf(value) >= (float)value)
         {
@@ -797,7 +808,7 @@ public abstract class ValueContainer<TValue, THolder> : ValueContainerBase<TValu
     
 }
 
-public abstract class ValueContainerThing<TValue, THolder> : ValueContainer<TValue, THolder>
+public class ValueContainerThing<TValue, THolder> : ValueContainer<TValue, THolder>
     where TValue : FlowValueDef
     where THolder : IContainerHolderThing<TValue>
 {
@@ -815,8 +826,50 @@ public abstract class ValueContainerThing<TValue, THolder> : ValueContainer<TVal
     
     public Thing ParentThing => Holder.Thing;
     
-    protected ValueContainerThing(ContainerConfig config, THolder holder) : base(config, holder)
+    public ValueContainerThing(ContainerConfig config, THolder holder) : base(config, holder)
     {
+    }
+    
+    public void Notify_ParentDestroyed(DestroyMode mode, Map previousMap)
+    {
+        if (Holder == null || TotalStored <= 0 || mode == DestroyMode.Vanish) return;
+        OnParentDestroyed(mode, previousMap);
+        Clear();
+    }
+
+    public virtual void OnParentDestroyed(DestroyMode mode, Map previousMap)
+    {
+        if (mode is DestroyMode.KillFinalize)
+        {
+            if (Config.explosionProps != null)
+                if (TotalStored > 0)
+                    //float radius = Props.explosionProps.explosionRadius * StoredPercent;
+                    //int damage = (int)(10 * StoredPercent);
+                    //var mainTypeDef = MainValueType.dropThing;
+                    Config.explosionProps.DoExplosion(ParentThing.Position, previousMap, ParentThing);
+            //GenExplosion.DoExplosion(Parent.Thing.Position, previousMap, radius, DamageDefOf.Bomb, Parent.Thing, damage, 5, null, null, null, null, mainTypeDef, 0.18f);
+            if (Config.dropContents)
+            {
+                var i = 0;
+                var drops = GetThingDrops().ToList();
+                Predicate<IntVec3> pred = c => c.InBounds(previousMap) && c.GetEdifice(previousMap) == null;
+                var action = delegate(IntVec3 c)
+                {
+                    if (i < drops.Count)
+                    {
+                        var drop = drops[i];
+                        if (drop != null)
+                        {
+                            GenSpawn.Spawn(drop, c, previousMap);
+                            drops.Remove(drop);
+                        }
+
+                        i++;
+                    }
+                };
+                _ = TeleFlooder.Flood(previousMap, ParentThing.OccupiedRect(), action, pred, drops.Count);
+            }
+        }
     }
     
     public override IEnumerable<Gizmo> GetGizmos()

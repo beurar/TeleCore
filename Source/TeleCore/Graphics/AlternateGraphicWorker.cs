@@ -2,7 +2,7 @@
 
 namespace TeleCore;
 
-public class GraphicAlternateWorker
+public class AlternateGraphicWorker
 {
     public virtual bool NeedsAlt(Rot4 rot, Thing thing)
     {
@@ -10,7 +10,7 @@ public class GraphicAlternateWorker
     }
 }
 
-public class GraphicAlternateWorker_WallOnSouth : GraphicAlternateWorker
+public class AlternateGraphicWorkerWallOnSouth : AlternateGraphicWorker
 {
     public override bool NeedsAlt(Rot4 rot, Thing thing)
     {

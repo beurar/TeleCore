@@ -34,14 +34,14 @@
             <param name="flow">The flow direction output relative to the first container.</param>
             <param name="diffPct">The difference in content by percentage.</param>
         </member>
-        <member name="T:TeleCore.FlowCore.Implementations.IContainerHolderThing`1">
+        <member name="T:TeleCore.FlowCore.IContainerHolderThing`1">
             <summary>
-            Container Implementation extension which allows you to expose a <see cref="P:TeleCore.FlowCore.Implementations.IContainerHolderThing`1.Thing"/> reference
+            Container Implementation extension which allows you to expose a <see cref="P:TeleCore.FlowCore.IContainerHolderThing`1.Thing"/> reference
             </summary>
         </member>
-        <member name="T:TeleCore.FlowCore.Implementations.IContainerHolderRoom`1">
+        <member name="T:TeleCore.FlowCore.IContainerHolderRoom`1">
             <summary>
-            Implements a container for a <see cref="P:TeleCore.FlowCore.Implementations.IContainerHolderRoom`1.Room"/>
+            Implements a container for a <see cref="P:TeleCore.FlowCore.IContainerHolderRoom`1.Room"/>
             </summary>
         </member>
         <member name="T:TeleCore.FlowCore.ValueState">
@@ -54,12 +54,12 @@
             The result of a <see cref="T:TeleCore.FlowCore.ValueContainerBase`1"/> Value-Change operation.
             </summary>
         </member>
-        <member name="M:TeleCore.FlowCore.ValueContainerBase`1.CanAddValue(TeleCore.DefValue{`0,System.Single})">
+        <member name="M:TeleCore.FlowCore.ValueContainerBase`1.CanAddValue(TeleCore.DefFloat{`0})">
             <summary>
             Provides an extra condition to check against when trying to add a value.
             </summary>
         </member>
-        <member name="M:TeleCore.FlowCore.ValueContainerBase`1.CanRemoveValue(TeleCore.DefValue{`0,System.Single})">
+        <member name="M:TeleCore.FlowCore.ValueContainerBase`1.CanRemoveValue(TeleCore.DefFloat{`0})">
             <summary>
             Provides an extra condition to check against when trying to remove a value.
             </summary>
@@ -102,7 +102,7 @@
             </summary>
             <param name="stack">Stack to provide values for the container.</param>
         </member>
-        <member name="M:TeleCore.FlowCore.ValueContainerBase`1.TryTransferValue(TeleCore.FlowCore.ValueContainerBase{`0},`0,System.Single,System.Single@)">
+        <member name="M:TeleCore.FlowCore.ValueContainerBase`1.TryTransferValue(TeleCore.FlowCore.ValueContainerBase{`0},`0,System.Single,TeleCore.FlowCore.ValueResult{`0}@)">
             <summary>
             Attempts to transfer the desired value and amount to another container, returns how much was transfered
             </summary>
@@ -112,7 +112,7 @@
             Attempts to transfer any held value to the other container, split evenly.
             </summary>
         </member>
-        <member name="M:TeleCore.FlowCore.ValueContainerBase`1.TryConsume(System.Collections.Generic.IEnumerable{TeleCore.DefValue{`0,System.Single}})">
+        <member name="M:TeleCore.FlowCore.ValueContainerBase`1.TryConsume(System.Collections.Generic.IEnumerable{TeleCore.DefFloat{`0}})">
             <summary>
             Attempts to consume each given value.
             </summary>
@@ -122,24 +122,10 @@
             Consumes a set amount, using any value from the container.
             </summary>
         </member>
-        <member name="M:TeleCore.FlowCore.ValueContainerBase`1.TryConsume(TeleCore.DefValue{`0,System.Single})">
+        <member name="M:TeleCore.FlowCore.ValueContainerBase`1.TryConsume(TeleCore.DefFloat{`0})">
             <summary>
             Consumes a fixed given value.
             </summary>
-        </member>
-        <member name="T:TeleCore.DefValue`2">
-            <summary>
-            Wraps any <see cref="P:TeleCore.DefValue`2.Def"/> Type into a struct, attaching a numeric value
-            </summary>
-            <typeparam name="TDef">The <see cref="P:TeleCore.DefValue`2.Def"/> Type of the value.</typeparam>
-            <typeparam name="TValue">A numeric Type, can be <see cref="T:System.Int32"/> or <see cref="T:System.Single"/></typeparam>
-        </member>
-        <member name="T:TeleCore.DefValueStack`1">
-            <summary>
-            Manages any Def as a numeric value in a stack.
-            Only supports DefValues with TValue set as <see cref="T:System.Single"/>.
-            </summary>
-            <typeparam name="TDef">The <see cref="T:Verse.Def"/> of the stack.</typeparam>
         </member>
         <member name="T:TeleCore.ScribeList`1">
             <summary>
@@ -152,6 +138,26 @@
             Define a Def with various values for dynamic and versatile uses.
             XML Notation: <defName>value, chance, QualityCategory, stuffDef</defName>
             </summary>
+        </member>
+        <member name="T:TeleCore.DefFloatRef`1">
+            <summary>
+            Used to load a <see cref="T:TeleCore.DefFloat`1"/> struct via xml.
+            </summary>
+        </member>
+        <!-- Badly formed XML comment ignored for member "T:TeleCore.DefIntRef`1" -->
+        <member name="T:TeleCore.DefValueGeneric`2">
+            <summary>
+            Wraps any <see cref="P:TeleCore.DefValueGeneric`2.Def"/> Type into a struct, attaching a numeric value
+            </summary>
+            <typeparam name="TDef">The <see cref="P:TeleCore.DefValueGeneric`2.Def"/> Type of the value.</typeparam>
+            <typeparam name="TValue">A numeric Type, can be <see cref="T:System.Int32"/> or <see cref="T:System.Single"/></typeparam>
+        </member>
+        <member name="T:TeleCore.DefValueStack`1">
+            <summary>
+            Manages any Def as a numeric value in a stack.
+            Only supports DefValues with TValue set as <see cref="T:System.Single"/>.
+            </summary>
+            <typeparam name="TDef">The <see cref="T:Verse.Def"/> of the stack.</typeparam>
         </member>
         <member name="T:TeleCore.IFXBase">
             <summary>
@@ -279,7 +285,7 @@
         </member>
         <member name="T:TeleCore.PortableNetworkContainer">
             <summary>
-            Temporary <see cref="T:TeleCore.FlowCore.Implementations.NetworkContainer"/> Thing spawned upon deconstruction of a <see cref="T:Verse.Building"/> containing a <see cref="T:TeleCore.Comp_NetworkStructure"/> comp.
+            Temporary <see cref="T:TeleCore.FlowCore.NetworkContainer"/> Thing spawned upon deconstruction of a <see cref="T:Verse.Building"/> containing a <see cref="T:TeleCore.Comp_NetworkStructure"/> comp.
             </summary>
         </member>
         <member name="P:TeleCore.PortableNetworkContainer.ForSelf">
@@ -383,6 +389,23 @@
             <summary>
             Determines whether there should be a equalization between two network parts.
             </summary>
+        </member>
+        <member name="M:TeleCore.StaticData.ToDef``1(System.UInt16)">
+            <summary>
+            Returns the relative Def object assignable to the provided ID.
+            </summary>
+            <param name="id">The ID of the Def.</param>
+            <typeparam name="TDef">The Def type to search through.</typeparam>
+            <returns>A unique Def instance as identified by the id.</returns>
+        </member>
+        <member name="M:TeleCore.StaticData.ToID``1(``0)">
+            <summary>
+            Turns a Def to its relative ID.
+            <para>Can be used to handle Defs in a more lightweight way without assigning references to objects.</para>
+            </summary>
+            <param name="def">The Def instance.</param>
+            <typeparam name="TDef">The Def type to assign the ID from.</typeparam>
+            <returns>A unique ID for the Def instance of the given Def type.</returns>
         </member>
         <member name="M:TeleCore.CellGen.SectorCells(Verse.IntVec3,Verse.Map,System.Single,System.Single,System.Single,System.Boolean,System.Predicate{Verse.IntVec3})">
             <summary>

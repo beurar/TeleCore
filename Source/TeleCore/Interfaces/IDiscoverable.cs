@@ -1,19 +1,35 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Verse;
+﻿using Verse;
 
 namespace TeleCore
 {
+    public class DiscoveryProperties
+    {
+        [Unsaved(false)]
+        private TaggedString cachedUnknownLabelCap = null;
+        
+        public DiscoveryDef discoveryDef;
+        public string unknownLabel;
+        public string unknownDescription;
+        public string extraDescription;
+
+        public string UnknownLabelCap
+        {
+            get
+            {
+                if (cachedUnknownLabelCap.NullOrEmpty())
+                    cachedUnknownLabelCap = unknownLabel.CapitalizeFirst();
+                return cachedUnknownLabelCap;
+            }
+        }
+    }
+    
     public class DiscoveryDef : Def
     {
         //public WikiEntryDef wikiEntry;
 
         public void Discover()
         {
-            StaticData.WorldCompTele().thingDataCache.Discover(this);
+            TFind.Discoveries.Discover(this);
         }
     }
 

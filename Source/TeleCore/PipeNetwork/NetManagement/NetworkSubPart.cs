@@ -1,13 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.InteropServices.WindowsRuntime;
 using System.Text;
-using System.Threading.Tasks;
-using HarmonyLib;
-using RimWorld;
 using TeleCore.FlowCore;
-using TeleCore.FlowCore.Implementations;
 using TeleCore.Static.Utilities;
 using UnityEngine;
 using Verse;
@@ -131,7 +126,7 @@ namespace TeleCore
             {
                 //Scribe_Values.Look(ref requestedCapacityPercent, "requesterPercent");
                 //Scribe_Values.Look(ref requestedCpacityRange, "requestedCpacityRange");
-                Scribe_Deep.Look(ref container, "container", this, Props.AllowedValues);
+                Scribe_Container.Look(ref container, Props.containerConfig, this, "container");
             }
         }
 

@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using RimWorld;
+﻿using RimWorld;
 using Verse;
 
 namespace TeleCore.Static
@@ -25,7 +20,7 @@ namespace TeleCore.Static
 
         //
         public static ThingDef PortableContainer;
-        
+
         //
         public static TerrainDef ChromaKeyGreen;
         public static TerrainDef ChromaKeyBlue;

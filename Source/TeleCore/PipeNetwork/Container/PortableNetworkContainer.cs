@@ -5,7 +5,6 @@ using System.Text;
 using System.Threading.Tasks;
 using RimWorld;
 using TeleCore.FlowCore;
-using TeleCore.FlowCore.Implementations;
 using TeleCore.Static;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -131,7 +130,8 @@ namespace TeleCore
         //
         public static PortableNetworkContainer Create(NetworkContainer container)
         {
-            var portable = (PortableNetworkContainer)ThingMaker.MakeThing(container.Holder.NetworkPart.NetworkDef.portableContainerDef);
+            var containerDef = container.Config.droppedContainerDef ?? container.Holder.NetworkDef.portableContainerDefFallback;
+            var portable = (PortableNetworkContainer)ThingMaker.MakeThing(containerDef);
             portable.Container = container.Copy<NetworkContainerThing<IContainerHolderNetworkThing>>();
             return portable;
         }

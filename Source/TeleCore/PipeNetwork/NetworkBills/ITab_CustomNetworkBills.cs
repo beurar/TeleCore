@@ -1,8 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 using RimWorld;
 using UnityEngine;
 using Verse;
@@ -22,7 +20,7 @@ namespace TeleCore
 
         //Cachery
         private bool inputDirty = false;
-        private DefValue<NetworkValueDef, float>[] cachedCustomCost;
+        private DefFloat<NetworkValueDef>[] cachedCustomCost;
 
         public Comp_NetworkBillsCrafter CrafterComp => SelThing.TryGetComp<Comp_NetworkBillsCrafter>();
         public NetworkBillStack BillStack => CrafterComp.BillStack;
@@ -319,7 +317,7 @@ namespace TeleCore
             */
         }
 
-        public DefValue<NetworkValueDef, float>[] TryGetCachedCost()
+        public DefFloat<NetworkValueDef>[] TryGetCachedCost()
         {
             if (!inputDirty && cachedCustomCost != null) return cachedCustomCost;
             inputDirty = false;
@@ -336,7 +334,7 @@ namespace TeleCore
             for (var i = 0; i < recipeRatio.inputRatio.Count; i++)
             {
                 var input = recipeRatio.inputRatio[i];
-                sb.Append($"{input.value}{input.def.labelShort.Colorize(input.def.valueColor)}");
+                sb.Append($"{input.Value}{input.Def.labelShort.Colorize(input.Def.valueColor)}");
                 if (i + 1 < recipeRatio.inputRatio.Count)
                     sb.Append(" ");
             }

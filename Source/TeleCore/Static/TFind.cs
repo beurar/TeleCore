@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using UnityEngine;
+﻿using UnityEngine;
 using Verse;
 
 namespace TeleCore
@@ -25,5 +20,7 @@ namespace TeleCore
 
         public static TeleRoot TeleRoot => mainRoot;
         public static TeleTickManager TickManager => TeleRoot.TickManager;
+        public static DiscoveryTable Discoveries => StaticData.TeleWorldComp._discoveries;
+        public static UISettingsTable UIProperties => StaticData.TeleWorldComp._uiSettingsTable;
     }
 }

@@ -1,6 +1,4 @@
-﻿using Verse;
-
-namespace TeleCore;
+﻿namespace TeleCore;
 
 public interface INetworkRequester : INetworkRoleWorker
 {

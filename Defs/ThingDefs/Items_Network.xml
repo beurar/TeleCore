@@ -5,7 +5,7 @@
 		<defName>PortableContainer</defName>
 		<label>network storage cell</label>
 		<description>This container appears after deconstruction of a network building. It contains the exact amount as was left remaining in that structure. You can use this at any structure which stores a type from this container.</description>
-		<thingClass>TeleCore.PortableContainer</thingClass>
+		<thingClass>TeleCore.PortableNetworkContainer</thingClass>
 		<graphicData>
 			<texPath>Items/Network/PortableContainer/TSC</texPath>
 			<graphicClass>Graphic_Single</graphicClass>

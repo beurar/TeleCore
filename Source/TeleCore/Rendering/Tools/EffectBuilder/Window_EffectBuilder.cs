@@ -1,5 +1,4 @@
-﻿using TeleCore.Rendering.Tools.EffectBuilder;
-using UnityEngine;
+﻿using UnityEngine;
 using Verse;
 
 namespace TeleCore

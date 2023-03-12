@@ -1,14 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Reflection;
-using System.Xml;
-using HarmonyLib;
-using RimWorld;
-using Verse;
-using Verse.Profile;
-using XmlNode = System.Xml.XmlNode;
-
-namespace TeleCore.Loading;
+﻿namespace TeleCore.Loading;
 
 public static class XMLPatches
 {

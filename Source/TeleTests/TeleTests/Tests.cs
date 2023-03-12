@@ -5,7 +5,6 @@ using System.Linq;
 using NUnit.Framework;
 using TeleCore;
 using TeleCore.FlowCore;
-using TeleCore.FlowCore.Implementations;
 using Verse;
 
 namespace TeleTests
@@ -19,13 +18,13 @@ namespace TeleTests
             {
                 defName = "TestNetworkDef",
                 containerLabel = "ContainerLabel",
-                portableContainerDef = null,
                 transmitterGraphic = null,
                 overlayGraphic = null,
                 controllerDef = null,
                 transmitterDef = null
             },
         };
+        
 
         public static NetworkValueDef[] ValueDefs = new NetworkValueDef[2]
         {
@@ -110,6 +109,8 @@ namespace TeleTests
         [SetUp]
         public void ContainerInitTest()
         {
+            Console.WriteLine("------------------------------------------------------------\n");
+            
             TestContainer = new NetworkContainer(new ContainerConfig
             {
                 containerClass = null,
@@ -134,18 +135,19 @@ namespace TeleTests
         [Test]
         public void ProfileTest1()
         {
-            var values = new List<DefValue<NetworkValueDef, float>>();
-            for (int i = 0; i < 100; i++)
+            var values = new List<DefFloat<NetworkValueDef>>();
+            for (int i = 0; i < 1000; i++)
             {
-                values.Add(new DefValue<NetworkValueDef, float>(ValueDefs[0], 1+i));
+                values.Add(new DefFloat<NetworkValueDef>(ValueDefs[0], 1+i));
             }
             
-            Console.WriteLine("Running 100 additions.");
+            Console.WriteLine("Running Arithmetic Profiling");
             
             //PROFILING
             var stopwatch = new Stopwatch();
             
             //PROFILE CONTAINER ADDITION
+            Console.WriteLine($"Testing {values.Count} ValueContainer Additions");
             stopwatch.Start();
             var failCount = 0;
             foreach (var value in values)
@@ -155,30 +157,40 @@ namespace TeleTests
                     failCount++;
             }
             stopwatch.Stop();
-            var ellapsedFirst = stopwatch.ElapsedMilliseconds;
+            Console.WriteLine($"Execution time: {stopwatch.Elapsed} with {failCount} failures to add");
+            Console.WriteLine("------------------------------------------------------------\n");
             
+            //
+            Console.WriteLine($"Testing {values.Count} DefValueStack<> Additions - Immutability & Performance");
             stopwatch.Restart();
+            var initStack = new DefValueStack<NetworkValueDef>(ValueDefs);
+            initStack += new DefFloat<NetworkValueDef>(ValueDefs[0], 1337);
             var localStack = new DefValueStack<NetworkValueDef>(ValueDefs);
-            localStack += new DefValue<NetworkValueDef,float>(ValueDefs[0], 1);
-            for (int i = 0; i < 100; i++)
+            localStack += new DefFloat<NetworkValueDef>(ValueDefs[0], 1);
+            for (int i = 0; i < values.Count; i++)
             {
                 localStack += localStack;
             }
+            var newStack = initStack + localStack;
             stopwatch.Stop();
-            var ellapsedSecond = stopwatch.ElapsedMilliseconds;
+            Assert.IsTrue(initStack != localStack && initStack != newStack);
+            Console.WriteLine($"Execution time: {stopwatch.Elapsed} | Immutability: {(initStack != localStack && initStack != newStack)}");
+            Console.WriteLine("------------------------------------------------------------\n");
             
             stopwatch.Restart();
-            float totalTest = 0;
+            Console.WriteLine($"Testing {values.Count} DefFloat<> Additions - Immutability & Performance");
+            DefFloat<NetworkValueDef> valueDef = new DefFloat<NetworkValueDef>(ValueDefs[0], 66);
+            var newValueFloat = new DefFloat<NetworkValueDef>(ValueDefs[0], 0);
             foreach (var value in values)
             {
-                totalTest += value.Value;
+                newValueFloat = valueDef + value.Value;
             }
             stopwatch.Stop();
-            
-            Console.WriteLine($"Container value:\n{TestContainer}");
-            Console.WriteLine($"Execution time: {ellapsedFirst} ms with {failCount} failures to add");
-            Console.WriteLine($"Execution time: {ellapsedSecond} ms");
-            Console.WriteLine($"Execution time: {stopwatch.ElapsedMilliseconds} ms");
+            Assert.IsTrue(valueDef != newValueFloat);
+            Console.WriteLine($"Execution time: {stopwatch.Elapsed} | Immutability: {valueDef != newValueFloat}");
+            Console.WriteLine("------------------------------------------------------------\n");
+            //
+            Console.WriteLine($"[Final]Container value:\n{TestContainer}");
 
         }
     }

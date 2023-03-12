@@ -1,10 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using RimWorld;
-using UnityEngine;
 using Verse;
 
 namespace TeleCore
@@ -41,12 +37,12 @@ namespace TeleCore
         //Favorited
         public static bool IsFavorited(ThingDef def)
         {
-            return StaticData.WorldCompTele().thingDataCache.MenuOptionIsFavorited(def);
+            return TFind.UIProperties.MenuOptionIsFavorited(def);
         }
 
         public static bool ToggleFavorite(ThingDef def)
         {
-            StaticData.WorldCompTele().thingDataCache.ToggleMenuOptionFavorite(def);
+            TFind.UIProperties.ToggleMenuOptionFavorite(def);
             return IsFavorited(def);
         }
 
@@ -68,12 +64,12 @@ namespace TeleCore
 
         internal static bool ConstructionOptionDiscovered(ThingDef def)
         {
-            return StaticData.WorldCompTele().thingDataCache.MenuOptionHasBeenSeen(def);
+            return TFind.Discoveries.MenuOptionHasBeenSeen(def);
         }
 
         internal static void Discover_ConstructionOption(ThingDef def)
         {
-            StaticData.WorldCompTele().thingDataCache.DiscoverInMenu(def);
+            TFind.Discoveries.DiscoverInMenu(def);
         }
 
         public static void Add(ThingDef def, SubMenuExtension extension)

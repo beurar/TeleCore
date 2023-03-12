@@ -1,15 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
-using System.Reflection;
-using System.Runtime.CompilerServices;
 using System.Text;
-using System.Threading.Tasks;
-using HarmonyLib;
 using Multiplayer.API;
-using RimWorld;
-using UnityEngine.Assertions;
+using TeleCore.FlowCore;
+using TeleCore.Loading.InternalTests;
 using Verse;
 
 namespace TeleCore
@@ -30,6 +25,11 @@ namespace TeleCore
             
             //Process Defs after load
             ApplyDefChangesPostLoad();
+            
+            //Static Startup Tests
+            //var prof = new Profiling();
+            //prof.ContainerInitTest();
+            //Aprof.ProfileTest1();
         }
 
         private static void ApplyDefChangesPostLoad()
@@ -40,21 +40,19 @@ namespace TeleCore
             //
             var allInjectors = DefInjectors()?.ToArray();
             var skipInjectors = allInjectors is not { Length: > 0 };
-
-            foreach (var def in DefDatabase<Def>.AllDefsListForReading)
+            
+            var defs = LoadedModManager.RunningMods.SelectMany(s => s.AllDefs);
+            TLog.Debug($"Defs: {defs.Count()}");
+            TLog.Debug($"Defs: {DefDatabase<ThingDef>.AllDefsListForReading.Count} | {DefDatabase<ThingDef>.AllDefs.Count()} ");
+            foreach (var def in defs)
             {
                 var bDef = def as BuildableDef;
                 var tDef = def as ThingDef;
                 var isBuildable = bDef != null;
                 var isThing = tDef != null;
-
-                //Register ID
-                StaticData.RegisterDefID(def);
-
-                if (isBuildable)
-                {
-                    DefExtensionCache.TryRegister(def);
-                }
+ 
+                //
+                DefExtensionCache.TryRegister(def);
 
                 if (isThing)
                 {
@@ -86,7 +84,7 @@ namespace TeleCore
                     }
                 }
             }
-
+            
             if (skipInjectors) return;
             foreach (var injector in allInjectors)
             {

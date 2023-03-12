@@ -9,13 +9,15 @@
     <AssemblyName>TeleCore</AssemblyName>
     <TargetFramework>net472</TargetFramework>
     <LangVersion>preview</LangVersion>
-    <PlatformTarget>x64</PlatformTarget>
     <OutputPath>C:\Program Files (x86)\Steam\steamapps\common\RimWorld\Mods\TeleCore\Assemblies\</OutputPath>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <PackageTags>RimWorld;Mod;Telefonmast;Framework;Library;</PackageTags>
     <RepositoryUrl>https://github.com/RealTelefonmast/TeleCore</RepositoryUrl>
     <PackageProjectUrl>https://github.com/RealTelefonmast/TeleCore</PackageProjectUrl>
     <PackageIcon>TeleCore.jpg</PackageIcon>
+    <!---->
+    <Optimize>true</Optimize>
+    <PlatformTarget>AnyCPU</PlatformTarget>
     <!--
     <Optimize>true</Optimize>
     <DebugType>none</DebugType>
@@ -24,7 +26,7 @@
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <Version>1.2.5</Version>
     <SignAssembly>False</SignAssembly>
-    <PackageVersion>1.7.7.6</PackageVersion>
+    <PackageVersion>1.7.8.3</PackageVersion>
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
@@ -34,8 +36,11 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <OutputPath>C:\Program Files (x86)\Steam\steamapps\common\RimWorld\Mods\TeleCore\Assemblies\Release\</OutputPath>
-    <DebugType>none</DebugType>
+    <DebugType>full</DebugType>
     <DocumentationFile>bin\Release\TeleCore.xml</DocumentationFile>
+    <NoWarn>1701;1702;IL2121;1591;</NoWarn>
+    <CheckForOverflowUnderflow>true</CheckForOverflowUnderflow>
+    <DebugSymbols>true</DebugSymbols>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
@@ -44,8 +49,8 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <DebugType>full</DebugType>
     <OutputPath>C:\Program Files (x86)\Steam\steamapps\common\RimWorld\Mods\TeleCore\Assemblies</OutputPath>
-    <Optimize>true</Optimize>
     <DocumentationFile>C:\Program Files (x86)\Steam\steamapps\common\RimWorld\Mods\TeleCore\Assemblies\TeleCore.xml</DocumentationFile>
+    <NoWarn>1701;1702;IL2121;1591;</NoWarn>
   </PropertyGroup>
 
 	<PropertyGroup>

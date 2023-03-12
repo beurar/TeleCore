@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System.Xml;
+using UnityEngine;
 using Verse;
 
 namespace TeleCore
@@ -49,6 +50,19 @@ namespace TeleCore
         public static TaggedString StrikeThrough(this string text)
         {
             return $"<s>{text}</s>";
+        }
+
+        public static string ToRefPath(this XmlNode root)
+        {
+            string val = "";
+            var parent = root;
+            while (parent.ParentNode != null)
+            {
+                val = $">{parent.Name}" + val;
+                parent = parent.ParentNode;
+            }
+
+            return val;
         }
 
     }

@@ -1,7 +1,7 @@
 ﻿using UnityEngine;
 using Verse;
 
-namespace TeleCore.Verbs;
+namespace TeleCore;
 
 public class MoteDualAttachedReal : MoteDualAttached
 {

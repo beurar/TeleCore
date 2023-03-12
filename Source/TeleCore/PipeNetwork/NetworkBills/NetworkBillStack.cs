@@ -1,9 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using RimWorld;
 using UnityEngine;
 using Verse;
 
@@ -28,7 +25,7 @@ namespace TeleCore
         public Dictionary<CustomRecipeRatioDef, int> RequestedAmount = new();
         public string[] textBuffers;
 
-        public DefValue<NetworkValueDef,float>[] TotalCost { get; set; }
+        public DefFloat<NetworkValueDef>[] TotalCost { get; set; }
         public int TotalWorkAmount => TotalCost.NullOrEmpty() ? 0 : TotalCost.Sum(m => (int)(m.Value * WorkAmountFactor));
 
         //
@@ -89,7 +86,7 @@ namespace TeleCore
 
             CustomNetworkBill customBill = new CustomNetworkBill(TotalWorkAmount);
             customBill.billName = billName;
-            customBill.networkCost = new DefValue<NetworkValueDef,float>[TotalCost.Length];
+            customBill.networkCost = new DefFloat<NetworkValueDef>[TotalCost.Length];
             TotalCost.CopyTo(customBill.networkCost);
             customBill.billStack = this;
             customBill.results = RequestedAmount.Where(m => m.Value > 0).Select(m => new ThingDefCount(m.Key.result, m.Value)).ToList();

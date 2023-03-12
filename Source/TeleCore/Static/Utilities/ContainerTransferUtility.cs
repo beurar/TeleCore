@@ -1,8 +1,4 @@
-﻿using System.Collections.Generic;
-using UnityEngine;
-using Verse;
-
-namespace TeleCore.Static.Utilities;
+﻿namespace TeleCore.Static.Utilities;
 
 /*
 public class ContainerTransferUtility
