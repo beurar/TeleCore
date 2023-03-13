@@ -10,7 +10,6 @@ namespace TeleCore
 
         public NetworkMapInfo(Map map) : base(map)
         {
-            TLog.Debug("MAKING NETWORK MAP INFO ON {map");
         }
 
         public PipeNetworkManager this[NetworkDef type] => NetworksByType.TryGetValue(type);

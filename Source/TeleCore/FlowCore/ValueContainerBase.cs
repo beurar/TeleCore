@@ -118,7 +118,7 @@ where TValue : FlowValueDef
 
     public ValueResult<TValue> TryComplete()
     {
-        if (ActualAmount == DesiredAmount)
+        if (Math.Abs(ActualAmount - DesiredAmount) < Mathf.Epsilon)
             State = ValueState.Completed;
         return this;
     }
@@ -232,7 +232,7 @@ public abstract class ValueContainerBase<TValue> : IExposable where TValue : Flo
 
         if (config.valueDefs == null)
         {
-            TLog.Warning($"Could not correctly instantiate {this} - Missing valueDefs");
+            TLog.Warning($"[{GetType()}.ctor]Could not correctly instantiate- Missing ValueDefs. State:\n{this}");
             return;
         }
 

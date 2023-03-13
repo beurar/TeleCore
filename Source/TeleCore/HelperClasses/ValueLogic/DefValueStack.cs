@@ -17,10 +17,10 @@ namespace TeleCore
         where TDef : Def
     {
          [FieldOffset(0)]
-        private fixed ushort _stackPart1[4095];
+        private fixed ushort _stackPart1[4096];
         
-        [FieldOffset(0)]//2*4095
-        private fixed float _stackPart2[4095];
+        [FieldOffset(8192)]//2*4095
+        private fixed float _stackPart2[4096];
 
         public DefFloat<TDef> At(int index)
         {
@@ -30,68 +30,58 @@ namespace TeleCore
     
     /// <summary>
     /// Manages any Def as a numeric value in a stack.
-    /// Only supports DefValues with TValue set as <see cref="float"/>.
     /// </summary>
     /// <typeparam name="TDef">The <see cref="Def"/> of the stack.</typeparam>
-    public unsafe class DefValueStack<TDef> : IEnumerable<DefFloat<TDef>>, IDisposable where TDef : Def
+    public struct DefValueStack<TDef> where TDef : Def
     {
-        //private readonly OrderedDictionary<TDef, DefValue<TDef, float>> _values = new();
-        private readonly float? _maxCapacity;
-        //TODO: TEST NATIVE ARR
-        private NativeArray<DefFloat<TDef>> _stackArr;
-        private DefFloat<TDef>* _ptr;
-        //private DefFloat<TDef>[] _stack;
+        private float? _maxCapacity;
+        private DefFloat<TDef>[] _stack;
         private float _totalValue;
         
         //States
-        public bool IsValid => _ptr != null;
+        public bool IsValid => _stack != null;
         public bool Empty => _totalValue == 0f;
         public bool? Full => _maxCapacity == null ? null :  _totalValue >= _maxCapacity;
         
         //Stack Info
-        public IEnumerable<TDef> Defs => _stackArr.Select(value => value.Def);
-        public IEnumerable<DefFloat<TDef>> Values => _stackArr;
+        public IEnumerable<TDef> Defs => _stack.Select(value => value.Def);
+        public IEnumerable<DefFloat<TDef>> Values => _stack;
         
         public float TotalValue => _totalValue;
-        public int Length => _stackArr.Length;
+        public int Length => _stack.Length;
 
-        public DefFloat<TDef> this[int index] => _stackArr[index];
+        public DefFloat<TDef> this[int index] => _stack[index];
 
         public DefFloat<TDef> this[TDef def]
         {
             get => TryGetWithFallback(def, new DefFloat<TDef>(def, 0));
             private set => TryAddOrSet(value);
         }
-        
-        public void Dispose()
-        {
-            _stackArr.Dispose();
-            _ptr = null;
-        }
 
-        ~DefValueStack()
+        public DefValueStack()
         {
-            Dispose();
-        }
-
-    public DefValueStack()
-        {
+            Default();
         }
 
         public DefValueStack(float? maxCapacity = null) : this()
         {
-            _maxCapacity = maxCapacity;
+            Default(maxCapacity);
         }
         
         public DefValueStack(IDictionary<TDef, float> source, float? maxCapacity = null) : this(maxCapacity)
         {
-            TUnsafeUtility.CreateOrChangeNativeArr(ref _stackArr, source.Select(t => new DefFloat<TDef>(t.Key, t.Value)).ToArray(), Allocator.Persistent);
-            _ptr = (DefFloat<TDef>*)_stackArr.GetUnsafePtr();
-            //_stack = new DefFloat<TDef>[source.Count];
+            if (source.EnumerableNullOrEmpty())
+            {
+                TLog.Warning($"[{GetType()}.ctor]Tried to create new DefValueStack from NullOrEmpty source dictionary.");
+                Default(maxCapacity);
+                return;
+            }
+            
+            _stack = new DefFloat<TDef>[source.Count];
             var i = 0;
             foreach (var value in source)
             {
-                _ptr[i] = new DefFloat<TDef>(value.Key, value.Value);
+                _stack[i] = new DefFloat<TDef>(value.Key, value.Value);
                 _totalValue += value.Value;
                 i++;
             }
@@ -99,49 +89,70 @@ namespace TeleCore
         
         public DefValueStack(ICollection<TDef> defs, float? maxCapacity = null) : this(maxCapacity)
         {
-            TUnsafeUtility.CreateOrChangeNativeArr(ref _stackArr, defs.Select(t => new DefFloat<TDef>(t, 0)).ToArray(), Allocator.Persistent);
-            _ptr = (DefFloat<TDef>*)_stackArr.GetUnsafePtr();
-            //_stack = new DefFloat<TDef>[defs.Count];
+            if (!defs.Any())
+            {
+                TLog.Warning($"[{GetType()}.ctor]Tried to create new DefValueStack from Empty {typeof(TDef)} Array.");
+                Default(maxCapacity);
+                return;
+            }
+            
+            _stack = new DefFloat<TDef>[defs.Count];
             var i = 0;
             foreach (var def in defs)
             {
-                _ptr[i] = new DefFloat<TDef>(def, 0);
+                _stack[i] = new DefFloat<TDef>(def, 0);
                 i++;
             }
         }
         
         public DefValueStack(DefFloat<TDef>[] source, float? maxCapacity = null) : this(maxCapacity)
         {
-            TUnsafeUtility.CreateOrChangeNativeArr(ref _stackArr, source, Allocator.Persistent);
-            _ptr = (DefFloat<TDef>*)_stackArr.GetUnsafePtr();
-            //_stack = new DefFloat<TDef>[source.Count];
+            if (source.NullOrEmpty())
+            {
+                TLog.Warning($"[{GetType()}.ctor]Tried to create new DefValueStack from NullOrEmpty DefFloat Array.");
+                Default(maxCapacity);
+                return;
+            }
+            
+            _stack = new DefFloat<TDef>[source.Length];
             var i = 0;
             foreach (var value in source)
             {
-                _ptr[i] = new DefFloat<TDef>(value, value.Value);
+                _stack[i] = new DefFloat<TDef>(value, value.Value);
                 _totalValue += value.Value;
                 i++;
             }
         }
         
-        public DefValueStack(DefValueStack<TDef> other)
+        public DefValueStack(DefValueStack<TDef> other, float? maxCapacity = null) : this(maxCapacity)
         {
-            TUnsafeUtility.CreateOrChangeNativeArr(ref _stackArr, other._stackArr.ToArray(), Allocator.Persistent);
-            _ptr = (DefFloat<TDef>*)_stackArr.GetUnsafePtr();
-            //_stack = new DefFloat<TDef>[other._stack.Length];
-            for (var i = 0; i < _stackArr.Length; i++)
+            if (!other.IsValid)
             {
-                _ptr[i] = other._ptr[i];
-               //_stack[i] = other._stack[i];
+                TLog.Warning($"[{GetType()}.ctor]Tried to create new DefValueStack from invalid DefValueStack.");
+                Default(maxCapacity);
+                return;
+            }
+            
+            _stack = new DefFloat<TDef>[other._stack.Length];
+            for (var i = 0; i < _stack.Length; i++)
+            {
+                _stack[i] = other._stack[i];
             }
             _totalValue = other._totalValue;
+        }
+
+        private void Default(float? maxCapacity = null)
+        {
+            _maxCapacity = maxCapacity;
+            _stack = Array.Empty<DefFloat<TDef>>();
+            _totalValue = 0;
         }
         
         private int IndexOf(TDef def)
         {
-            for (var i = 0; i < _stackArr.Length; i++)
+            for (var i = 0; i < _stack.Length; i++)
             {
-                if (_ptr[i].Def == def) return i;
+                if (_stack[i].Def == def) return i;
             }
             return -1;
         }
@@ -155,9 +166,9 @@ namespace TeleCore
         {
             index = -1;
             value = new DefFloat<TDef>(key, float.NaN);
-            for (var i = 0; i < _stackArr.Length; i++)
+            for (var i = 0; i < _stack.Length; i++)
             {
-                value = _ptr[i];
+                value = _stack[i];
                 if (value.Def != key) continue;
                 index = i;
                 return true;
@@ -171,31 +182,30 @@ namespace TeleCore
             if (!TryGetValue(newValue.Def, out var index, out var previous))
             {
                 //Set new value
-                index = _stackArr.Length;
-                var oldArr = _stackArr;
-                TUnsafeUtility.CreateOrChangeNativeArr(ref _stackArr, _stackArr.Length + 1, Allocator.Persistent);
-                _ptr = (DefFloat<TDef>*)_stackArr.GetUnsafePtr();
+                index = _stack.Length;
+                Array.Resize(ref _stack, _stack.Length + 1);
+                var oldArr = _stack;
                 for (int i = 0; i < index; i++)
                 {
-                    _ptr[i] = oldArr[i];
+                    _stack[i] = oldArr[i];
                 }
             }
 
-            _ptr[index] = newValue;
+            _stack[index] = newValue;
             
             //Get Delta
-            var delta = _ptr[index] - previous;
+            var delta = _stack[index] - previous;
             _totalValue += delta.Value;
         }
         
         public override string ToString()
         {
-            if (_ptr == null || Length == 0) return "Empty Stack";
+            if (_stack == null || Length == 0) return "Empty Stack";
             StringBuilder sb = new StringBuilder();
             sb.AppendLine($"[TOTAL: {TotalValue}]");
             for (var i = 0; i < Length; i++)
             {
-                var value = _ptr[i];
+                var value = _stack[i];
                 sb.AppendLine($"[{i}] {value}");
             }
             return sb.ToString();
@@ -203,21 +213,16 @@ namespace TeleCore
 
         public IEnumerator<DefFloat<TDef>> GetEnumerator()
         {
-            return (IEnumerator<DefFloat<TDef>>)_stackArr.GetEnumerator();
-        }
-
-        
-        IEnumerator IEnumerable.GetEnumerator()
-        {
-            return GetEnumerator();
+            return _stack.Cast<DefFloat<TDef>>().GetEnumerator(); //(IEnumerator<DefFloat<TDef>>)_stack.GetEnumerator();
         }
 
         public void Reset()
         {
             _totalValue = 0;
-            for (int i = 0; i < _stackArr.Length; i++)
+            if (_stack == null || _stack.Length == 0) return;
+            for (var i = 0; i < _stack.Length; i++)
             {
-                _ptr[i].Value = 0;
+                _stack[i].Value = 0;
             }
         }
         
@@ -252,7 +257,7 @@ namespace TeleCore
         public static DefValueStack<TDef> operator +(DefValueStack<TDef> stack , DefValueStack<TDef> other)
         {
             stack = new DefValueStack<TDef>(stack);
-            foreach (var value in other._stackArr)
+            foreach (var value in other._stack)
             {
                 stack[value] += value;
             }
@@ -262,7 +267,7 @@ namespace TeleCore
         public static DefValueStack<TDef> operator -(DefValueStack<TDef> stack , DefValueStack<TDef> other)
         {
             stack = new DefValueStack<TDef>(stack);
-            foreach (var value in other._stackArr)
+            foreach (var value in other._stack)
             {
                 stack[value] -= other[value];
             }
@@ -303,6 +308,26 @@ namespace TeleCore
             return !(left == right);
         }
 
+        public bool Equals(DefValueStack<TDef> other)
+        {
+            return Nullable.Equals(_maxCapacity, other._maxCapacity) && _stack.Equals(other._stack) && _totalValue.Equals(other._totalValue);
+        }
+
+        public override bool Equals(object? obj)
+        {
+            return obj is DefValueStack<TDef> other && Equals(other);
+        }
+
+        public override int GetHashCode()
+        {
+            unchecked
+            {
+                var hashCode = _maxCapacity.GetHashCode();
+                hashCode = (hashCode * 397) ^ _stack.GetHashCode();
+                hashCode = (hashCode * 397) ^ _totalValue.GetHashCode();
+                return hashCode;
+            }
+        }
 
         #endregion
     }

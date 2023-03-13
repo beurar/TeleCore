@@ -155,7 +155,6 @@
         <member name="T:TeleCore.DefValueStack`1">
             <summary>
             Manages any Def as a numeric value in a stack.
-            Only supports DefValues with TValue set as <see cref="T:System.Single"/>.
             </summary>
             <typeparam name="TDef">The <see cref="T:Verse.Def"/> of the stack.</typeparam>
         </member>
