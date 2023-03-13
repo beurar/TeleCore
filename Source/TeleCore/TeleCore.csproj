@@ -35,7 +35,7 @@
     <WarningLevel>4</WarningLevel>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-    <OutputPath>C:\Program Files (x86)\Steam\steamapps\common\RimWorld\Mods\TeleCore\Assemblies\Release\</OutputPath>
+    <OutputPath>C:\Program Files (x86)\Steam\steamapps\common\RimWorld\Mods\TeleCore\Assemblies</OutputPath>
     <DebugType>full</DebugType>
     <DocumentationFile>bin\Release\TeleCore.xml</DocumentationFile>
     <NoWarn>1701;1702;IL2121;1591;</NoWarn>

@@ -696,8 +696,8 @@ public abstract class ValueContainerBase<TValue> : IExposable where TValue : Flo
         //Resolve result state
         return transferedDiff switch
         {
-            0 => ValueResult<TValue>.InitFail(amount),
-            > 0 => ValueResult<TValue>.Init(amount, AcceptedTypes).Complete(transferedDiff.TotalValue),
+            var n when n == 0 => ValueResult<TValue>.InitFail(amount),
+            var n when n > 0 => ValueResult<TValue>.Init(amount, AcceptedTypes).Complete(transferedDiff.TotalValue),
             var n when n == amount => ValueResult<TValue>.Init(amount, AcceptedTypes).Complete(amount),
         };
     }

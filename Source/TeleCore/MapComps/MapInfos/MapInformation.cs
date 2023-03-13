@@ -11,7 +11,7 @@ namespace TeleCore
         public bool HasBeenInitialized => initialized;
         public Map Map => map;
 
-        protected MapInformation(Map map)
+        public MapInformation(Map map)
         {
             this.map = map;
         }

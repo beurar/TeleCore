@@ -5,7 +5,7 @@ using Verse;
 namespace TeleCore;
 
 [StructLayout(LayoutKind.Sequential, Size = 6)]
-public unsafe struct DefFloat<TDef>
+public struct DefFloat<TDef>
     where TDef : Def
 {
     private ushort defID;
@@ -31,12 +31,14 @@ public unsafe struct DefFloat<TDef>
 
     public DefFloat(DefFloatRef<TDef> defValue)
     {
+        //TLog.Debug($"Making {this} with {defValue.def}|{defValue.value} -> {defValue.def.ToID()} | {defValue.def.index}");
         Def = defValue.Def;
         Value = defValue.Value;
     }
 
     public DefFloat(TDef def, float value)
     {
+        //TLog.Debug($"Making {this} with {def}|{value} -> {def.ToID()} | {def.index}");
         Def = def;
         Value = value;
     }
@@ -48,7 +50,7 @@ public unsafe struct DefFloat<TDef>
 
     public override string ToString()
     {
-        return $"(({Def.GetType()}):{Def}, {Value})";
+        return $"(({typeof(TDef)}):[{defID}]{Def}, {Value})";
     }
     
     #region Arithmetics

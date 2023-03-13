@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Multiplayer.API;
+using RimWorld;
 using TeleCore.FlowCore;
 using TeleCore.Loading.InternalTests;
 using Verse;
@@ -14,6 +15,7 @@ namespace TeleCore
     {
         static TeleCoreStaticStartup()
         {
+            TLog.Debug($"GARBO TIME1: {GC.GetTotalMemory(false)/1000000f}MB");
             TLog.Message("Startup Init");
             
             //MP Hook
@@ -23,6 +25,8 @@ namespace TeleCore
                 MP.RegisterAll();
             }
             
+            TLog.Debug($"GARBO TIME2: {GC.GetTotalMemory(false)/1000000f}MB");
+            
             //Process Defs after load
             ApplyDefChangesPostLoad();
             
@@ -30,6 +34,37 @@ namespace TeleCore
             //var prof = new Profiling();
             //prof.ContainerInitTest();
             //Aprof.ProfileTest1();
+            
+            TLog.Debug($"GARBO TIME3: {GC.GetTotalMemory(false)/1000000f}MB");
+            
+            //Foo();
+            var prof = new Profiling();
+            prof.ContainerInitTest();
+            prof.ProfileTest1();
+            prof.TestContainer = null;
+            prof = null;
+            
+            TLog.Debug($"GARBO TIME4: {GC.GetTotalMemory(false)/1000000f}MB");
+            GC.Collect();
+            TLog.Debug($"A: {GC.GetTotalMemory(false)/1000000f}MB");
+        }
+        
+        public static void Foo()
+        {
+            DefValueStack<ThingDef> stack1 = new DefValueStack<ThingDef>(new DefFloat<ThingDef>[2]
+            {
+                new DefFloat<ThingDef>(ThingDefOf.Steel, 10),
+                new DefFloat<ThingDef>(ThingDefOf.Gold, 10),
+            });
+            DefValueStack<ThingDef> stack2 = new DefValueStack<ThingDef>(new DefFloat<ThingDef>[2]
+            {
+                new DefFloat<ThingDef>(ThingDefOf.Steel, 22),
+                new DefFloat<ThingDef>(ThingDefOf.Gold, 22),
+            });
+
+            var newStack = stack1 + stack2;
+            
+            TLog.Debug($"\nS1: {stack1}\nS2: {stack2} \nSN: {newStack}");
         }
 
         private static void ApplyDefChangesPostLoad()

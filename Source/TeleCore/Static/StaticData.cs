@@ -5,7 +5,7 @@ using Verse;
 
 namespace TeleCore
 {
-    public class DefIDStack<TDef> where TDef : Def
+    /*public class DefIDStack<TDef> where TDef : Def
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static ushort GetID(TDef def)
@@ -16,7 +16,8 @@ namespace TeleCore
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static TDef GetDef(ushort index)
         {
-            return DefDatabase<TDef>.AllDefsListForReading[index];
+            TLog.Debug($"Trying to get index {index} of {typeof(TDef)} in {DefDatabase<TDef>.DefCount}...");
+            return index < DefDatabase<TDef>.AllDefsListForReading.Count ? DefDatabase<TDef>.AllDefsListForReading[index] : null;
         }
         
         /*public static string StackReadout 
@@ -57,8 +58,8 @@ namespace TeleCore
                 IDToDef.Add(nextID, def);
                 IncrementID(def);
             }
-        }*/
-    }
+        }#1#
+    }*/
     
     public static class StaticData
     {
@@ -121,7 +122,7 @@ namespace TeleCore
         public static TDef ToDef<TDef>(this ushort id)
             where TDef:Def
         {
-            return DefIDStack<TDef>.GetDef(id);
+            return DefDatabase<TDef>.AllDefsListForReading[id]; //DefIDStack<TDef>.GetDef(id);
         }
 
         /// <summary>
@@ -135,7 +136,7 @@ namespace TeleCore
         public static ushort ToID<TDef>(this TDef def)
             where TDef : Def
         {
-            return DefIDStack<TDef>.GetID(def);
+            return def.index; //DefIDStack<TDef>.GetID(def);
         }
 
         //
