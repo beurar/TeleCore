@@ -31,7 +31,7 @@ public static class TRContentDatabase
 
                 string mainBundlePath = Path.Combine(TeleCoreMod.Mod.Content.RootDir, $@"UnityAssets\{pathPart}\telecore");
                 bundleInt = AssetBundle.LoadFromFile(mainBundlePath);
-                TLog.Debug($"Loaded Bundle: {mainBundlePath}: {bundleInt != null}");
+                TLog.Message($"AssetBundle Loaded:: {bundleInt != null}");
             }
 
             return bundleInt;

@@ -5,15 +5,20 @@ using Verse;
 
 namespace TeleCore
 {
+    [StaticConstructorOnStartup]
     public class NetworkGraph
     {
+        //
+        private static readonly Material FilledMat = SolidColorMaterials.NewSolidColorMaterial(Color.green, ShaderDatabase.MetaOverlay);
+        private static readonly Material UnFilledMat = SolidColorMaterials.NewSolidColorMaterial(TColor.LightBlack, ShaderDatabase.MetaOverlay);
+
+        //
         private NetworkGraphRequestManager _requestManager;
 
         //Graph Data
         private readonly List<INetworkSubPart> _allNodes;
         private readonly Dictionary<INetworkSubPart, LinkedList<INetworkSubPart>> _adjacencyLists;
         private readonly Dictionary<(INetworkSubPart, INetworkSubPart), NetEdge> _edges;
-        //private readonly HashSet<(NetEdge, NetEdge)> _edgePairs;
 
         //Props
         public int NodeCount => _adjacencyLists.Count;
@@ -150,10 +155,6 @@ namespace TeleCore
             }
         }
 
-        //Debug stuff
-        private static readonly Material FilledMat = SolidColorMaterials.NewSolidColorMaterial(Color.green, ShaderDatabase.MetaOverlay);
-        private static readonly Material UnFilledMat = SolidColorMaterials.NewSolidColorMaterial(TColor.LightBlack, ShaderDatabase.MetaOverlay);
-        
         internal void Debug_DrawGraphOnUI()
         {
             var size = Find.CameraDriver.CellSizePixels / 4;

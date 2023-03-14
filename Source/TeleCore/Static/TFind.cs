@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 using Verse;
 
 namespace TeleCore
@@ -16,11 +17,13 @@ namespace TeleCore
             teleRootHolder.AddComponent<TeleRoot>();
 
             mainRoot = teleRootHolder.GetComponent<TeleRoot>();
+            TLog.Message("TFind Ready!", TColor.Green);
         }
 
         public static TeleRoot TeleRoot => mainRoot;
         public static TeleTickManager TickManager => TeleRoot.TickManager;
         public static DiscoveryTable Discoveries => StaticData.TeleWorldComp._discoveries;
+
         public static UISettingsTable UIProperties => StaticData.TeleWorldComp._uiSettingsTable;
     }
 }

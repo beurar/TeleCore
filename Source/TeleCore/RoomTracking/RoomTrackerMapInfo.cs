@@ -21,6 +21,7 @@ namespace TeleCore
         Destroy,
     }
 
+    //TODO: Implement delayed worker for roomcomp gen
     internal struct DelayedRoomUpdateInfo
     {
         public DelayedRoomUpdateType type;

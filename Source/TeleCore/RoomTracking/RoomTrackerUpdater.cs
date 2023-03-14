@@ -1,5 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using TeleCore.Memory;
+using TeleCore.Static.Utilities;
 using Verse;
 
 namespace TeleCore
@@ -51,6 +53,9 @@ namespace TeleCore
         //Last step, comparing known data, with new generated rooms
         public static void Notify_RoomUpdatePostfix(Map map)
         {
+            using var g = new GarbageMan();
+            TProfiler.Begin("RoomUpdatePostfix");
+            
             //Get all rooms after vanilla updater finishes
             var roomInfo = map.GetMapInfo<RoomTrackerMapInfo>();
             var allRooms = map.regionGrid.allRooms;
@@ -130,6 +135,8 @@ namespace TeleCore
             ReusedTrackers.Clear();
             NewExistingTrackers.Clear();
             ExistingTrackers.Clear();
+            
+            TProfiler.End();
         }
     }
 }

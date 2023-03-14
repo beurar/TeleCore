@@ -6,6 +6,8 @@ using Multiplayer.API;
 using RimWorld;
 using TeleCore.FlowCore;
 using TeleCore.Loading.InternalTests;
+using TeleCore.Memory;
+using UnityEngine;
 using Verse;
 
 namespace TeleCore
@@ -15,8 +17,8 @@ namespace TeleCore
     {
         static TeleCoreStaticStartup()
         {
-            TLog.Debug($"GARBO TIME1: {GC.GetTotalMemory(false)/1000000f}MB");
-            TLog.Message("Startup Init");
+            using var garbo = new GarbageMan(); 
+            TLog.Message("Startup Init...");
             
             //MP Hook
             TLog.Message($"Multiplayer: {(MP.enabled ? "Enabled - Adding MP hooks..." : "Disabled")}");
@@ -24,29 +26,10 @@ namespace TeleCore
             {
                 MP.RegisterAll();
             }
-            
-            TLog.Debug($"GARBO TIME2: {GC.GetTotalMemory(false)/1000000f}MB");
-            
             //Process Defs after load
             ApplyDefChangesPostLoad();
             
-            //Static Startup Tests
-            //var prof = new Profiling();
-            //prof.ContainerInitTest();
-            //Aprof.ProfileTest1();
-            
-            TLog.Debug($"GARBO TIME3: {GC.GetTotalMemory(false)/1000000f}MB");
-            
-            //Foo();
-            var prof = new Profiling();
-            prof.ContainerInitTest();
-            prof.ProfileTest1();
-            prof.TestContainer = null;
-            prof = null;
-            
-            TLog.Debug($"GARBO TIME4: {GC.GetTotalMemory(false)/1000000f}MB");
-            GC.Collect();
-            TLog.Debug($"A: {GC.GetTotalMemory(false)/1000000f}MB");
+            TLog.Message("Startup Finished!", TColor.Green);
         }
         
         public static void Foo()

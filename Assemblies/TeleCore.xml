@@ -127,6 +127,12 @@
             Consumes a fixed given value.
             </summary>
         </member>
+        <member name="T:TeleCore.Memory.GarbageMan">
+            <summary>
+            Calls the GC after being used.
+            Use in any method with a using statement to ensure garbage collection when finished.
+            </summary>
+        </member>
         <member name="T:TeleCore.ScribeList`1">
             <summary>
             A wrapper to expose generic lists as values. I.e: A <see cref="T:System.Collections.Generic.List`1"/> of <see cref="T:TeleCore.ScribeList`1"/>

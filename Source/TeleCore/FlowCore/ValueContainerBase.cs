@@ -366,10 +366,6 @@ public abstract class ValueContainerBase<TValue> : IExposable where TValue : Flo
     public virtual void Notify_RemovedValue(TValue valueType, float value)
     {
         totalStoredCache -= value;
-        if (storedValues[valueType] <= 0)
-        {
-            storedValues.Remove(valueType);
-        }
 
         //Update stack state
         OnContainerStateChanged();
@@ -416,7 +412,7 @@ public abstract class ValueContainerBase<TValue> : IExposable where TValue : Flo
     /// </summary>
     public void Clear()
     {
-        foreach (TValue def in storedValues.Keys)
+        foreach (var def in storedValues.Keys.ToArray())
         {
             _ = TryRemoveValue(def, storedValues[def]);
         }
@@ -602,18 +598,19 @@ public abstract class ValueContainerBase<TValue> : IExposable where TValue : Flo
 
         //Calculate the actual removeable value
         var actual = Mathf.Min(available, desired);
-
+        
         //Remove the value from the dictionary or update the value if there is still some left
         if (available - actual <= 0)
         {
-            storedValues.Remove(value);
+            storedValues.Remove(value.Def);
         }
         else
         {
             storedValues[value] -= actual;
         }
 
-        Notify_RemovedValue(value, actual); //Notify internal logic updates
+        //Notify internal logic updates
+        Notify_RemovedValue(value, actual);
 
         //On the result, set actual removed value and resolve completion status
         return result.AddDiff(value, -actual).SetActual(actual).TryComplete();

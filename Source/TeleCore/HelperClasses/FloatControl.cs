@@ -5,7 +5,7 @@ using Verse;
 
 namespace TeleCore
 {
-    public class FloatController
+    public class FloatControl
     {
         private const float deltaTime = 0.016666668f;
 
@@ -53,11 +53,12 @@ namespace TeleCore
             {
                 if (starting && !ReachedPeak) return FCState.Accelerating;
                 if (stopping && !StoppedDead) return FCState.Decelerating;
-                return FCState.Sustaining;
+                if (ReachedPeak) return FCState.Sustaining;
+                return FCState.Idle;
             }
         }
 
-        public FloatController(float maxValue, float secondsToMax, SimpleCurve accCurve = null, SimpleCurve decCurve = null, SimpleCurve outCurve = null)
+        public FloatControl(float maxValue, float secondsToMax, SimpleCurve accCurve = null, SimpleCurve decCurve = null, SimpleCurve outCurve = null)
         {
             this.maxValue = maxValue;
             fixedAcc = maxValue / secondsToMax;
