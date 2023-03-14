@@ -7,7 +7,6 @@ namespace TeleCore;
 
 public static class FileSaveUtility
 {
-
     public static void ProcessSavingAction(string fullPath, string documentElementName, Action saveAction)
     {
         try

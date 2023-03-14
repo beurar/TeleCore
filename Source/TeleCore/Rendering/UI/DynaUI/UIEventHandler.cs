@@ -33,7 +33,7 @@ namespace TeleCore
 
         public static int GetLayerOf(UIElement element)
         {
-            throw new NotImplementedException();
+            return -1;
         }
         
         public static bool ElementIsCovered(IFocusable element)
@@ -49,7 +49,6 @@ namespace TeleCore
             }
             return false;
         }
-
 
         public static void Begin()
         {

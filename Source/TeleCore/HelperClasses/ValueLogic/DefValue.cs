@@ -3,7 +3,6 @@ using Verse;
 
 namespace TeleCore
 {
-    
     /// <summary>
     /// Wraps any <see cref="Def"/> Type into a struct, attaching a numeric value
     /// </summary>

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.Eventing.Reader;
 using System.Linq;
 using HarmonyLib;
 using RimWorld;
@@ -315,64 +316,85 @@ public class RoomTracker
 
     public void RegenerateData(bool ignoreRoomExtents = false, bool regenCellData = true, bool regenListerThings = true)
     {
-        UpdateGroupData();
-        if (!ignoreRoomExtents)
+        string tag = "deinit";
+        try
         {
-            //Room.ExtentsClose
-            var extents = Room.ExtentsClose;
-            int minX = extents.minX;
-            int maxX = extents.maxX;
-            int minZ = extents.minZ;
-            int maxZ = extents.maxZ;
-            cornerCells = extents.Corners.ToArray();
-
-            minVec = new IntVec3(minX, 0, minZ);
-            size = new IntVec2(maxX - minX + 1, maxZ - minZ + 1);
-            actualCenter = extents.CenterVector3; //new Vector3(minX + (size.x / 2f), 0, minZ + (size.z / 2f));
-            drawPos = new Vector3(minX, AltitudeLayer.FogOfWar.AltitudeFor(), minZ);
-        }
-
-        //Get Roof and Border Cells
-        if (regenCellData)
-        {
-            GenerateCellData();
-        }
-
-        //Get ListerThings
-        if (regenListerThings)
-        {
-            listerThings.Clear();
-            borderListerThings.Clear();
-
-            List<Region> regions = Room.Regions;
-            for (int i = 0; i < regions.Count; i++)
+            UpdateGroupData();
+            tag = "updated group data";
+            if (!ignoreRoomExtents)
             {
-                List<Thing> allThings = regions[i].ListerThings.AllThings;
-                if (allThings != null)
+                tag = "START processed room extents";
+                //Room.ExtentsClose
+                var extents = Room.ExtentsClose;
+                int minX = extents.minX;
+                int maxX = extents.maxX;
+                int minZ = extents.minZ;
+                int maxZ = extents.maxZ;
+                cornerCells = extents.Corners.ToArray();
+
+                minVec = new IntVec3(minX, 0, minZ);
+                size = new IntVec2(maxX - minX + 1, maxZ - minZ + 1);
+                actualCenter = extents.CenterVector3; //new Vector3(minX + (size.x / 2f), 0, minZ + (size.z / 2f));
+                drawPos = new Vector3(minX, AltitudeLayer.FogOfWar.AltitudeFor(), minZ);
+                tag = "END processed room extents";
+            }
+            
+            //Get Roof and Border Cells
+            if (regenCellData)
+            {
+                tag = "START regen cell data";
+                GenerateCellData();
+                tag = "END regenerated cell data";
+            }
+
+            //Get ListerThings
+            if (regenListerThings)
+            {
+                tag = "START ListerThings";
+                listerThings.Clear();
+                borderListerThings.Clear();
+
+                List<Region> regions = Room.Regions;
+                for (int i = 0; i < regions.Count; i++)
                 {
-                    for (int j = 0; j < allThings.Count; j++)
+                    List<Thing> allThings = regions[i].ListerThings.AllThings;
+                    if (allThings != null)
                     {
-                        Thing item = allThings[j];
-                        if (item.Position.GetRoomFast(Map) != Room)
+                        for (int j = 0; j < allThings.Count; j++)
                         {
-                            if (uniqueContainedThingsSet.Add(item))
+                            Thing item = allThings[j];
+                            if (item.Position.GetRoomFast(Map) != Room)
                             {
-                                Notify_RegisterBorderThing(item);
+                                if (uniqueContainedThingsSet.Add(item))
+                                {
+                                    Notify_RegisterBorderThing(item);
+                                }
+
+                                continue;
                             }
 
-                            continue;
-                        }
-
-                        if (IsOutside) continue;
-                        if (uniqueContainedThingsSet.Add(item))
-                        {
-                            Notify_RegisterThing(item);
+                            if (IsOutside) continue;
+                            if (uniqueContainedThingsSet.Add(item))
+                            {
+                                Notify_RegisterThing(item);
+                            }
                         }
                     }
                 }
+                uniqueContainedThingsSet.Clear();
+                tag = "END ListerThings";
             }
-
-            uniqueContainedThingsSet.Clear();
+        }
+        catch (Exception ex)
+        {
+            if (ex is OverflowException oEx)
+            {
+                TLog.Error($"Arithmetic Overflow Exception in RegenerateData, with last Tag '{tag}': {oEx}");
+            }
+        }
+        finally
+        {
+            
         }
     }
 

@@ -2,11 +2,6 @@
 
 namespace TeleCore.FlowCore;
 
-//TODO:Reduce generics to one level <TValue> : FlowValueDef
-//TODO:Make inherited Holder chain base > thing > network
-//TODO:                                 > room
-//
-
 public struct ContainerArgs
 {
     public string Name { get; }

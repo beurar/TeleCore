@@ -4,7 +4,6 @@ using Verse;
 
 namespace TeleCore
 {
-
     //TODO: Generalize into generic saveUtility
     internal static class AnimationSaveUtility
     {

@@ -1,10 +1,11 @@
 ﻿using System;
+using System.Text;
 using UnityEngine;
 using Verse;
 
 namespace TeleCore
 {
-    public class FloatControl
+    public class FloatController
     {
         private const float deltaTime = 0.016666668f;
 
@@ -56,7 +57,7 @@ namespace TeleCore
             }
         }
 
-        public FloatControl(float maxValue, float secondsToMax, SimpleCurve accCurve = null, SimpleCurve decCurve = null, SimpleCurve outCurve = null)
+        public FloatController(float maxValue, float secondsToMax, SimpleCurve accCurve = null, SimpleCurve decCurve = null, SimpleCurve outCurve = null)
         {
             this.maxValue = maxValue;
             fixedAcc = maxValue / secondsToMax;
@@ -92,6 +93,19 @@ namespace TeleCore
         {
             starting = false;
             stopping = true;
+        }
+
+        public override string ToString()
+        {
+            StringBuilder sb = new StringBuilder();
+            sb.AppendLine($"CurSate: {CurState}");
+            sb.AppendLine($"ReachedPeak: {ReachedPeak}");
+            sb.AppendLine($"StoppedDead: {StoppedDead}");
+            sb.AppendLine($"CurPct: {CurPct}");
+            sb.AppendLine($"CurValue: {CurValue}");
+            sb.AppendLine($"OutputValue: {OutputValue}");
+            sb.AppendLine($"Acceleration: {Acceleration}");
+            return sb.ToString();
         }
     }
 }

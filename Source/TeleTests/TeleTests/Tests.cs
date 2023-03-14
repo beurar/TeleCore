@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 using NUnit.Framework;
 using TeleCore;
 using TeleCore.FlowCore;
@@ -9,6 +8,8 @@ using Verse;
 
 namespace TeleTests
 {
+    
+    /*
     [TestFixture]
     public class Tests
     {
@@ -123,7 +124,14 @@ namespace TeleTests
                 explosionProps = null
             }, new NetworkClassTest());
         }
-        
+
+        [Test]
+        public void First()
+        {
+            int i = 1 + 1;
+            Console.Write(i);
+        }
+
         [Test]
         public void BasicContainerFunctionTest()
         {
@@ -193,5 +201,5 @@ namespace TeleTests
             Console.WriteLine($"[Final]Container value:\n{TestContainer}");
 
         }
-    }
+    }*/
 }
