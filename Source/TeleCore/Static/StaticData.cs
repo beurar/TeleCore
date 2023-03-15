@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
+using UnityEngine.Profiling;
 using Verse;
 
 namespace TeleCore
@@ -70,15 +71,21 @@ namespace TeleCore
         internal static Dictionary<SubBuildMenuDef, SubBuildMenu> windowsByDef;
         internal static Dictionary<int, MapComponent_TeleCore> teleMapComps;
         internal static Dictionary<ThingDef, Designator> cachedDesignators;
+        
+        //
+        internal static List<PlaySettingsWorker> _playSettings;
 
         //Static Props
         public static WorldComp_Tele TeleWorldComp { get; internal set; }
 
         public static MapComponent_TeleCore TeleMapComp(int mapInt) => teleMapComps[mapInt];
 
+        internal static List<PlaySettingsWorker> PlaySettings => _playSettings;
+
         static StaticData()
         {
             Notify_Reload();
+            SetupPlaySettings();
         }
 
         internal static void ExposeStaticData()
@@ -95,6 +102,15 @@ namespace TeleCore
             ActionComposition._ID = 0;
         }
 
+        private static void SetupPlaySettings()
+        {
+            _playSettings = new List<PlaySettingsWorker>();
+            foreach (var type in typeof(PlaySettingsWorker).AllSubclassesNonAbstract())
+            {
+                _playSettings.Add((PlaySettingsWorker)Activator.CreateInstance(type));
+            }
+        }
+        
         internal static void Notify_ClearingMapAndWorld()
         {
             TFind.TickManager.ClearGameTickers();

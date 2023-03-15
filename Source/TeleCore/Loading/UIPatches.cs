@@ -188,16 +188,17 @@ namespace TeleCore
         {
             public static void Postfix(WidgetRow row, bool worldView)
             {
-                if (worldView)
+                foreach (var setting in StaticData.PlaySettings)
                 {
-                    if (row.ButtonIcon(TeleContent.AddKeyFrame))
+                    if (worldView && setting.ShowOnWorldView || !worldView && setting.ShowOnMapView)
                     {
-                        Find.WindowStack.Add(DefDatabase<DevToolDef>.GetNamed("ModuleVisualizerDef").GetWindow);
+                        if (row.ButtonIcon(setting.Icon))
+                        {
+                            setting.Toggle();
+                        }
                     }
                 }
-
-                if (worldView || row == null) return;
-
+                //  Find.WindowStack.Add(DefDatabase<DevToolDef>.GetNamed("ModuleVisualizerDef").GetWindow);
             }
         }
 

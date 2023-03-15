@@ -4,6 +4,7 @@ using System.Diagnostics.Eventing.Reader;
 using System.Linq;
 using HarmonyLib;
 using RimWorld;
+using TeleCore.Static.Utilities;
 using UnityEngine;
 using Verse;
 
@@ -210,10 +211,12 @@ public class RoomTracker
     {
         //
         RegenerateData(true);
+        TProfiler.Check("Reused_1");
         foreach (var comp in comps)
         {
             comp.Notify_Reused();
         }
+        TProfiler.Check("Reused_2");
     }
 
     public void PreApply()
@@ -316,15 +319,12 @@ public class RoomTracker
 
     public void RegenerateData(bool ignoreRoomExtents = false, bool regenCellData = true, bool regenListerThings = true)
     {
-        string tag = "deinit";
         try
         {
             UpdateGroupData();
-            tag = "updated group data";
+            TProfiler.Check("Regen_1");
             if (!ignoreRoomExtents)
             {
-                tag = "START processed room extents";
-                //Room.ExtentsClose
                 var extents = Room.ExtentsClose;
                 int minX = extents.minX;
                 int maxX = extents.maxX;
@@ -334,26 +334,24 @@ public class RoomTracker
 
                 minVec = new IntVec3(minX, 0, minZ);
                 size = new IntVec2(maxX - minX + 1, maxZ - minZ + 1);
-                actualCenter = extents.CenterVector3; //new Vector3(minX + (size.x / 2f), 0, minZ + (size.z / 2f));
+                actualCenter = extents.CenterVector3;
                 drawPos = new Vector3(minX, AltitudeLayer.FogOfWar.AltitudeFor(), minZ);
-                tag = "END processed room extents";
             }
             
+            TProfiler.Check("Regen_2");
             //Get Roof and Border Cells
             if (regenCellData)
             {
-                tag = "START regen cell data";
                 GenerateCellData();
-                tag = "END regenerated cell data";
             }
 
+            TProfiler.Check("Regen_3");
             //Get ListerThings
             if (regenListerThings)
             {
-                tag = "START ListerThings";
                 listerThings.Clear();
                 borderListerThings.Clear();
-
+                TProfiler.Check("RegenSub_1");
                 List<Region> regions = Room.Regions;
                 for (int i = 0; i < regions.Count; i++)
                 {
@@ -369,32 +367,35 @@ public class RoomTracker
                                 {
                                     Notify_RegisterBorderThing(item);
                                 }
-
+                                TProfiler.Check($"RegenSubForThings0_{j}");
                                 continue;
                             }
 
-                            if (IsOutside) continue;
+                            if (IsOutside)
+                            {
+                                TProfiler.Check($"RegenSubForThings1_{j}");
+                                continue;
+                            }
                             if (uniqueContainedThingsSet.Add(item))
                             {
                                 Notify_RegisterThing(item);
                             }
+                            TProfiler.Check($"RegenSubForThings2_{j}");
                         }
                     }
+                    TProfiler.Check($"RegenSubFor_{i}");
                 }
                 uniqueContainedThingsSet.Clear();
-                tag = "END ListerThings";
+                TProfiler.Check("RegenSub_2");
             }
+            TProfiler.Check("Regen_4");
         }
         catch (Exception ex)
         {
             if (ex is OverflowException oEx)
             {
-                TLog.Error($"Arithmetic Overflow Exception in RegenerateData, with last Tag '{tag}': {oEx}");
+                TLog.Error($"Arithmetic Overflow Exception in RegenerateData: {oEx}");
             }
-        }
-        finally
-        {
-            
         }
     }
 

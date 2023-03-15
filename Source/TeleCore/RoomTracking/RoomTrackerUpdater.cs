@@ -2,6 +2,7 @@
 using System.Linq;
 using TeleCore.Memory;
 using TeleCore.Static.Utilities;
+using UnityEngine;
 using Verse;
 
 namespace TeleCore
@@ -53,7 +54,7 @@ namespace TeleCore
         //Last step, comparing known data, with new generated rooms
         public static void Notify_RoomUpdatePostfix(Map map)
         {
-            using var g = new GarbageMan();
+            //using var g = new GarbageMan();
             TProfiler.Begin("RoomUpdatePostfix");
             
             //Get all rooms after vanilla updater finishes
@@ -88,14 +89,21 @@ namespace TeleCore
                     }
                 }
             }
+            
+            TProfiler.Check("1");
 
             //Compare old rooms with new rooms to disband unused ones
             var allActiveTrackers = NewTrackers.Concat(NewExistingTrackers).ToList();
             var disbanded = ExistingTrackers.Except(allActiveTrackers).ToList();
+            
+            TProfiler.Check("2");
+            
             foreach (var tracker in disbanded)
             {
                 roomInfo.MarkDisband(tracker);
             }
+
+            TProfiler.Check("3");
 
             //Finalize Addition
             foreach (var tracker in allActiveTrackers)
@@ -103,17 +111,23 @@ namespace TeleCore
                 roomInfo.SetTracker(tracker);
             }
 
+            TProfiler.Check("4");
+            
             //
             foreach (var tracker in ReusedTrackers.Concat(NewTrackers))
             {
                 tracker.Reset();
             }
+            
+            TProfiler.Check("5");
 
             //
             foreach (var tracker in ReusedTrackers)
             {
                 tracker.Notify_Reused();
             }
+            
+            TProfiler.Check("6");
 
             //
             foreach (var tracker in disbanded)
@@ -121,15 +135,21 @@ namespace TeleCore
                 roomInfo.Disband(tracker);
             }
 
+            TProfiler.Check("7");
+            
             foreach (var tracker in NewTrackers)
             {
                 tracker.PreApply();
             }
+            
+            TProfiler.Check("8");
 
             foreach (var tracker in NewTrackers)
             {
                 tracker.FinalizeApply();
             }
+            
+            TProfiler.Check("9");
 
             NewTrackers.Clear();
             ReusedTrackers.Clear();

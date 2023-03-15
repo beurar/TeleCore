@@ -231,6 +231,11 @@
             Attaches a custom function to a layer, it is run before the layer is drawn.
             </summary>
         </member>
+        <member name="T:TeleCore.PlaySettingsWorker">
+            <summary>
+            Provides an entry point to add a custom PlaySettings Option
+            </summary>
+        </member>
         <member name="T:TeleCore.RegionPatches">
             <summary>
             Main handling of changes in regions and rooms of RimWorld
