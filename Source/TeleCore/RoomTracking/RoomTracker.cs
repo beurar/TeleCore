@@ -233,6 +233,7 @@ public class RoomTracker
         foreach (var comp in comps)
         {
             comp.FinalizeApply();
+            TProfiler.Check($"Finalized {comp}");
         }
     }
 
@@ -367,20 +368,17 @@ public class RoomTracker
                                 {
                                     Notify_RegisterBorderThing(item);
                                 }
-                                TProfiler.Check($"RegenSubForThings0_{j}");
                                 continue;
                             }
 
                             if (IsOutside)
                             {
-                                TProfiler.Check($"RegenSubForThings1_{j}");
                                 continue;
                             }
                             if (uniqueContainedThingsSet.Add(item))
                             {
                                 Notify_RegisterThing(item);
                             }
-                            TProfiler.Check($"RegenSubForThings2_{j}");
                         }
                     }
                     TProfiler.Check($"RegenSubFor_{i}");

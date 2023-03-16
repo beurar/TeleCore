@@ -12,6 +12,7 @@ namespace TeleCore
         public WorldComp_Tele(World world) : base(world)
         {
             GenerateInfos();
+            StaticData.Notify_NewTeleWorldComp(this);
         }
 
         public override void ExposeData()

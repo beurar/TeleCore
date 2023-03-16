@@ -1,13 +1,26 @@
-﻿using Verse;
+﻿using System;
+using System.Collections.Generic;
+using Verse;
 
 namespace TeleCore;
 
-public struct RoomPortal
+//TODO: Implement Workers and replace AtmosphericPortal in TAE
+public abstract class RoomPortalWorker
+{
+    public RoomPortalWorker(RoomPortal parent)
+    {
+        
+    }
+}
+
+public class RoomPortal
 {
     private readonly Building connector;
     private readonly RoomTracker portalRoom;
     private readonly RoomTracker[] connections;
     private readonly Rot4[] connectionDirections;
+
+    private List<RoomPortalWorker> workers;
 
     public RoomPortal(Building connector, RoomTracker roomA, RoomTracker roomB, RoomTracker portalRoom)
     {
@@ -26,6 +39,15 @@ public struct RoomPortal
                 connectionDirections[0] = cell.Rot4Relative(connector.Position);
             if (roomB.Room == room)
                 connectionDirections[1] = cell.Rot4Relative(connector.Position);
+        }
+        
+        //Generate Workers
+        var subclasses = typeof(RoomPortalWorker).AllSubclassesNonAbstract();
+        if (subclasses.NullOrEmpty()) return;
+        workers = new System.Collections.Generic.List<RoomPortalWorker>(subclasses.Count);
+        foreach (var type in subclasses)
+        {
+            workers.Add((RoomPortalWorker)Activator.CreateInstance(type, this));
         }
     }
 
