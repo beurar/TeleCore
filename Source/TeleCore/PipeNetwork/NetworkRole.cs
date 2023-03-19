@@ -13,11 +13,12 @@ namespace TeleCore
         Storage = 32,
         Requester = 64,
         Valve = 128,
-        Pump = 356,
-        //All = 64,
+        Pump = 256,
+        EndPoint = 512,
+        All = 127,
 
         AllContainers = Producer | Consumer | Storage | Requester,
-        AllFlag = Controller | Transmitter | Valve | AllContainers,
-        //All = Transmitter | AllContainers,
+        AllFlag = Controller | Transmitter | Passthrough | Valve | AllContainers
+        //All = 127
     }
 }

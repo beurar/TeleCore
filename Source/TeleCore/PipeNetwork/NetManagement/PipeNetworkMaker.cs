@@ -23,6 +23,7 @@ namespace TeleCore
             //
             GenerateGraph(root, newNet);
 
+            newNet.Initialize();
             return newNet;
         }
 

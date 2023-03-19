@@ -27,6 +27,8 @@ namespace TeleCore
     
     public class CompFX : ThingComp
     {
+        private bool _hasFXLayers;
+        private bool _hasEffecters;
         private bool spawnedOnce = false;
         private List<IFXLayerProvider> allHeldFXComps;
 
@@ -90,6 +92,7 @@ namespace TeleCore
                     
                     //Resolve priority
                     FXLayers.Sort((a,b) => a.RenderPriority < b.RenderPriority ? 1 : 0);
+                    _hasFXLayers = FXLayers?.Count > 0;
                 }
 
                 //Generate FXEffecters
@@ -100,6 +103,9 @@ namespace TeleCore
                     {
                         EffectLayers.Add(new EffecterLayer(this, Props.effectLayers[i], i));
                     }
+                    
+                    //
+                    _hasEffecters = EffectLayers?.Count > 0;
                 }
             }
 
@@ -239,7 +245,7 @@ namespace TeleCore
 
         private void FXTick(int tickInterval)
         {
-            if (FXLayers.Any())
+            if (_hasFXLayers)
             {
                 foreach (var g in FXLayers)
                 {
@@ -247,7 +253,7 @@ namespace TeleCore
                 }
             }
 
-            if (EffectLayers.Any())
+            if (_hasEffecters)
             {
                 foreach (var effectLayer in EffectLayers)
                 {   

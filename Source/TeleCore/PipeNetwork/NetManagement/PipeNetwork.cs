@@ -29,6 +29,8 @@ namespace TeleCore
         public NetworkRank NetworkRank => networkRank;
         public int ID { get; set; } = -1;
 
+        
+        public bool Initialized { get; internal set; }
         public bool IsValid => parentManager.AllNetworks.Contains(this);
         public bool HasGraph => Graph != null && Graph.AllNodes.Count > 1;
         
@@ -171,6 +173,11 @@ namespace TeleCore
             {
                 NetworkCells.Remove(cell);
             }
+        }
+        
+        public void Initialize()
+        {
+            Initialized = true;
         }
 
         public override string ToString()

@@ -18,7 +18,7 @@ namespace TeleCore
         //Custom
         public string billName;
         public float workAmountTotal;
-        public DefFloat<NetworkValueDef>[] networkCost;
+        public DefValueStack<NetworkValueDef> networkCost;
         public List<ThingDefCount> results = new List<ThingDefCount>();
 
         private BillRepeatModeDef repeatMode = BillRepeatModeDefOf.Forever;
@@ -31,8 +31,6 @@ namespace TeleCore
         private float workAmountLeft;
         private bool hasBeenPaid = false;
 
-        //
-        private List<DefFloat<NetworkValueDef>> scribedListInt;
 
         private static float borderWidth = 5;
         private static float contentHeight = 0;
@@ -86,11 +84,6 @@ namespace TeleCore
 
         public void ExposeData()
         {
-            if (Scribe.mode == LoadSaveMode.Saving)
-            {
-                scribedListInt = networkCost.ToList();
-            }
-
             Scribe_Values.Look(ref billName, "billName");
             Scribe_Values.Look(ref repeatCount, "iterationsLeft");
             Scribe_Values.Look(ref workAmountTotal, "workAmountTotal");
@@ -98,12 +91,7 @@ namespace TeleCore
             Scribe_Values.Look(ref hasBeenPaid, "hasBeenPaid");
             Scribe_Collections.Look(ref results, "results");
 
-            Scribe_Collections.Look(ref scribedListInt, "networkCostList", LookMode.Deep);
-
-            if (Scribe.mode == LoadSaveMode.PostLoadInit)
-            {
-                networkCost = scribedListInt.ToArray();
-            }
+            Scribe_Deep.Look(ref networkCost, "networkCost");
         }
 
         public CustomNetworkBill(NetworkBillStack stack)
@@ -126,16 +114,16 @@ namespace TeleCore
 
         private bool CanPay()
         {
-            if (networkCost.NullOrEmpty())
+            if (networkCost.Empty)
             {
                 TLog.Error($"Trying to pay for {billName} with empty networkCost! | Paid: {HasBeenPaid} WorkLeft: {WorkLeft}");
                 return false;
             }
 
-            float totalNeeded = networkCost.Sum(t => t.Value);
+            float totalNeeded = networkCost.TotalValue;
             foreach (var value in networkCost)
             {
-                var network = billStack.ParentComp[value.Def.networkDef].Network;
+                var network = billStack.ParentComp[value.Def.NetworkDef].Network;
                 if (network.TotalValueFor(value.Def, NetworkFlags) >= value.Value)
                 {
                     totalNeeded -= value.Value;
@@ -253,7 +241,7 @@ namespace TeleCore
             DefValueStack<NetworkValueDef> stack = new DefValueStack<NetworkValueDef>();
             foreach (var value in networkCost)
             {
-                if(value.Def.networkDef == comp.NetworkDef)
+                if(value.Def.NetworkDef == comp.NetworkDef)
                     stack += (value.Def, value.Value);
             }
 
@@ -425,8 +413,7 @@ namespace TeleCore
             bill.repeatCount = repeatCount;
             bill.billName = billName + "_Copy";
             bill.repeatMode = repeatMode;
-            bill.networkCost = new DefFloat<NetworkValueDef>[networkCost.Length];
-            networkCost.CopyTo(bill.networkCost);
+            bill.networkCost = new DefValueStack<NetworkValueDef>(networkCost);
             bill.results = new List<ThingDefCount>(results);
             return bill;
         }

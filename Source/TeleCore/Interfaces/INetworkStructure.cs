@@ -26,8 +26,8 @@ namespace TeleCore
         void Notify_StructureRemoved(INetworkStructure other);
 
         //
-        bool CanInteractWith(INetworkSubPart interactor, INetworkSubPart otherPart);
         bool AcceptsValue(NetworkValueDef value);
+        bool CanInteractWith(INetworkSubPart other);
         bool CanConnectToOther(INetworkStructure other);
     }
 }

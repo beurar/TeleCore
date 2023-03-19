@@ -173,11 +173,11 @@ namespace TeleCore
         }
 
         //
-        public virtual bool CanInteractWith(INetworkSubPart interactor, INetworkSubPart otherPart)
+        public virtual bool CanInteractWith(INetworkSubPart otherPart)
         {
             return true;
         }
-        
+
         public virtual void NetworkPostTick(NetworkSubPart networkSubPart, bool isPowered)
         {
 

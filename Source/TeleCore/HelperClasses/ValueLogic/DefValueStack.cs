@@ -32,7 +32,8 @@ namespace TeleCore
     /// Manages any Def as a numeric value in a stack.
     /// </summary>
     /// <typeparam name="TDef">The <see cref="Def"/> of the stack.</typeparam>
-    public struct DefValueStack<TDef> where TDef : Def
+    public struct DefValueStack<TDef> : IExposable
+        where TDef : Def
     {
         private float? _maxCapacity;
         private DefFloat<TDef>[] _stack;
@@ -72,7 +73,6 @@ namespace TeleCore
         {
             if (source.EnumerableNullOrEmpty())
             {
-                TLog.Warning($"[{GetType()}.ctor]Tried to create new DefValueStack from NullOrEmpty source dictionary.");
                 Default(maxCapacity);
                 return;
             }
@@ -139,6 +139,13 @@ namespace TeleCore
                 _stack[i] = other._stack[i];
             }
             _totalValue = other._totalValue;
+        }
+        
+        public void ExposeData()
+        {
+            Scribe_Values.Look(ref _maxCapacity, "maxCapacity");
+            Scribe_Values.Look(ref _totalValue, "totalValue");
+            Scribe_Arrays.Look(ref _stack, "stack");
         }
 
         private void Default(float? maxCapacity = null)

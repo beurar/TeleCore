@@ -16,6 +16,8 @@ public class FlowValueDef : Def
     public float viscosity = 1;
     public float capacityFactor = 1;
     
+    public FlowValueCollectionDef collectionDef;
+    
     //Runtime
     public float FlowRate => 1f / viscosity;
 
@@ -30,5 +32,16 @@ public class FlowValueDef : Def
         {
             yield return $"{nameof(viscosity)} cannot be 0!";
         }
+    }
+    
+    public override void ResolveReferences()
+    {
+        base.ResolveReferences();
+        if (labelShort.NullOrEmpty())
+        {
+            labelShort = label;
+        }
+
+        collectionDef?.Notify_ResolvedFlowValueDef(this);
     }
 }

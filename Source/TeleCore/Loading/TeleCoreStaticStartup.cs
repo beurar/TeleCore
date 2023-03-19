@@ -31,37 +31,42 @@ namespace TeleCore
             
             TLog.Message("Startup Finished!", TColor.Green);
         }
-        
-        public static void Foo()
-        {
-            DefValueStack<ThingDef> stack1 = new DefValueStack<ThingDef>(new DefFloat<ThingDef>[2]
-            {
-                new DefFloat<ThingDef>(ThingDefOf.Steel, 10),
-                new DefFloat<ThingDef>(ThingDefOf.Gold, 10),
-            });
-            DefValueStack<ThingDef> stack2 = new DefValueStack<ThingDef>(new DefFloat<ThingDef>[2]
-            {
-                new DefFloat<ThingDef>(ThingDefOf.Steel, 22),
-                new DefFloat<ThingDef>(ThingDefOf.Gold, 22),
-            });
 
-            var newStack = stack1 + stack2;
-            
-            TLog.Debug($"\nS1: {stack1}\nS2: {stack2} \nSN: {newStack}");
+        private static void DefIDCheck()
+        {
+            var allDefs = LoadedModManager.RunningModsListForReading.SelectMany(pack => pack.AllDefs);
+            //Runs ID check
+            bool failed = false;
+            foreach (var def in allDefs)
+            {
+                var toID = def.ToID();
+                var andBack = toID.ToDef<Def>();
+                if (andBack.ToID() != toID)
+                {
+                    TLog.Warning($"Checking {def} failed: ({def}){toID} != ({andBack}){andBack.ToID()}");
+                    failed = true;
+                }
+            }
+
+            if (failed)
+            {
+                TLog.Warning("Def ID check failed!");
+            }
         }
 
         private static void ApplyDefChangesPostLoad()
         {
             //Load Translation Libraries
             //LoadStaticTranslationLibraries();
+
+            DefIDCheck();
             
             //
             var allInjectors = DefInjectors()?.ToArray();
             var skipInjectors = allInjectors is not { Length: > 0 };
             
-            var defs = LoadedModManager.RunningMods.SelectMany(s => s.AllDefs);
-            TLog.Debug($"Defs: {defs.Count()}");
-            TLog.Debug($"Defs: {DefDatabase<ThingDef>.AllDefsListForReading.Count} | {DefDatabase<ThingDef>.AllDefs.Count()} ");
+            var defs = LoadedModManager.RunningMods.SelectMany(s => s.AllDefs).ToArray();
+            TLog.Message($"Def ID Database check - Loaded IDs: {DefIDStack._MasterID} == {defs.Length}: {defs.Length - 1 == DefIDStack._MasterID}");
             foreach (var def in defs)
             {
                 var bDef = def as BuildableDef;

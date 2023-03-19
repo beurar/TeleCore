@@ -352,7 +352,7 @@ public class RoomTracker
             {
                 listerThings.Clear();
                 borderListerThings.Clear();
-                TProfiler.Check("RegenSub_1");
+                //TODO: Main Performance Killer - Thing processing, maybe parallel for?
                 List<Region> regions = Room.Regions;
                 for (int i = 0; i < regions.Count; i++)
                 {
@@ -381,10 +381,8 @@ public class RoomTracker
                             }
                         }
                     }
-                    TProfiler.Check($"RegenSubFor_{i}");
                 }
                 uniqueContainedThingsSet.Clear();
-                TProfiler.Check("RegenSub_2");
             }
             TProfiler.Check("Regen_4");
         }

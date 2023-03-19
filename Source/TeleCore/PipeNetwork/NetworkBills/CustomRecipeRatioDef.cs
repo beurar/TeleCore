@@ -7,7 +7,7 @@ namespace TeleCore
     {
         public bool hidden = false;
         public List<string> tags;
-        public List<DefFloat<NetworkValueDef>> inputRatio;
+        public List<DefFloatRef<NetworkValueDef>> inputRatio;
         public ThingDef result;
 
         public override void ResolveReferences()

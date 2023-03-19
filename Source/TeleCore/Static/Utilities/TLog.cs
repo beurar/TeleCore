@@ -7,7 +7,7 @@ namespace TeleCore
     {
         public static void Error(string msg, string tag = null)
         {
-            Log.Error($"{"[TELE]".Colorize(TColor.NiceBlue)} {msg}");
+            Log.Error($"{"[TELE][ERROR]".Colorize(TColor.NiceBlue)} {msg}");
         }
 
         public static void ErrorOnce(string msg, int id)
@@ -35,6 +35,22 @@ namespace TeleCore
             if (flag)
             {
                 Log.Message($"{"[TELE-Debug]".Colorize(TColor.Green)} {msg}");
+            }
+        }
+
+        public static void DebugOnce(string msg, int hash)
+        {
+            object obj = Log.logLock;
+            lock (obj)
+            {
+                if (!Log.ReachedMaxMessagesLimit)
+                {
+                    if (!Log.usedKeys.Contains(hash))
+                    {
+                        Log.usedKeys.Add(hash);
+                        Debug(msg);
+                    }
+                }
             }
         }
     }

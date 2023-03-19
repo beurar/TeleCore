@@ -15,7 +15,7 @@ public enum ContainerFillState
     Empty
 }
 
-public struct FlowValueFilterSettings
+public struct FlowValueFilterSettings : IExposable
 {
     public bool canReceive = true;
     public bool canStore = true;
@@ -23,6 +23,13 @@ public struct FlowValueFilterSettings
 
     public FlowValueFilterSettings()
     {
+    }
+
+    public void ExposeData()
+    {
+        Scribe_Values.Look(ref canReceive, nameof(canReceive));
+        Scribe_Values.Look(ref canStore, nameof(canStore));
+        Scribe_Values.Look(ref canTransfer, nameof(canTransfer));
     }
 }
 
@@ -74,6 +81,17 @@ where TValue : FlowValueDef
         };
     }
 
+    public static ValueResult<TValue> Init(float desiredAmount, TValue usedDef)
+    {
+        return new ValueResult<TValue>
+        {
+            State = ValueState.Incomplete,
+            DesiredAmount = desiredAmount,
+            ActualAmount = 0,
+            FullDiff = new DefValueStack<TValue>(usedDef.ToSingleItemList())
+        };
+    }
+
     public static ValueResult<TValue> Init(float desiredAmount, ICollection<TValue> usedDefs)
     {
         return new ValueResult<TValue>
@@ -85,48 +103,50 @@ where TValue : FlowValueDef
         };
     }
     
+    public ValueResult<TValue> AddDiff(TValue def, float diffAmount)
+    {
+        FullDiff += (def, diffAmount);
+        Diff += diffAmount;
+        return this;
+    }
+    
     public ValueResult<TValue> SetActual(float actual)
     {
         ActualAmount = actual;
         return this;
     }
     
-    public ValueResult<TValue> SetDiff(float diff)
-    {
-        Diff = diff;
-        return this;
-    }
-
     public ValueResult<TValue> Fail()
     {
         State = ValueState.Failed;
         return this;
     }
-    
-    public ValueResult<TValue> Break(float? curActual = null)
-    {
-        State = ValueState.CompletedWithExcess;
-        return this;
-    }
-    
+
     public ValueResult<TValue> Complete(float? finalActual = null)
     {
         State = ValueState.Completed;
-        ActualAmount = finalActual ?? -1;
+        ActualAmount = finalActual ?? ActualAmount;
         return this;
     }
 
-    public ValueResult<TValue> TryComplete()
+    public ValueResult<TValue> Resolve()
     {
         if (Math.Abs(ActualAmount - DesiredAmount) < Mathf.Epsilon)
             State = ValueState.Completed;
+        if (ActualAmount > DesiredAmount)
+            State = ValueState.CompletedWithExcess;
+        if (ActualAmount < DesiredAmount)
+            State = ValueState.CompletedWithShortage;
         return this;
     }
 
-    public ValueResult<TValue> AddDiff(TValue def, float diffAmount)
+    public override string ToString()
     {
-        FullDiff += (def, diffAmount);
-        return this;
+        StringBuilder sb = new StringBuilder();
+        sb.Append($"State: {State} | ");
+        sb.Append($"DesiredToActual: {DesiredAmount} -> {ActualAmount} | ");
+        sb.Append($"Diff: {Diff}");
+        return sb.ToString();
     }
 }
 
@@ -134,7 +154,7 @@ where TValue : FlowValueDef
 public abstract class ValueContainerBase<TValue> : IExposable where TValue : FlowValueDef
 {
     //
-    private readonly ContainerConfig _config;
+    private readonly ContainerConfig<TValue> _config;
     
     //Dynamic settings
     protected float capacity;
@@ -154,7 +174,7 @@ public abstract class ValueContainerBase<TValue> : IExposable where TValue : Flo
     public float TotalStored => totalStoredCache;
     public float StoredPercent => TotalStored / Capacity;
 
-    public ContainerConfig Config => _config;
+    public ContainerConfig<TValue> Config => _config;
     
     //Capacity State
     public ContainerFillState FillState
@@ -225,7 +245,7 @@ public abstract class ValueContainerBase<TValue> : IExposable where TValue : Flo
     //
     #region Constructors
 
-    public ValueContainerBase(ContainerConfig config)
+    public ValueContainerBase(ContainerConfig<TValue> config)
     {
         _config = config;
         capacity = config.baseCapacity;
@@ -237,7 +257,7 @@ public abstract class ValueContainerBase<TValue> : IExposable where TValue : Flo
         }
 
         //Cache Types
-        AcceptedTypes = new List<TValue>(config.valueDefs.Cast<TValue>());
+        AcceptedTypes = new List<TValue>(config.AllowedValues);
         
         //Setup Filter
         foreach (var value in AcceptedTypes)
@@ -252,15 +272,15 @@ public abstract class ValueContainerBase<TValue> : IExposable where TValue : Flo
 
     public void ExposeData()
     {
-        if (Scribe_Container.InvalidState)
+        if (Scribe_Container.InvalidState && Scribe.mode is LoadSaveMode.Saving or LoadSaveMode.LoadingVars)
         {
-            TLog.Error($"{this} should be scribed with {typeof(Scribe_Container)}!");
+            TLog.Error($"{this} should be scribed with {typeof(Scribe_Container)}!\nScribe mode used: {Scribe.mode}");
         }
         
-        Scribe_Collections.Look(ref filterSettings, "typeFilter");
+        Scribe_Collections.Look(ref filterSettings, "typeFilter", LookMode.Def, LookMode.Deep);
         Scribe_Collections.Look(ref storedValues, "storedValues");
         
-        if (Scribe.mode == LoadSaveMode.PostLoadInit)
+        if (Scribe.mode == LoadSaveMode.LoadingVars)
         {
             OnContainerStateChanged(true);
         }
@@ -453,7 +473,7 @@ public abstract class ValueContainerBase<TValue> : IExposable where TValue : Flo
         }
     }
 
-    public virtual TCopy Copy<TCopy>(ContainerConfig configOverride = null)
+    public virtual TCopy Copy<TCopy>(ContainerConfig<TValue> configOverride = null)
     where TCopy : ValueContainerBase<TValue>
     {
         var newContainer = (TCopy) Activator.CreateInstance(typeof(TCopy), _config);
@@ -519,7 +539,7 @@ public abstract class ValueContainerBase<TValue> : IExposable where TValue : Flo
         Notify_AddedValue(value, actual); //Notify internal logic updates
         
         //On the result, set actual added value and resolve completion status
-        return result.SetActual(actual).TryComplete();
+        return result.SetActual(actual).Complete().Resolve();
     }
     
     [Obsolete]
@@ -527,8 +547,7 @@ public abstract class ValueContainerBase<TValue> : IExposable where TValue : Flo
     {
         float desired = value.Value;
         float actual = 0;
-        //Result is inited with the desired value
-        var result = ValueResult<TValue>.Init(desired,AcceptedTypes); //Init new result process
+        var result = ValueResult<TValue>.Init(desired,AcceptedTypes);
 
         //If we cant add the value, the operation fails
         if (!CanAddValue(value))
@@ -572,7 +591,7 @@ public abstract class ValueContainerBase<TValue> : IExposable where TValue : Flo
 
         // Notify that a value has been added
         Notify_AddedValue(value, actual);
-        return result.SetActual(actual).TryComplete();
+        return result.AddDiff(value, actual).SetActual(actual).Complete().Resolve();
     }
     
     public bool TryRemoveValue(TValue valueDef, float amount, out ValueResult<TValue> result)
@@ -587,11 +606,11 @@ public abstract class ValueContainerBase<TValue> : IExposable where TValue : Flo
 
     public ValueResult<TValue> TryRemoveValue(DefFloat<TValue> value)
     {
-        var desired = value.Value; //Local cache for desired value
-        var result = ValueResult<TValue>.Init(desired,AcceptedTypes); //ValueResult Init
+        var desired = value.Value;
+        var result = ValueResult<TValue>.Init(desired,AcceptedTypes);
 
         //Lazy sanity checks for failure
-        if (!CanRemoveValue(value) || !storedValues.TryGetValue(value, out float available))
+        if (!CanRemoveValue(value) || !storedValues.TryGetValue(value, out var available))
         {
             return result.Fail();
         }
@@ -609,11 +628,11 @@ public abstract class ValueContainerBase<TValue> : IExposable where TValue : Flo
             storedValues[value] -= actual;
         }
 
-        //Notify internal logic updates
+        //Notify internal cached data
         Notify_RemovedValue(value, actual);
 
         //On the result, set actual removed value and resolve completion status
-        return result.AddDiff(value, -actual).SetActual(actual).TryComplete();
+        return result.AddDiff(value, -actual).SetActual(actual).Complete().Resolve();
 
         /*
         actualValue = wantedValue;
@@ -793,7 +812,7 @@ public abstract class ValueContainer<TValue, THolder> : ValueContainerBase<TValu
 {
     public THolder Holder { get; }
 
-    protected ValueContainer(ContainerConfig config, THolder holder) : base(config)
+    protected ValueContainer(ContainerConfig<TValue> config, THolder holder) : base(config)
     {
         Holder = holder;
     }
@@ -823,7 +842,7 @@ public class ValueContainerThing<TValue, THolder> : ValueContainer<TValue, THold
     
     public Thing ParentThing => Holder.Thing;
     
-    public ValueContainerThing(ContainerConfig config, THolder holder) : base(config, holder)
+    public ValueContainerThing(ContainerConfig<TValue> config, THolder holder) : base(config, holder)
     {
     }
     

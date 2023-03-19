@@ -39,6 +39,7 @@ namespace TeleCore
 
         public override void PostLoad()
         {
+            base.PostLoad();
         }
 
         //Loading

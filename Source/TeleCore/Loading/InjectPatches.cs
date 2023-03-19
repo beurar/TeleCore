@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Reflection;
 using HarmonyLib;
 using RimWorld;
 using UnityEngine;
@@ -60,6 +61,32 @@ namespace TeleCore
                     floatMenuOption.Label = text;
                     opts.Add(floatMenuOption);
                 }
+            }
+        }
+
+        //
+        [HarmonyPatch]
+        public static class EditablePostLoadPatch
+        {
+            [HarmonyTargetMethods]
+            public static IEnumerable<MethodInfo> TargetMethods()
+            {
+                yield return AccessTools.Method(typeof(Def), "PostLoad");
+                yield return AccessTools.Method(typeof(PawnKindDef), "PostLoad");
+                yield return AccessTools.Method(typeof(ThingStyleDef), "PostLoad");
+                yield return AccessTools.Method(typeof(BodyPartDef), "PostLoad");
+                yield return AccessTools.Method(typeof(FactionDef), "PostLoad");
+                yield return AccessTools.Method(typeof(ThingCategoryDef), "PostLoad");
+                
+                yield return AccessTools.Method(typeof(SongDef), "PostLoad");
+                yield return AccessTools.Method(typeof(SkillDef), "PostLoad");
+                yield return AccessTools.Method(typeof(AbilityDef), "PostLoad");
+                yield return AccessTools.Method(typeof(MechWorkModeDef), "PostLoad");
+            }
+
+            public static void Postfix(Def __instance)
+            {
+                DefIDStack.RegisterNew(__instance);
             }
         }
     }

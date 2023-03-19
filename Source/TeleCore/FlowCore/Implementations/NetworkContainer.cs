@@ -20,17 +20,22 @@ public interface IContainerHolderNetwork : IContainerHolderNetworkThing
 public class NetworkContainerThing<THolder> : ValueContainerThing<NetworkValueDef, THolder>
     where THolder : IContainerHolderNetworkThing
 {
-    public NetworkContainerThing(ContainerConfig config, THolder holder) : base(config, holder)
+    public NetworkContainerThing(ContainerConfig<NetworkValueDef> config, THolder holder) : base(config, holder)
     {
     }
 }
 
 public class NetworkContainer : NetworkContainerThing<IContainerHolderNetwork>
 {
-    public NetworkContainer(ContainerConfig config, IContainerHolderNetwork holder) : base(config, holder)
+    public NetworkContainer(ContainerConfig<NetworkValueDef> config, IContainerHolderNetwork holder) : base(config, holder)
     {
     }
 
+    public NetworkContainer(ContainerConfig<NetworkValueDef> config, List<NetworkValueDef> extraValueDefs, IContainerHolderNetwork holder) : base(config, holder)
+    {
+        AcceptedTypes.AddRange(extraValueDefs);
+    }
+    
     //Virtual Functions
     public override IEnumerable<Thing> GetThingDrops()
     {

@@ -93,14 +93,14 @@ namespace TeleCore
 
             foreach (var typeCost in Cost.SpecificCosts)
             {
-                var container = structure[typeCost.valueDef.networkDef].Container;
+                var container = structure[typeCost.valueDef.NetworkDef].Container;
                 if (container.TryConsume(typeCost.valueDef, typeCost.value))
                     totalCost -= typeCost.value;
             }
 
             foreach (var type in Cost.AcceptedValueTypes)
             {
-                var container = structure[type.networkDef].Container;
+                var container = structure[type.NetworkDef].Container;
                 
                 var result = container.TryRemoveValue(type, totalCost);
                 if (result)

@@ -45,14 +45,14 @@ namespace TeleCore
         //Rotation
         public float TrueRotation => CompFX.GetExtraRotation(Args) + exactRotation;
         public Vector3 DrawPos => CompFX.GetDrawPositionOverride(Args) ?? CompFX.parent.DrawPos;
-        private float RotationSpeedPerTick => AnimationSpeed * (CompFX.GetRotationSpeedOverride(Args) ?? (data.rotate?.rotationSpeed ?? 0));
+        private float RotationSpeedPerTick => AnimationSpeedFactor * (CompFX.GetRotationSpeedOverride(Args) ?? (data.rotate?.rotationSpeed ?? 0));
         
         
         private Color ColorOverride => CompFX.GetColorOverride(Args) ?? Color.white;
         private float Opacity => CompFX.GetOpacityFloat(Args);
 
 
-        private float AnimationSpeed => CompFX.GetAnimationSpeedFactor(Args);
+        private float AnimationSpeedFactor => CompFX.GetAnimationSpeedFactor(Args);
         private Action<RoutedDrawArgs> DrawAction => CompFX.GetDrawAction(Args);
         
         private bool HasPower => CompFX.HasPower(Args);
@@ -79,6 +79,7 @@ namespace TeleCore
             if (data.skip)
             {
                 _inactive = true;
+                Args = this.GetArgs();
                 return;
             }
             

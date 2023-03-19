@@ -25,14 +25,14 @@ namespace TeleCore
         public Dictionary<CustomRecipeRatioDef, int> RequestedAmount = new();
         public string[] textBuffers;
 
-        public DefFloat<NetworkValueDef>[] TotalCost { get; set; }
-        public int TotalWorkAmount => TotalCost.NullOrEmpty() ? 0 : TotalCost.Sum(m => (int)(m.Value * WorkAmountFactor));
+        public DefValueStack<NetworkValueDef> TotalCost { get; set; }
+        public int TotalWorkAmount => TotalCost.Empty ? 0 : TotalCost.Values.Sum(m => (int)(m.Value * WorkAmountFactor));
 
         //
         public Building ParentBuilding => billStackOwner.parent;
         public Comp_NetworkBillsCrafter ParentComp => billStackOwner;
         public IEnumerable<NetworkSubPart> ParentNetParts => UsedNetworks?.Select(n => ParentComp[n]) ?? null;
-        public IEnumerable<NetworkDef> UsedNetworks => CurrentBill?.networkCost.Select(t => t.Def.networkDef)?.Distinct() ?? null;
+        public IEnumerable<NetworkDef> UsedNetworks => CurrentBill?.networkCost.Values.Select(t => t.Def.NetworkDef)?.Distinct() ?? null;
 
         public List<CustomRecipeRatioDef> Ratios => ParentComp.Props.UsedRatioDefs;
 
@@ -74,7 +74,7 @@ namespace TeleCore
             var totalCost = presetDefDef.desiredResources.Sum(t => (int)(t.Value * WorkAmountFactor));
             CustomNetworkBill customBill = new CustomNetworkBill(totalCost);
             customBill.billName = presetDefDef.defName;
-            customBill.networkCost = NetworkBillUtility.ConstructCustomCost(presetDefDef.desiredResources);
+            customBill.networkCost = NetworkBillUtility.ConstructCustomCostStack(presetDefDef.desiredResources);
             customBill.billStack = this;
             customBill.results = presetDefDef.Results;
             bills.Add(customBill);
@@ -82,12 +82,11 @@ namespace TeleCore
 
         public void TryCreateNewBill()
         {
-            if (TotalCost == null || TotalCost.Sum(t => t.Value) <= 0) return;
+            if (TotalCost.Empty) return;
 
             CustomNetworkBill customBill = new CustomNetworkBill(TotalWorkAmount);
             customBill.billName = billName;
-            customBill.networkCost = new DefFloat<NetworkValueDef>[TotalCost.Length];
-            TotalCost.CopyTo(customBill.networkCost);
+            customBill.networkCost = new DefValueStack<NetworkValueDef>(TotalCost);
             customBill.billStack = this;
             customBill.results = RequestedAmount.Where(m => m.Value > 0).Select(m => new ThingDefCount(m.Key.result, m.Value)).ToList();
             bills.Add(customBill);
@@ -116,7 +115,7 @@ namespace TeleCore
             {
                 textBuffers[i] = "0";
                 RequestedAmount[Ratios[i]] = 0;
-                TotalCost = null;
+                TotalCost = new DefValueStack<NetworkValueDef>();
             }
         }
 

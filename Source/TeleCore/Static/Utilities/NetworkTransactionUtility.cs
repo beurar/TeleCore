@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using RimWorld;
 using TeleCore.FlowCore;
 using UnityEngine;
+using Verse;
 
 namespace TeleCore.Static.Utilities;
 
@@ -34,7 +36,7 @@ public static class NetworkTransactionUtility
             }
 
             //TODO: Make sure to use correct filter settings: Container.Filter
-            var usedTypes = sender.Props.AllowedValues;
+            var usedTypes = sender.Container.AcceptedTypes;
             for (int i = usedTypes.Count - 1; i >= 0; i--)
             {
                 var type = usedTypes[i];
@@ -64,12 +66,15 @@ public static class NetworkTransactionUtility
                 TLog.Warning("Transaction receiver is null.");
                 return;
             }
-            
-            foreach (var type in sender.Container.StoredDefs)
+
+            var temp = StaticListHolder<NetworkValueDef>.RequestSet("TransferPurgeSet");
+            temp.AddRange(sender.Container.StoredDefs);
+            foreach (var type in temp)
             {
                 if(!sender.Container.GetFilterFor(type).canStore)
                     TransferToOtherSpecific(sender, receiver, type);
             }
+            temp.Clear();
         }
         
         internal static void TransferToOther_FullFiltered(INetworkSubPart sender, INetworkSubPart? receiver, NetworkRole fromRole, NetworkRole ofRole)

@@ -1,19 +1,18 @@
 ﻿using System.Collections.Generic;
+using TeleCore.FlowCore;
 using TeleCore.Static;
 using Verse;
 
 namespace TeleCore
 {
     //Defines the logical ruleset for a network
-    public class NetworkDef : Def
+    public class NetworkDef : FlowValueCollectionDef
     {
         //Cached Data
         [Unsaved]
         private Graphic_LinkedNetworkStructure cachedTransmitterGraphic;
         [Unsaved]
         private Graphic_Linked_NetworkStructureOverlay cachedOverlayGraphic;
-        [Unsaved]
-        private readonly List<NetworkValueDef> belongingValueDefs = new();
 
         //General Label
         public string containerLabel;
@@ -30,7 +29,6 @@ namespace TeleCore
         public ThingDef transmitterDef;
 
         public bool UsesController => controllerDef != null;
-        public List<NetworkValueDef> NetworkValueDefs => belongingValueDefs;
 
         public Graphic_LinkedNetworkStructure TransmitterGraphic
         {
@@ -78,11 +76,6 @@ namespace TeleCore
                     }
                 }
             }
-        }
-
-        internal void Notify_ResolvedNetworkValueDef(NetworkValueDef networkValueDef)
-        {
-            belongingValueDefs.Add(networkValueDef);
         }
     }
 }

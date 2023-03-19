@@ -139,7 +139,7 @@ namespace TeleCore
         public static PortableNetworkContainer CreateFromStack(ThingDef portableThingDef, DefValueStack<NetworkValueDef> stack)
         {
             var portable = (PortableNetworkContainer)ThingMaker.MakeThing(portableThingDef);
-            portable.Container = new NetworkContainerThing<IContainerHolderNetworkThing>(new ContainerConfig
+            portable.Container = new NetworkContainerThing<IContainerHolderNetworkThing>(new ContainerConfig<NetworkValueDef>
             {
                 containerClass = null,
                 baseCapacity = Mathf.RoundToInt(stack.TotalValue),
@@ -147,7 +147,7 @@ namespace TeleCore
                 storeEvenly = true,
                 dropContents = false,
                 leaveContainer = false,
-                valueDefs = new List<FlowValueDef>(stack.Defs),
+                valueDefs = new List<NetworkValueDef>(stack.Defs),
             }, portable);
             portable.Container.LoadFromStack(stack);
             return portable;

@@ -45,6 +45,9 @@ namespace TeleCore
         public INetworkStructure Parent { get; private set; }
         public INetworkSubPart NetworkPart => this;
 
+        //
+        public bool Initialized => Network?.Initialized ?? false;
+        
         //States
         public bool IsMainController => Network?.NetworkController == Parent;
         public bool IsNetworkNode => NetworkRole != NetworkRole.Transmitter;// || IsJunction; //|| IsPipeEndPoint;
@@ -174,6 +177,7 @@ namespace TeleCore
         {
             if (respawningAfterLoad) return;
             
+            TLog.Debug($"Created Role3: {NetworkRole}");
             if (NetworkRole.HasFlag(NetworkRole.Requester))
             {
                 _requesterInt = new NetworkRequestWorker(this);
@@ -183,6 +187,7 @@ namespace TeleCore
         //
         public void NetworkTick()
         {
+            if (!Initialized) return;
             var parent = Parent;
             var isPowered = parent.IsPowered;
             if (isPowered)
@@ -449,7 +454,7 @@ namespace TeleCore
         //
         public bool CanInteractWith(INetworkSubPart other)
         {
-            return Parent.CanInteractWith(this, other);
+            return Parent.CanInteractWith(other);
         }
         
         public bool ConnectsTo(INetworkSubPart other)

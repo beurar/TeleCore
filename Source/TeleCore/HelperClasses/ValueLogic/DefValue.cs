@@ -9,7 +9,7 @@ namespace TeleCore
     /// <typeparam name="TDef">The <see cref="Def"/> Type of the value.</typeparam>
     /// <typeparam name="TValue">A numeric Type, can be <see cref="int"/> or <see cref="float"/></typeparam>
     public struct DefValueGeneric<TDef, TValue> 
-        where TDef : Def 
+        where TDef : Def
         where TValue : struct
     {
         public TDef Def { get; private set; }

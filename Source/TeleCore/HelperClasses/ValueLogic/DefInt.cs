@@ -44,7 +44,7 @@ public struct DefInt<TDef>
     
     public void LoadDataFromXmlCustom(XmlNode xmlRoot)
     {
-        TLog.Error($"Tried to load DefInt struct - use {typeof(DefIntRef<TDef>)} instead! XML: {xmlRoot.ToRefPath()}");
+        TLog.Error($"Tried to load DefInt struct - use 'DefIntRef' instead! XML: {xmlRoot.ToRefPath()}");
     }
 
     public override string ToString()

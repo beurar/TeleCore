@@ -19,7 +19,7 @@ public class CustomRecipePresetDef : Def
     {
         base.ResolveReferences();
         cachedResults = desiredResources.Select(m => new ThingDefCount(m.Def.result, m.Value)).ToList();
-        costLabel = NetworkBillUtility.CostLabel(NetworkBillUtility.ConstructCustomCost(desiredResources));
+        costLabel = NetworkBillUtility.CostLabel(NetworkBillUtility.ConstructCustomCostStack(desiredResources));
 
         //
         CustomNetworkRecipeReferences.TryRegister(this);

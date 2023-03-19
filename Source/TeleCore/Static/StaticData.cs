@@ -1,66 +1,61 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
+using TeleCore.FlowCore;
 using UnityEngine.Profiling;
 using Verse;
 
 namespace TeleCore
 {
-    /*public class DefIDStack<TDef> where TDef : Def
+    public static class DefIDStack
     {
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static ushort GetID(TDef def)
+        internal static ushort _MasterID = 0; 
+        internal static Dictionary<Def, ushort> _defToID;
+        internal static Dictionary<ushort, Def> _idToDef;
+
+        static DefIDStack()
         {
-            return def.index;
+            _defToID = new Dictionary<Def, ushort>();
+            _idToDef = new Dictionary<ushort, Def>();
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static TDef GetDef(ushort index)
+        public static ushort ToID(Def def)
         {
-            TLog.Debug($"Trying to get index {index} of {typeof(TDef)} in {DefDatabase<TDef>.DefCount}...");
-            return index < DefDatabase<TDef>.AllDefsListForReading.Count ? DefDatabase<TDef>.AllDefsListForReading[index] : null;
-        }
-        
-        /*public static string StackReadout 
-        {
-            get
-            {
-                return $"IDs: {_MasterIDs.ToStringSafeEnumerable()}\n" +
-                       $"DefToID: {DefToID.ToStringSafeEnumerable()}\n" +
-                       $"IDToDef: {IDToDef.ToStringSafeEnumerable()}";
-            }
-        }
-
-        public static int Count => _MasterIDs.Count;
-
-        private static ushort GetNextID(TDef def)
-        {
-            def.index
-            if (_MasterIDs.TryGetValue(def.GetType(), out var id))
+            if (_defToID.TryGetValue(def, out var id))
             {
                 return id;
             }
-
-            _MasterIDs.Add(def.GetType(), 0);
-            return 0;
+            TLog.Warning($"Cannot find id for ({def.GetType()}){def}. Make sure to call base.PostLoad().");
+            return def.index;
         }
 
-        private static void IncrementID(TDef def)
+        public static TDef ToDef<TDef>(ushort id)
+            where TDef : Def
         {
-            _MasterIDs[def.GetType()]++;
-        }
-
-        public static void RegisterDef(TDef def)
-        {
-            var nextID = GetNextID(def);
-            if (!DefToID.ContainsKey(def))
+            if (_idToDef.TryGetValue(id, out var def))
             {
-                DefToID.Add(def, nextID);
-                IDToDef.Add(nextID, def);
-                IncrementID(def);
+                if(def is TDef casted)
+                    return casted;
+                TLog.Warning($"Cannot cast {def} to {typeof(TDef)}");
+                return null;
             }
-        }#1#
-    }*/
+            TLog.Warning($"Cannot find Def for {id} of type {typeof(TDef)}. Make sure PostLoad calls base.PostLoad.");
+            return null;
+        }
+        
+        public static void RegisterNew<TDef>(TDef def) where TDef : Def
+        {
+            if (_defToID.ContainsKey(def))
+            {
+                TLog.Warning($"{def} is already registered.");
+                return;
+            }
+
+            _defToID.Add(def, _MasterID);
+            _idToDef.Add(_MasterID, def);
+            _MasterID++;
+        }
+    }
     
     public static class StaticData
     {
@@ -126,8 +121,10 @@ namespace TeleCore
             TeleWorldComp ??= worldComp;
         }
 
+        #region Def ID
+
         //TODO:Could be useful to others, needs documentation
-        
+
         /// <summary>
         /// Returns the relative Def object assignable to the provided ID.
         /// </summary>
@@ -138,6 +135,12 @@ namespace TeleCore
         public static TDef ToDef<TDef>(this ushort id)
             where TDef:Def
         {
+            return DefIDStack.ToDef<TDef>(id);
+            if (id > DefDatabase<TDef>.AllDefsListForReading.Count)
+            {
+                TLog.Warning($"Trying to access ID: {id} of {typeof(TDef)} with database of {DefDatabase<TDef>.AllDefsListForReading.Count} | {DefDatabase<FlowValueDef>.AllDefsListForReading.Count}");
+                return null;
+            }
             return DefDatabase<TDef>.AllDefsListForReading[id]; //DefIDStack<TDef>.GetDef(id);
         }
 
@@ -152,8 +155,10 @@ namespace TeleCore
         public static ushort ToID<TDef>(this TDef def)
             where TDef : Def
         {
-            return def.index; //DefIDStack<TDef>.GetID(def);
+            return DefIDStack.ToID(def);// def.index; //DefIDStack<TDef>.GetID(def);
         }
+
+        #endregion
 
         //
         public static MapComponent_TeleCore TeleCore(this Map map)

@@ -5,7 +5,7 @@ using Verse;
 namespace TeleCore;
 
 [StructLayout(LayoutKind.Sequential, Size = 6)]
-public struct DefFloat<TDef>
+public struct DefFloat<TDef> : IExposable
     where TDef : Def
 {
     private ushort defID;
@@ -45,14 +45,26 @@ public struct DefFloat<TDef>
 
     public void LoadDataFromXmlCustom(XmlNode xmlRoot)
     {
-        TLog.Error($"Tried to load DefFloat - use {typeof(DefFloatRef<TDef>)} instead! XML: {xmlRoot.ToRefPath()}");
+        TLog.Error($"Tried to load DefFloat - use 'DefFloatRef' instead! XML: {xmlRoot.ToRefPath()}");
     }
 
     public override string ToString()
     {
         return $"(({typeof(TDef)}):[{defID}]{Def}, {Value})";
     }
-    
+
+    public void ExposeData()
+    {
+        DefFloatRef<TDef> defRef = (DefFloatRef<TDef>) this;
+        Scribe_Deep.Look(ref defRef, "defRef");
+
+        if (Scribe.mode == LoadSaveMode.LoadingVars)
+        {
+            this.Def = defRef.Def;
+            this.Value = defRef.Value;
+        }
+    }
+
     #region Arithmetics
 
     public static DefFloat<TDef> operator +(DefFloat<TDef> a, float b)
@@ -64,6 +76,12 @@ public struct DefFloat<TDef>
     public static DefFloat<TDef> operator -(DefFloat<TDef> a, float b)
     {
         a.value -= b;
+        return a;
+    }
+    
+    public static DefFloat<TDef> operator *(DefFloat<TDef> a, float b)
+    {
+        a.value *= b;
         return a;
     }
 

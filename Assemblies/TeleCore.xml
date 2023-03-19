@@ -308,6 +308,11 @@
             When using the Requester NetworkRole, will pull values in according to <see cref="!:RequestedCpacityRange"/>.
             </summary>
         </member>
+        <member name="P:TeleCore.NetworkSubPartProperties.AllowedValuesByRole">
+            <summary>
+            Provides sub-managed values by role, if set in the networkRole props.
+            </summary>
+        </member>
         <member name="T:TeleCore.NetworkReceiverWorker">
             <summary>
             Handles how a <see cref="T:TeleCore.NetworkSubPart"/> manages receiving values.

@@ -45,7 +45,7 @@ internal class Profiling
             sharesCapacity = false,
             viscosity = 0,
             capacityFactor = 0,
-            networkDef = null,
+            collectionDef = null,
             specialDroppedContainerDef = null,
             thingDroppedFromContainer = null,
             valueToThingRatio = 0
@@ -71,7 +71,7 @@ internal class Profiling
             sharesCapacity = false,
             viscosity = 0,
             capacityFactor = 0,
-            networkDef = null,
+            collectionDef = null,
             specialDroppedContainerDef = null,
             thingDroppedFromContainer = null,
             valueToThingRatio = 0
@@ -109,7 +109,7 @@ internal class Profiling
     {
         Console.WriteLine("------------------------------------------------------------\n");
 
-        TestContainer = new NetworkContainer(new ContainerConfig
+        TestContainer = new NetworkContainer(new ContainerConfig<NetworkValueDef>
         {
             containerClass = null,
             baseCapacity = 10000,
@@ -117,7 +117,7 @@ internal class Profiling
             storeEvenly = false,
             dropContents = false,
             leaveContainer = false,
-            valueDefs = new List<FlowValueDef>(ValueDefs),
+            valueDefs = new List<NetworkValueDef>(ValueDefs),
             explosionProps = null
         }, new NetworkClassTest());
     }

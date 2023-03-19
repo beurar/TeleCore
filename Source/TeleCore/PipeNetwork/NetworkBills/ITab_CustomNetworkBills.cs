@@ -20,7 +20,7 @@ namespace TeleCore
 
         //Cachery
         private bool inputDirty = false;
-        private DefFloat<NetworkValueDef>[] cachedCustomCost;
+        private DefValueStack<NetworkValueDef> cachedCustomCost;
 
         public Comp_NetworkBillsCrafter CrafterComp => SelThing.TryGetComp<Comp_NetworkBillsCrafter>();
         public NetworkBillStack BillStack => CrafterComp.BillStack;
@@ -317,14 +317,23 @@ namespace TeleCore
             */
         }
 
-        public DefFloat<NetworkValueDef>[] TryGetCachedCost()
+        public DefValueStack<NetworkValueDef> TryGetCachedCost()
         {
             if (!inputDirty && cachedCustomCost != null) return cachedCustomCost;
             inputDirty = false;
-            BillStack.TotalCost = cachedCustomCost = NetworkBillUtility.ConstructCustomCost(BillStack.RequestedAmount);
+            BillStack.TotalCost = cachedCustomCost = NetworkBillUtility.ConstructCustomCostStack(BillStack.RequestedAmount);
 
             return cachedCustomCost;
         }
+        
+        // public DefFloat<NetworkValueDef>[] TryGetCachedCost()
+        // {
+        //     if (!inputDirty && cachedCustomCost != null) return cachedCustomCost;
+        //     inputDirty = false;
+        //     BillStack.TotalCost = cachedCustomCost = NetworkBillUtility.ConstructCustomCostStack(BillStack.RequestedAmount);
+        //
+        //     return cachedCustomCost;
+        // }
 
         //
         private void CostLabel(Vector2 pos, CustomRecipeRatioDef recipeRatio)

@@ -27,7 +27,7 @@
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <Version>1.2.5</Version>
     <SignAssembly>False</SignAssembly>
-    <PackageVersion>1.7.8.4</PackageVersion>
+    <PackageVersion>1.7.8.7</PackageVersion>
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
@@ -70,6 +70,8 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>compile; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
+    
+    <PackageReference Include="OneOf" Version="3.0.243" />
 
     <PackageReference Include="TaskPubliciser" Version="1.0.3">
       <PrivateAssets>all</PrivateAssets>
