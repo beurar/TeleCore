@@ -31,8 +31,7 @@ public class NetworkRequestWorker : IExposable
     }
 
     public RequesterMode Mode => _mode;
-
-
+    
     public Dictionary<NetworkValueDef, (bool isActive, float desiredAmt)> RequestedTypes => _settings;
     
     //State Machine

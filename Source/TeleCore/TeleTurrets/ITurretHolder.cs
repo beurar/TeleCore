@@ -21,7 +21,7 @@ namespace TeleCore
         CompMannable MannableComp { get; }
         // 
         CompRefuelable RefuelComp { get; }
-        Comp_NetworkStructure NetworkComp { get; }
+        Comp_Network NetworkComp { get; }
         StunHandler Stunner { get; }
 
         void Notify_OnProjectileFired();

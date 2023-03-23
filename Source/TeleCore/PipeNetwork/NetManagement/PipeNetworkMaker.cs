@@ -501,7 +501,7 @@ namespace TeleCore
             part = null;
             if (thing is not ThingWithComps compThing) return false;
             
-            var structure = compThing.GetComp<Comp_NetworkStructure>();
+            var structure = compThing.GetComp<Comp_Network>();
             if (structure == null) return false;
             
             part = structure[forNetwork];

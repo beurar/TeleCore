@@ -18,7 +18,7 @@ namespace TeleCore
 
         //
         public VerbProperties_Extended Props => (VerbProperties_Extended)verbProps;
-        public Comp_NetworkStructure NetworkComp => caster.TryGetComp<Comp_NetworkStructure>();
+        public Comp_Network NetworkComp => caster.TryGetComp<Comp_Network>();
         public CompPowerTrader PowerComp => caster.TryGetComp<CompPowerTrader>();
 
         public ThingDef GunDef

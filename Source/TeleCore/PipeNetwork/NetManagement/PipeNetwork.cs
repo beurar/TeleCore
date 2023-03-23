@@ -74,7 +74,7 @@ namespace TeleCore
             
             //
             var selThing = Find.Selector.SingleSelectedThing;
-            if (selThing != null && selThing.TryGetComp(out Comp_NetworkStructure comp))
+            if (selThing != null && selThing.TryGetComp(out Comp_Network comp))
             {
                 foreach (var compNetworkPart in comp.NetworkParts)
                 {

@@ -27,7 +27,7 @@ namespace TeleCore
 
         public override void Print(SectionLayer layer, Thing thing, float extraRotation)
         {
-            var comp = thing.TryGetComp<Comp_NetworkStructure>();
+            var comp = thing.TryGetComp<Comp_Network>();
             if (comp == null) return;
 
             foreach (var subPart in comp.NetworkParts)

@@ -114,12 +114,12 @@ namespace TeleCore
         }
 
         //Network Components
-        public void RegisterComponent(NetworkSubPart part, Comp_NetworkStructure netComp)
+        public void RegisterComponent(NetworkSubPart part, Comp_Network netComp)
         {
             delayedActions.Add(new DelayedNetworkAction(DelayedNetworkActionType.Register, part, part.Thing.Position));
         }
 
-        public void DeregisterComponent(NetworkSubPart part, Comp_NetworkStructure netComp)
+        public void DeregisterComponent(NetworkSubPart part, Comp_Network netComp)
         {
             delayedActions.Add(new DelayedNetworkAction(DelayedNetworkActionType.Deregister, part, part.Thing.Position));
         }

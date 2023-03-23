@@ -9,7 +9,7 @@ using Verse;
 namespace TeleCore
 {
     //TODO: Add leaking functionality, broken transmitters losing values
-    public class Comp_NetworkStructure : FXThingComp, INetworkStructure
+    public class Comp_Network : FXThingComp, INetworkStructure
     {
         //
         private NetworkMapInfo networkInfo;
@@ -26,7 +26,7 @@ namespace TeleCore
         public NetworkSubPart this[NetworkDef def] => networkPartByDef.TryGetValue(def, out var value) ? value : null;
 
         //
-        public CompProperties_NetworkStructure Props => (CompProperties_NetworkStructure)base.props;
+        public CompProperties_Network Props => (CompProperties_Network)base.props;
         public CompPowerTrader CompPower { get; private set; }
         public CompFlickable CompFlick { get; private set; }
         public CompFX CompFX { get; private set; }
@@ -37,9 +37,10 @@ namespace TeleCore
         public NetworkCellIO GeneralIO => cellIO;
 
         public bool IsPowered => CompPower?.PowerOn ?? true;
+        public bool IsWorking => IsWorkingOverride;
 
         //
-        public virtual bool IsActiveOverride => true;
+        protected virtual bool IsWorkingOverride => true;
 
         #region FX Implementation
         
@@ -94,7 +95,7 @@ namespace TeleCore
         }
         
         #endregion
-        
+
         //SaveData
         public override void PostExposeData()
         {
@@ -173,6 +174,11 @@ namespace TeleCore
         }
 
         //
+        public virtual bool RoleIsActive(NetworkRole role)
+        {
+            return true;
+        }
+        
         public virtual bool CanInteractWith(INetworkSubPart otherPart)
         {
             return true;
@@ -323,7 +329,7 @@ namespace TeleCore
                 targetingParams = TargetingParameters.ForBuilding(),
                 action = delegate (LocalTargetInfo target) {
                     if (target.Thing is not ThingWithComps compThing) return;
-                    var netComp = compThing.TryGetComp<Comp_NetworkStructure>();
+                    var netComp = compThing.TryGetComp<Comp_Network>();
                     var part = netComp[NetworkParts[0].NetworkDef];
                     if (part == null) return;
 

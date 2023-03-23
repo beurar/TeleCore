@@ -13,7 +13,7 @@ using Verse;
 namespace TeleCore
 {
     /// <summary>
-    /// Temporary <see cref="NetworkContainer"/> Thing spawned upon deconstruction of a <see cref="Building"/> containing a <see cref="Comp_NetworkStructure"/> comp.
+    /// Temporary <see cref="NetworkContainer"/> Thing spawned upon deconstruction of a <see cref="Building"/> containing a <see cref="Comp_Network"/> comp.
     /// </summary>
     public class PortableNetworkContainer : FXThing, IContainerImplementer<NetworkValueDef, IContainerHolderNetworkThing, NetworkContainerThing<IContainerHolderNetworkThing>>, IContainerHolderNetworkThing
     {
@@ -81,7 +81,7 @@ namespace TeleCore
             {
                 if (info.Thing is ThingWithComps twc)
                 {
-                    var n = twc.TryGetComp<Comp_NetworkStructure>();
+                    var n = twc.TryGetComp<Comp_Network>();
                     if (n == null) return false;
                     if (!n[networkDef].NetworkRole.HasFlag(NetworkRole.Storage)) return false;
                     if (!Container.StoredDefs.Any(n.AcceptsValue)) return false;

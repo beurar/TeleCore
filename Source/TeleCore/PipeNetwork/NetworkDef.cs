@@ -54,7 +54,7 @@ namespace TeleCore
             }
             if (controllerDef != null)
             {
-                var compProps = controllerDef.GetCompProperties<CompProperties_NetworkStructure>();
+                var compProps = controllerDef.GetCompProperties<CompProperties_Network>();
                 if (compProps == null)
                 {
                     yield return $"controllerDef {controllerDef} does not have a Network ThingComp!";

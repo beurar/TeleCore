@@ -4,7 +4,7 @@ using Verse;
 
 namespace TeleCore
 {
-    public class Comp_NetworkBillsCrafter : Comp_NetworkStructure
+    public class Comp_NetworkBillsCrafter : Comp_Network
     {
         public new Building_WorkTable parent;
         public NetworkBillStack billStack;

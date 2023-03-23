@@ -12,7 +12,7 @@ namespace TeleCore
 
         //States
         public bool IsPowered { get; }
-        public bool IsActiveOverride { get; }
+        public bool IsWorking { get; }
         
         //
         void NetworkPartProcessorTick(INetworkSubPart subPart);
@@ -26,6 +26,7 @@ namespace TeleCore
         void Notify_StructureRemoved(INetworkStructure other);
 
         //
+        bool RoleIsActive(NetworkRole role);
         bool AcceptsValue(NetworkValueDef value);
         bool CanInteractWith(INetworkSubPart other);
         bool CanConnectToOther(INetworkStructure other);

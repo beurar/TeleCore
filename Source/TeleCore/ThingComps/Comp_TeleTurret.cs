@@ -12,7 +12,7 @@ namespace TeleCore
         private CompInitiatable initiatableComp;
         private CompMannable mannableComp;
         private CompRefuelable refuelComp;
-        private Comp_NetworkStructure networkComp;
+        private Comp_Network networkComp;
 
         //
         private StunHandler stunner;
@@ -48,7 +48,7 @@ namespace TeleCore
         public CompInitiatable InitiatableComp => initiatableComp;
         public CompMannable MannableComp => mannableComp;
         public CompRefuelable RefuelComp => refuelComp;
-        public Comp_NetworkStructure NetworkComp => networkComp;
+        public Comp_Network NetworkComp => networkComp;
         public StunHandler Stunner => stunner;
 
 
@@ -61,7 +61,7 @@ namespace TeleCore
             initiatableComp = parent.GetComp<CompInitiatable>();
             mannableComp = parent.GetComp<CompMannable>();
             refuelComp = parent.GetComp<CompRefuelable>();
-            networkComp = parent.GetComp<Comp_NetworkStructure>();
+            networkComp = parent.GetComp<Comp_Network>();
             
             //
             stunner = new StunHandler(parent);

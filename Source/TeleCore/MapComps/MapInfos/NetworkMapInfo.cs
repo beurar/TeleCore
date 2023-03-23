@@ -26,7 +26,7 @@ namespace TeleCore
             return networkMaster;
         }
 
-        public void Notify_NewNetworkStructureSpawned(Comp_NetworkStructure structure)
+        public void Notify_NewNetworkStructureSpawned(Comp_Network structure)
         {
             foreach (var networkComponent in structure.NetworkParts)
             {
@@ -34,7 +34,7 @@ namespace TeleCore
             }
         }
 
-        public void Notify_NetworkStructureDespawned(Comp_NetworkStructure structure)
+        public void Notify_NetworkStructureDespawned(Comp_Network structure)
         {
             foreach (var networkComponent in structure.NetworkParts)
             {
@@ -45,7 +45,7 @@ namespace TeleCore
         //Data Getters
         public bool HasConnectionAtFor(Thing thing, IntVec3 c)
         {
-            var networkStructure = thing.TryGetComp<Comp_NetworkStructure>();
+            var networkStructure = thing.TryGetComp<Comp_Network>();
             if (networkStructure == null) return false;
             foreach (var networkPart in networkStructure.NetworkParts)
             {

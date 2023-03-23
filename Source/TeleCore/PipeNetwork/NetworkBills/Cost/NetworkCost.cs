@@ -12,7 +12,7 @@ namespace TeleCore
         public NetworkCostSet Cost => costSet;
 
         //Validation
-        public bool CanPayWith(Comp_NetworkStructure networkComp)
+        public bool CanPayWith(Comp_Network networkComp)
         {
             return networkComp.NetworkParts.Any(CanPayWith);
         }
@@ -78,15 +78,15 @@ namespace TeleCore
         }
 
         //Process
-        public void DoPayWith(Comp_NetworkStructure networkStructure)
+        public void DoPayWith(Comp_Network network)
         {
             if (useDirectStorage)
-                DoPayWithContainer(networkStructure);
+                DoPayWithContainer(network);
             else
-                DoPayWithNetwork(networkStructure);
+                DoPayWithNetwork(network);
         }
 
-        private void DoPayWithContainer(Comp_NetworkStructure structure)
+        private void DoPayWithContainer(Comp_Network structure)
         {
             var totalCost = Cost.TotalCost;
             if (totalCost <= 0) return;
@@ -115,7 +115,7 @@ namespace TeleCore
                 TLog.Warning($"Paying {this} with {structure.Thing} was too much: {totalCost}");
         }
 
-        private void DoPayWithNetwork(Comp_NetworkStructure structure)
+        private void DoPayWithNetwork(Comp_Network structure)
         {
             var totalCost = Cost.TotalCost;
             if (totalCost <= 0) return;

@@ -14,7 +14,7 @@ namespace TeleCore
         private ThingWithComps NetworkParent => TargetB.Thing as ThingWithComps;
 
         private NetworkContainerThing<IContainerHolderNetworkThing> Container => PortableNetworkContainer.Container;
-        private Comp_NetworkStructure NetworkComp => NetworkParent.GetComp<Comp_NetworkStructure>();
+        private Comp_Network NetworkComp => NetworkParent.GetComp<Comp_Network>();
         private NetworkSubPart NetworkPart => NetworkComp[PortableNetworkContainer.NetworkDef];
         private NetworkContainer TargetContainer => NetworkPart.Container;
 

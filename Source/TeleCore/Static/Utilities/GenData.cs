@@ -259,7 +259,7 @@ namespace TeleCore
         public static bool TryGetNetworkPart(this Thing thing, NetworkDef def, out INetworkSubPart subPart)
         {
             subPart = null;
-            var networkComp = thing.TryGetComp<Comp_NetworkStructure>();
+            var networkComp = thing.TryGetComp<Comp_Network>();
             if (networkComp == null) return false;
             subPart = networkComp[def];
             return subPart != null;

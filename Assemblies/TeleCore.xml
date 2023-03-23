@@ -295,7 +295,7 @@
         </member>
         <member name="T:TeleCore.PortableNetworkContainer">
             <summary>
-            Temporary <see cref="T:TeleCore.FlowCore.NetworkContainer"/> Thing spawned upon deconstruction of a <see cref="T:Verse.Building"/> containing a <see cref="T:TeleCore.Comp_NetworkStructure"/> comp.
+            Temporary <see cref="T:TeleCore.FlowCore.NetworkContainer"/> Thing spawned upon deconstruction of a <see cref="T:Verse.Building"/> containing a <see cref="T:TeleCore.Comp_Network"/> comp.
             </summary>
         </member>
         <member name="P:TeleCore.PortableNetworkContainer.ForSelf">
@@ -545,7 +545,7 @@
             
             </summary>
         </member>
-        <member name="T:TeleCore.CompProperties_NetworkStructure">
+        <member name="T:TeleCore.CompProperties_Network">
             <summary>
             
             </summary>

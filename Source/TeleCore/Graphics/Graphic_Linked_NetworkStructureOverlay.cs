@@ -32,7 +32,7 @@ namespace TeleCore
 
         public void Print(SectionLayer layer, Thing parent, float extraRotation, NetworkDef forNetwork)
         {
-            var comp = parent.TryGetComp<Comp_NetworkStructure>();
+            var comp = parent.TryGetComp<Comp_Network>();
             foreach (IntVec3 cell in comp[forNetwork].CellIO.InnerConnnectionCells)
             {
                 Vector3 center = cell.ToVector3ShiftedWithAltitude(AltitudeLayer.MetaOverlays);

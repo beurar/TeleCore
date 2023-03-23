@@ -12,7 +12,7 @@ public class CompPowerPlant_Network : CompPowerPlant
     private int powerTicksRemaining;
     private float internalPowerOutput = 0f;
 
-    private Comp_NetworkStructure _compNetworkStructure;
+    private Comp_Network compNetwork;
     private NetworkSubPart _networkComponent;
 
     public new CompProperties_NetworkStructurePowerPlant Props =>
@@ -20,6 +20,7 @@ public class CompPowerPlant_Network : CompPowerPlant
 
     public bool GeneratesPowerNow => powerTicksRemaining > 0;
     public override float DesiredPowerOutput => internalPowerOutput;
+    public bool IsAtCapacity => powerTicksRemaining >= Props.maxWorkTime.TotalTicks;
 
     public override void PostExposeData()
     {
@@ -30,8 +31,8 @@ public class CompPowerPlant_Network : CompPowerPlant
     public override void PostSpawnSetup(bool respawningAfterLoad)
     {
         base.PostSpawnSetup(respawningAfterLoad);
-        _compNetworkStructure = parent.GetComp<Comp_NetworkStructure>();
-        _networkComponent = _compNetworkStructure[Props.fromNetwork];
+        compNetwork = parent.GetComp<Comp_Network>();
+        _networkComponent = compNetwork[Props.fromNetwork];
     }
 
     public override void CompTick()
@@ -43,13 +44,15 @@ public class CompPowerPlant_Network : CompPowerPlant
     private void PowerTick()
     {
         base.CompTick();
+        //If no power-generation possible
         if (!PowerOn || Props.valueToTickRules.NullOrEmpty())
         {
             internalPowerOutput = 0f;
             return;
         }
 
-        if (_networkComponent.Container.FillState != ContainerFillState.Empty)
+        //If no value
+        if (!IsAtCapacity && !_networkComponent.Requester.RequestingNow && _networkComponent.Container.FillState != ContainerFillState.Empty)
         {
             foreach (var conversion in Props.valueToTickRules)
             {
@@ -82,6 +85,7 @@ public class CompProperties_NetworkStructurePowerPlant : CompProperties_Power
 {
     public NetworkDef fromNetwork;
     public List<ValueConversion> valueToTickRules;
+    public TickTime maxWorkTime = new TickTime(GenDate.TicksPerDay);
 }
 
 public class ValueConversion

@@ -57,7 +57,7 @@ namespace TeleCore
         public CompCanBeDormant DormantComp => ParentHolder.DormantComp;
         public CompInitiatable InitiatableComp => ParentHolder.InitiatableComp;
         public CompRefuelable RefuelComp => ParentHolder.RefuelComp;
-        public Comp_NetworkStructure NetworkComp => ParentHolder.NetworkComp;
+        public Comp_Network NetworkComp => ParentHolder.NetworkComp;
         public CompMannable MannableComp => ParentHolder.MannableComp;
 
         //Basic Turret

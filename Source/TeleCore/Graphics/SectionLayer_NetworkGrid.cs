@@ -23,7 +23,7 @@ namespace TeleCore
         public static NetworkDef[] NetworksFromDesignator(Designator designator)
         {
             if (designator is not Designator_Build build) return null;
-            return ((build.PlacingDef as ThingDef)?.comps.Find(c => c is CompProperties_NetworkStructure) as CompProperties_NetworkStructure)?.networks?.Select(n => n.networkDef).ToArray();
+            return ((build.PlacingDef as ThingDef)?.comps.Find(c => c is CompProperties_Network) as CompProperties_Network)?.networks?.Select(n => n.networkDef).ToArray();
         }
 
         private void DrawSubLayer(NetworkDef def)
@@ -134,7 +134,7 @@ namespace TeleCore
 
         public override void TakePrintFrom(Thing t)
         {
-            var comp = t.TryGetComp<Comp_NetworkStructure>();
+            var comp = t.TryGetComp<Comp_Network>();
             if (comp == null) return;
             foreach (var networkComponent in comp.NetworkParts)
             {

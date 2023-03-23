@@ -3,7 +3,7 @@ using Verse;
 
 namespace TeleCore
 {
-    public class CompProperties_NetworkBillsCrafter : CompProperties_NetworkStructure
+    public class CompProperties_NetworkBillsCrafter : CompProperties_Network
     {
         [Unsaved] 
         private List<CustomRecipeRatioDef> ratioDefsInt;

@@ -21,7 +21,7 @@ namespace TeleCore
         private CompInitiatable initiatableComp;
         private CompMannable mannableComp;
         private CompRefuelable refuelComp;
-        private Comp_NetworkStructure networkComp;
+        private Comp_Network networkComp;
 
         //
         private TurretDefExtension defExtension;
@@ -57,7 +57,7 @@ namespace TeleCore
         public virtual CompInitiatable InitiatableComp => initiatableComp;
         public virtual CompMannable MannableComp => mannableComp;
         public virtual CompRefuelable RefuelComp => refuelComp;
-        public virtual Comp_NetworkStructure NetworkComp => networkComp;
+        public virtual Comp_Network NetworkComp => networkComp;
         public virtual StunHandler Stunner => stunner;
         
         #region FX Implementation
@@ -111,7 +111,7 @@ namespace TeleCore
             initiatableComp = GetComp<CompInitiatable>();
             mannableComp = GetComp<CompMannable>();
             refuelComp = GetComp<CompRefuelable>();
-            networkComp = GetComp<Comp_NetworkStructure>();
+            networkComp = GetComp<Comp_Network>();
 
             defExtension = def.TurretExtension();
             

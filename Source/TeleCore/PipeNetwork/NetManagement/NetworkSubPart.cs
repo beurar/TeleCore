@@ -120,7 +120,7 @@ namespace TeleCore
             if (Scribe.mode == LoadSaveMode.LoadingVars)
             {
                 //TODO: Clean this up, shouldnt cast to comp
-                Props = ( (Comp_NetworkStructure)Parent).Props.networks.Find(p => p.networkDef == internalDef);
+                Props = ( (Comp_Network)Parent).Props.networks.Find(p => p.networkDef == internalDef);
             }
 
             Scribe_Deep.Look(ref _requesterInt, nameof(_requesterInt));
@@ -139,14 +139,14 @@ namespace TeleCore
             directPartSet = new NetworkPartSet(NetworkDef, this);
 
             RolePropertySetup(respawningAfterLoad);
-            GetDirectlyAjdacentNetworkParts();
+            GetDirectlyAdjacentNetworkParts();
             
             if (respawningAfterLoad) return; // IGNORING EXPOSED CONSTRUCTORS
             if (HasContainer)
                 Container = new NetworkContainer(Props.containerConfig, this);
         }
 
-        private void GetDirectlyAjdacentNetworkParts()
+        private void GetDirectlyAdjacentNetworkParts()
         {
             for (var c = 0; c < CellIO.OuterConnnectionCells.Length; c++)
             {
@@ -190,7 +190,7 @@ namespace TeleCore
             if (!Initialized) return;
             var parent = Parent;
             var isPowered = parent.IsPowered;
-            if (isPowered)
+            if (isPowered && parent.IsWorking)
             {
                 if (receivingTicks > 0 && lastReceivedTick < Find.TickManager.TicksGame)
                     receivingTicks--;
@@ -206,31 +206,31 @@ namespace TeleCore
         //Process current stored values according to rules of the network role
         private void ProcessValues()
         {
-            if (NetworkRole.HasFlag(NetworkRole.Passthrough))
+            if (NetworkRole.HasFlag(NetworkRole.Passthrough) && Parent.RoleIsActive(NetworkRole.Passthrough))
             {
                 PassthroughTick();
             }
             
             //Producers push to Storages
-            if (NetworkRole.HasFlag(NetworkRole.Producer))
+            if (NetworkRole.HasFlag(NetworkRole.Producer) && Parent.RoleIsActive(NetworkRole.Producer))
             {
                 ProducerTick();
             }
 
             //Storages push to Consumers
-            if (NetworkRole.HasFlag(NetworkRole.Storage))
+            if (NetworkRole.HasFlag(NetworkRole.Storage) && Parent.RoleIsActive(NetworkRole.Storage))
             {
                 StorageTick();
             }
 
             //Consumers slowly use up own container
-            if (NetworkRole.HasFlag(NetworkRole.Consumer))
+            if (NetworkRole.HasFlag(NetworkRole.Consumer) && Parent.RoleIsActive(NetworkRole.Consumer))
             {
                 ConsumerTick();
             }
 
             //
-            if (NetworkRole.HasFlag(NetworkRole.Requester))
+            if (NetworkRole.HasFlag(NetworkRole.Requester) && Parent.RoleIsActive(NetworkRole.Requester))
             {
                 RequesterTick();
             }

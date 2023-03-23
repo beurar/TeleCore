@@ -6,14 +6,14 @@ namespace TeleCore
     /// <summary>
     /// 
     /// </summary>
-    public class CompProperties_NetworkStructure : CompProperties
+    public class CompProperties_Network : CompProperties
     {
         public List<NetworkSubPartProperties> networks;
         public string generalIOPattern;
 
-        public CompProperties_NetworkStructure()
+        public CompProperties_Network()
         {
-            this.compClass = typeof(Comp_NetworkStructure);
+            this.compClass = typeof(Comp_Network);
         }
     }
 }
