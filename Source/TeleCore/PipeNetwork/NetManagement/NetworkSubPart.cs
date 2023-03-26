@@ -12,15 +12,12 @@ namespace TeleCore
     public class NetworkSubPart : IExposable, INetworkSubPart, INetworkRequester, IContainerHolderNetwork
     {
         //
-        private Gizmo_NetworkInfo networkInfoGizmo;
-
-        //
         protected NetworkCellIO cellIO;
         protected NetworkContainer container;
         protected NetworkPartSet directPartSet;
 
         //Role Workers
-        private NetworkRequestWorker _requesterInt;
+        private NetworkRequestWorker requestWorkerInt;
         
         private NetworkDef internalDef;
         private int lastReceivedTick;
@@ -41,7 +38,7 @@ namespace TeleCore
         public NetworkDef NetworkDef => internalDef;
         public NetworkRole NetworkRole => Props.NetworkRole;
         public PipeNetwork Network { get; set; }
-        public INetworkSubPart Part { get; set; }
+        //public INetworkSubPart Part { get; set; }
         public INetworkStructure Parent { get; private set; }
         public INetworkSubPart NetworkPart => this;
 
@@ -79,7 +76,6 @@ namespace TeleCore
         }
 
         //
-        public Gizmo_NetworkInfo NetworkGizmo => networkInfoGizmo ??= new Gizmo_NetworkInfo(this);
 
         //Container
         public string ContainerTitle => "_Obsolete_";
@@ -94,7 +90,7 @@ namespace TeleCore
         }
 
         //Role Workers
-        public NetworkRequestWorker Requester => _requesterInt;
+        public NetworkRequestWorker RequestWorker => requestWorkerInt;
 
         #region Constructors
 
@@ -123,7 +119,7 @@ namespace TeleCore
                 Props = ( (Comp_Network)Parent).Props.networks.Find(p => p.networkDef == internalDef);
             }
 
-            Scribe_Deep.Look(ref _requesterInt, nameof(_requesterInt));
+            Scribe_Deep.Look(ref requestWorkerInt, nameof(requestWorkerInt));
             
             if (Props.containerConfig != null)
             {
@@ -177,10 +173,9 @@ namespace TeleCore
         {
             if (respawningAfterLoad) return;
             
-            TLog.Debug($"Created Role3: {NetworkRole}");
             if (NetworkRole.HasFlag(NetworkRole.Requester))
             {
-                _requesterInt = new NetworkRequestWorker(this);
+                requestWorkerInt = new NetworkRequestWorker(this);
             }
         }
 
@@ -188,6 +183,11 @@ namespace TeleCore
         public void NetworkTick()
         {
             if (!Initialized) return;
+            if (IsNetworkEdge)
+            {
+                TLog.Warning("Edges should not be ticked!");
+                return;
+            }
             var parent = Parent;
             var isPowered = parent.IsPowered;
             if (isPowered && parent.IsWorking)
@@ -284,7 +284,54 @@ namespace TeleCore
         /// </summary>
         protected virtual void RequesterTick()
         {
-            
+            if (RequestWorker.RequestTick())
+            {
+                //When set to automatic, adjusts settings to pull equal amounts of each value-type
+                if (RequestWorker.Mode == RequesterMode.Automatic)
+                {
+                    //Resolve..
+                    //var maxVal = RequestedCapacityPercent * Container.Capacity;
+                    var maxPercent = RequestWorker.ReqRange.max; //Get max percentage
+                    foreach (var valType in Props.AllowedValuesByRole[NetworkRole.Requester])
+                    {
+                        //var requestedTypeValue = container.ValueForType(valType);
+                        var requestedTypeNetworkValue = Network.TotalValueFor(valType, NetworkRole.Storage);
+                        if (requestedTypeNetworkValue > 0)
+                        {
+                            var setValue = Mathf.Min(maxPercent,
+                                requestedTypeNetworkValue / Container.Capacity);
+                            var tempVal = RequestWorker.Settings[valType];
+
+                            tempVal.Item2 = setValue;
+                            RequestWorker.Settings[valType] = tempVal;
+                            maxPercent = Mathf.Clamp(maxPercent - setValue, 0, maxPercent);
+                        }
+                    }
+                }
+
+                //Pull values according to settings
+                //if (container.StoredPercent >= RequestedCapacityPercent) return;
+                foreach (var setting in RequestWorker.Settings)
+                {
+                    //If not requested, skip
+                    if (!setting.Value.isActive) continue;
+                    if (container.StoredPercentOf(setting.Key) < setting.Value.desiredAmt)
+                    {
+                        NetworkTransactionUtility.DoTransaction(new TransactionRequest(this,
+                            NetworkRole.Requester, NetworkRole.Storage,
+                            part =>
+                            {
+                                var partContainer = part.Container;
+                                if (partContainer.FillState == ContainerFillState.Empty) return;
+                                if (partContainer.StoredValueOf(setting.Key) <= 0) return;
+                                if (partContainer.TryTransferValue(container, setting.Key, 1, out _))
+                                {
+                                    _ = true;
+                                }
+                            }));
+                    }
+                }
+            }
 
             /*
             if (RequesterMode == RequesterMode.Automatic)
@@ -513,7 +560,6 @@ namespace TeleCore
         //Gizmos
         public virtual IEnumerable<Gizmo> GetPartGizmos()
         {
-            yield return NetworkGizmo;
 
             /*
             if (HasContainer)

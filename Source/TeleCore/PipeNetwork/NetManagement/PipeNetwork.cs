@@ -60,7 +60,7 @@ namespace TeleCore
 
         public virtual void Tick()
         {
-            foreach (var part in PartSet.FullSet)
+            foreach (var part in PartSet.TickList)
             {
                 part.NetworkTick();
             }

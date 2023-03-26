@@ -198,6 +198,12 @@ namespace TeleCore
         }
 
         //
+        public bool HasPartFor(NetworkDef networkDef)
+        {
+            return networkPartByDef.ContainsKey(networkDef);
+        }
+        
+        //
         public void Notify_StructureAdded(INetworkStructure other)
         {
             //structureSet.AddNewStructure(other);
@@ -272,6 +278,9 @@ namespace TeleCore
             return sb.ToString().TrimStart().TrimEndNewlines();
         }
 
+        private Gizmo_NetworkOverview networkInfoGizmo;
+        public Gizmo_NetworkOverview NetworkGizmo => networkInfoGizmo ??= new Gizmo_NetworkOverview(this);
+        
         public override IEnumerable<Gizmo> CompGetGizmosExtra()
         {
             /*
@@ -280,6 +289,8 @@ namespace TeleCore
             yield return gizmo;
             }
             */
+            
+            yield return NetworkGizmo;
 
             foreach (var networkPart in NetworkParts)
             {

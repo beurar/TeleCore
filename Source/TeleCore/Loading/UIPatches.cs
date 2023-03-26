@@ -202,5 +202,25 @@ namespace TeleCore
             }
         }
 
+
+        [HarmonyPatch(typeof(GizmoGridDrawer))]
+        [HarmonyPatch(nameof(GizmoGridDrawer.DrawGizmoGrid))]
+        public static class GizmoGridDrawer_DrawGizmoGrid_Patch
+        {
+            public static bool Prefix(IEnumerable<Gizmo> gizmos, ref float startX, ref Gizmo mouseoverGizmo,
+                Func<Gizmo, bool> customActivatorFunc = null, Func<Gizmo, bool> highlightFunc = null,
+                Func<Gizmo, bool> lowlightFunc = null)
+            {
+                var network = (Gizmo_NetworkOverview)gizmos.FirstOrFallback(g => g is Gizmo_NetworkOverview, null);
+                if (network != null)
+                {
+                    startX = network.GetWidthSpecial() + startX;
+                    //GizmoGridDrawer.DrawGizmoGrid(gizmos, network.GetWidth(0) + startX, out mouseoverGizmo, customActivatorFunc, highlightFunc, lowlightFunc);
+                    //return false;
+                }
+                
+                return true;
+            }
+        }
     }
 }

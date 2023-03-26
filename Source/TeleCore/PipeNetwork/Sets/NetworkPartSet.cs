@@ -13,6 +13,7 @@ namespace TeleCore
 
         private INetworkSubPart controller;
         private readonly HashSet<INetworkSubPart> fullSet;
+        private readonly HashSet<INetworkSubPart> tickSet;
         private readonly Dictionary<NetworkRole, HashSet<INetworkSubPart>> structuresByRole;
         
         public HashSet<INetworkSubPart> this[NetworkRole role]
@@ -21,6 +22,7 @@ namespace TeleCore
         }
 
         public HashSet<INetworkSubPart> FullSet => fullSet;
+        internal HashSet<INetworkSubPart> TickList => tickSet;
         public INetworkSubPart Controller => controller;
 
         public NetworkPartSet(NetworkDef def, INetworkSubPart parent)
@@ -29,6 +31,7 @@ namespace TeleCore
             this.parent = parent;
 
             fullSet = new HashSet<INetworkSubPart>();
+            tickSet = new HashSet<INetworkSubPart>();
             structuresByRole = new Dictionary<NetworkRole, HashSet<INetworkSubPart>>();
             foreach (NetworkRole role in Enum.GetValues(typeof(NetworkRole)))
             {
@@ -70,8 +73,13 @@ namespace TeleCore
         private bool AddComponent(INetworkSubPart part)
         {
             if (part.NetworkDef != def) return false;
-            if (FullSet.Contains(part)) return false;
-            FullSet.Add(part);
+            if (fullSet.Contains(part)) return false;
+            fullSet.Add(part);
+
+            if (!part.IsNetworkEdge)
+            {
+                tickSet.Add(part);
+            }
 
             //Special Case
             if (part.NetworkRole.HasFlag(NetworkRole.Controller))
@@ -92,7 +100,7 @@ namespace TeleCore
 
         public void RemoveComponent(INetworkSubPart part)
         {
-            if (!FullSet.Contains(part)) return;
+            if (!fullSet.Contains(part)) return;
 
             //Special Case
             if (part.NetworkRole.HasFlag(NetworkRole.Controller))
@@ -108,7 +116,7 @@ namespace TeleCore
             }
 
             //
-            FullSet.Remove(part);
+            fullSet.Remove(part);
             UpdateString();
         }
 
@@ -124,7 +132,7 @@ namespace TeleCore
                     sb.AppendLine($"    - {part.Parent.Thing}");
                 }
             }
-            sb.AppendLine($"Total Count: {FullSet.Count}");
+            sb.AppendLine($"Total Count: {fullSet.Count}");
             cachedString = sb.ToString();
         }
 

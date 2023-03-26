@@ -10,6 +10,7 @@ public class FXThingComp : ThingComp, IFXLayerProvider, IFXEffecterProvider
     #region FX Implementation
         
     //Basics
+    public virtual string FX_GetHolderTag => "FXThingComp";
     public virtual bool FX_ProvidesForLayer(FXArgs args) => true; //FXLayerData._ThingHolderTag;
     public virtual CompPowerTrader FX_PowerProviderFor(FXArgs args) => null!;
         

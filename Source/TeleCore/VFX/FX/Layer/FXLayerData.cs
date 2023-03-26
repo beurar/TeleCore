@@ -18,7 +18,7 @@ namespace TeleCore
 
         //
         public int? renderPriority; //Otherwise set by index
-        public string fxHolderTag = _ThingHolderTag;
+        public string holderTag = null;
         public string layerTag;
         public string categoryTag;
         public bool skip = false;

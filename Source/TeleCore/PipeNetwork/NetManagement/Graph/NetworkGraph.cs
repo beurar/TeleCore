@@ -19,6 +19,10 @@ namespace TeleCore
         private readonly List<INetworkSubPart> _allNodes;
         private readonly Dictionary<INetworkSubPart, LinkedList<INetworkSubPart>> _adjacencyLists;
         private readonly Dictionary<(INetworkSubPart, INetworkSubPart), NetEdge> _edges;
+        
+        
+        //TODO: Contemplate edge caching directly
+        private readonly Dictionary<INetworkSubPart, List<(INetworkSubPart, NetEdge)>> _adjacencyListEdge;
 
         //Props
         public int NodeCount => _adjacencyLists.Count;
@@ -34,6 +38,7 @@ namespace TeleCore
         public NetworkGraph()
         {
             _allNodes = new List<INetworkSubPart>();
+            _adjacencyListEdge = new Dictionary<INetworkSubPart, List<(INetworkSubPart, NetEdge)>>();
             _adjacencyLists = new Dictionary<INetworkSubPart, LinkedList<INetworkSubPart>>();
             _edges = new Dictionary<(INetworkSubPart, INetworkSubPart), NetEdge>();
             //_edgePairs = new HashSet<(NetEdge, NetEdge)>();
@@ -60,11 +65,21 @@ namespace TeleCore
             }
             return null;
         }
+        
+        public IEnumerable<(INetworkSubPart,NetEdge)> GetAdjacencyListEdge(INetworkSubPart forPart)
+        {
+            if (_adjacencyListEdge.TryGetValue(forPart, out var list))
+            {
+                return list;
+            }
+            return null;
+        }
 
         public void AddNode(INetworkSubPart node)
         {
             _allNodes.Add(node);
             _adjacencyLists.Add(node, new LinkedList<INetworkSubPart>());
+            _adjacencyListEdge.Add(node, new List<(INetworkSubPart, NetEdge)>());
         }
 
         public bool AddEdge(NetEdge newEdge)
@@ -97,14 +112,20 @@ namespace TeleCore
                 AddNode(newEdge.endNode);
                 listSource2 = _adjacencyLists[newEdge.endNode];
             }
-            
-            if(!listSource.Contains(newEdge.endNode))
+
+            if (!listSource.Contains(newEdge.endNode))
+            {
                 listSource.AddFirst(newEdge.endNode);
+                _adjacencyListEdge[newEdge.startNode].Add((newEdge.endNode, newEdge));
+            }
             else
                 TLog.Warning($"Already added {newEdge.endNode}");
-            
-            if(!listSource2.Contains(newEdge.startNode))
+
+            if (!listSource2.Contains(newEdge.startNode))
+            {
                 listSource2?.AddFirst(newEdge.startNode);
+                _adjacencyListEdge[newEdge.endNode].Add((newEdge.startNode, newEdge.Reverse));
+            }
             else
                 TLog.Warning($"Already added {newEdge.startNode}");
             return true;

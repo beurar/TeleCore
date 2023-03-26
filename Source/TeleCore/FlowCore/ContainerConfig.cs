@@ -60,7 +60,6 @@ where TValue: FlowValueDef
         public FlowValueCollectionDef fromCollection;
         public List<TValue> values;
 
-
         public static implicit operator ContainerValueFilter(List<TValue> values) => new ContainerValueFilter()
         {
             values = values,

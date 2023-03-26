@@ -87,64 +87,102 @@ namespace TeleCore
             return num;
         }
 
-        //TODO: Test if functional
-        [Obsolete]
-        public static void SliderCustom(Rect rect, int id, ref int value, int min = 0, int max = 100, Texture sliderTexture = null, Color sliderColor = default)
-        {
-            Rect rect2 = rect;
-            rect2.xMin += 8f;
-            rect2.xMax -= 8f;
-
-            Rect position = new Rect(rect2.x, rect2.yMax - 8f - 1f, rect2.width, 2f);
-            GUI.DrawTexture(position, BaseContent.WhiteTex);
-            GUI.color = Color.white;
-            float num = rect2.x + rect2.width * (float)(value - min) / (float)(max - min);
-            Rect position2 = new Rect(num - 16f, position.center.y - 8f, 16f, 16f);
-            GUI.DrawTexture(position2, sliderTexture ?? TeleContent.TimeSelMarker);
-
-            if (Event.current.type == EventType.MouseUp || Event.current.rawType == EventType.MouseDown)
-            {
-                Widgets.draggingId = 0;
-                SoundDefOf.DragSlider.PlayOneShotOnCamera(null);
-            }
-
-            bool flag = false;
-            if (Mouse.IsOver(rect) || Widgets.draggingId == id)
-            {
-                if (Event.current.type == EventType.MouseDown && Event.current.button == 0 && id != Widgets.draggingId)
-                {
-                    Widgets.draggingId = id;
-                    /*
-                    float x = Event.current.mousePosition.x;
-                    if (x < position2.xMax)
-                    {
-                        Widgets.curDragEnd = Widgets.RangeEnd.Min;
-                    }
-                    else if (x > position3.xMin)
-                    {
-                        Widgets.curDragEnd = Widgets.RangeEnd.Max;
-                    }
-                    else
-                    {
-                        float num3 = Mathf.Abs(x - position2.xMax);
-                        float num4 = Mathf.Abs(x - (position3.x - 16f));
-                        Widgets.curDragEnd = ((num3 < num4) ? Widgets.RangeEnd.Min : Widgets.RangeEnd.Max);
-                    }
-                    */
-                    flag = true;
-                    Event.current.Use();
-                    SoundDefOf.DragSlider.PlayOneShotOnCamera(null);
-                }
-                if (flag || Event.current.type == EventType.MouseDrag)
-                {
-                    int newSliderVal = Mathf.RoundToInt(Mathf.Clamp((Event.current.mousePosition.x - rect2.x) / rect2.width * (float)(max - min) + (float)min, (float)min, (float)max));
-                    value = Mathf.Clamp(newSliderVal, min, max);
-                    Widgets.CheckPlayDragSliderSound();
-                    Event.current.Use();
-                }
-            }
-
-        }
+        public static void FloatRange(Rect rect, int id, ref FloatRange range, float min = 0f, float max = 1f, string labelKey = null, ToStringStyle valueStyle = ToStringStyle.FloatTwo, float gap = 0f, GameFont sliderLabelFont = GameFont.Tiny, Color? sliderLabelColor = null, Texture2D customSliderTex = null)
+		{
+			Rect rect2 = rect;
+			rect2.xMin += 8f;
+			rect2.xMax -= 8f;
+			GUI.color = (sliderLabelColor ?? Widgets.RangeControlTextColor);
+			string text = range.min.ToStringByStyle(valueStyle, ToStringNumberSense.Absolute) + " - " + range.max.ToStringByStyle(valueStyle, ToStringNumberSense.Absolute);
+			if (labelKey != null)
+			{
+				text = labelKey.Translate(text);
+			}
+			GameFont font = Text.Font;
+			Text.Font = sliderLabelFont;
+			Text.Anchor = TextAnchor.UpperCenter;
+			Rect rect3 = rect2;
+			rect3.yMin -= 2f;
+			rect3.height = Mathf.Max(rect3.height, Text.CalcHeight(text, rect3.width));
+			Widgets.Label(rect3, text);
+			Text.Anchor = TextAnchor.UpperLeft;
+			Rect position = new Rect(rect2.x, rect2.yMax - 8f - 1f, rect2.width, 2f);
+			GUI.DrawTexture(position, BaseContent.WhiteTex);
+			GUI.color = Color.white;
+			float num = rect2.x + rect2.width * Mathf.InverseLerp(min, max, range.min);
+			float num2 = rect2.x + rect2.width * Mathf.InverseLerp(min, max, range.max);
+			Rect position2 = new Rect(num - 16f, position.center.y - 8f, 16f, 16f);
+            var sliderTex = customSliderTex ?? Widgets.FloatRangeSliderTex;
+			GUI.DrawTexture(position2, sliderTex);
+			Rect position3 = new Rect(num2 + 16f, position.center.y - 8f, -16f, 16f);
+			GUI.DrawTexture(position3, sliderTex);
+			if (Widgets.curDragEnd != Widgets.RangeEnd.None && (Event.current.type == EventType.MouseUp || Event.current.rawType == EventType.MouseDown))
+			{
+				Widgets.draggingId = 0;
+				Widgets.curDragEnd = Widgets.RangeEnd.None;
+				SoundDefOf.DragSlider.PlayOneShotOnCamera(null);
+				Event.current.Use();
+			}
+			bool flag = false;
+			if (Mouse.IsOver(rect) || Widgets.draggingId == id)
+			{
+				if (Event.current.type == EventType.MouseDown && Event.current.button == 0 && id != Widgets.draggingId)
+				{
+					Widgets.draggingId = id;
+					float x = Event.current.mousePosition.x;
+					if (x < position2.xMax)
+					{
+						Widgets.curDragEnd = Widgets.RangeEnd.Min;
+					}
+					else if (x > position3.xMin)
+					{
+						Widgets.curDragEnd = Widgets.RangeEnd.Max;
+					}
+					else
+					{
+						float num3 = Mathf.Abs(x - position2.xMax);
+						float num4 = Mathf.Abs(x - (position3.x - 16f));
+						Widgets.curDragEnd = ((num3 < num4) ? Widgets.RangeEnd.Min : Widgets.RangeEnd.Max);
+					}
+					flag = true;
+					Event.current.Use();
+					SoundDefOf.DragSlider.PlayOneShotOnCamera(null);
+				}
+				if (flag || (Widgets.curDragEnd != Widgets.RangeEnd.None && UnityGUIBugsFixer.MouseDrag(0)))
+				{
+					float num5 = (Event.current.mousePosition.x - rect2.x) / rect2.width * (max - min) + min;
+					num5 = Mathf.Clamp(num5, min, max);
+					if (Widgets.curDragEnd == Widgets.RangeEnd.Min)
+					{
+						if (num5 != range.min)
+						{
+							range.min = Mathf.Min(num5, max - gap);
+							if (range.max < range.min + gap)
+							{
+								range.max = range.min + gap;
+							}
+							Widgets.CheckPlayDragSliderSound();
+						}
+					}
+					else if (Widgets.curDragEnd == Widgets.RangeEnd.Max && num5 != range.max)
+					{
+						range.max = Mathf.Max(num5, min + gap);
+						if (range.min > range.max - gap)
+						{
+							range.min = range.max - gap;
+						}
+						Widgets.CheckPlayDragSliderSound();
+					}
+					if (Event.current.type == EventType.MouseDrag)
+					{
+						Event.current.Use();
+					}
+				}
+			}
+			Text.Font = font;
+		}
+        
+        
 
 
         //Labels
@@ -796,6 +834,18 @@ namespace TeleCore
             }
             GUI.matrix = matrix;
             GUI.color = previousColor;
+        }
+
+        public static void HoverContainerReadout(Rect hoverArea, NetworkContainer container)
+        {
+            //Draw Hovered Readout
+            if (container.FillState != ContainerFillState.Empty && Mouse.IsOver(hoverArea))
+            {
+                var mousePos = Event.current.mousePosition;
+                var containerReadoutSize = TWidgets.GetNetworkValueReadoutSize(container);
+                Rect rectAtMouse = new Rect(mousePos.x, mousePos.y - containerReadoutSize.y, containerReadoutSize.x, containerReadoutSize.y);
+                TWidgets.DrawNetworkValueReadout(rectAtMouse, container);
+            }
         }
     }
 }

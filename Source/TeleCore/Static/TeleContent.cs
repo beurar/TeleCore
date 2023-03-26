@@ -22,6 +22,8 @@ namespace TeleCore
         public static readonly Texture2D HightlightInMenu = ContentFinder<Texture2D>.Get("UI/Icons/HighLight", true);
         public static readonly Texture2D OpenMenu = ContentFinder<Texture2D>.Get("UI/Icons/OpenMenu", true);
 
+        public static Texture2D CustomSlider = ContentFinder<Texture2D>.Get("UI/Icons/CustomSlider", true);
+        
         //SubBuildMenu
         public static readonly Texture2D Undiscovered = ContentFinder<Texture2D>.Get("UI/Menu/Undiscovered", true);
         public static readonly Texture2D Favorite_Filled = ContentFinder<Texture2D>.Get("UI/Menu/Star_Filled", true);

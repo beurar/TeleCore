@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
+using Mono.Unix.Native;
 using RimWorld;
 using TeleCore.FlowCore;
 using UnityEngine;
@@ -128,24 +129,26 @@ public static class NetworkTransactionUtility
         }
     }
 
-    private static IEnumerable<INetworkSubPart> AdjacentParts(INetworkSubPart part, ValueFlowDirection flowDir)
+    private static IEnumerable<INetworkSubPart> AdjacentParts(TransactionRequest request)
     {
+        var part = request.requester;
         var graph = part.Network.Graph;
-        var adjacencyList = graph.GetAdjacencyList(part);
+        var adjacencyList = graph.GetAdjacencyListEdge(part);
         if (adjacencyList == null) yield break;
-        foreach (var subPart in adjacencyList)
+        foreach (var partEdge in adjacencyList)
         {
-            if (graph.GetAnyEdgeBetween(part, subPart, out var edge))
-            {
-                if (edge.IsBiDirectional)
-                    yield return subPart;
+            var subPart = partEdge.Item1;
+            var edge = partEdge.Item2;
+            if (!subPart.NetworkRole.HasFlag(request.requestedRole)) continue;
 
-                if (flowDir == ValueFlowDirection.Positive && edge.startNode == part)
-                    yield return subPart;
-                
-                if (flowDir == ValueFlowDirection.Negative && edge.endNode == part)
-                    yield return subPart;
-            }
+            if (edge.IsBiDirectional)
+                yield return subPart;
+
+            if (request.FlowDir == ValueFlowDirection.Positive && edge.startNode == part)
+                yield return subPart;
+
+            if (request.FlowDir == ValueFlowDirection.Negative && edge.endNode == part)
+                yield return subPart;
         }
     }
 
@@ -154,7 +157,7 @@ public static class NetworkTransactionUtility
          if (!request.IsValid) return;
         
         //Search for potential transaction partners
-        foreach (var adjacentPart in AdjacentParts(request.requester, request.FlowDir))
+        foreach (var adjacentPart in AdjacentParts(request))
         {
             if (!adjacentPart.HasContainer) continue; //Cant do transaction without containers
             if (!request.partValidator?.Invoke(adjacentPart) ?? false) continue; //Custom Validator check

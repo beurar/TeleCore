@@ -32,6 +32,8 @@ namespace TeleCore
     {
         #region MetaDataGetter
 
+        string FX_GetHolderTag { get;}
+        
         /// <summary>
         /// 
         /// </summary>

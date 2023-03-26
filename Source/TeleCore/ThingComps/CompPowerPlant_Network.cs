@@ -15,8 +15,8 @@ public class CompPowerPlant_Network : CompPowerPlant
     private Comp_Network compNetwork;
     private NetworkSubPart _networkComponent;
 
-    public new CompProperties_NetworkStructurePowerPlant Props =>
-        (CompProperties_NetworkStructurePowerPlant) base.Props;
+    public new CompProperties_NetworkPowerPlant Props =>
+        (CompProperties_NetworkPowerPlant) base.Props;
 
     public bool GeneratesPowerNow => powerTicksRemaining > 0;
     public override float DesiredPowerOutput => internalPowerOutput;
@@ -41,6 +41,8 @@ public class CompPowerPlant_Network : CompPowerPlant
         PowerTick();
     }
 
+    public bool CanConsume => !IsAtCapacity && !_networkComponent.RequestWorker.RequestingNow;
+    
     private void PowerTick()
     {
         base.CompTick();
@@ -50,9 +52,9 @@ public class CompPowerPlant_Network : CompPowerPlant
             internalPowerOutput = 0f;
             return;
         }
-
+        
         //If no value
-        if (!IsAtCapacity && !_networkComponent.Requester.RequestingNow && _networkComponent.Container.FillState != ContainerFillState.Empty)
+        if (CanConsume && _networkComponent.Container.FillState != ContainerFillState.Empty)
         {
             foreach (var conversion in Props.valueToTickRules)
             {
@@ -71,6 +73,21 @@ public class CompPowerPlant_Network : CompPowerPlant
         }
     }
 
+    public override IEnumerable<Gizmo> CompGetGizmosExtra()
+    {
+        foreach (var gizmo in base.CompGetGizmosExtra())
+        {
+            yield return gizmo;
+        }
+
+        yield return new Command_Action()
+        {
+            defaultLabel = "Clear Power",
+            defaultDesc = "Clears the power buffer",
+            action = () => powerTicksRemaining = 0,
+        };
+    }
+
     public override string CompInspectStringExtra()
     {
         StringBuilder sb = new StringBuilder();
@@ -81,7 +98,7 @@ public class CompPowerPlant_Network : CompPowerPlant
     }
 }
 
-public class CompProperties_NetworkStructurePowerPlant : CompProperties_Power
+public class CompProperties_NetworkPowerPlant : CompProperties_Power
 {
     public NetworkDef fromNetwork;
     public List<ValueConversion> valueToTickRules;

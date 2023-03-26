@@ -16,7 +16,8 @@ namespace TeleCore
 
         //General Label
         public string containerLabel;
-
+        public string labelShort;
+        
         //
         public GraphicData transmitterGraphic;
         public GraphicData overlayGraphic;
@@ -52,6 +53,12 @@ namespace TeleCore
             {
                 yield return configError;
             }
+
+            if (labelShort == null)
+            {
+                labelShort = label ?? defName.Substring(0, 2);
+            }
+
             if (controllerDef != null)
             {
                 var compProps = controllerDef.GetCompProperties<CompProperties_Network>();

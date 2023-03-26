@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using TeleCore.FlowCore;
 using TeleCore.Static.Utilities;
 using UnityEngine;
@@ -13,7 +14,7 @@ public class NetworkRequestWorker : IExposable
 {
     //Settings
     private readonly Dictionary<NetworkValueDef, (bool isActive, float desiredAmt)> _settings;
-    private FloatRange _capactiyRange = new FloatRange(0.5f, 0.5f);
+    private FloatRange _capactiyRange = new FloatRange(0.5f, 1f);
     private RequesterMode _mode = RequesterMode.Automatic;
 
     //Requester Stuff
@@ -24,21 +25,23 @@ public class NetworkRequestWorker : IExposable
     /// </summary>
     /// <param name="min">The minimum amount that may be reached before starting to request.</param>
     /// <param name="max">The maximum amount that can be requested.</param>
-    public FloatRange RequestedRange
+    public FloatRange ReqRange
     {
         get => _capactiyRange;
         private set => _capactiyRange = value; //new FloatRange(Mathf.Clamp01(value.min), Mathf.Clamp01(value.max));
     }
 
     public RequesterMode Mode => _mode;
-    
-    public Dictionary<NetworkValueDef, (bool isActive, float desiredAmt)> RequestedTypes => _settings;
+    public Dictionary<NetworkValueDef, (bool isActive, float desiredAmt)> Settings => _settings;
     
     //State Machine
     public bool RequestingNow { get; private set; }
-    public bool BelowMin => Requester.Container.StoredPercent < RequestedRange.min;
-    public bool AboveMax => Requester.Container.StoredPercent > RequestedRange.max;
+    public bool BelowMin => Requester.Container.StoredPercent < ReqRange.min;
+    public bool AboveMax => Requester.Container.StoredPercent > ReqRange.max;
 
+    public bool BelowMax => Requester.Container.StoredPercent < ReqRange.max;
+    public bool AboveMin => Requester.Container.StoredPercent > ReqRange.min;
+    
     public bool ShouldRequest
     {
         get
@@ -68,7 +71,7 @@ public class NetworkRequestWorker : IExposable
 
     public void SetRange(FloatRange newRange)
     {
-        RequestedRange = newRange;
+        ReqRange = newRange;
     }
 
     public void SetMode(RequesterMode mode)
@@ -77,7 +80,7 @@ public class NetworkRequestWorker : IExposable
     }
     
     //
-    public void RequestTick()
+    public bool RequestTick()
     {
         //Process State Machine
         if (!RequestingNow && BelowMin) // Start requesting
@@ -88,64 +91,58 @@ public class NetworkRequestWorker : IExposable
         {
             RequestingNow = false;
         }
-
-
-        //Actual Ticker
-        if (ShouldRequest)
-        {
-            Request();
-        }
+        
+        return ShouldRequest;
     }
 
-    private void Request()
+    internal void DrawSettings(Rect rect)
     {
-        var network = Requester.Network;
-        var container = Requester.Container;
-        
-        //When set to automatic, adjusts settings to pull equal amounts of each value-type
-        if (_mode == RequesterMode.Automatic)
-        {
-            //Resolve..
-            //var maxVal = RequestedCapacityPercent * Container.Capacity;
-            var maxPercent = RequestedRange.max; //Get max percentage
-            foreach (var valType in Requester.Props.AllowedValuesByRole[NetworkRole.Requester])
-            {
-                //var requestedTypeValue = container.ValueForType(valType);
-                var requestedTypeNetworkValue = network.TotalValueFor(valType, NetworkRole.Storage);
-                if (requestedTypeNetworkValue > 0)
-                {
-                    var setValue = Mathf.Min(maxPercent, requestedTypeNetworkValue / Requester.Container.Capacity);
-                    var tempVal = _settings[valType];
+        Widgets.DrawWindowBackground(rect);
 
-                    tempVal.Item2 = setValue;
-                    _settings[valType] = tempVal;
-                    maxPercent = Mathf.Clamp(maxPercent - setValue, 0, maxPercent);
+        var contentRect = rect.ContractedBy(5);
+        Widgets.BeginGroup(contentRect);
+        contentRect = contentRect.AtZero();
+
+        var curX = 5;
+        var allowedTypes = Requester.Props.AllowedValuesByRole[NetworkRole.Requester];
+        foreach (var type in allowedTypes)
+        {
+            Rect typeRect = new Rect(curX, contentRect.height - 15, 10, 10);
+            Rect typeSliderSetting = new Rect(curX, contentRect.height - (20 + 100), 10, 100);
+            Rect typeFilterRect = new Rect(curX, typeSliderSetting.y - 10, 10, 10);
+            Widgets.DrawBoxSolid(typeRect, type.valueColor);
+
+            var previous = Settings[type];
+            var previousValue = previous.Item2;
+            var previousBool = previous.Item1;
+
+            //
+            var newValue = TWidgets.VerticalSlider(typeSliderSetting, previousValue, 0, 1f, 0.01f, Mode == RequesterMode.Manual);
+            Widgets.Checkbox(typeFilterRect.position, ref previousBool, 10);
+            TooltipHandler.TipRegion(typeSliderSetting, $"Value: {newValue}");
+
+            Settings[type] = (previousBool, newValue);
+
+            var totalRequested = Settings.Values.Sum(v => v.Item2);
+            if (totalRequested > Requester.Container.Capacity)
+            {
+                if (previousValue < newValue)
+                {
+                    foreach (var type2 in allowedTypes)
+                    {
+                        if (type2 == type) continue;
+                        var val = Settings[type2].Item2;
+                        val = Mathf.Lerp(val, 0, 1f - newValue);
+                        Settings[type2] = (Settings[type2].Item1, val);
+                        //val = Mathf.Lerp(0, val, 1f - Mathf.InverseLerp(0, Container.Capacity, newValue));
+                        //parentComp.RequestedTypes[type2] = Mathf.Clamp(parentComp.RequestedTypes[type2] - (diff / (parentComp.RequestedTypes.Count - 1)), 0, Container.Capacity);
+                    }
                 }
             }
+
+            curX += 20 + 5;
         }
 
-        //Pull values according to settings
-        //if (container.StoredPercent >= RequestedCapacityPercent) return;
-        foreach (var setting in _settings)
-        {
-            //If not requested, skip
-            if (!setting.Value.isActive) continue;
-            if (container.StoredPercentOf(setting.Key) < setting.Value.desiredAmt)
-            {
-                NetworkTransactionUtility.DoTransaction(new TransactionRequest(Requester.Part,
-                    NetworkRole.Requester, NetworkRole.Storage,
-                    part =>
-                    {
-                        var partContainer = part.Container;
-                        if (partContainer.FillState == ContainerFillState.Empty) return;
-                        if (partContainer.StoredValueOf(setting.Key) <= 0) return;
-                        if (partContainer.TryTransferValue(container, setting.Key, 1, out _))
-                        {
-                            _ = true;
-                            //Notify_ReceivedValue();
-                        }
-                    }));
-            }
-        }
+        Widgets.EndGroup();
     }
 }

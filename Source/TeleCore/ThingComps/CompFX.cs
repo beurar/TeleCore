@@ -150,13 +150,20 @@ namespace TeleCore
                     continue;
                 }
                 
-                LayerProviderByLayerIndex[i] = allHeldFXComps.FirstOrFallback(fx => (bool)fx?.FX_ProvidesForLayer(new FXLayerArgs
+                LayerProviderByLayerIndex[i] = allHeldFXComps.FirstOrFallback(fx =>
                 {
-                    index = i,
-                    renderPriority = -1,
-                    layerTag = layerData.layerTag,
-                    categoryTag = layerData.categoryTag
-                }), null)!;
+                    if (layerData.holderTag != null)
+                    {
+                        return fx?.FX_GetHolderTag == layerData.holderTag;
+                    }
+                    return (bool) fx?.FX_ProvidesForLayer(new FXLayerArgs
+                    {
+                        index = i,
+                        renderPriority = -1,
+                        layerTag = layerData.layerTag,
+                        categoryTag = layerData.categoryTag
+                    });
+                }, null)!;
             }
         }
         

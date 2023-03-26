@@ -61,8 +61,6 @@ namespace TeleCore
                     {
                         networkRole |= role;
                     }
-                    TLog.Debug($"Created Role: {networkRole}");
-                    TLog.Debug($"Created Role2: {NetworkRole}");
                 }
                 return networkRole;
             }

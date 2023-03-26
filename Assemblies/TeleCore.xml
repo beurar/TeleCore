@@ -323,7 +323,7 @@
             Manages the requesting process as a state machine
             </summary>
         </member>
-        <member name="P:TeleCore.NetworkRequestWorker.RequestedRange">
+        <member name="P:TeleCore.NetworkRequestWorker.ReqRange">
             <summary>
             This range defines the Requester behaviour.
             </summary>
