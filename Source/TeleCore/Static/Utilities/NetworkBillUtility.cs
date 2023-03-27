@@ -7,11 +7,20 @@ namespace TeleCore
 {
     internal static class NetworkBillUtility
     {
-        public static DefValueStack<NetworkValueDef> ConstructCustomCostStack(List<DefIntRef<CustomRecipeRatioDef>> list)
+        public static DefValueStack<NetworkValueDef> ConstructCustomCostStack(List<DefIntRef<CustomRecipeRatioDef>> list, bool isByProduct = false)
         {
             DefValueStack<NetworkValueDef> stack = new DefValueStack<NetworkValueDef>();
             foreach (var defIntRef in list)
             {
+                if (isByProduct)
+                {
+                    foreach (var ratio in defIntRef.Def.byProducts)
+                    {
+                        stack += (DefFloat<NetworkValueDef>) ratio * defIntRef.Value;
+                    }
+                    continue;
+                }
+
                 foreach (var ratio in defIntRef.Def.inputRatio)
                 {
                     stack += (DefFloat<NetworkValueDef>) ratio * defIntRef.Value;
@@ -20,11 +29,20 @@ namespace TeleCore
             return stack;
         }
 
-        public static DefValueStack<NetworkValueDef> ConstructCustomCostStack(IDictionary<CustomRecipeRatioDef, int> requestedAmount)
+        public static DefValueStack<NetworkValueDef> ConstructCustomCostStack(IDictionary<CustomRecipeRatioDef, int> requestedAmount, bool isByProduct = false)
         {
             DefValueStack<NetworkValueDef> stack = new DefValueStack<NetworkValueDef>();
             foreach (var defIntRef in requestedAmount)
             {
+                if (isByProduct)
+                {
+                    foreach (var ratio in defIntRef.Key.byProducts)
+                    {
+                        stack += (DefFloat<NetworkValueDef>) ratio * defIntRef.Value;
+                    }
+                    continue;
+                }
+                
                 foreach (var ratio in defIntRef.Key.inputRatio)
                 {
                     stack += (DefFloat<NetworkValueDef>) ratio * defIntRef.Value;

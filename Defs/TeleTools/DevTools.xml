@@ -9,8 +9,14 @@
 	
 	<TeleCore.DevToolDef>
 		<defName>EffectBuilderDef</defName>
-		<label>Effect Builder</label>
+		<label>Effect Builder - WIP</label>
 		<windowClass>TeleCore.Window_EffectBuilder</windowClass>
+	</TeleCore.DevToolDef>
+	
+	<TeleCore.DevToolDef>
+		<defName>ModuleVisualizerDef</defName>
+		<label>Module Visualizer - WIP</label>
+		<windowClass>TeleCore.Window_ModuleVisualizer</windowClass>
 	</TeleCore.DevToolDef>
 	
 	<!--

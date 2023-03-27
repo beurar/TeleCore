@@ -19,6 +19,7 @@ namespace TeleCore
         public string billName;
         public float workAmountTotal;
         public DefValueStack<NetworkValueDef> networkCost;
+        public DefValueStack<NetworkValueDef> byProducts;
         public List<ThingDefCount> results = new List<ThingDefCount>();
 
         private BillRepeatModeDef repeatMode = BillRepeatModeDefOf.Forever;
@@ -92,6 +93,7 @@ namespace TeleCore
             Scribe_Collections.Look(ref results, "results");
 
             Scribe_Deep.Look(ref networkCost, "networkCost");
+            Scribe_Deep.Look(ref byProducts, "byProducts");
         }
 
         public CustomNetworkBill(NetworkBillStack stack)
@@ -161,6 +163,20 @@ namespace TeleCore
                 if (repeatCount == 0)
                     billStack.Delete(this);
             }
+
+            if (!byProducts.Empty)
+            {
+                foreach (var byProduct in byProducts)
+                {
+                    var network = billStack.ParentComp[byProduct.Def.NetworkDef];
+                    if (network == null)
+                    {
+                        TLog.Warning($"Tried to add byproduct to non-existent network: {byProduct.Def.NetworkDef} | {byProduct.Def}");
+                    }
+                    network?.Container.TryAddValue(byProduct.Def, byProduct.Value);
+                }
+            }
+
             return true;
         }
 
@@ -414,6 +430,7 @@ namespace TeleCore
             bill.billName = billName + "_Copy";
             bill.repeatMode = repeatMode;
             bill.networkCost = new DefValueStack<NetworkValueDef>(networkCost);
+            bill.byProducts = new DefValueStack<NetworkValueDef>(byProducts);
             bill.results = new List<ThingDefCount>(results);
             return bill;
         }

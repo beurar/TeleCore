@@ -26,6 +26,7 @@ namespace TeleCore
         public string[] textBuffers;
 
         public DefValueStack<NetworkValueDef> TotalCost { get; set; }
+        public DefValueStack<NetworkValueDef> ByProducts { get; set; }
         public int TotalWorkAmount => TotalCost.Empty ? 0 : TotalCost.Values.Sum(m => (int)(m.Value * WorkAmountFactor));
 
         //
@@ -75,6 +76,8 @@ namespace TeleCore
             CustomNetworkBill customBill = new CustomNetworkBill(totalCost);
             customBill.billName = presetDefDef.defName;
             customBill.networkCost = NetworkBillUtility.ConstructCustomCostStack(presetDefDef.desiredResources);
+            if(presetDefDef.HasByProducts)
+                customBill.byProducts =NetworkBillUtility.ConstructCustomCostStack(presetDefDef.desiredResources, true);
             customBill.billStack = this;
             customBill.results = presetDefDef.Results;
             bills.Add(customBill);
@@ -87,6 +90,10 @@ namespace TeleCore
             CustomNetworkBill customBill = new CustomNetworkBill(TotalWorkAmount);
             customBill.billName = billName;
             customBill.networkCost = new DefValueStack<NetworkValueDef>(TotalCost);
+            
+            if(!ByProducts.Empty)
+                customBill.byProducts = new DefValueStack<NetworkValueDef>(ByProducts);
+            
             customBill.billStack = this;
             customBill.results = RequestedAmount.Where(m => m.Value > 0).Select(m => new ThingDefCount(m.Key.result, m.Value)).ToList();
             bills.Add(customBill);
@@ -116,6 +123,7 @@ namespace TeleCore
                 textBuffers[i] = "0";
                 RequestedAmount[Ratios[i]] = 0;
                 TotalCost = new DefValueStack<NetworkValueDef>();
+                ByProducts = new DefValueStack<NetworkValueDef>();
             }
         }
 

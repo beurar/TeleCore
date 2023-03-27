@@ -105,6 +105,7 @@
 
   <ItemGroup>
     <Folder Include="Rendering\Tools\DefEditor" />
+    <Folder Include="Rendering\Tools\ModuleVisualizer\ModuleNodes" />
     <Folder Include="VFX\Particles" />
   </ItemGroup>
 

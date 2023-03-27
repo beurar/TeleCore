@@ -322,6 +322,7 @@ namespace TeleCore
             if (!inputDirty && cachedCustomCost != null) return cachedCustomCost;
             inputDirty = false;
             BillStack.TotalCost = cachedCustomCost = NetworkBillUtility.ConstructCustomCostStack(BillStack.RequestedAmount);
+            BillStack.ByProducts = NetworkBillUtility.ConstructCustomCostStack(BillStack.RequestedAmount, true);
 
             return cachedCustomCost;
         }

@@ -14,6 +14,7 @@ public class CustomRecipePresetDef : Def
 
     public List<ThingDefCount> Results => cachedResults;
     public string CostLabel => costLabel;
+    public bool HasByProducts => desiredResources.Any(r => r.def.byProducts != null);
 
     public override void ResolveReferences()
     {
