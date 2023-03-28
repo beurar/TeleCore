@@ -838,6 +838,8 @@ namespace TeleCore
 
         public static void HoverContainerReadout(Rect hoverArea, NetworkContainer container)
         {
+            if (container == null) return;
+            
             //Draw Hovered Readout
             if (container.FillState != ContainerFillState.Empty && Mouse.IsOver(hoverArea))
             {
