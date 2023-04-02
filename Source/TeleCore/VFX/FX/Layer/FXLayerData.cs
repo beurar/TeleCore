@@ -18,9 +18,8 @@ namespace TeleCore
 
         //
         public int? renderPriority; //Otherwise set by index
-        public string holderTag = null;
-        public string layerTag;
         public string categoryTag;
+        public string layerTag;
         public bool skip = false;
         public bool needsPower = false;
         public int? drawLayer = null;

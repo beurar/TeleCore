@@ -47,7 +47,7 @@ namespace TeleCore
         public Vector3 DrawPos => CompFX.GetDrawPositionOverride(Args) ?? CompFX.parent.DrawPos;
         private float RotationSpeedPerTick => AnimationSpeedFactor * (CompFX.GetRotationSpeedOverride(Args) ?? (data.rotate?.rotationSpeed ?? 0));
         
-        
+         
         private Color ColorOverride => CompFX.GetColorOverride(Args) ?? Color.white;
         private float Opacity => CompFX.GetOpacityFloat(Args);
 

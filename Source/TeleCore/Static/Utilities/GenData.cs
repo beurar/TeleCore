@@ -51,7 +51,7 @@ namespace TeleCore
             return false;
         }
 
-        public static bool CheckIfAnonymousType(this Type type, out bool isDisplayClass)
+        public static bool IsAnonymousType(this Type type, out bool isDisplayClass)
         {
             if (type == null)
                 throw new ArgumentNullException(nameof(type));
@@ -64,30 +64,6 @@ namespace TeleCore
             TLog.Debug($"{hasCompilerGeneratedAttribute} && {hasCompilerStrings} && {hasFlags} || {type.Name.Contains("DisplayClass")} | {type.IsGenericType}");
             isDisplayClass = type.Name.Contains("DisplayClass");;
             return hasCompilerGeneratedAttribute && hasCompilerStrings && hasFlags;
-        }
-
-        /// <summary>
-        /// Registers an action to be ticked every single tick.
-        /// </summary>
-        public static void RegisterTickAction(this Action action)
-        {
-            TeleUpdateManager.Notify_AddNewTickAction(action);
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        public static void AddTaggedAction(this Action action, TeleUpdateManager.TaggedActionType type, string tag)
-        {
-            TeleUpdateManager.Notify_AddTaggedAction(type, action, tag);
-        }
-        
-        /// <summary>
-        /// Enqueues an action to be run once on the main thread when available.
-        /// </summary>
-        public static void EnqueueActionForMainThread(this Action action)
-        {
-            TeleUpdateManager.Notify_EnqueueNewSingleAction(action);
         }
 
         /// <summary>
@@ -280,7 +256,6 @@ namespace TeleCore
                 renderPriority = layer.RenderPriority,
                 layerTag = layer.data.layerTag,
                 needsPower = layer.data.needsPower,
-                categoryTag = layer.data.categoryTag,
                 data = layer.data,
             };
         }

@@ -6,6 +6,7 @@ public class FXArgs : EventArgs
 {
     public int index;
     public string layerTag;
+    public string categoryTag;
     public bool needsPower;
 }
 
@@ -17,7 +18,6 @@ public class FXEffecterArgs : FXArgs
 public class FXLayerArgs : FXArgs
 {
     public int renderPriority;
-    public string categoryTag;
     public FXLayerData data;
 
     public static implicit operator int(FXLayerArgs args) => args.index;

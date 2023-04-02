@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using Verse;
+using Verse.AI;
 
 namespace TeleCore
 {
@@ -35,6 +36,15 @@ namespace TeleCore
                 roomList.Add(newRoom.RoomTracker());
                 lastAddedRoom = newRoom;
             }
+        }
+
+        public static PawnPathResult TryGetPath(IntVec3 start, LocalTargetInfo destination, Map map, TraverseParms traverseParms, PathEndMode endMode = PathEndMode.OnCell)
+        {
+            if (map.reachability.CanReach(start, destination, endMode, traverseParms))
+            {
+                return new PawnPathResult(map.pathFinder.FindPath(start, destination, traverseParms, endMode));
+            }
+            return new PawnPathResult(null, "Cannot reach destination.");
         }
         
         /*TODO: probably part of the airlocks?

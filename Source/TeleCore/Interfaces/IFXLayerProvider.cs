@@ -31,8 +31,6 @@ namespace TeleCore
     public interface IFXBase
     {
         #region MetaDataGetter
-
-        string FX_GetHolderTag { get;}
         
         /// <summary>
         /// 

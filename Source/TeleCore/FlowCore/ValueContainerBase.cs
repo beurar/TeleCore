@@ -297,7 +297,7 @@ public abstract class ValueContainerBase<TValue> : IExposable where TValue : Flo
     //
     public virtual Color ColorFor(TValue def)
     {
-        return Color.white;
+        return def.valueColor;
     }
 
     

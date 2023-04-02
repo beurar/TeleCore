@@ -43,16 +43,14 @@ namespace TeleCore
         protected virtual bool IsWorkingOverride => true;
 
         #region FX Implementation
-        
+
         public override bool FX_ProvidesForLayer(FXArgs args)
         {
-            return args.layerTag switch
-            {
-                FXLayerData._NetworkHolderTag => true,
-                _ => false,
-            };
+            if(args.layerTag == "FXNetwork")
+                return true;
+            return false;
         }
-
+        
         public override CompPowerTrader FX_PowerProviderFor(FXArgs args) => null;
 
         public override bool? FX_ShouldDraw(FXLayerArgs args)

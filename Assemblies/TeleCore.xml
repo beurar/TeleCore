@@ -460,21 +460,6 @@
             </summary>
             <returns>The <see cref="T:Verse.Rot4"/> from <paramref name="cell"/> 'looking' towards <paramref name="other"/>.</returns>
         </member>
-        <member name="M:TeleCore.GenData.RegisterTickAction(System.Action)">
-            <summary>
-            Registers an action to be ticked every single tick.
-            </summary>
-        </member>
-        <member name="M:TeleCore.GenData.AddTaggedAction(System.Action,TeleCore.TeleUpdateManager.TaggedActionType,System.String)">
-            <summary>
-            
-            </summary>
-        </member>
-        <member name="M:TeleCore.GenData.EnqueueActionForMainThread(System.Action)">
-            <summary>
-            Enqueues an action to be run once on the main thread when available.
-            </summary>
-        </member>
         <member name="M:TeleCore.GenData.IsElectricallyPowered(Verse.ThingWithComps,System.Boolean@)">
             <summary>
             Defines whether a structure is powered by electricity and returns whether it actually uses power.
@@ -521,6 +506,21 @@
         <member name="M:TeleCore.GenData.GetRoomComp``1(Verse.Room)">
             <summary>
             Get the desired <see cref="T:TeleCore.RoomComponent"/> based on type of <typeparamref name="T"/>.
+            </summary>
+        </member>
+        <member name="M:TeleCore.LongTickHandler.EnqueueActionForMainThread(System.Action)">
+            <summary>
+            Enqueues an action to be run once on the main thread when available.
+            </summary>
+        </member>
+        <member name="M:TeleCore.LongTickHandler.RegisterTickAction(System.Action)">
+            <summary>
+            Registers an action to be ticked every single tick.
+            </summary>
+        </member>
+        <member name="M:TeleCore.LongTickHandler.AddTaggedAction(System.Action,TeleCore.TeleUpdateManager.TaggedActionType,System.String)">
+            <summary>
+            
             </summary>
         </member>
         <member name="M:TeleCore.TeleFlooder.Flood(Verse.Map,Verse.CellRect,System.Action{Verse.IntVec3},System.Predicate{Verse.IntVec3},System.Int32)">

@@ -65,7 +65,7 @@ namespace TeleCore
             FieldInfo[] declaringTypeFields = usedDeclaringType.GetFields();
 
             //If anonymous class - save internal fields
-            var isAnonymousType = usedDeclaringType.CheckIfAnonymousType(out bool isDisplayClass);
+            var isAnonymousType = usedDeclaringType.IsAnonymousType(out bool isDisplayClass);
             if (isAnonymousType && isDisplayClass)
             {
                 if (isSaving)

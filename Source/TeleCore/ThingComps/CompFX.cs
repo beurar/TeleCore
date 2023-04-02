@@ -152,14 +152,9 @@ namespace TeleCore
                 
                 LayerProviderByLayerIndex[i] = allHeldFXComps.FirstOrFallback(fx =>
                 {
-                    if (layerData.holderTag != null)
-                    {
-                        return fx?.FX_GetHolderTag == layerData.holderTag;
-                    }
-                    return (bool) fx?.FX_ProvidesForLayer(new FXLayerArgs
+                    return (bool) fx?.FX_ProvidesForLayer(new FXArgs()
                     {
                         index = i,
-                        renderPriority = -1,
                         layerTag = layerData.layerTag,
                         categoryTag = layerData.categoryTag
                     });

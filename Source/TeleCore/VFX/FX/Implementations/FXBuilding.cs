@@ -18,8 +18,13 @@ namespace TeleCore
         #region FX Implementation
         
         //Basics
-        public virtual string FX_GetHolderTag => "FXBuilding";
-        public virtual bool FX_ProvidesForLayer(FXArgs args) => true; //FXLayerData._ThingHolderTag;
+        public virtual bool FX_ProvidesForLayer(FXArgs args)
+        {
+            if(args.layerTag == "FXBuilding")
+                return true;
+            return false;
+        }
+        
         public virtual CompPowerTrader FX_PowerProviderFor(FXArgs args) => null!;
         
         //Layer
