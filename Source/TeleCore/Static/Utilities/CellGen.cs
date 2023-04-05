@@ -8,17 +8,7 @@ namespace TeleCore
 {
     public static class CellGen
     {
-        /// <summary>
-        /// Calculates a circular sector of <see cref="IntVec3"/> cells. Recommended to cache the result.
-        /// </summary>
-        /// <param name="center">Center of circle.</param>
-        /// <param name="map">Map reference.</param>
-        /// <param name="radius">Radius of circle.</param>
-        /// <param name="angle">Angle size of the sector.</param>
-        /// <param name="rotation">Rotation of the sector, 0 would make the sector "go" upwards.</param>
-        /// <param name="useCenter">Uses the center cells as part of the sector.</param>
-        /// <param name="validator">Additional validator to exclude or include cells.</param>
-        public static IEnumerable<IntVec3> SectorCells(IntVec3 center, Map map, float radius, float angle, float rotation, bool useCenter = false, Predicate<IntVec3> validator = null)
+        public static IEnumerable<IntVec3> SectorCells_Old(IntVec3 center, Map map, float radius, float angle, float rotation, bool useCenter = false, Predicate<IntVec3> validator = null)
         {
             int cellCount = GenRadial.NumCellsInRadius(radius);
             int startCell = useCenter ? 0 : 1;
@@ -36,6 +26,48 @@ namespace TeleCore
             }
         }
 
+        /// <summary>
+        /// Calculates a circular sector of <see cref="IntVec3"/> cells. Recommended to cache the result.
+        /// </summary>
+        /// <param name="center">Center of circle.</param>
+        /// <param name="map">Map reference.</param>
+        /// <param name="radius">Radius of circle.</param>
+        /// <param name="angle">Angle size of the sector.</param>
+        /// <param name="rotation">Rotation of the sector, 0 would make the sector "go" upwards.</param>
+        /// <param name="useCenter">Uses the center cells as part of the sector.</param>
+        /// <param name="validator">Additional validator to exclude or include cells.</param>
+        public static IEnumerable<IntVec3> SectorCells(IntVec3 center, Map map, float radius, float desiredAngle, float offset, bool useCenter = false, Predicate<IntVec3> validator = null)
+        {
+            int startCell = useCenter ? 0 : 1;
+            float sectorRadiusSquared = radius * radius;
+            int cellCount = GenRadial.NumCellsInRadius(radius);
+            
+            //
+            var half = desiredAngle * 0.5f;
+            var min = (offset - half).AngleWrapped();
+            var max = (offset + half).AngleWrapped();
+            var invert = min > max;
+            
+            //
+            for (int i = startCell; i < cellCount; i++)
+            {
+                IntVec3 cell = GenRadial.RadialPattern[i] + center;
+                if(!cell.InBounds(map) || (validator != null && !validator(cell))) continue;
+                int dx = cell.x - center.x;
+                int dz = cell.z - center.z;
+                int distanceSquared = dx * dx + dz * dz;
+                
+                if (!(distanceSquared <= sectorRadiusSquared)) continue;
+                
+                float angle = Mathf.Atan2(dx, dz) * Mathf.Rad2Deg;
+                angle = (angle).AngleWrapped();
+                if (invert ? (angle >= min || angle <= max) : (angle >= min && angle <= max))
+                {
+                    yield return cell;
+                }
+            }
+        }
+        
         public static CellRect ToCellRect(this List<IntVec3> cells)
         {
             int minZ = cells.Min(c => c.z);

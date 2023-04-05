@@ -75,7 +75,7 @@ namespace TeleCore
         {
             float width = end - start;
             float offsetValue = value - start;
-            return (offsetValue - ((offsetValue / width) * width)) + start;
+            return (((offsetValue % width) + width) % width) + start;
         }
 
         public static float AngleWrapped(this float angle)

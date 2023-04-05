@@ -4,11 +4,29 @@ using System.Diagnostics;
 using NUnit.Framework;
 using TeleCore;
 using TeleCore.FlowCore;
+using UnityEngine;
 using Verse;
 
 namespace TeleTests
 {
-    
+    [TestFixture]
+    public class Tests
+    {
+        
+        [Test]
+        public void AngleTests()
+        {
+            for (int x = -10; x < 10; x++)
+            {
+                for(int y = -10; y < 10; y++)
+                {
+                    float angle = Mathf.Atan2(1, 0) * Mathf.Rad2Deg;
+                    angle = TMath.AngleWrapped(angle - 90f);
+                }
+            }
+        }
+
+    }
     /*
     [TestFixture]
     public class Tests

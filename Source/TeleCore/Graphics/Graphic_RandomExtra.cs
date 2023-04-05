@@ -17,7 +17,7 @@ public class Graphic_RandomExtra : Graphic_Random
         get
         {
             if (Rand.Chance(ParamRandChance))
-                return BaseContent.ClearMat;
+                return TeleContent.ClearTextureMat;
             return base.MatSingle;
         }
     }
@@ -32,7 +32,7 @@ public class Graphic_RandomExtra : Graphic_Random
     public override Material MatSingleFor(Thing thing)
     {
         if (Rand.Chance(ParamRandChance))
-            return BaseContent.ClearMat;
+            return TeleContent.ClearTextureMat;
         if (thing == null) 
             return MatSingle;
         return SubGraphicFor(thing).MatSingle;

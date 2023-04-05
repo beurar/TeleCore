@@ -217,8 +217,8 @@ namespace TeleCore
                     if (c == _TwoWay)
                     {
                         AddIOCell(InnerCellsByTag, NetworkIOMode.TwoWay, cell);
-                        AddIOCell(InnerCellsByTag, NetworkIOMode.Input, cell);
-                        AddIOCell(InnerCellsByTag, NetworkIOMode.Output, cell);
+                        //AddIOCell(InnerCellsByTag, NetworkIOMode.Input, cell);
+                        //AddIOCell(InnerCellsByTag, NetworkIOMode.Output, cell);
                     }
                     if (c == _Input)
                         AddIOCell(InnerCellsByTag, NetworkIOMode.Input, cell);
@@ -239,8 +239,8 @@ namespace TeleCore
                         {
                             //TODO: Cleanup?
                             AddIOCell(OuterCellsByTag, NetworkIOMode.TwoWay, new IntVec3Rot(edgeCell, edgeCell.Rot4Relative(inner)));
-                            AddIOCell(OuterCellsByTag, NetworkIOMode.Input, new IntVec3Rot(edgeCell, edgeCell.Rot4Relative(inner)));
-                            AddIOCell(OuterCellsByTag, NetworkIOMode.Output, new IntVec3Rot(edgeCell, edgeCell.Rot4Relative(inner)));
+                            //AddIOCell(OuterCellsByTag, NetworkIOMode.Input, new IntVec3Rot(edgeCell, edgeCell.Rot4Relative(inner)));
+                            //AddIOCell(OuterCellsByTag, NetworkIOMode.Output, new IntVec3Rot(edgeCell, edgeCell.Rot4Relative(inner)));
                         }
                         if (InnerModeFor(inner) == NetworkIOMode.Input)
                             AddIOCell(OuterCellsByTag, NetworkIOMode.Input, new IntVec3Rot(edgeCell, edgeCell.Rot4Relative(inner)));
@@ -311,9 +311,8 @@ namespace TeleCore
             {
                 foreach (var cell in twoway)
                 {
-                    var drawPos = cell.IntVec.ToVector3Shifted();
-                    Graphics.DrawMesh(MeshPool.plane10, drawPos, cell.Rotation.AsQuat, BaseContent.BadMat, 0);
-                    //GenDraw.DrawMeshNowOrLater(MeshPool.plane10, drawPos, cell.Rotation.AsQuat, BaseContent.BadMat, true);
+                    var drawPos = cell.IntVec.ToVector3ShiftedWithAltitude(AltitudeLayer.MetaOverlays);
+                    Graphics.DrawMesh(MeshPool.plane10, drawPos, cell.Rotation.AsQuat, TeleContent.IOArrowTwoWay, 0);
                 }
             }
 
@@ -321,7 +320,7 @@ namespace TeleCore
             {
                 foreach (var cell in output)
                 {
-                    var drawPos = cell.IntVec.ToVector3Shifted();
+                    var drawPos = cell.IntVec.ToVector3ShiftedWithAltitude(AltitudeLayer.MetaOverlays);
                     Graphics.DrawMesh(MeshPool.plane10, drawPos, cell.Rotation.AsQuat, TeleContent.IOArrow, 0);
                 }
             }
@@ -330,7 +329,7 @@ namespace TeleCore
             {
                 foreach (var cell in input)
                 {
-                    var drawPos = cell.IntVec.ToVector3Shifted();
+                    var drawPos = cell.IntVec.ToVector3ShiftedWithAltitude(AltitudeLayer.MetaOverlays);
 
                     Graphics.DrawMesh(MeshPool.plane10, drawPos, (cell.Rotation.AsAngle - 180).ToQuat(), TeleContent.IOArrow, 0);
                 }
@@ -344,7 +343,7 @@ namespace TeleCore
                 foreach (var cell in twoway)
                 {
                     var drawPos = cell.IntVec.ToVector3Shifted();
-                    TDrawing.PrintBasic(layer, drawPos, Vector2.one, BaseContent.BadMat, 0, false);
+                    TDrawing.PrintBasic(layer, drawPos, Vector2.one, TeleContent.IOArrowTwoWay, 0, false);
                 }
             }
 

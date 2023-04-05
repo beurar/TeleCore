@@ -93,14 +93,16 @@ namespace TeleCore
         public static readonly Material ForcedTargetLineMat =
             MaterialPool.MatFrom(GenDraw.LineTexPath, ShaderDatabase.Transparent, new Color(1f, 0.5f, 0.5f));
 
-        public static readonly Material IOArrow = MaterialPool.MatFrom("Buildings/IOArrow", ShaderDatabase.Transparent);
-
-        public static readonly Material IOArrowRed =
-            MaterialPool.MatFrom("Buildings/IOArrow", ShaderDatabase.Transparent, Color.red);
+        public static readonly Material IOArrow = MaterialPool.MatFrom("Buildings/IO/IOArrow", ShaderDatabase.Transparent);
+        public static readonly Material IOArrowRed = MaterialPool.MatFrom("Buildings/IO/IOArrow", ShaderDatabase.Transparent, Color.red);
+        public static readonly Material IOArrowTwoWay = MaterialPool.MatFrom("Buildings/IO/IOArrowTwoWay", ShaderDatabase.Transparent);
 
         public static readonly Material WorldTerrain =
             MaterialPool.MatFrom("World/Tile/Terrain", ShaderDatabase.WorldOverlayCutout, 3500);
 
+
+        public static readonly Material ClearTextureMat = MaterialPool.MatFrom("Blank", ShaderDatabase.Transparent);
+        
         //Graphics
         public static readonly Graphic_Single ClearGraphic = new Graphic_Single
         {
@@ -113,7 +115,7 @@ namespace TeleCore
                 allowAtlasing = false,
             },
             path = "NoPath",
-            mat = BaseContent.ClearMat
+            mat = ClearTextureMat
         };
     }
 }
