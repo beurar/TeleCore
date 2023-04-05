@@ -18,6 +18,10 @@ public static class TProfiler
 
     public static void Begin(string label = null)
     {
+        //TODO: Custom log file
+        return;
+        
+        //
         if (_Disabled)
         {
             return;
@@ -29,6 +33,8 @@ public static class TProfiler
 
     public static void Check(string tag = null)
     {
+        //TODO: Custom log file
+        return;
         if (!Watch.IsRunning)
         {
             TLog.Warning("Cant check profiling while inactive.");
@@ -41,6 +47,8 @@ public static class TProfiler
     
     public static void End(string message = null)
     {
+        //TODO: Custom log file
+        return;
         if (!Watch.IsRunning)
         {
             return;
@@ -51,13 +59,11 @@ public static class TProfiler
 
     internal static void Disable()
     {
-        TLog.Debug("Disabled TProfiler!");
         _Disabled = true;
     }
 
     internal static void Enable()
     {
-        TLog.Debug("Enabled TProfiler.");
         _Disabled = false;
     }
 }

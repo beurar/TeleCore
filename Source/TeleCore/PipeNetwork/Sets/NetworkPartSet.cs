@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
-using TeleCore.DataEvents;
+using TeleCore.Events;
 
 namespace TeleCore
 {

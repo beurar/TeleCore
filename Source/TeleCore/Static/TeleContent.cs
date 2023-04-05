@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using RimWorld;
+using UnityEngine;
 using Verse;
 
 namespace TeleCore
@@ -12,7 +13,10 @@ namespace TeleCore
 
         //
         public static readonly Texture2D ButtonBGAtlas = ContentFinder<Texture2D>.Get("UI/Buttons/ButtonBG");
-        public static readonly Texture2D ButtonBGAtlasMouseover = ContentFinder<Texture2D>.Get("UI/Buttons/ButtonBGMouseover");
+
+        public static readonly Texture2D ButtonBGAtlasMouseover =
+            ContentFinder<Texture2D>.Get("UI/Buttons/ButtonBGMouseover");
+
         public static readonly Texture2D ButtonBGAtlasClick = ContentFinder<Texture2D>.Get("UI/Buttons/ButtonBGClick");
 
         //
@@ -23,20 +27,25 @@ namespace TeleCore
         public static readonly Texture2D OpenMenu = ContentFinder<Texture2D>.Get("UI/Icons/OpenMenu", true);
 
         public static Texture2D CustomSlider = ContentFinder<Texture2D>.Get("UI/Icons/CustomSlider", true);
-        
+
         //SubBuildMenu
         public static readonly Texture2D Undiscovered = ContentFinder<Texture2D>.Get("UI/Menu/Undiscovered", true);
         public static readonly Texture2D Favorite_Filled = ContentFinder<Texture2D>.Get("UI/Menu/Star_Filled", true);
-        public static readonly Texture2D Favorite_Unfilled = ContentFinder<Texture2D>.Get("UI/Menu/Star_Unfilled", true);
-        
+
+        public static readonly Texture2D
+            Favorite_Unfilled = ContentFinder<Texture2D>.Get("UI/Menu/Star_Unfilled", true);
+
         //UIElement
         public static readonly Texture2D LockOpen = ContentFinder<Texture2D>.Get("UI/Icons/Animator/LockOpen", true);
-        public static readonly Texture2D LockClosed = ContentFinder<Texture2D>.Get("UI/Icons/Animator/LockClosed", true);
+
+        public static readonly Texture2D
+            LockClosed = ContentFinder<Texture2D>.Get("UI/Icons/Animator/LockClosed", true);
 
         public static readonly Texture2D UIDataNode = ContentFinder<Texture2D>.Get("UI/Icons/Tools/Node", true);
 
         //TextureElement
-        public static readonly Texture2D PivotPoint = ContentFinder<Texture2D>.Get("UI/Icons/Animator/PivotPoint", true);
+        public static readonly Texture2D
+            PivotPoint = ContentFinder<Texture2D>.Get("UI/Icons/Animator/PivotPoint", true);
 
         //Animation Tool
         //LayerView
@@ -50,9 +59,16 @@ namespace TeleCore
 
         //TimeLine
         public static readonly Texture2D KeyFrame = ContentFinder<Texture2D>.Get("UI/Icons/Animator/KeyFrame", true);
-        public static readonly Texture2D KeyFrameSelection = ContentFinder<Texture2D>.Get("UI/Icons/Animator/KeyFrameSelection", true);
-        public static readonly Texture2D AddKeyFrame = ContentFinder<Texture2D>.Get("UI/Icons/Animator/AddKeyFrame", true);
-        public static readonly Texture2D TimeSelMarker = ContentFinder<Texture2D>.Get("UI/Icons/Animator/TimeSelector", true);
+
+        public static readonly Texture2D KeyFrameSelection =
+            ContentFinder<Texture2D>.Get("UI/Icons/Animator/KeyFrameSelection", true);
+
+        public static readonly Texture2D AddKeyFrame =
+            ContentFinder<Texture2D>.Get("UI/Icons/Animator/AddKeyFrame", true);
+
+        public static readonly Texture2D TimeSelMarker =
+            ContentFinder<Texture2D>.Get("UI/Icons/Animator/TimeSelector", true);
+
         public static readonly Texture2D PlayPause = ContentFinder<Texture2D>.Get("UI/Icons/Animator/PlayPause", true);
         public static readonly Texture2D TimeSelRangeL = ContentFinder<Texture2D>.Get("UI/Icons/Animator/RangeL", true);
         public static readonly Texture2D TimeSelRangeR = ContentFinder<Texture2D>.Get("UI/Icons/Animator/RangeR", true);
@@ -74,10 +90,30 @@ namespace TeleCore
         public static readonly Texture2D Paste = TexButton.Paste;
 
         //Materials
-        public static readonly Material ForcedTargetLineMat = MaterialPool.MatFrom(GenDraw.LineTexPath, ShaderDatabase.Transparent, new Color(1f, 0.5f, 0.5f));
-        public static readonly Material IOArrow = MaterialPool.MatFrom("Buildings/IOArrow", ShaderDatabase.Transparent);
-        public static readonly Material IOArrowRed = MaterialPool.MatFrom("Buildings/IOArrow", ShaderDatabase.Transparent, Color.red);
+        public static readonly Material ForcedTargetLineMat =
+            MaterialPool.MatFrom(GenDraw.LineTexPath, ShaderDatabase.Transparent, new Color(1f, 0.5f, 0.5f));
 
-        public static readonly Material WorldTerrain = MaterialPool.MatFrom("World/Tile/Terrain", ShaderDatabase.WorldOverlayCutout, 3500);
+        public static readonly Material IOArrow = MaterialPool.MatFrom("Buildings/IOArrow", ShaderDatabase.Transparent);
+
+        public static readonly Material IOArrowRed =
+            MaterialPool.MatFrom("Buildings/IOArrow", ShaderDatabase.Transparent, Color.red);
+
+        public static readonly Material WorldTerrain =
+            MaterialPool.MatFrom("World/Tile/Terrain", ShaderDatabase.WorldOverlayCutout, 3500);
+
+        //Graphics
+        public static readonly Graphic_Single ClearGraphic = new Graphic_Single
+        {
+            data = new GraphicData
+            {
+                texPath = "NoPath",
+                graphicClass = typeof(Graphic_Single),
+                shaderType = ShaderTypeDefOf.Transparent,
+                renderInstanced = true,
+                allowAtlasing = false,
+            },
+            path = "NoPath",
+            mat = BaseContent.ClearMat
+        };
     }
 }

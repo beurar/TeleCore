@@ -1,4 +1,6 @@
-﻿using RimWorld;
+﻿using System;
+using RimWorld;
+using TeleCore.Events;
 using UnityEngine;
 using Verse;
 using Verse.AI;
@@ -33,6 +35,8 @@ public class GenericPathFollower : IExposable
     private int lastMovedTick = -999999;
     private static float moveSpeed = 1;
 
+    public event MovedEventHandler OnMoved;
+    
     //
     public Map Map => curThing.Map;
 
@@ -159,6 +163,7 @@ public class GenericPathFollower : IExposable
 	    if (nextCellCostLeft > 0f)
 	    {
 		    nextCellCostLeft -= CostToPayThisTick();
+		    OnMoved?.Invoke(this, new MovedEventArgs(curThing, nextCell, nextCellCostLeft, nextCellCostTotal));
 		    return;
 	    }
 

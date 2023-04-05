@@ -274,7 +274,8 @@ namespace TeleCore
             Texture2D tex = mouseOver ? CurrentTexturePack.designatorSelected : CurrentTexturePack.designator;
             Widgets.DrawTextureFitted(rect, tex, 1f);
             GUI.color = mouseOver ? new Color(1, 1, 1, 0.45f) : Color.white;
-            Widgets.DrawTextureFitted(rect.ContractedBy(2), def.uiIcon, 1);
+            var icon = def.uiIcon != null ? def.uiIcon : BaseContent.BadTex;
+            Widgets.DrawTextureFitted(rect.ContractedBy(2), icon, 1);
             GUI.color = Color.white;
             if (def.HasSubMenuExtension(out var subMenu) && subMenu.isDevOption)
             {

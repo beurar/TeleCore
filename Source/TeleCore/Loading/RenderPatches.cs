@@ -1,4 +1,8 @@
-﻿using HarmonyLib;
+﻿using System.Collections;
+using System.Collections.Generic;
+using System.Reflection;
+using System.Reflection.Emit;
+using HarmonyLib;
 using RimWorld;
 using UnityEngine;
 using Verse;
@@ -65,6 +69,23 @@ namespace TeleCore
             }
         }
         */
+
+        [HarmonyPatch(typeof(Graphic_Random), nameof(Graphic_Random.SubGraphicFor))]
+        public static class SubGraphcForPatch
+        {
+            static bool Prefix(Graphic_Random __instance, ref Graphic __result)
+            {
+                if (__instance is Graphic_RandomExtra extra)
+                {
+                    if (Rand.Chance(extra.ParamRandChance))
+                    {
+                        __result = TeleContent.ClearGraphic;
+                        return false;
+                    }
+                }
+                return true;
+            }
+        }
 
         //
         //Fix projectile random graphics
