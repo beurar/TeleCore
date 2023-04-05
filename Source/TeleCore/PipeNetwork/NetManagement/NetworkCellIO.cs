@@ -263,9 +263,9 @@ namespace TeleCore
 
                 var charArr = new char[widthx * heighty];
                 //Inner Connection Cells
-                for (int y = 0; y < widthx; y++)
+                for (int x = 0; x < widthx; x++)
                 {
-                    for (int x = 0; x < heighty; x++)
+                    for (int y = 0; y < heighty; y++)
                     {
                         charArr[x + (y*widthx)] = _TwoWay;
                     }
