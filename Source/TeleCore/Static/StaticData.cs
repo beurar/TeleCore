@@ -65,7 +65,7 @@ namespace TeleCore
         //
         internal static Dictionary<SubBuildMenuDef, SubBuildMenu> windowsByDef;
         internal static Dictionary<int, MapComponent_TeleCore> teleMapComps;
-        internal static Dictionary<ThingDef, Designator> cachedDesignators;
+        internal static Dictionary<BuildableDef, Designator> cachedDesignators;
         
         //
         internal static List<PlaySettingsWorker> _playSettings;
@@ -92,7 +92,7 @@ namespace TeleCore
         {
             //TLog.Message("Clearing StaticData!");
             teleMapComps = new Dictionary<int, MapComponent_TeleCore>();
-            cachedDesignators = new Dictionary<ThingDef, Designator>();
+            cachedDesignators = new Dictionary<BuildableDef, Designator>();
             windowsByDef = new Dictionary<SubBuildMenuDef, SubBuildMenu>();
             ActionComposition._ID = 0;
         }

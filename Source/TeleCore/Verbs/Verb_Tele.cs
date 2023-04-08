@@ -153,6 +153,8 @@ namespace TeleCore
             baseMatrix.SetTRS(baseOff, CurrentAimAngle.ToQuat(), new Vector3(0.5f, 0, 0.5f));
             Graphics.DrawMesh(MeshPool.plane10, baseMatrix, TeleContent.IOArrow, 0);
             
+            
+            /* DEBUG Shot Origin Drawer
             foreach (var drawOffset in RelativeDrawOffsets)
             {
                 var off = DrawPos + drawOffset + altOff;
@@ -160,6 +162,7 @@ namespace TeleCore
                 matri.SetTRS(off, CurrentAimAngle.ToQuat(), new Vector3(0.5f, 0, 0.5f));
                 Graphics.DrawMesh(MeshPool.plane10, matri, BaseContent.BadMat, 0);
             }
+            */
         }
 
         protected virtual Vector3 ShotOriginLOS => CurrentStartPos + new Vector3(0, Props.shootHeightOffset, 0);

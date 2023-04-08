@@ -226,9 +226,10 @@
             Sets the exact render position of the layer at the index of that value.
             </summary>
         </member>
-        <member name="M:TeleCore.IFXLayerProvider.FX_GetDrawAction(TeleCore.FXLayerArgs)">
+        <member name="M:TeleCore.IFXLayerProvider.FX_GetDrawFunc(TeleCore.FXLayerArgs)">
             <summary>
             Attaches a custom function to a layer, it is run before the layer is drawn.
+            Returns a bool which defines where the actual layer draw function should be run.
             </summary>
         </member>
         <member name="T:TeleCore.PlaySettingsWorker">
@@ -495,7 +496,7 @@
             Get the desired <see cref="T:TeleCore.MapInformation"/> based on type of <typeparamref name="T"/>.
             </summary>
         </member>
-        <member name="M:TeleCore.GenData.GetDesignatorFor``1(Verse.ThingDef)">
+        <member name="M:TeleCore.GenData.GetDesignatorFor``1(Verse.BuildableDef)">
             <summary>
             Get the desired <see cref="T:Verse.Designator"/> based on type of <typeparamref name="T"/>.
             </summary>

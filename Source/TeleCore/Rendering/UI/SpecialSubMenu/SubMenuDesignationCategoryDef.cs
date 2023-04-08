@@ -6,6 +6,7 @@ namespace TeleCore;
 public class SubMenuDesignationCategoryDef : DesignationCategoryDef
 {
     public SubBuildMenuDef menuDef;
+    public bool isDebug;
     
     public override void ResolveReferences()
     {

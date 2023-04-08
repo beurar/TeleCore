@@ -6,10 +6,10 @@ namespace TeleCore
     public abstract class RoomComponent
     {
         private RoomTracker parent;
-        private List<RoomComponent> adjacentComps;
+        private HashSet<RoomComponent> adjacentComps;
 
         public RoomTracker Parent => parent;
-        public List<RoomComponent> AdjacentComps => adjacentComps;
+        public HashSet<RoomComponent> AdjacentComps => adjacentComps;
         
         //
         public Map Map => Parent.Map;
@@ -24,7 +24,7 @@ namespace TeleCore
         public virtual void Create(RoomTracker parent)
         {
             this.parent = parent;
-            adjacentComps = new List<RoomComponent>();
+            adjacentComps = new HashSet<RoomComponent>();
         }
 
         internal void AddAdjacent<T>(T comp) where T : RoomComponent
@@ -32,7 +32,14 @@ namespace TeleCore
             adjacentComps.Add(comp);
         }
 
-        public virtual void Disband(RoomTracker parent, Map map) { }
+        internal void DisbandInternal()
+        {
+            adjacentComps.Clear();
+        }
+        
+        public virtual void Disband(RoomTracker parent, Map map)
+        {
+        }
         public virtual void Notify_Reused() { }
         //public virtual void Notify_() { }
         public virtual void Notify_RoofClosed() { }

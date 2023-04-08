@@ -16,7 +16,7 @@ public class RoomTracker
 
     private Dictionary<Type, RoomComponent> compsByType = new();
     private List<RoomComponent> comps = new List<RoomComponent>();
-    private List<RoomTracker> adjacentTrackers;
+    private HashSet<RoomTracker> adjacentTrackers;
     private List<RoomPortal> roomPortals;
 
     //Shared Room Data
@@ -50,7 +50,7 @@ public class RoomTracker
     public ListerThings BorderListerThings => borderListerThings;
     public List<Thing> ContainedPawns => listerThings.ThingsInGroup(ThingRequestGroup.Pawn);
 
-    public List<RoomTracker> AdjacentTrackers => adjacentTrackers;
+    public HashSet<RoomTracker> AdjacentTrackers => adjacentTrackers;
     public List<RoomPortal> RoomPortals => roomPortals;
 
     public RegionType RegionTypes => regionTypes;
@@ -71,7 +71,7 @@ public class RoomTracker
         borderListerThings = new ListerThings(ListerThingsUse.Region);
 
         //
-        adjacentTrackers = new List<RoomTracker>();
+        adjacentTrackers = new HashSet<RoomTracker>();
         roomPortals = new List<RoomPortal>();
 
         //Get Group Data
@@ -102,6 +102,7 @@ public class RoomTracker
 
         foreach (var comp in comps)
         {
+            comp.DisbandInternal();
             comp.Disband(this, onMap);
         }
     }

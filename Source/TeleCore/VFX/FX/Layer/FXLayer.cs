@@ -53,7 +53,7 @@ namespace TeleCore
 
 
         private float AnimationSpeedFactor => CompFX.GetAnimationSpeedFactor(Args);
-        private Action<RoutedDrawArgs> DrawAction => CompFX.GetDrawAction(Args);
+        private Func<RoutedDrawArgs, bool> DrawFunction => CompFX.GetDrawFunction(Args);
         
         private bool HasPower => CompFX.HasPower(Args);
         
@@ -280,14 +280,19 @@ namespace TeleCore
             }
 
             //
-            DrawAction?.Invoke(new RoutedDrawArgs
+            if (DrawFunction != null)
             {
-                graphic = Graphic,
-                drawPos = DrawPos,
-                altitude = _altitude,
-                rotation = TrueRotation,
-                mesh = drawMesh
-            });
+                var result = DrawFunction.Invoke(new RoutedDrawArgs
+                {
+                    graphic = Graphic,
+                    drawPos = DrawPos,
+                    altitude = _altitude,
+                    rotation = TrueRotation,
+                    mesh = drawMesh
+                });
+                if (!result) 
+                    return;
+            }
 
             //
             Graphics.DrawMesh(drawMesh, new Vector3(drawPos.x, _altitude, drawPos.z), rotationQuat, _drawMat, 0, null, 0, _materialProperties);

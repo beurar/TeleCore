@@ -154,7 +154,7 @@ namespace TeleCore
         /// <summary>
         /// Get the desired <see cref="Designator"/> based on type of <typeparamref name="T"/>.
         /// </summary>
-        public static T GetDesignatorFor<T>(ThingDef def) where T : Designator
+        public static T GetDesignatorFor<T>(BuildableDef def) where T : Designator
         {
             if (StaticData.cachedDesignators.TryGetValue(def, out var des))
             {

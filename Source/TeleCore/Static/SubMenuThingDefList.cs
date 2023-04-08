@@ -7,7 +7,7 @@ namespace TeleCore
 {
     internal static class SubMenuThingDefList
     {
-        public static Dictionary<SubMenuGroupDef, Dictionary<SubMenuCategoryDef, List<ThingDef>>> Categorized = new();
+        public static Dictionary<SubMenuGroupDef, Dictionary<SubMenuCategoryDef, List<BuildableDef>>> Categorized = new();
         public static List<SubMenuGroupDef> AllSubGroupDefs = new List<SubMenuGroupDef>();
 
 
@@ -20,12 +20,12 @@ namespace TeleCore
             for (int i = 0; i < list1.Count(); i++)
             {
                 SubMenuGroupDef des = list1.ElementAt(i);
-                var dict = new Dictionary<SubMenuCategoryDef, List<ThingDef>>();
+                var dict = new Dictionary<SubMenuCategoryDef, List<BuildableDef>>();
                 var designatorDict = new Dictionary<SubMenuCategoryDef, List<Designator>>();
                 for (int j = 0; j < list2.Count(); j++)
                 {
                     SubMenuCategoryDef cat = list2.ElementAt(j);
-                    dict.Add(cat, new List<ThingDef>());
+                    dict.Add(cat, new List<BuildableDef>());
                     designatorDict.Add(cat, new List<Designator>());
                 }
                 Categorized.Add(des, dict);
@@ -35,12 +35,12 @@ namespace TeleCore
         }
 
         //Favorited
-        public static bool IsFavorited(ThingDef def)
+        public static bool IsFavorited(BuildableDef def)
         {
             return TFind.UIProperties.MenuOptionIsFavorited(def);
         }
 
-        public static bool ToggleFavorite(ThingDef def)
+        public static bool ToggleFavorite(BuildableDef def)
         {
             TFind.UIProperties.ToggleMenuOptionFavorite(def);
             return IsFavorited(def);
@@ -52,9 +52,9 @@ namespace TeleCore
             return Categorized[group].Any(d => HasUnDiscovered(inMenu, group, d.Key));
         }
 
-        public static bool IsActive(SubBuildMenuDef inMenu, ThingDef def)
+        public static bool IsActive(SubBuildMenuDef inMenu, BuildableDef def)
         {
-            return DebugSettings.godMode || (inMenu.AllowWorker?.IsAllowed(def) ?? true);
+            return DebugSettings.godMode || (inMenu.VisWorker?.IsAllowed(def) ?? true);
         }
 
         public static bool HasUnDiscovered(SubBuildMenuDef inMenu, SubMenuGroupDef group, SubMenuCategoryDef categoryDef)
@@ -62,17 +62,17 @@ namespace TeleCore
             return Categorized[group][categoryDef].Any(d => !ConstructionOptionDiscovered(d) && IsActive(inMenu, d));
         }
 
-        internal static bool ConstructionOptionDiscovered(ThingDef def)
+        internal static bool ConstructionOptionDiscovered(BuildableDef def)
         {
             return TFind.Discoveries.MenuOptionHasBeenSeen(def);
         }
 
-        internal static void Discover_ConstructionOption(ThingDef def)
+        internal static void Discover_ConstructionOption(BuildableDef def)
         {
             TFind.Discoveries.DiscoverInMenu(def);
         }
 
-        public static void Add(ThingDef def, SubMenuExtension extension)
+        public static void Add(BuildableDef def, SubMenuExtension extension)
         {
             var groupDef = extension.groupDef;
             var category = extension.category;

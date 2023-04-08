@@ -25,13 +25,13 @@ namespace TeleCore
         private Vector2 scroller = Vector2.zero;
         private string searchText = "";
         private Gizmo mouseOverGizmo;
-        private ThingDef inactiveDef;
+        private BuildableDef inactiveDef;
 
         private Vector2 lastPos;
         
         //
         private Dictionary<SubMenuGroupDef, SubMenuCategoryDef> cachedSelection = new ();
-        private List<ThingDef> favoriteOptions = new List<ThingDef>();
+        private List<BuildableDef> favoriteOptions = new List<BuildableDef>();
         private bool favoriteMenuActive = false;
         
         //private Dictionary<SubMenuGroupDef, DesignationTexturePack> texturePacks = new ();
@@ -106,7 +106,6 @@ namespace TeleCore
             }
         }
 
-
         public override bool OnCloseRequest()
         {
             if (MainButtonDefOf.Architect.TabWindow is MainTabWindow_Architect architect)
@@ -116,7 +115,6 @@ namespace TeleCore
             return base.OnCloseRequest();
         }
         
-
         public override void DoWindowContents(Rect inRect)
         {
             //
@@ -233,7 +231,7 @@ namespace TeleCore
                 {
                     Vector2 size = new Vector2(80, 80);
                     Vector2 curXY = new Vector2(5f, 5f);
-                    List<ThingDef> things = searchText.NullOrEmpty()
+                    List<BuildableDef> things = searchText.NullOrEmpty()
                         ? SubMenuThingDefList.Categorized[groupDef][categoryDef]
                         : ItemsBySearch(searchText);
                     Rect viewRect = new Rect(0f, 0f, main.width,
@@ -261,12 +259,12 @@ namespace TeleCore
             }
         }
 
-        private List<ThingDef> ItemsBySearch(string searchText)
+        private List<BuildableDef> ItemsBySearch(string searchText)
         {
             return SubMenuThingDefList.Categorized[SelectedGroup].SelectMany(cat => cat.Value).Where(d => SubMenuThingDefList.IsActive(menuDef, d) && d.label.ToLower().Contains(searchText.ToLower())).ToList();
         }
 
-        private void Designator(ThingDef def, Rect main, Vector2 size, ref Vector2 XY)
+        private void Designator(BuildableDef def, Rect main, Vector2 size, ref Vector2 XY)
         {
             Rect rect = new Rect(new Vector2(XY.x, XY.y), size);
             GUI.color = new Color(1, 1, 1, 0.80f);
@@ -275,7 +273,9 @@ namespace TeleCore
             Widgets.DrawTextureFitted(rect, tex, 1f);
             GUI.color = mouseOver ? new Color(1, 1, 1, 0.45f) : Color.white;
             var icon = def.uiIcon != null ? def.uiIcon : BaseContent.BadTex;
-            Widgets.DrawTextureFitted(rect.ContractedBy(2), icon, 1);
+            var texCoords = new Rect(0f, 0f, 1f, 1f);
+            texCoords = def is TerrainDef ? Widgets.CroppedTerrainTextureRect(icon) : texCoords;
+            Widgets.DrawTextureFitted(rect.ContractedBy(2), icon, 1, Vector2.one, texCoords);
             GUI.color = Color.white;
             if (def.HasSubMenuExtension(out var subMenu) && subMenu.isDevOption)
             {
@@ -384,7 +384,7 @@ namespace TeleCore
             }
         }
 
-        private void InactiveDesignator(ThingDef def, Rect main, Vector2 size, ref Vector2 XY)
+        private void InactiveDesignator(BuildableDef def, Rect main, Vector2 size, ref Vector2 XY)
         {
             Rect rect = new Rect(new Vector2(XY.x, XY.y), size);
             GUI.color = Color.grey;

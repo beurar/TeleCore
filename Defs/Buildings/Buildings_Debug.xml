@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Defs>
+
+	<ThingDef ParentName="BuildingNaturalBase">
+		<defName>AtmosphericDebug</defName>
+		<label>Atmospheric Debug</label>
+		<statBases>
+			<MaxHitPoints>20000</MaxHitPoints>
+			<Beauty>999</Beauty>
+		</statBases>
+		<graphicData>
+			<graphicClass>Graphic_Single</graphicClass>
+			<drawRotated>false</drawRotated>
+			<shaderType>Transparent</shaderType>
+			<texPath>Buildings/Natural/GenesisPit</texPath>
+			<drawSize>(12,12)</drawSize>
+		</graphicData>
+		<altitudeLayer>Floor</altitudeLayer>
+		<size>(8,8)</size>
+		<filthLeaving>FilthTiberiumGreen</filthLeaving>
+	</ThingDef>
+
+</Defs>

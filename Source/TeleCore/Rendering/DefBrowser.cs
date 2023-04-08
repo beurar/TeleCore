@@ -61,7 +61,6 @@ public class DefBrowser : DataBrowser<Def>
 
     protected override Texture2D IconFor(Def element)
     {
-
         if (element is ThingDef thingDef)
         {
             return (Texture2D)(thingDef.graphicData?.Graphic?.MatSingle?.mainTexture ?? BaseContent.BadTex);

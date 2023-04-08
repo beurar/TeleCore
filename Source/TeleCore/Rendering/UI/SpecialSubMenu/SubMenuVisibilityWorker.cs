@@ -2,7 +2,7 @@
 
 namespace TeleCore;
 
-public class SubMenuAllowWorker
+public class SubMenuVisibilityWorker
 {
     public virtual bool IsAllowed(Def def)
     {
@@ -10,7 +10,6 @@ public class SubMenuAllowWorker
         {
             return buildable.IsResearchFinished;
         }
-        
         return true;
     }
 }

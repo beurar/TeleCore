@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using RimWorld;
 using UnityEngine;
 using Verse;
 
@@ -55,6 +56,18 @@ namespace TeleCore
                 }
 
                 return pivotOffset;
+            }
+        }
+
+        public void PostLoad()
+        {
+            if (graphicData != null)
+            {
+                LongEventHandler.ExecuteWhenFinished(delegate
+                {
+                    graphicData.shaderType ??= ShaderTypeDefOf.Cutout;
+                    graphicData.Init();
+                });
             }
         }
     }

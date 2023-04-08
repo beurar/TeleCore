@@ -1,0 +1,32 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<Defs>
+
+	<TeleCore.SubMenuDesignationCategoryDef>
+		<defName>TeleCore</defName>
+		<label>TeleCore</label>
+		<order>1</order>
+		<menuDef>TeleCoreMenu</menuDef>
+		<isDebug>true</isDebug>
+	</TeleCore.SubMenuDesignationCategoryDef>
+	
+	<TeleCore.SubBuildMenuDef>
+		<defName>TeleCoreMenu</defName>
+		<subMenus>
+			<li>TeleGroup</li>
+		</subMenus>
+	</TeleCore.SubBuildMenuDef>
+	
+	<TeleCore.SubMenuGroupDef>
+		<defName>TeleGroup</defName>
+		<subCategories>
+			<li>TeleDebug</li>
+		</subCategories>
+		<isDevGroup>true</isDevGroup>
+	</TeleCore.SubMenuGroupDef>
+	
+	<TeleCore.SubMenuCategoryDef>
+		<defName>TeleDebug</defName>
+		<label>Debug</label>
+	</TeleCore.SubMenuCategoryDef>  
+  
+</Defs>

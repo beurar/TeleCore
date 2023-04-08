@@ -48,6 +48,23 @@ namespace TeleCore
 
     internal static class UIPatches
     {
+        [HarmonyPatch(typeof(DesignationCategoryDef))]
+        [HarmonyPatch(nameof(DesignationCategoryDef.Visible), MethodType.Getter)]
+        internal static class DesignationCategoryDefVisiblePatch
+        {
+            public static bool Prefix(DesignationCategoryDef __instance, ref bool __result)
+            {
+                if (__instance is SubMenuDesignationCategoryDef def)
+                {
+                    if (def.isDebug && !DebugSettings.godMode)
+                    {
+                        __result = false;
+                        return false;
+                    }
+                }
+                return true;
+            }
+        }        
         [HarmonyPatch(typeof(MainTabWindow_Architect))]
         [HarmonyPatch(nameof(MainTabWindow_Architect.ClickedCategory))]
         internal static class ClickedCategoryPatch

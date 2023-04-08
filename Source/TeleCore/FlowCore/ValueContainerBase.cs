@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
+using Multiplayer.API;
 using UnityEngine;
 using Verse;
 
@@ -204,7 +206,7 @@ public abstract class ValueContainerBase<TValue> : IExposable where TValue : Flo
     //Stack Cache
     public DefValueStack<TValue> ValueStack { get; set; }
     public List<TValue> AcceptedTypes { get; }
-    
+
     //
     #region Value Getters
 
@@ -779,6 +781,55 @@ public abstract class ValueContainerBase<TValue> : IExposable where TValue : Flo
             return TryRemoveValue(value);
         }
         return ValueResult<TValue>.InitFail((float)value);
+    }
+
+    #endregion
+
+    #region DEBUG
+
+            
+    private List<FloatMenuOption> _debugFloatMenuOptions;
+
+    public List<FloatMenuOption> DebugFloatMenuOptions
+    {
+        get
+        {
+            if (_debugFloatMenuOptions == null)
+            {
+                _debugFloatMenuOptions = new List<FloatMenuOption>();
+                float part = Capacity / AcceptedTypes.Count;
+                _debugFloatMenuOptions.Add(new FloatMenuOption("Add ALL", delegate { Debug_AddAll(part); }));
+
+                _debugFloatMenuOptions.Add(new FloatMenuOption("Remove ALL", Debug_Clear));
+
+                foreach (var type in AcceptedTypes)
+                {
+                    _debugFloatMenuOptions.Add(new FloatMenuOption($"Add {type}", delegate { Debug_AddType(type, part); }));
+                }
+            }
+            return _debugFloatMenuOptions;
+        }
+    }
+    
+    [SyncMethod]
+    private void Debug_AddAll(float part)
+    {
+        foreach (var type in AcceptedTypes)
+        {
+            TryAddValue(type, part);
+        }
+    }
+
+    [SyncMethod]
+    private void Debug_Clear()
+    {
+        Clear();
+    }
+
+    [SyncMethod]
+    private void Debug_AddType(TValue type, float part)
+    {
+        TryAddValue(type, part);
     }
 
     #endregion

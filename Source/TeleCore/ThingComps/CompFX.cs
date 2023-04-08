@@ -372,9 +372,9 @@ namespace TeleCore
             //return GetDrawPosition.Invoke(args);
         }
 
-        public Action<RoutedDrawArgs> GetDrawAction(FXLayerArgs args)
+        public Func<RoutedDrawArgs, bool> GetDrawFunction(FXLayerArgs args)
         {
-            return LayerProviderByLayerIndex[args.index]?.FX_GetDrawAction(args) ?? null!;
+            return LayerProviderByLayerIndex[args.index]?.FX_GetDrawFunc(args) ?? null!;
             //return GetAction.Invoke(args);
         }
 

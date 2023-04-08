@@ -5,10 +5,10 @@ namespace TeleCore;
 
 public class UISettingsTable : IExposable
 {
-    private Dictionary<ThingDef, bool> favoritedOptions = new Dictionary<ThingDef, bool>();
+    private Dictionary<BuildableDef, bool> favoritedOptions = new Dictionary<BuildableDef, bool>();
 
     //
-    public Dictionary<ThingDef, bool> FavoritedOptions => favoritedOptions;
+    public Dictionary<BuildableDef, bool> FavoritedOptions => favoritedOptions;
 
     //
     public void ExposeData()
@@ -17,7 +17,7 @@ public class UISettingsTable : IExposable
     }
 
     //
-    public void ToggleMenuOptionFavorite(ThingDef def)
+    public void ToggleMenuOptionFavorite(BuildableDef def)
     {
         if (favoritedOptions.TryGetValue(def, out var value))
         {
@@ -29,7 +29,7 @@ public class UISettingsTable : IExposable
         }
     }
         
-    public bool MenuOptionIsFavorited(ThingDef def)
+    public bool MenuOptionIsFavorited(BuildableDef def)
     {
         return favoritedOptions.TryGetValue(def, out bool value) && value;;
     }

@@ -8,7 +8,7 @@ namespace TeleCore;
 public class DiscoveryTable : IExposable
 {
     private Dictionary<DiscoveryDef, bool> discoveries = new Dictionary<DiscoveryDef, bool>();
-    private Dictionary<ThingDef, bool> discoveredMenuOptions = new Dictionary<ThingDef, bool>();
+    private Dictionary<BuildableDef, bool> discoveredMenuOptions = new Dictionary<BuildableDef, bool>();
 
     //TODO: Research For ALL!
     //public Dictionary<TResearchDef, bool> DiscoveredResearch = new Dictionary<TResearchDef, bool>();
@@ -17,7 +17,7 @@ public class DiscoveryTable : IExposable
     public bool this[IDiscoverable discovery] => this[discovery.DiscoveryDef];
     
     public Dictionary<DiscoveryDef, bool> Discoveries => discoveries;
-    public Dictionary<ThingDef, bool> DiscoveredMenuOptions => discoveredMenuOptions;
+    public Dictionary<BuildableDef, bool> DiscoveredMenuOptions => discoveredMenuOptions;
     
     public void ExposeData()
     {
@@ -26,12 +26,12 @@ public class DiscoveryTable : IExposable
     }
     
     //
-    public bool MenuOptionHasBeenSeen(ThingDef def)
+    public bool MenuOptionHasBeenSeen(BuildableDef def)
     {
         return DiscoveredMenuOptions.TryGetValue(def, out bool value) && value;
     }
 
-    public void DiscoverInMenu(ThingDef def)
+    public void DiscoverInMenu(BuildableDef def)
     {
         if (MenuOptionHasBeenSeen(def)) return;
         DiscoveredMenuOptions.Add(def, true);

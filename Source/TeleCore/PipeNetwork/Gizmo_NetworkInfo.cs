@@ -334,7 +334,7 @@ namespace TeleCore
                 ExtendoTabs.Add("Container Settings", delegate (Rect rect)
                 {
                     Widgets.DrawWindowBackground(rect);
-                    TWidgets.DrawNetworkValueReadout(rect, parentComp.Container);
+                    TWidgets.DrawValueContainerReadout(rect, parentComp.Container);
 
                     //Right Click Input
                     if (TWidgets.MouseClickIn(rect, 1) && DebugSettings.godMode)

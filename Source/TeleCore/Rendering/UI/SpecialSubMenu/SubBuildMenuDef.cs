@@ -9,16 +9,16 @@ public class SubBuildMenuDef : Def
     [Unsaved] 
     private DesignationTexturePack _textures;
     [Unsaved] 
-    private SubMenuAllowWorker _allowWorker;
+    private SubMenuVisibilityWorker _visWorker;
     
     //
     public List<SubMenuGroupDef> subMenus;
     public string superPackPath;
-    public Type allowedDefWorker = typeof(SubMenuAllowWorker);
+    public Type visWorker = typeof(SubMenuVisibilityWorker);
     
     //
     public DesignationTexturePack TexturePack => _textures;
-    public SubMenuAllowWorker AllowWorker => _allowWorker;
+    public SubMenuVisibilityWorker VisWorker => _visWorker;
     
     public override void PostLoad()
     {
@@ -26,7 +26,7 @@ public class SubBuildMenuDef : Def
         LongEventHandler.ExecuteWhenFinished(delegate
         {
             _textures ??= new DesignationTexturePack(superPackPath, this);
-            _allowWorker = (SubMenuAllowWorker) Activator.CreateInstance(allowedDefWorker);
+            _visWorker = (SubMenuVisibilityWorker) Activator.CreateInstance(visWorker);
         });
     }
 }

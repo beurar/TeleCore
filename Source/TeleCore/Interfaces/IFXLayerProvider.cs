@@ -100,8 +100,9 @@ namespace TeleCore
 
         /// <summary>
         /// Attaches a custom function to a layer, it is run before the layer is drawn.
+        /// Returns a bool which defines where the actual layer draw function should be run.
         /// </summary>
-        Action<RoutedDrawArgs> FX_GetDrawAction(FXLayerArgs args);
+        Func<RoutedDrawArgs, bool> FX_GetDrawFunc(FXLayerArgs args);
 
         /*
         #region Effecters

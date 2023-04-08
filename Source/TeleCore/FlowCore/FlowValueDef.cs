@@ -8,7 +8,7 @@ public class FlowValueDef : Def
 {
     public string labelShort;
     public string valueUnit;
-    public Color valueColor;
+    public Color valueColor = Color.white;
 
     public bool sharesCapacity;
     
@@ -20,7 +20,7 @@ public class FlowValueDef : Def
     
     //Runtime
     public float FlowRate => 1f / viscosity;
-
+    
     public override IEnumerable<string> ConfigErrors()
     {
         foreach (var error in base.ConfigErrors())
@@ -41,7 +41,8 @@ public class FlowValueDef : Def
         {
             labelShort = label;
         }
-
+        
+        //
         collectionDef?.Notify_ResolvedFlowValueDef(this);
     }
 }

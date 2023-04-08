@@ -33,7 +33,7 @@ public class FXPawn : Pawn, IFXLayerProvider, IFXEffecterProvider
     public virtual float? FX_GetAnimationSpeedFactor(FXLayerArgs args) => null;
     public virtual Color? FX_GetColor(FXLayerArgs args) => null;
     public virtual Vector3? FX_GetDrawPosition(FXLayerArgs args) => null;
-    public virtual Action<RoutedDrawArgs> FX_GetDrawAction(FXLayerArgs args) => null!;
+    public virtual Func<RoutedDrawArgs, bool> FX_GetDrawFunc(FXLayerArgs args) => null!;
 
     //Effecters
     public virtual bool? FX_ShouldThrowEffects(FXEffecterArgs args) => true;

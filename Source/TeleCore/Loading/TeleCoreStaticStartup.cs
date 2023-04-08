@@ -77,11 +77,11 @@ namespace TeleCore
                 //
                 DefExtensionCache.TryRegister(def);
 
-                if (isThing)
+                if (isBuildable)
                 {
-                    if (tDef.HasSubMenuExtension(out var extension))
+                    if (bDef.HasSubMenuExtension(out var extension))
                     {
-                        SubMenuThingDefList.Add(tDef, extension);
+                        SubMenuThingDefList.Add(bDef, extension);
                     }
                 }
 

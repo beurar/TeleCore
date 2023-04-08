@@ -81,7 +81,7 @@ namespace TeleCore
             return parent.DrawPos;
         }
         
-        public override Action<RoutedDrawArgs> FX_GetDrawAction(FXLayerArgs args) => null!;
+        public override Func<RoutedDrawArgs, bool> FX_GetDrawFunc(FXLayerArgs args) => null!;
 
         public override bool? FX_ShouldThrowEffects(FXEffecterArgs args)
         {
