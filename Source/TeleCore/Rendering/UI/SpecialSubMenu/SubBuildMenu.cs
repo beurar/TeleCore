@@ -322,7 +322,9 @@ namespace TeleCore
                     SubMenuThingDefList.Discover_ConstructionOption(def);
                 }
 
-                mouseOverGizmo = def.SubMenuExtension().isDevOption ? GenData.GetDesignatorFor<Designator_BuildGodMode>(def) : GenData.GetDesignatorFor<Designator_Build>(def);
+                var extension = def.SubMenuExtension();
+                var thisOrGroupDevOption = extension.isDevOption || extension.groupDef.isDevGroup || extension.category.isDevCategory;
+                mouseOverGizmo = thisOrGroupDevOption ? GenData.GetDesignatorFor<Designator_BuildGodMode>(def) : GenData.GetDesignatorFor<Designator_Build>(def);
                 Text.Anchor = TextAnchor.UpperCenter;
                 Widgets.Label(rect, def.LabelCap);
                 Text.Anchor = 0;

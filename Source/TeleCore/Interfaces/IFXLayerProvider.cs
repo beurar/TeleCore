@@ -1,6 +1,8 @@
 ﻿using System;
+using HarmonyLib;
 using Verse;
 using RimWorld;
+using TeleCore.Data.Events;
 using UnityEngine;
 
 namespace TeleCore
@@ -58,11 +60,16 @@ namespace TeleCore
         /// <summary>
         /// Allows you to hook into the effecter logic, and handle custom logic whenever a tagged effect is spawned.
         /// </summary>
-        void FX_OnEffectSpawned(FXEffecterSpawnedEffectEventArgs args);
+        void FX_OnEffectSpawned(FXEffecterSpawnedEventArgs args);
     }
     
     public interface IFXLayerProvider : IFXBase
     {
+        /// <summary>
+        /// Sets the index of the graphic to choose for Graphic_Selectable layers.
+        /// </summary>
+        int? FX_SelectedGraphicIndex(FXLayerArgs args);
+        
         /// <summary>
         /// Overrides whether a layer at the same index of that value is rendered or not.
         /// </summary>

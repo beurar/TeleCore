@@ -1,7 +1,7 @@
 ﻿using System;
 using Verse;
 
-namespace TeleCore;
+namespace TeleCore.Data.Events;
 
 public class MovedEventArgs : EventArgs
 {

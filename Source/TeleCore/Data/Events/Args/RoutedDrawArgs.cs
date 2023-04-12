@@ -1,7 +1,7 @@
 ﻿using UnityEngine;
 using Verse;
 
-namespace TeleCore;
+namespace TeleCore.Data.Events;
 
 public struct RoutedDrawArgs
 {

@@ -1,4 +1,5 @@
-﻿using TeleCore.Static;
+﻿using TeleCore;
+using TeleCore.Static;
 using UnityEngine;
 using Verse;
 

@@ -1,5 +1,5 @@
 ﻿using System.Collections.Generic;
-using TeleCore.Events;
+using TeleCore.Data.Events;
 using Verse;
 
 namespace TeleCore

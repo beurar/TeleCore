@@ -28,4 +28,9 @@ internal static class TranslationUtil
     {
         public static readonly string PortableContainer = "TELE.PortableContainer.Title".Translate();
     }
+
+    internal static class Hediffs
+    {
+        public static readonly string ExplodedHediffRuptured = "TELE.Hediffs.Comps.ExplodedHediffRuptured".Translate();
+    } 
 }

@@ -1,6 +1,6 @@
 ﻿using Verse;
 
-namespace TeleCore.DefExtensions;
+namespace TeleCore;
 
 public class GraphicDataExtension : DefModExtension
 {

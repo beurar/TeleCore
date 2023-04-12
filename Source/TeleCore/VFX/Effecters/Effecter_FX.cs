@@ -1,4 +1,5 @@
-﻿using Verse;
+﻿using TeleCore.Data.Events;
+using Verse;
 
 namespace TeleCore;
 
@@ -15,8 +16,8 @@ public class Effecter_FX : Effecter
     {
     }
 
-    internal void SpawnedEffect(FXEffecterSpawnedEffectEventArgs spawnedEffectEventArgs)
+    internal void SpawnedEffect(FXEffecterSpawnedEventArgs spawnedEventArgs)
     {
-        fxComp?.OnEffectSpawned(spawnedEffectEventArgs);
+        fxComp?.OnEffectSpawned(spawnedEventArgs);
     }
 }

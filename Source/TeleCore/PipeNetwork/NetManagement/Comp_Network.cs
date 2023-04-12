@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using RimWorld;
+using TeleCore.Data.Events;
 using UnityEngine;
 using Verse;
 
@@ -88,7 +89,7 @@ namespace TeleCore
             return base.FX_ShouldThrowEffects(args);
         }
 
-        public override void FX_OnEffectSpawned(FXEffecterSpawnedEffectEventArgs spawnedEffectEventArgs)
+        public override void FX_OnEffectSpawned(FXEffecterSpawnedEventArgs spawnedEventArgs)
         {
         }
         

@@ -1,6 +1,7 @@
 ﻿using System;
 using RimWorld;
-using TeleCore.Events;
+using TeleCore.Data.Events;
+using TeleCore.Loading;
 using UnityEngine;
 using Verse;
 using Verse.AI;
@@ -14,13 +15,11 @@ public class GenericPathFollower : IExposable
     private const int MinCostWalk = 50;
     
     //
-    private Thing curThing;
     public PawnPath curPath;
     private LocalTargetInfo destination;
     private PathEndMode peMode;
     private TraverseMode traverseMode;
-    
-    
+
     //
     private bool moving;
 
@@ -38,13 +37,14 @@ public class GenericPathFollower : IExposable
     public event MovedEventHandler OnMoved;
     
     //
-    public Map Map => curThing.Map;
+    public Thing Thing { get; }
+    public Map Map => Thing.Map;
 
     public LocalTargetInfo Destination => destination;
 
     public GenericPathFollower(Thing forThing)
     {
-	    curThing = forThing;
+	    Thing = forThing;
     }
 
     public void ExposeData()
@@ -61,7 +61,7 @@ public class GenericPathFollower : IExposable
     
     #region States
 
-    public bool AtDestinationPosition => TouchPathEndModeUtility.IsAdjacentOrInsideAndAllowedToTouch(curThing.Position, destination, Map.pathing.normal);
+    public bool AtDestinationPosition => TouchPathEndModeUtility.IsAdjacentOrInsideAndAllowedToTouch(Thing.Position, destination, Map.pathing.normal);
     
     public bool Moving => moving;
     
@@ -84,7 +84,7 @@ public class GenericPathFollower : IExposable
 		    return 1f - (nextCellCostLeft / nextCellCostTotal);
 	    }
     }
-
+    
     #endregion
     
     public void StartPath(LocalTargetInfo dest, PathEndMode peMode, TraverseMode traverseMode)
@@ -98,16 +98,16 @@ public class GenericPathFollower : IExposable
 	    
 	    if (dest.HasThing && dest.ThingDestroyed)
 	    {
-		    TLog.Error($"{curThing} pathing to destroyed thing {dest.Thing}");
+		    TLog.Error($"{Thing} pathing to destroyed thing {dest.Thing}");
 		    PatherFailed();
 		    return;
 	    }
 
-	    if (!ThingCanOccupy(curThing.Position) && !TryRecoverFromUnwalkablePosition()) return;
+	    if (!ThingCanOccupy(Thing.Position) && !TryRecoverFromUnwalkablePosition()) return;
 
 	    if (moving && curPath != null && destination == dest && this.peMode == peMode) return;
 
-	    if (!curThing.Map.reachability.CanReach(curThing.Position, dest, peMode, traverseMode))
+	    if (!Thing.Map.reachability.CanReach(Thing.Position, dest, peMode, traverseMode))
 	    {
 		    PatherFailed();
 		    return;
@@ -163,7 +163,7 @@ public class GenericPathFollower : IExposable
 	    if (nextCellCostLeft > 0f)
 	    {
 		    nextCellCostLeft -= CostToPayThisTick();
-		    OnMoved?.Invoke(this, new MovedEventArgs(curThing, nextCell, nextCellCostLeft, nextCellCostTotal));
+		    OnMoved?.Invoke(this, new MovedEventArgs(Thing, nextCell, nextCellCostLeft, nextCellCostTotal));
 		    return;
 	    }
 
@@ -175,61 +175,74 @@ public class GenericPathFollower : IExposable
     {
 	    if (curPath.NodesLeftCount <= 1)
 	    {
-		    TLog.Error($"{curThing} at {curThing.Position} ran out of path nodes while pathing to {destination}.");
+		    TLog.Error($"{Thing} at {Thing.Position} ran out of path nodes while pathing to {destination}.");
 		    PatherFailed();
 		    return;
 	    }
 
 	    nextCell = curPath.ConsumeNextNode();
-	    if (!nextCell.Walkable(Map)) Log.Error($"{curThing} entering {nextCell} which is unwalkable.");
-	    int num = CostToMoveIntoCell(curThing, nextCell);
-	    this.nextCellCostTotal = (float)num;
-	    this.nextCellCostLeft = (float)num;
+	    if (!nextCell.Walkable(Map)) Log.Error($"{Thing} entering {nextCell} which is unwalkable.");
+	    int num = CostToMoveIntoCell(Thing, nextCell);
+	    nextCellCostTotal = num;
+	    nextCellCostLeft = num;
     }
     
     private void TryEnterNextPathCell()
     {
-	    Building building = this.BuildingBlockingNextPathCell();
+	    // Check if there is a building blocking the next path cell
+	    Building building = BuildingBlockingNextPathCell();
 	    if (building != null)
 	    {
+		    // If there is a building, check if it has a free passage (represented by a Building_Door object)
 		    Building_Door building_Door = building as Building_Door;
 		    if (building_Door is not {FreePassage: true})
 		    {
+			    // If the building doesn't have a free passage, mark the pather as failed and exit the method
 			    PatherFailed();
 			    return;
 		    }
 	    }
 
+	    // Check if there is a door in the next cell to wait for or manually open
 	    Building_Door building_Door2 = NextCellDoorToWaitForOrManuallyOpen();
 	    if (building_Door2 != null)
 	    {
+		    // If there is a door, exit the method and wait for it to open
 		    return;
 	    }
 
-	    lastCell = curThing.Position;
-	    curThing.Position = nextCell;
-	    
-	    if (curThing.def.BaseMass > 5f) 
-		    curThing.Map.snowGrid.AddDepth(curThing.Position, -0.001f);
+	    // Save the current position as the last cell and move the thing (represented by curThing) to the next cell
+	    lastCell = Thing.Position;
+	    Thing.Position = nextCell;
 
+	    // If the thing has a base mass greater than 5f, decrease the snow depth at its new position
+	    if (Thing.def.BaseMass > 5f) 
+		    Thing.Map.snowGrid.AddDepth(Thing.Position, -0.001f);
+
+	    // If a new path is needed and cannot be set, exit the method
 	    if (NeedNewPath() && !TrySetNewPath())
 	    {
 		    return;
 	    }
 
+	    // If the thing has arrived at its destination position, mark the pather as arrived and exit the method
 	    if (AtDestinationPosition)
 	    {
 		    PatherArrived();
 		    return;
 	    }
 
-	    this.SetupMoveIntoNextCell();
+	    // Set up the move into the next cell and exit the method
+	    SetupMoveIntoNextCell();
     }
     
     private PawnPath GenerateNewPath()
     {
+	    PathFinderPatches.UsedGenericPather = this;
 	    lastPathedTargetPosition = destination.Cell;
-	    return AIUtils.TryGetPath(curThing.Position, destination, Map, traverseMode, peMode).Path;
+	    var pathResult = AIUtils.TryGetPath(Thing.Position, destination, Map, traverseMode, peMode).Path;
+	    PathFinderPatches.UsedGenericPather = null;
+	    return pathResult;
     }
 
     private bool TrySetNewPath()
@@ -253,14 +266,14 @@ public class GenericPathFollower : IExposable
 		    return true;
 	    }
 
-	    if (destination.HasThing && destination.Thing.Map != this.curThing.Map)
+	    if (destination.HasThing && destination.Thing.Map != this.Thing.Map)
 	    {
 		    return true;
 	    }
 
-	    if ((curThing.Position.InHorDistOf(curPath.LastNode, 15f) ||
-	         curThing.Position.InHorDistOf(destination.Cell, 15f)) &&
-	        !curThing.Map.reachability.CanReach(curPath.LastNode, destination, peMode, traverseMode))
+	    if ((Thing.Position.InHorDistOf(curPath.LastNode, 15f) ||
+	         Thing.Position.InHorDistOf(destination.Cell, 15f)) &&
+	        !Thing.Map.reachability.CanReach(curPath.LastNode, destination, peMode, traverseMode))
 	    {
 		    return true;
 	    }
@@ -269,7 +282,7 @@ public class GenericPathFollower : IExposable
 
 	    if (lastPathedTargetPosition != destination.Cell)
 	    {
-		    float num = (curThing.Position - destination.Cell).LengthHorizontalSquared;
+		    float num = (Thing.Position - destination.Cell).LengthHorizontalSquared;
 		    var num2 = num switch
 		    {
 			    > 900f => 10f,
@@ -282,7 +295,7 @@ public class GenericPathFollower : IExposable
 		    if ((lastPathedTargetPosition - destination.Cell).LengthHorizontalSquared > num2 * num2) return true;
 	    }
 	    
-	    PathingContext pc = this.curThing.Map.pathing.normal;
+	    PathingContext pc = this.Thing.Map.pathing.normal;
 	    IntVec3 intVec = IntVec3.Invalid;
 	    int num3 = 0;
 	    while (num3 < 20 && num3 < this.curPath.NodesLeftCount)
@@ -336,7 +349,7 @@ public class GenericPathFollower : IExposable
 	    else
 	    {
 		    num3 = 1f / num2;
-		    if (curThing.Spawned && !Map.roofGrid.Roofed(curThing.Position))
+		    if (Thing.Spawned && !Map.roofGrid.Roofed(Thing.Position))
 		    {
 			    num3 /= Map.weatherManager.CurMoveSpeedMultiplier;
 		    }
@@ -359,7 +372,7 @@ public class GenericPathFollower : IExposable
 	    {
 		    num = TicksPerMove(true);
 	    }
-	    num += Map.pathing.normal.pathGrid.CalculatedCostAt(c, false, curThing.Position);
+	    num += Map.pathing.normal.pathGrid.CalculatedCostAt(c, false, Thing.Position);
 	    if (num > MaxMoveTicks)
 	    {
 		    num = MaxMoveTicks;
@@ -370,7 +383,7 @@ public class GenericPathFollower : IExposable
     //TODO: Irrelevant for non-pawn pathed things
     public Building_Door NextCellDoorToWaitForOrManuallyOpen()
     {
-	    Building_Door building_Door = this.curThing.Map.thingGrid.ThingAt<Building_Door>(this.nextCell);
+	    Building_Door building_Door = this.Thing.Map.thingGrid.ThingAt<Building_Door>(this.nextCell);
 	    if (building_Door is {SlowsPawns: true} && (!building_Door.Open || building_Door.TicksTillFullyOpened > 0) /*&& building_Door.PawnCanOpen(this.pawn)*/)
 	    {
 		    return building_Door;
@@ -380,7 +393,7 @@ public class GenericPathFollower : IExposable
     
     public Building BuildingBlockingNextPathCell()
     {
-	    var edifice = nextCell.GetEdifice(curThing.Map);
+	    var edifice = nextCell.GetEdifice(Thing.Map);
 	    if (edifice != null && (edifice.def.passability == Traversability.Impassable))
 	    {
 		    return edifice;
@@ -394,7 +407,7 @@ public class GenericPathFollower : IExposable
 	    {
 		    return false;
 	    }
-	    Building edifice = c.GetEdifice(curThing.Map);
+	    Building edifice = c.GetEdifice(Thing.Map);
 	    Building_Door building_Door = edifice as Building_Door;
 	    return building_Door == null || building_Door.Open; //building_Door.PawnCanOpen(this.pawn) 
     }
@@ -405,17 +418,17 @@ public class GenericPathFollower : IExposable
 	    var i = 0;
 	    while (i < GenRadial.RadialPattern.Length)
 	    {
-		    var pos = curThing.Position;
+		    var pos = Thing.Position;
 		    var intVec = pos + GenRadial.RadialPattern[i];
 		    if (ThingCanOccupy(intVec))
 		    {
 			    if (intVec == pos) return true;
 			    if (error)
 			    {
-				    TLog.Warning($"{curThing} on unwalkable cell {curThing.Position}. Teleporting to {intVec}");
+				    TLog.Warning($"{Thing} on unwalkable cell {Thing.Position}. Teleporting to {intVec}");
 			    }
 
-			    curThing.Position = intVec;
+			    Thing.Position = intVec;
 			    //this.curThing.Notify_Teleported(true, false);
 			    flag = true;
 			    break;
@@ -426,8 +439,8 @@ public class GenericPathFollower : IExposable
 
 	    if (!flag)
 	    {
-		    curThing.Destroy();
-		    TLog.Error($"{curThing.ToStringSafe()} on unwalkable cell {curThing.Position}. Could not find walkable position nearby. Destroyed.");
+		    Thing.Destroy();
+		    TLog.Error($"{Thing.ToStringSafe()} on unwalkable cell {Thing.Position}. Could not find walkable position nearby. Destroyed.");
 	    }
 
 	    return flag;
@@ -451,7 +464,7 @@ public class GenericPathFollower : IExposable
 
     public void ResetToCurrentPosition()
     {
-	    nextCell = curThing.Position;
+	    nextCell = Thing.Position;
 	    nextCellCostLeft = 0f;
 	    nextCellCostTotal = 1f;
     }
@@ -462,7 +475,7 @@ public class GenericPathFollower : IExposable
 		    curPath.ReleaseToPool();
 	    curPath = null;
 	    moving = false;
-	    nextCell = curThing.Position;
+	    nextCell = Thing.Position;
     }
     
     //
@@ -484,9 +497,9 @@ public class GenericPathFollower : IExposable
 			    b.y = y;
 			    GenDraw.DrawLineBetween(a, b);
 		    }
-		    if (curThing != null)
+		    if (Thing != null)
 		    {
-			    Vector3 drawPos = curThing.DrawPos;
+			    Vector3 drawPos = Thing.DrawPos;
 			    drawPos.y = y;
 			    Vector3 b2 = curPath.Peek(0).ToVector3Shifted();
 			    b2.y = y;

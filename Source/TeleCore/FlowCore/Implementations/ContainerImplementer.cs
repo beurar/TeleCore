@@ -1,4 +1,6 @@
-﻿namespace TeleCore.FlowCore;
+﻿using TeleCore;
+
+namespace TeleCore.FlowCore;
 
 //Implementer - glues both the holder and the container together and exposes a Container Property
 public interface IContainerImplementer<TValue, THolder, out TContainer>

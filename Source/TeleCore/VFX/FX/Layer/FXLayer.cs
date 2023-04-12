@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using TeleCore.Data.Events;
 using UnityEngine;
 using Verse;
 
@@ -171,20 +172,14 @@ namespace TeleCore
             {
                 if (_graphicInt == null)
                 {
-                    if (parentInfo.ParentThing.Graphic is Graphic_Random random)
-                    {
-                        var path = this.data.graphicData.texPath;
-                        var parentName = random.SubGraphicFor(parentInfo.ParentThing).path.Split('/').Last();
-                        var lastPart = path.Split('/').Last();
-                        path += "/" + lastPart;
-                        path += "_" + parentName.Split('_').Last();
-                        _graphicInt = GraphicDatabase.Get(typeof(Graphic_Single), path, data.graphicData.shaderType.Shader, data.graphicData.drawSize, data.graphicData.color, data.graphicData.colorTwo);
-                    }
-                    else if (data.graphicData != null)
+                    if (data.graphicData != null)
                     {
                         _graphicInt = data.graphicData.Graphic;
+                        if (_graphicInt is Graphic_Selectable selectable)
+                        {
+                            _graphicInt = selectable.AtIndex(CompFX.GetSelectedIndex(Args));
+                        }
                     }
-
                     if (!data.textureParams.NullOrEmpty())
                     {
                         foreach (var param in data.textureParams)
@@ -197,9 +192,9 @@ namespace TeleCore
             }
         }
 
-        internal static void GetDrawInfo(Graphic g, ref Vector3 inoutPos, Rot4 rot, FXDefExtension exData, ThingDef def, out Vector2 drawSize, out Material drawMat, out Mesh drawMesh, out float extraRotation, out bool flipUV)
+        internal static void GetDrawInfo(Graphic g, Thing thing, ThingDef def, ref Vector3 inoutPos, Rot4 rot, FXDefExtension exData, out Vector2 drawSize, out Material drawMat, out Mesh drawMesh, out float extraRotation, out bool flipUV)
         {
-            drawMat = g.MatAt(rot);
+            drawMat = g.MatAt(rot, thing);
 
             //DrawPos
             if ((exData?.alignToBottom ?? false) && def != null)
@@ -251,11 +246,8 @@ namespace TeleCore
         {
             //
             var drawPos = drawLocOverride ?? DrawPos;
-            GetDrawInfo(Graphic, ref drawPos, ParentRot4, parentInfo.Extension, parentInfo.ParentThing.def, out drawSize, out _drawMat, out drawMesh, out float extraRotation, out flipUV);
+            GetDrawInfo(Graphic, parentInfo.ParentThing, parentInfo.ParentThing.def, ref drawPos, ParentRot4, parentInfo.Extension, out drawSize, out _drawMat, out drawMesh, out float extraRotation, out flipUV);
 
-            if(CompFX.IgnoreDrawOff)
-                drawPos += data.drawOffset;
-            
             //Colors
             var graphicColor = data.graphicData.color;
             if (ColorOverride != Color.white)
@@ -300,11 +292,8 @@ namespace TeleCore
 
         public void Print(SectionLayer layer)
         {
-            //
             var drawPos = DrawPos;
-            GetDrawInfo(Graphic, ref drawPos, ParentRot4, parentInfo.Extension, parentInfo.ParentThing.def, out drawSize, out _drawMat, out drawMesh, out float extraRotation, out flipUV);
-            if (!CompFX.IgnoreDrawOff)
-                drawPos += data.drawOffset;
+            GetDrawInfo(Graphic, parentInfo.ParentThing, parentInfo.ParentThing.def, ref drawPos, ParentRot4, parentInfo.Extension, out drawSize, out _drawMat, out drawMesh, out float extraRotation, out flipUV);
             Printer_Plane.PrintPlane(layer, new Vector3(drawPos.x, _altitude, drawPos.z), drawSize, _drawMat, TrueRotation, flipUV);
         }
     }

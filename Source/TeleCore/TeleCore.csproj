@@ -27,7 +27,7 @@
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <Version>1.2.5</Version>
     <SignAssembly>False</SignAssembly>
-    <PackageVersion>1.8.1.8</PackageVersion>
+    <PackageVersion>1.8.2.5</PackageVersion>
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
@@ -104,6 +104,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Folder Include="Data\Map" />
     <Folder Include="Rendering\Tools\DefEditor" />
     <Folder Include="Rendering\Tools\ModuleVisualizer\ModuleNodes" />
     <Folder Include="VFX\Particles" />

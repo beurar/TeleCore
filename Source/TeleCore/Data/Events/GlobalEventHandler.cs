@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace TeleCore.Static;
+namespace TeleCore.Data.Events;
 
 public static class GlobalEventHandler
 {
@@ -8,12 +8,18 @@ public static class GlobalEventHandler
     public static event ThingDespawnedEvent ThingDespawning;
     public static event ThingStateChangedEvent ThingSentSignal;
     public static event PawnHediffChangedEvent PawnHediffChanged;
+    public static event TerrainChangedEvent TerrainChanged;
+    public static event CellChangedEvent CellChanged;
+
+    
+    #region Things
     
     internal static void OnThingSpawned(ThingStateChangedEventArgs args)
     {
         try
         {
             ThingSpawned?.Invoke(args);
+            CellChanged?.Invoke(new CellChangedEventArgs(args));
         }
         catch (Exception ex)
         {
@@ -26,6 +32,7 @@ public static class GlobalEventHandler
         try
         {
             ThingDespawning?.Invoke(args);
+            CellChanged?.Invoke(new CellChangedEventArgs(args));
         }
         catch (Exception ex)
         {
@@ -38,6 +45,7 @@ public static class GlobalEventHandler
         try
         {
             ThingSentSignal?.Invoke(args);
+            CellChanged?.Invoke(new CellChangedEventArgs(args));
         }
         catch (Exception ex)
         {
@@ -45,6 +53,26 @@ public static class GlobalEventHandler
         }
     }
 
+    #endregion
+
+    #region Terrain
+
+    public static void OnTerrainChanged(TerrainChangedEventArgs args)
+    {
+        try
+        {
+            TerrainChanged?.Invoke(args);
+            CellChanged?.Invoke(new CellChangedEventArgs(args));
+        }
+        catch (Exception ex)
+        {
+            TLog.Error($"Error trying to register terrain change: {args.PreviousTerrain} -> {args.NewTerrain}\n{ex.Message}");
+        }
+    }
+
+    #endregion
+    
+    //
     internal static void OnPawnHediffChanged(PawnHediffChangedEventArgs args)
     {
         try
@@ -55,5 +83,13 @@ public static class GlobalEventHandler
         {
             TLog.Error($"Error trying to register hediff change on pawn: {args.Pawn}\n{ex.Message}");
         }
+    }
+
+    internal static void ClearData()
+    {
+        ThingSpawned = null;
+        ThingDespawning = null;
+        ThingSentSignal = null;
+        PawnHediffChanged = null;
     }
 }

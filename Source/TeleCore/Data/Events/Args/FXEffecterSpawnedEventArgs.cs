@@ -1,8 +1,8 @@
 ﻿using Verse;
 
-namespace TeleCore;
+namespace TeleCore.Data.Events;
 
-public struct FXEffecterSpawnedEffectEventArgs
+public struct FXEffecterSpawnedEventArgs
 {
     public string effecterTag;
     public FleckDef fleckDef;

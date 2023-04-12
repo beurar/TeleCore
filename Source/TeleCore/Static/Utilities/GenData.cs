@@ -5,6 +5,7 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Xml;
 using RimWorld;
+using TeleCore.Data.Events;
 using UnityEngine;
 using Verse;
 

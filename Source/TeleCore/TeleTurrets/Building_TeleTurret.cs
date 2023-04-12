@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using Multiplayer.API;
 using RimWorld;
+using TeleCore.Data.Events;
 using UnityEngine;
 using Verse;
 using Verse.AI;
@@ -85,6 +86,7 @@ namespace TeleCore
         }
         public virtual float? FX_GetRotationSpeedOverride(FXLayerArgs args) => null;
         public virtual float? FX_GetAnimationSpeedFactor(FXLayerArgs args) => null;
+        public virtual int? FX_SelectedGraphicIndex(FXLayerArgs args) => null;
         public virtual Color? FX_GetColor(FXLayerArgs args) => null;
         public virtual Vector3? FX_GetDrawPosition(FXLayerArgs args) => null;
         public virtual Func<RoutedDrawArgs, bool> FX_GetDrawFunc(FXLayerArgs args) => null!;
@@ -96,7 +98,7 @@ namespace TeleCore
 
         public virtual TargetInfo FX_Effecter_TargetBOverride(FXEffecterArgs args) => null;
 
-        public virtual void FX_OnEffectSpawned(FXEffecterSpawnedEffectEventArgs args)
+        public virtual void FX_OnEffectSpawned(FXEffecterSpawnedEventArgs args)
         {
             
         }

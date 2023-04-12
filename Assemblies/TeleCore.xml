@@ -127,24 +127,6 @@
             Consumes a fixed given value.
             </summary>
         </member>
-        <member name="T:TeleCore.Memory.GarbageMan">
-            <summary>
-            Calls the GC after being used.
-            Use in any method with a using statement to ensure garbage collection when finished.
-            </summary>
-        </member>
-        <member name="T:TeleCore.ScribeList`1">
-            <summary>
-            A wrapper to expose generic lists as values. I.e: A <see cref="T:System.Collections.Generic.List`1"/> of <see cref="T:TeleCore.ScribeList`1"/>
-            </summary>
-            <typeparam name="T"></typeparam>
-        </member>
-        <member name="T:TeleCore.ThingValue">
-            <summary>
-            Define a Def with various values for dynamic and versatile uses.
-            XML Notation: <defName>value, chance, QualityCategory, stuffDef</defName>
-            </summary>
-        </member>
         <member name="T:TeleCore.DefFloatRef`1">
             <summary>
             Used to load a <see cref="T:TeleCore.DefFloat`1"/> struct via xml.
@@ -164,77 +146,100 @@
             </summary>
             <typeparam name="TDef">The <see cref="T:Verse.Def"/> of the stack.</typeparam>
         </member>
+        <member name="T:TeleCore.PlaySettingsWorker">
+            <summary>
+            Provides an entry point to add a custom PlaySettings Option
+            </summary>
+        </member>
+        <member name="T:TeleCore.Memory.GarbageMan">
+            <summary>
+            Calls the GC after being used.
+            Use in any method with a using statement to ensure garbage collection when finished.
+            </summary>
+        </member>
+        <member name="T:TeleCore.ScribeList`1">
+            <summary>
+            A wrapper to expose generic lists as values. I.e: A <see cref="T:System.Collections.Generic.List`1"/> of <see cref="T:TeleCore.ScribeList`1"/>
+            </summary>
+            <typeparam name="T"></typeparam>
+        </member>
+        <member name="T:TeleCore.ThingValue">
+            <summary>
+            Define a Def with various values for dynamic and versatile uses.
+            XML Notation: <defName>value, chance, QualityCategory, stuffDef</defName>
+            </summary>
+        </member>
         <member name="T:TeleCore.IFXBase">
             <summary>
             <para>Implementing this on a <see cref="T:Verse.ThingComp"/> or <see cref="T:Verse.Thing"/> allows you to affect the layers in a <see cref="T:TeleCore.CompFX"/> attached to the same Thing instance.                                      </para>
             <para>You can implement this interface on multiple parts of a Thing instance, including the base <see cref="F:Verse.ThingDef.thingClass"/> and the <see cref="F:Verse.ThingDef.comps"/>.                                        </para>
-            <para>If multiple implementations are active, the order of priority for selecting an interface for a layer via <see cref="!:FX_AffectsLayerAt"/> or for <see cref="!:IsMain"/> is done by <see cref="!:Priority"/>.   </para>
+            <para>If multiple implementations are active, the order of priority for selecting an interface for a layer via <see cref="!:FX_AffectsLayerAt"/> or for <see cref="!:IsMain"/> is done by <see cref="T:HarmonyLib.Priority"/>.   </para>
             </summary>
         </member>
-        <member name="M:TeleCore.IFXBase.FX_ProvidesForLayer(TeleCore.FXArgs)">
+        <member name="M:TeleCore.IFXBase.FX_ProvidesForLayer(TeleCore.Data.Events.FXArgs)">
             <summary>
             
             </summary>
         </member>
-        <member name="M:TeleCore.IFXBase.FX_PowerProviderFor(TeleCore.FXArgs)">
+        <member name="M:TeleCore.IFXBase.FX_PowerProviderFor(TeleCore.Data.Events.FXArgs)">
             <summary>
             Allows you to override the default power getter with a custom reference, otherwise it defaults to the parent Thing's PowerComp (if it exists)
             </summary>
         </member>
-        <member name="M:TeleCore.IFXEffecterProvider.FX_ShouldThrowEffects(TeleCore.FXEffecterArgs)">
+        <member name="M:TeleCore.IFXEffecterProvider.FX_ShouldThrowEffects(TeleCore.Data.Events.FXEffecterArgs)">
             <summary>
             Sets whether or not an attached Comp_FleckThrower should throw effects.
             </summary>
         </member>
-        <member name="M:TeleCore.IFXEffecterProvider.FX_OnEffectSpawned(TeleCore.FXEffecterSpawnedEffectEventArgs)">
+        <member name="M:TeleCore.IFXEffecterProvider.FX_OnEffectSpawned(TeleCore.Data.Events.FXEffecterSpawnedEventArgs)">
             <summary>
             Allows you to hook into the effecter logic, and handle custom logic whenever a tagged effect is spawned.
             </summary>
         </member>
-        <member name="M:TeleCore.IFXLayerProvider.FX_ShouldDraw(TeleCore.FXLayerArgs)">
+        <member name="M:TeleCore.IFXLayerProvider.FX_SelectedGraphicIndex(TeleCore.Data.Events.FXLayerArgs)">
+            <summary>
+            Sets the index of the graphic to choose for Graphic_Selectable layers.
+            </summary>
+        </member>
+        <member name="M:TeleCore.IFXLayerProvider.FX_ShouldDraw(TeleCore.Data.Events.FXLayerArgs)">
             <summary>
             Overrides whether a layer at the same index of that value is rendered or not.
             </summary>
         </member>
-        <member name="M:TeleCore.IFXLayerProvider.FX_GetOpacity(TeleCore.FXLayerArgs)">
+        <member name="M:TeleCore.IFXLayerProvider.FX_GetOpacity(TeleCore.Data.Events.FXLayerArgs)">
             <summary>
             Sets the opacity value of a layer at the same index as the value in the array.
             </summary>
         </member>
-        <member name="M:TeleCore.IFXLayerProvider.FX_GetRotation(TeleCore.FXLayerArgs)">
+        <member name="M:TeleCore.IFXLayerProvider.FX_GetRotation(TeleCore.Data.Events.FXLayerArgs)">
             <summary>
             Sets the rotation value of a layer at the same index as the value in the array.
             </summary>
         </member>
-        <member name="M:TeleCore.IFXLayerProvider.FX_GetRotationSpeedOverride(TeleCore.FXLayerArgs)">
+        <member name="M:TeleCore.IFXLayerProvider.FX_GetRotationSpeedOverride(TeleCore.Data.Events.FXLayerArgs)">
             <summary>
             
             </summary>
         </member>
-        <member name="M:TeleCore.IFXLayerProvider.FX_GetAnimationSpeedFactor(TeleCore.FXLayerArgs)">
+        <member name="M:TeleCore.IFXLayerProvider.FX_GetAnimationSpeedFactor(TeleCore.Data.Events.FXLayerArgs)">
             <summary>
             Sets the speed at which the layer processes dynamic images (rotating, blinking, moving)
             </summary>
         </member>
-        <member name="M:TeleCore.IFXLayerProvider.FX_GetColor(TeleCore.FXLayerArgs)">
+        <member name="M:TeleCore.IFXLayerProvider.FX_GetColor(TeleCore.Data.Events.FXLayerArgs)">
             <summary>
             Overrides the draw color of the layer at the index of the value.
             </summary>
         </member>
-        <member name="M:TeleCore.IFXLayerProvider.FX_GetDrawPosition(TeleCore.FXLayerArgs)">
+        <member name="M:TeleCore.IFXLayerProvider.FX_GetDrawPosition(TeleCore.Data.Events.FXLayerArgs)">
             <summary>
             Sets the exact render position of the layer at the index of that value.
             </summary>
         </member>
-        <member name="M:TeleCore.IFXLayerProvider.FX_GetDrawFunc(TeleCore.FXLayerArgs)">
+        <member name="M:TeleCore.IFXLayerProvider.FX_GetDrawFunc(TeleCore.Data.Events.FXLayerArgs)">
             <summary>
             Attaches a custom function to a layer, it is run before the layer is drawn.
             Returns a bool which defines where the actual layer draw function should be run.
-            </summary>
-        </member>
-        <member name="T:TeleCore.PlaySettingsWorker">
-            <summary>
-            Provides an entry point to add a custom PlaySettings Option
             </summary>
         </member>
         <member name="T:TeleCore.RegionPatches">
@@ -282,6 +287,11 @@
         <member name="M:TeleCore.MapInformation.TeleUpdate">
             <summary>
             This update is called from the TeleRoot Monobehaviour, offloading rendering from the RW Root.
+            </summary>
+        </member>
+        <member name="T:TeleCore.PathHelperInfo">
+            <summary>
+            Handles additional pathing data, such as avoid weights, walkable/wander cells and danger 
             </summary>
         </member>
         <member name="T:TeleCore.ThingTrackerMapInfo">

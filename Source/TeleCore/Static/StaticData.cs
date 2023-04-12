@@ -1,7 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
+using TeleCore;
+using TeleCore.Data.Events;
 using TeleCore.FlowCore;
+using TeleCore.Static;
 using UnityEngine.Profiling;
 using Verse;
 
@@ -109,6 +112,7 @@ namespace TeleCore
         internal static void Notify_ClearingMapAndWorld()
         {
             TFind.TickManager.ClearGameTickers();
+            GlobalEventHandler.ClearData();
         }
 
         internal static void Notify_NewTeleMapComp(MapComponent_TeleCore mapComp)

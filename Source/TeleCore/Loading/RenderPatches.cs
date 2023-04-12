@@ -142,7 +142,7 @@ namespace TeleCore
                 }
                 Graphic graphic = GhostUtility.GhostGraphicFor(baseGraphic, thingDef, ghostCol);
                 Vector3 loc = GenThing.TrueCenter(center, rot, thingDef.Size, drawAltitude.AltitudeFor());
-                TDrawing.Draw(graphic, loc, rot, null, thingDef, extension);
+                TDrawing.Draw(graphic, loc, rot, null, thingDef,null, extension);
 
                 foreach (var t in thingDef.comps)
                 {

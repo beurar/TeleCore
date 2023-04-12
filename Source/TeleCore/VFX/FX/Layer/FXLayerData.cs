@@ -34,7 +34,6 @@ namespace TeleCore
         //Texture UV Data
         public Rect texCoords = new Rect(0, 0, 1, 1);
         public Vector2 textureSize = Vector2.one;
-        public Vector3 drawOffset = Vector3.zero;
         public Vector3? pivotOffset = null;
         public Vector3? pivotPixelOffset = null;
 
@@ -58,7 +57,7 @@ namespace TeleCore
                 return pivotOffset;
             }
         }
-
+        
         public void PostLoad()
         {
             if (graphicData != null)

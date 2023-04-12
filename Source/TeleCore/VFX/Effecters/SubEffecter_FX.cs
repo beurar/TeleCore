@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using TeleCore.Data.Events;
+using UnityEngine;
 using Verse;
 
 namespace TeleCore;
@@ -352,7 +353,7 @@ public class SubEffecter_FX : SubEffecter
 			//Try Notify Parent
 			if (Def?.eventTag != null)
 			{
-				((Effecter_FX) parent)?.SpawnedEffect(new FXEffecterSpawnedEffectEventArgs()
+				((Effecter_FX) parent)?.SpawnedEffect(new FXEffecterSpawnedEventArgs()
 				{
 					//Cant pass fleck on as there is no return value when creating
 					effecterTag = Def.eventTag,
@@ -403,7 +404,7 @@ public class SubEffecter_FX : SubEffecter
 			//Try Notify Parent
 			if (Def?.eventTag != null)
 			{
-				((Effecter_FX) parent)?.SpawnedEffect(new FXEffecterSpawnedEffectEventArgs()
+				((Effecter_FX) parent)?.SpawnedEffect(new FXEffecterSpawnedEventArgs()
 				{
 					effecterTag = Def.eventTag,
 					mote = sustainedMote,

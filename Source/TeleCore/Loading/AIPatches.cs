@@ -1,4 +1,9 @@
-﻿using HarmonyLib;
+﻿using System.Collections;
+using System.Collections.Generic;
+using System.Reflection;
+using System.Reflection.Emit;
+using HarmonyLib;
+using RimWorld;
 using Verse.AI;
 
 namespace TeleCore

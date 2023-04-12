@@ -1,7 +1,8 @@
 ﻿using System.Collections.Generic;
+using TeleCore.FlowCore;
 using Verse;
 
-namespace TeleCore.FlowCore;
+namespace TeleCore;
 
 public class FlowValueCollectionDef : Def
 {
