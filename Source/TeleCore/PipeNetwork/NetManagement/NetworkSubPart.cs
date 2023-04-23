@@ -146,7 +146,7 @@ namespace TeleCore
         {
             for (var c = 0; c < CellIO.OuterConnnectionCells.Length; c++)
             {
-                var connectionCell = CellIO.OuterConnnectionCells[c];
+                IntVec3 connectionCell = CellIO.OuterConnnectionCells[c];
                 List<Thing> thingList = connectionCell.GetThingList(Thing.Map);
                 for (int i = 0; i < thingList.Count; i++)
                 {
@@ -332,59 +332,13 @@ namespace TeleCore
                     }
                 }
             }
-
-            /*
-            if (RequesterMode == RequesterMode.Automatic)
-            {
-                if (Network.TryGetNodePath(this, NetworkRole.Storage))
-                {
-
-                }
-
-                //Resolve..
-                var maxVal = RequestedCapacityPercent * Container.Capacity;
-                foreach (var valType in Props.AllowedValuesByRole[NetworkRole.Requester])
-                {
-                    var valTypeValue = Container.ValueForType(valType) + Network.TotalValueFor(valType, NetworkRole.Storage);
-                    if (valTypeValue > 0)
-                    {
-                        var setValue = Mathf.Min(maxVal, valTypeValue);
-                        var tempVal = requestedTypes[valType];
-                        tempVal.Item2 = setValue;
-                        RequestedTypes[valType] = tempVal;
-                        maxVal = Mathf.Clamp(maxVal - setValue, 0, maxVal);
-                    }
-                }
-            }
-
-
-            if (Container.StoredPercent >= RequestedCapacityPercent) return;
-            foreach (var requestedType in RequestedTypes)
-            {
-                //If not requested, skip
-                if (!requestedType.Value.Item1) continue;
-                if (Container.ValueForType(requestedType.Key) < requestedType.Value.Item2)
-                {
-                    foreach (var component in Network.PartSet[NetworkRole.Storage])
-                    {
-                        var container = component.Container;
-                        if (container.Empty) continue;
-                        if (container.ValueForType(requestedType.Key) <= 0) continue;
-                        if (container.TryTransferTo(Container, requestedType.Key, 1))
-                        {
-                            Notify_ReceivedValue();
-                        }
-                    }
-                }
-            }
-            */
         }
 
         private void ClearForbiddenTypesSubTick()
         {
             if (Container.FillState == ContainerFillState.Empty) return;
             NetworkTransactionUtility.DoTransaction(new TransactionRequest(this,
-                NetworkRole.Storage, NetworkRole.Consumer,
+                NetworkRole.Storage, NetworkRole.Consumer|NetworkRole.Storage,
                 part => NetworkTransactionUtility.Actions.TransferToOtherPurge(this, part),
                 part => NetworkTransactionUtility.Validators.PartValidator_Sender(this, part,
                     ePart => FlowValueUtils.CanExchangeForbidden(Container, ePart.Container))));
@@ -639,23 +593,30 @@ namespace TeleCore
         public virtual string NetworkInspectString()
         {
             StringBuilder sb = new StringBuilder();
-            sb.AppendLine($"[{NetworkDef}]ID: {Network?.ID}");
-            sb.AppendLine($"Has Network: {Network != null}");
-            sb.AppendLine($"Network Valid: {Network?.IsValid}");
-            if (IsNetworkNode)
+            if (DebugSettings.godMode)
             {
-                sb.AppendLine("Is Node");
-            }
-            if (IsNetworkEdge)
-            {
-                sb.AppendLine("Is Edge");
-            }
-            if (IsJunction)
-            {
-                sb.AppendLine("Is Junction");
+                //TODO: Move to Debug ITab
+                sb.AppendLine($"[{NetworkDef}]ID: {Network?.ID}");
+                sb.AppendLine($"Has Network: {Network != null}");
+                sb.AppendLine($"Network Valid: {Network?.IsValid}");
+                if (IsNetworkNode)
+                {
+                    sb.AppendLine("Is Node");
+                }
+
+                if (IsNetworkEdge)
+                {
+                    sb.AppendLine("Is Edge");
+                }
+
+                if (IsJunction)
+                {
+                    sb.AppendLine("Is Junction");
+                }
+
+                sb.AppendLine($"[Transmitters] {DirectPartSet[NetworkRole.Transmitter]?.Count}");
             }
 
-            sb.AppendLine($"[Transmitters] {DirectPartSet[NetworkRole.Transmitter]?.Count}");
             return sb.ToString().TrimEndNewlines();
         }
         

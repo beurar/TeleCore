@@ -27,9 +27,10 @@ where TValue: FlowValueDef
     public bool leaveContainer = false;
     public ThingDef droppedContainerDef;
     public ExplosionProperties explosionProps;
+    public FlowValueFilterSettings? defaultFilterSettings;
     
     //
-    public ContainerValueFilter valueDefs;
+    public ContainerValueSettings valueDefs;
 
     public List<TValue> AllowedValues
     {
@@ -56,12 +57,12 @@ where TValue: FlowValueDef
         }
     }
     
-    public sealed class ContainerValueFilter : IExposable
+    public sealed class ContainerValueSettings : IExposable
     {
         public FlowValueCollectionDef fromCollection;
         public List<TValue> values;
 
-        public static implicit operator ContainerValueFilter(List<TValue> values) => new ContainerValueFilter()
+        public static implicit operator ContainerValueSettings(List<TValue> values) => new ContainerValueSettings()
         {
             values = values,
         };

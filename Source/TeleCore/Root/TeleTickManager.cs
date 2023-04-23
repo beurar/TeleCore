@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using TeleCore.Data.Events;
 using UnityEngine;
 using Verse;
 
@@ -78,6 +79,7 @@ public class TeleTickManager
             while (realTimeToTickThrough > 0f && ticksThisFrame < tickRateMultiplier * 2f)
             {
                 map.TeleMapSingleTick();
+                TeleEventHandler.OnEntityTicked();
                 realTimeToTickThrough -= curTimePerTick;
                 ticksThisFrame++;
                 internalMapTicks++;

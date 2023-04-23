@@ -1,4 +1,5 @@
 ﻿using System;
+using Verse;
 
 namespace TeleCore.Data.Events;
 
@@ -11,7 +12,7 @@ public static class GlobalEventHandler
     public static event TerrainChangedEvent TerrainChanged;
     public static event CellChangedEvent CellChanged;
 
-    
+
     #region Things
     
     internal static void OnThingSpawned(ThingStateChangedEventArgs args)
@@ -84,7 +85,7 @@ public static class GlobalEventHandler
             TLog.Error($"Error trying to register hediff change on pawn: {args.Pawn}\n{ex.Message}");
         }
     }
-
+    
     internal static void ClearData()
     {
         ThingSpawned = null;

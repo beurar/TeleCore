@@ -16,6 +16,9 @@ namespace TeleCore
         public Type graphicAlternateWorkerType;
         
         public DiscoveryProperties discovery;
+        
+        //
+        public bool addCustomTick;
 
         public AlternateGraphicWorker AlternateGraphicWorker
         {

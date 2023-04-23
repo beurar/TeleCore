@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
+using System.Linq;
 using Mono.Unix.Native;
 using RimWorld;
 using TeleCore.FlowCore;
@@ -45,7 +46,7 @@ public static class NetworkTransactionUtility
                 if (sender.Container.TryTransferValue(receiver.Container, type, 1, out var val))
                 {
                     receiver.Notify_ReceivedValue();
-                    MoteMaker.ThrowText(receiver.Parent.Thing.DrawPos, sender.Parent.Thing.Map, $"{val}", Color.green);
+                    //MoteMaker.ThrowText(receiver.Parent.Thing.DrawPos, sender.Parent.Thing.Map, $"{val}", Color.green);
                 }
             }
         }
@@ -56,7 +57,7 @@ public static class NetworkTransactionUtility
             if (sender.Container.TryTransferValue(receiver.Container, def, 1, out var val))
             {
                 receiver.Notify_ReceivedValue();
-                MoteMaker.ThrowText(receiver.Parent.Thing.DrawPos, sender.Parent.Thing.Map, $"{val}", Color.green);
+                //MoteMaker.ThrowText(receiver.Parent.Thing.DrawPos, sender.Parent.Thing.Map, $"{val}", Color.green);
             }
         }
         
@@ -94,7 +95,7 @@ public static class NetworkTransactionUtility
                 if (sender.Container.TryTransferValue(receiver.Container, type, 1, out var val))
                 {
                     receiver.Notify_ReceivedValue();
-                    MoteMaker.ThrowText(receiver.Parent.Thing.DrawPos, sender.Parent.Thing.Map, $"{val}", Color.green);
+                    //MoteMaker.ThrowText(receiver.Parent.Thing.DrawPos, sender.Parent.Thing.Map, $"{val}", Color.green);
                 }
             }
         }
@@ -139,7 +140,8 @@ public static class NetworkTransactionUtility
         {
             var subPart = partEdge.Item1;
             var edge = partEdge.Item2;
-            if (!subPart.NetworkRole.HasFlag(request.requestedRole)) continue;
+            //!subPart.NetworkRole.HasFlag(request.requestedRole) 
+            if ((subPart.NetworkRole & request.requestedRole) == 0) continue;
 
             if (edge.IsBiDirectional)
                 yield return subPart;

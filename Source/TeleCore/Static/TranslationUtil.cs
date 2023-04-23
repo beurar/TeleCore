@@ -32,5 +32,15 @@ internal static class TranslationUtil
     internal static class Hediffs
     {
         public static readonly string ExplodedHediffRuptured = "TELE.Hediffs.Comps.ExplodedHediffRuptured".Translate();
-    } 
+    }
+
+    internal static class Discovery
+    {
+        public static readonly string DiscoveryNew = "TELE.Discovery.New".Translate();
+
+        public static TaggedString DiscoveryDesc(string discoveryDesc)
+        {
+            return "TELE.Discovery.Desc".Translate(discoveryDesc);
+        }
+    }
 }

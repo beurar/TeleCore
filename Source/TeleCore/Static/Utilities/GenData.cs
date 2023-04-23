@@ -6,6 +6,7 @@ using System.Runtime.CompilerServices;
 using System.Xml;
 using RimWorld;
 using TeleCore.Data.Events;
+using TeleCore.RWExtended;
 using UnityEngine;
 using Verse;
 
@@ -189,6 +190,11 @@ namespace TeleCore
         }
 
         //
+        public static bool IsTeleEntity(this Thing thing)
+        {
+            return thing is TeleThing or TeleBuilding;
+        }
+        
         public static bool IsMetallic(this Thing thing)
         {
             if (thing.def.MadeFromStuff && thing.Stuff.IsMetal) return true;

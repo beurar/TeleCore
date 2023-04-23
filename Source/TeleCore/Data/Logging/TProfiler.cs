@@ -1,10 +1,10 @@
 ﻿using System.Diagnostics;
 
-namespace TeleCore.Static.Utilities;
+namespace TeleCore.Data.Logging;
 
 public static class TProfiler
 {
-    private static bool _Disabled;
+    private static bool _Disabled = true;
     
     private static Stopwatch Watch { get; }
     private static string CurScope { get; set; }
@@ -18,9 +18,6 @@ public static class TProfiler
 
     public static void Begin(string label = null)
     {
-        //TODO: Custom log file
-        return;
-        
         //
         if (_Disabled)
         {
@@ -33,37 +30,21 @@ public static class TProfiler
 
     public static void Check(string tag = null)
     {
-        //TODO: Custom log file
-        return;
         if (!Watch.IsRunning)
         {
-            TLog.Warning("Cant check profiling while inactive.");
+            TLog.Warning("Cant check profiling while not running.");
             return;
         }
-        
-        TLog.Debug($"[{tag}]: {Watch.Elapsed.TotalMilliseconds}ms");
-        
+        TLogger.Log($"[{tag}]: {Watch.Elapsed.TotalMilliseconds}ms");
     }
     
     public static void End(string message = null)
     {
-        //TODO: Custom log file
-        return;
         if (!Watch.IsRunning)
         {
             return;
         }
         Watch.Stop();
-        TLog.Debug($"{(CurScope != null ? $"[{CurScope}]: " : null)}Profiling Result: {Watch.Elapsed.TotalMilliseconds}ms");
-    }
-
-    internal static void Disable()
-    {
-        _Disabled = true;
-    }
-
-    internal static void Enable()
-    {
-        _Disabled = false;
+        TLogger.Log($"{(CurScope != null ? $"[{CurScope}]: " : null)}Profiling Result: {Watch.Elapsed.TotalMilliseconds}ms");
     }
 }

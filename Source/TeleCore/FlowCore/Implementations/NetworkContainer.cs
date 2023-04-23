@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using Verse;
+using Verse.Noise;
 
 namespace TeleCore.FlowCore;
 
@@ -35,7 +36,7 @@ public class NetworkContainer : NetworkContainerThing<IContainerHolderNetwork>
     {
         AcceptedTypes.AddRange(extraValueDefs);
     }
-    
+
     //Virtual Functions
     public override IEnumerable<Thing> GetThingDrops()
     {

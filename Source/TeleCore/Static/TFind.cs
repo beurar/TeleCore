@@ -22,8 +22,8 @@ namespace TeleCore
 
         public static TeleRoot TeleRoot => mainRoot;
         public static TeleTickManager TickManager => TeleRoot.TickManager;
-        public static DiscoveryTable Discoveries => StaticData.TeleWorldComp._discoveries;
+        public static DiscoveryTable Discoveries => StaticData.TeleCoreWorldComp._discoveries;
 
-        public static UISettingsTable UIProperties => StaticData.TeleWorldComp._uiSettingsTable;
+        public static UISettingsTable UIProperties => StaticData.TeleCoreWorldComp._uiSettingsTable;
     }
 }

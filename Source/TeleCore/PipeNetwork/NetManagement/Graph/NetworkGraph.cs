@@ -20,7 +20,6 @@ namespace TeleCore
         private readonly Dictionary<INetworkSubPart, LinkedList<INetworkSubPart>> _adjacencyLists;
         private readonly Dictionary<(INetworkSubPart, INetworkSubPart), NetEdge> _edges;
         
-        
         //TODO: Contemplate edge caching directly
         private readonly Dictionary<INetworkSubPart, List<(INetworkSubPart, NetEdge)>> _adjacencyListEdge;
 
@@ -107,10 +106,15 @@ namespace TeleCore
                 AddNode(newEdge.startNode);
                 listSource = _adjacencyLists[newEdge.startNode];
             }
-            if (!_adjacencyLists.TryGetValue(newEdge.endNode, out var listSource2))
+
+            LinkedList<INetworkSubPart> listSource2 = null;
+            if (newEdge.IsBiDirectional)
             {
-                AddNode(newEdge.endNode);
-                listSource2 = _adjacencyLists[newEdge.endNode];
+                if (!_adjacencyLists.TryGetValue(newEdge.endNode, out listSource2))
+                {
+                    AddNode(newEdge.endNode);
+                    listSource2 = _adjacencyLists[newEdge.endNode];
+                }
             }
 
             if (!listSource.Contains(newEdge.endNode))
@@ -118,16 +122,16 @@ namespace TeleCore
                 listSource.AddFirst(newEdge.endNode);
                 _adjacencyListEdge[newEdge.startNode].Add((newEdge.endNode, newEdge));
             }
-            else
-                TLog.Warning($"Already added {newEdge.endNode}");
 
-            if (!listSource2.Contains(newEdge.startNode))
+            //Only add a mirrored access key if the edge is bi-directional
+            if (newEdge.IsBiDirectional)
             {
-                listSource2?.AddFirst(newEdge.startNode);
-                _adjacencyListEdge[newEdge.endNode].Add((newEdge.startNode, newEdge.Reverse));
+                if (!listSource2.Contains(newEdge.startNode))
+                {
+                    listSource2?.AddFirst(newEdge.startNode);
+                    _adjacencyListEdge[newEdge.endNode].Add((newEdge.startNode, newEdge.Reverse));
+                }
             }
-            else
-                TLog.Warning($"Already added {newEdge.startNode}");
             return true;
         }
 

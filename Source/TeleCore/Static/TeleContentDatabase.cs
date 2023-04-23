@@ -57,13 +57,13 @@ public static class TRContentDatabase
     {
         if (lookupComputeShades == null)
             lookupComputeShades = new Dictionary<string, ComputeShader>();
-        if (!lookupShades.ContainsKey(shaderName))
+        if (!lookupComputeShades.ContainsKey(shaderName))
             lookupComputeShades[shaderName] = TeleCoreBundle.LoadAsset<ComputeShader>(shaderName);
 
         ComputeShader shader = lookupComputeShades[shaderName];
         if (shader == null)
         {
-            Log.Warning($"Could not load shader '{shaderName}'");
+            TLog.Warning($"Could not load shader '{shaderName}'");
             return null;
         }
 
@@ -80,7 +80,7 @@ public static class TRContentDatabase
         Shader shader = lookupShades[shaderName];
         if (shader == null)
         {
-            Log.Warning($"Could not load shader '{shaderName}'");
+            TLog.Warning($"Could not load shader '{shaderName}'");
             return ShaderDatabase.DefaultShader;
         }
 
@@ -97,7 +97,7 @@ public static class TRContentDatabase
         Material mat = lookupMats[materialName];
         if (mat == null)
         {
-            Log.Warning($"Could not load material '{materialName}'");
+            TLog.Warning($"Could not load material '{materialName}'");
             return BaseContent.BadMat;
         }
 
@@ -114,7 +114,7 @@ public static class TRContentDatabase
         Texture2D texture = lookupTextures[textureName];
         if (texture == null)
         {
-            Log.Warning($"Could not load Texture2D '{textureName}'");
+            TLog.Warning($"Could not load Texture2D '{textureName}'");
             return BaseContent.BadTex;
         }
 

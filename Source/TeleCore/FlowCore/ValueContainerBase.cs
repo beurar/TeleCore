@@ -18,141 +18,6 @@ public enum ContainerFillState
     Empty
 }
 
-public struct FlowValueFilterSettings : IExposable
-{
-    public bool canReceive = true;
-    public bool canStore = true;
-    public bool canTransfer = true;
-
-    public FlowValueFilterSettings()
-    {
-    }
-
-    public void ExposeData()
-    {
-        Scribe_Values.Look(ref canReceive, nameof(canReceive));
-        Scribe_Values.Look(ref canStore, nameof(canStore));
-        Scribe_Values.Look(ref canTransfer, nameof(canTransfer));
-    }
-}
-
-/// <summary>
-/// The resulting state of a <see cref="ValueContainerBase{TValue}"/> value-change operation.
-/// </summary>
-public enum ValueState
-{
-    Incomplete,
-    Completed,
-    CompletedWithExcess,
-    CompletedWithShortage,
-    Failed
-}
-
-/// <summary>
-/// The result of a <see cref="ValueContainerBase{TValue}"/> Value-Change operation.
-/// </summary>
-public struct ValueResult<TValue>
-where TValue : FlowValueDef
-{
-    public ValueState State { get; private set; }
-    //Initial desire value
-    public float DesiredAmount { get; private set; }
-    //Actual resulting value
-    public float ActualAmount { get; private set; }
-
-    public float LeftOver => DesiredAmount - ActualAmount;
-    public float Diff { get; private set; }
-
-    public DefValueStack<TValue> FullDiff { get; private set; }
-    
-    public static implicit operator bool(ValueResult<TValue> result)
-    {
-        return result.State != ValueState.Failed;
-    }
-
-    public ValueResult()
-    {
-    }
-
-    public static ValueResult<TValue> InitFail(float desiredAmount)
-    {
-        return new ValueResult<TValue>
-        {
-            State = ValueState.Failed,
-            DesiredAmount = desiredAmount,
-            ActualAmount = 0,
-        };
-    }
-
-    public static ValueResult<TValue> Init(float desiredAmount, TValue usedDef)
-    {
-        return new ValueResult<TValue>
-        {
-            State = ValueState.Incomplete,
-            DesiredAmount = desiredAmount,
-            ActualAmount = 0,
-            FullDiff = new DefValueStack<TValue>(usedDef.ToSingleItemList())
-        };
-    }
-
-    public static ValueResult<TValue> Init(float desiredAmount, ICollection<TValue> usedDefs)
-    {
-        return new ValueResult<TValue>
-        {
-            State = ValueState.Incomplete,
-            DesiredAmount = desiredAmount,
-            ActualAmount = 0,
-            FullDiff = new DefValueStack<TValue>(usedDefs)
-        };
-    }
-    
-    public ValueResult<TValue> AddDiff(TValue def, float diffAmount)
-    {
-        FullDiff += (def, diffAmount);
-        Diff += diffAmount;
-        return this;
-    }
-    
-    public ValueResult<TValue> SetActual(float actual)
-    {
-        ActualAmount = actual;
-        return this;
-    }
-    
-    public ValueResult<TValue> Fail()
-    {
-        State = ValueState.Failed;
-        return this;
-    }
-
-    public ValueResult<TValue> Complete(float? finalActual = null)
-    {
-        State = ValueState.Completed;
-        ActualAmount = finalActual ?? ActualAmount;
-        return this;
-    }
-
-    public ValueResult<TValue> Resolve()
-    {
-        if (Math.Abs(ActualAmount - DesiredAmount) < Mathf.Epsilon)
-            State = ValueState.Completed;
-        if (ActualAmount > DesiredAmount)
-            State = ValueState.CompletedWithExcess;
-        if (ActualAmount < DesiredAmount)
-            State = ValueState.CompletedWithShortage;
-        return this;
-    }
-
-    public override string ToString()
-    {
-        StringBuilder sb = new StringBuilder();
-        sb.Append($"State: {State} | ");
-        sb.Append($"DesiredToActual: {DesiredAmount} -> {ActualAmount} | ");
-        sb.Append($"Diff: {Diff}");
-        return sb.ToString();
-    }
-}
-
 //Base Container Template for Values
 public abstract class ValueContainerBase<TValue> : IExposable where TValue : FlowValueDef
 {
@@ -166,8 +31,8 @@ public abstract class ValueContainerBase<TValue> : IExposable where TValue : Flo
     protected Color colorInt;
     protected float totalStoredCache;
     protected Dictionary<TValue, float> storedValues = new();
-    protected Dictionary<TValue, FlowValueFilterSettings> filterSettings = new();
-    
+    protected ContainerValueFilter<TValue> filter;
+
     //
     public virtual string Label => _config.containerLabel;
     public Color Color => colorInt;
@@ -263,10 +128,7 @@ public abstract class ValueContainerBase<TValue> : IExposable where TValue : Flo
         AcceptedTypes = new List<TValue>(config.AllowedValues);
         
         //Setup Filter
-        foreach (var value in AcceptedTypes)
-        {
-            filterSettings.Add(value, new FlowValueFilterSettings());
-        }
+        filter = new ContainerValueFilter<TValue>(AcceptedTypes, config.defaultFilterSettings);
 
         ValueStack = new DefValueStack<TValue>(AcceptedTypes, capacity);
     }
@@ -280,7 +142,7 @@ public abstract class ValueContainerBase<TValue> : IExposable where TValue : Flo
             TLog.Error($"{this} should be scribed with {typeof(Scribe_Container)}!\nScribe mode used: {Scribe.mode}");
         }
         
-        Scribe_Collections.Look(ref filterSettings, "typeFilter", LookMode.Def, LookMode.Deep);
+        Scribe_Deep.Look(ref filter, "filter");
         Scribe_Collections.Look(ref storedValues, "storedValues");
         
         if (Scribe.mode == LoadSaveMode.LoadingVars)
@@ -327,7 +189,7 @@ public abstract class ValueContainerBase<TValue> : IExposable where TValue : Flo
     /// </summary>
     public virtual bool CanReceiveValue(TValue valueType)
     {
-        return filterSettings.TryGetValue(valueType, out var settings) && settings.canReceive;
+        return filter.CanReceive(valueType);
     }
     
     /// <summary>
@@ -336,7 +198,7 @@ public abstract class ValueContainerBase<TValue> : IExposable where TValue : Flo
     /// </summary>
     public virtual bool CanHoldValue(TValue valueType)
     {
-        return filterSettings.TryGetValue(valueType, out var settings) && settings.canStore;
+        return filter.CanStore(valueType);
     }
     
     public bool CanTransferAmountTo(ValueContainerBase<TValue> other, float amount)
@@ -361,18 +223,20 @@ public abstract class ValueContainerBase<TValue> : IExposable where TValue : Flo
 
         return actualTransfer > 0;
     }
+
+    public ContainerValueFilter<TValue> Filter => filter;
     
     public FlowValueFilterSettings GetFilterFor(TValue value)
     {
-        return filterSettings[value];
+        return filter.SettingsFor(value);
     }
 
     public void SetFilterFor(TValue value, FlowValueFilterSettings filter)
     {
-        filterSettings[value] = filter;
+        this.filter.SetSettings(value, filter);
     }
 
-    public Dictionary<TValue, FlowValueFilterSettings> GetFilterCopy() => filterSettings.Copy();
+    public ContainerValueFilter<TValue> GetFilterCopy() => filter.Copy();
 
     #endregion
 
@@ -483,7 +347,7 @@ public abstract class ValueContainerBase<TValue> : IExposable where TValue : Flo
         newContainer.LoadFromStack(ValueStack);
         
         //Copy Settings
-        newContainer.filterSettings = filterSettings;
+        newContainer.filter = filter;
 
         return newContainer;
     }

@@ -26,7 +26,7 @@ public struct FXParentInfo
     }
 }
 
-public class CompFX : ThingComp
+public class CompFX : TeleComp
 {
     private bool _hasFXLayers;
     private bool _hasEffecters;

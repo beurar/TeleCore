@@ -152,9 +152,10 @@ namespace TeleCore
                             TLog.Warning($"Tried to register trasmitter {parent} at {parent.Position}, but there is already a power net here. There can't be two transmitters on the same cell.");
                         }
 
-                        foreach (IntVec3 item in GenAdj.CellsAdjacentCardinal(parent))
+                        //Enszure we only destroy network that we can also connect to
+                        foreach (var subPart in delayedActionForDestruction.subPart.DirectPartSet.FullSet)
                         {
-                            TryDestroyNetworkAt(item);
+                            TryDestroyNetworkAt(subPart.Parent.Thing.Position);
                         }
                         break;
                     }
@@ -242,7 +243,6 @@ namespace TeleCore
         //Grid For Def
         public void Notify_PipeNetCreated(PipeNetwork newNetwork)
         {
-            TLog.Message("Creating Network");
             if (cellsByNetwork.ContainsKey(newNetwork))
                 cellsByNetwork.Remove(newNetwork);
 

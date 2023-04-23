@@ -45,9 +45,13 @@ namespace TeleCore
 
         #region FX Implementation
 
+        
+        // ## Layers ##
+        // 0 - Container
+        // 
         public override bool FX_ProvidesForLayer(FXArgs args)
         {
-            if(args.layerTag == "FXNetwork")
+            if(args.categoryTag == "FXNetwork")
                 return true;
             return false;
         }
@@ -228,14 +232,12 @@ namespace TeleCore
         public override void PostDraw()
         {
             base.PostDraw();
-
-            //   
             foreach (var networkPart in NetworkParts)
             {
                 networkPart.Draw();
                 if (DebugConnectionCells && Find.Selector.IsSelected(parent))
                 {
-                    GenDraw.DrawFieldEdges(networkPart.CellIO.OuterConnnectionCells.ToList(), Color.cyan);
+                    GenDraw.DrawFieldEdges(networkPart.CellIO.OuterConnnectionCells.Select(t => t.IntVec).ToList(), Color.cyan);
                     GenDraw.DrawFieldEdges(networkPart.CellIO.InnerConnnectionCells.ToList(), Color.green);
                 }
             }
@@ -244,8 +246,6 @@ namespace TeleCore
         public override void PostPrintOnto(SectionLayer layer)
         {
             base.PostPrintOnto(layer);
-
-            //
             foreach (var networkPart in NetworkParts)
             {
                 networkPart.NetworkDef.TransmitterGraphic?.Print(layer, Thing, 0, networkPart);
@@ -273,7 +273,7 @@ namespace TeleCore
                 }
             }
             */
-
+            
             return sb.ToString().TrimStart().TrimEndNewlines();
         }
 

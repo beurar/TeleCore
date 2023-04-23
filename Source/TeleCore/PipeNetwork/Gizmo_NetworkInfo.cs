@@ -399,9 +399,9 @@ namespace TeleCore
                             var canStore = settings.canStore;
                          
                             WidgetRow itemRow = new WidgetRow(scrollViewRect.xMax, curY, UIDirection.LeftThenDown);
-                            itemRow.Checkbox( ref canStore, true, size3.x); 
+                            itemRow.Checkbox( ref canStore, parentComp.Container.Filter.CanChange, size3.x); 
                             itemRow.Highlight(size3.x);
-                            itemRow.Checkbox( ref canReceive, true);
+                            itemRow.Checkbox( ref canReceive, parentComp.Container.Filter.CanChange);
                             itemRow.Highlight(24);
                             itemRow.Label($"{acceptedType.LabelCap.CapitalizeFirst().Colorize(acceptedType.valueColor)}: ", 84);
                             itemRow.Highlight(84);

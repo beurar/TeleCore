@@ -1,4 +1,8 @@
-﻿namespace TeleCore
+﻿using HarmonyLib;
+using RimWorld;
+using Verse;
+
+namespace TeleCore
 {
     /*
     internal static class UpdatePatches

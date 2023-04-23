@@ -38,7 +38,7 @@ public static class WidgetStackPanel
 		active = true;
 		startPos = curXY = rect.position;
 		width = rect.width;
-		widthHalf = width / 2;
+		widthHalf = width * 0.5f;
 	}
 
 	public static void End()
@@ -56,30 +56,38 @@ public static class WidgetStackPanel
 	//
 	public static void DrawHeader(string text)
 	{
-		//var curY = curXY.y + (numLines * LineHeight) + 12f - 8f;
-		var curY = curXY.y + Padding;
 		Text.Anchor = TextAnchor.UpperCenter;
 		Text.Font = GameFont.Small;
+		
 		var rectHeight = Text.CalcHeight(text, width);
-		Rect rect = new Rect(curXY.x, curY, width, rectHeight);
+		Rect rect = new Rect(curXY.x, curXY.y + Padding, width, rectHeight);
 		Widgets.Label(rect, text);
+		
 		Text.Font = default;
 		Text.Anchor = default;
-		
+
 		//
-		Increment(rectHeight);
+		Increment(rect.height + Padding);
 	}
 
 	public static void DrawWidgetRow(WidgetRow row)
 	{
 		float num = numLines * 24f;
 		var curY = curXY.y + num + 12f;
-		Rect rect = new Rect(curXY.x,  curY, width, 24f);
+		Rect rect = new Rect(curXY.x,  curY, width, LineHeight);
 		row.Init(curXY.x, curY, UIDirection.RightThenDown, width);
 	}
 
 	public static void DrawRow(string label, string info)
 	{
+		var rect = new Rect(curXY.x, curXY.y + Padding, width, LineHeight);
+		var rect1 = rect.LeftPartPixels(widthHalf);
+		var rect2 = rect.RightPartPixels(widthHalf);
+		
+		Widgets.Label(rect1, label);
+		Widgets.Label(rect2, info);
+
+		/*
 		float num = numLines * LineHeight;
 		var curY = curXY.y + num + Padding;
 		Rect rect = new Rect(curXY.x, curY, width, LineHeight);
@@ -89,18 +97,18 @@ public static class WidgetStackPanel
 
 		//Label Part
 		GUI.color = Color.gray;
-		rect = new Rect(curXY.x + LineHeight, num + Padding, LabelColumnWidth, LineHeight);
-		Widgets.Label(rect, label);
+		Rect rect2 = rect.ContractedBy(Padding, 0).LeftPartPixels(LabelColumnWidth); //new Rect(curXY.x + Padding, curY, LabelColumnWidth, LineHeight);
+		Widgets.Label(rect2, label);
 		
 		
 		//Info Part
 		GUI.color = Color.white;
-		rect = new Rect(rect.xMax + Padding, rect.y, width - (rect.xMax + Padding), LineHeight);
-		Widgets.Label(rect, info);
-		TooltipHandler.TipRegion(rect, info);
-
-		//
-		Increment();
+		Rect rect3 = rect.ContractedBy(Padding, 0).RightPartPixels(LabelColumnWidth);  //new Rect(rect2.xMax + Padding, rect2.y, width - (rect2.xMax + Padding), LineHeight);
+		Widgets.Label(rect3, info);
+		//TooltipHandler.TipRegion(rect, info);
+		*/
+		
+		Increment(rect.height + Padding);
 	}
 
 	public static void DrawThingRow(Thing thing)

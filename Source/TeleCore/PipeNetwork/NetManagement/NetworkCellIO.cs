@@ -2,32 +2,154 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
+using OneOf.Types;
 using TMPro;
 using UnityEngine;
 using Verse;
 
 namespace TeleCore
 {
+    public struct IOCell
+    {
+        public NetworkIOMode Inner = NetworkIOMode.None;
+        public NetworkIOMode North = NetworkIOMode.None;
+        public NetworkIOMode East = NetworkIOMode.None;
+        public NetworkIOMode South = NetworkIOMode.None;
+        public NetworkIOMode West = NetworkIOMode.None;
+
+        private Rot4 curRot = Rot4.North;
+        
+        public IOCell(string cellString)
+        {
+            var parts = cellString.Trim('[', ']').Split(';');
+            foreach (var part in parts)
+            {
+                var trimmedPart = part.Trim();
+                if (string.IsNullOrEmpty(trimmedPart))
+                    continue;
+
+                var directionAndMode = trimmedPart.Split(':');
+                if (directionAndMode.Length != 2)
+                {
+                    TLog.Error($"Invalid IO cell part format: {part}");
+                }
+
+                var direction = directionAndMode[0];
+                var mode = directionAndMode[1].ToUpper()[0];
+
+                switch (direction.ToUpper())
+                {
+                    case "I":
+                        Inner = ParseIOMode(mode);
+                        break;
+                    case "N":
+                        North = ParseIOMode(mode);
+                        break;
+                    case "E":
+                        East = ParseIOMode(mode);
+                        break;
+                    case "S":
+                        South = ParseIOMode(mode);
+                        break;
+                    case "W":
+                        West = ParseIOMode(mode);
+                        break;
+                    default:
+                        TLog.Error($"Invalid IO cell direction: {direction}");
+                        break;
+                }
+            }
+        }
+
+        public IOCell(char singleMode)
+        {
+            Inner = singleMode switch
+            {
+                NetworkCellIO._Input => NetworkIOMode.Input,
+                NetworkCellIO._Output => NetworkIOMode.Output,
+                NetworkCellIO._TwoWay => NetworkIOMode.TwoWay,
+                NetworkCellIO._Empty => NetworkIOMode.None,
+                _ => throw new ArgumentException($"Invalid IO mode character: {singleMode}")
+            };
+            North = East = South = West = Inner;
+        }
+
+        private static NetworkIOMode ParseIOMode(char c)
+        {
+            return c switch
+            {
+                NetworkCellIO._Input => NetworkIOMode.Input,
+                NetworkCellIO._Output => NetworkIOMode.Output,
+                NetworkCellIO._TwoWay => NetworkIOMode.TwoWay,
+                _ => NetworkIOMode.None
+            };
+        }
+
+        public IOCell Rotate(Rot4 rotation)
+        {
+            if (curRot == rotation) return this;
+            
+            var pNorth = North;
+            var pEast = East;
+            var pSouth = South;
+            var pWest = West;
+            
+            if (rotation == Rot4.North)
+            {
+                curRot = Rot4.North;
+            }
+            if (rotation == Rot4.East)
+            {
+                North = pWest;
+                East = pNorth;
+                South = pEast;
+                West = pSouth;
+                curRot = Rot4.East;
+            }
+            if (rotation == Rot4.South)
+            {
+                North = pSouth;
+                East = pWest;
+                South = pNorth;
+                West = pEast;
+                curRot = Rot4.South;
+            }
+            if (rotation == Rot4.West)
+            {
+                North = pEast;
+                East = pSouth;
+                South = pWest;
+                West = pNorth;
+                curRot = Rot4.West;
+            }
+            return this;
+        }
+    }
+
+    /// <summary>
+    /// An IntVec3 with a relative direction attached.
+    /// </summary>
     public readonly struct IntVec3Rot
     {
-        private readonly Rot4 rot;
+        private readonly Rot4 direction;
         private readonly IntVec3 vec;
 
+        //public static implicit operator IntVec3(IntVec3Rot vec) => vec.vec;
         public static implicit operator IntVec3(IntVec3Rot vec) => vec.vec;
         public static implicit operator IntVec3Rot(IntVec3 vec) => new (vec, Rot4.Invalid);
 
-        public Rot4 Rotation => rot;
+        public Rot4 Direction => direction;
         public IntVec3 IntVec => vec;
 
-        public IntVec3Rot(IntVec3 vec, Rot4 rot)
+        public IntVec3Rot(IntVec3 vec, Rot4 direction)
         {
-            this.rot = rot;
+            this.direction = direction;
             this.vec = vec;
         }
 
         public override string ToString()
         {
-            return $"{vec}[{rot.ToStringHuman()}]";
+            return $"{vec}[{direction}]";
         }
 
         public override bool Equals(object obj)
@@ -40,108 +162,140 @@ namespace TeleCore
         }
     }
 
+    public struct RenderIOCell
+    {
+        public NetworkIOMode mode;
+        public IntVec3Rot pos;
+        
+        public RenderIOCell(IntVec3Rot pos, NetworkIOMode mode)
+        {
+            this.pos = pos;
+            this.mode = mode;
+        }
+    }
+
+    public class NetworkCellIOSimple
+    {
+        private readonly Dictionary<Rot4, RenderIOCell[]> _cellyByRot;
+
+        public NetworkCellIOSimple(string pattern, ThingDef def)
+        {
+            _cellyByRot = new Dictionary<Rot4, RenderIOCell[]>();
+            for (int i = 0; i < 4; i++)
+            {
+                Rot4 rot = new Rot4(i);
+                var rotatedSize = RotatedSize(rot, def.size);
+                var rect = new CellRect(0 - rotatedSize.x / 2, 0 - rotatedSize.z / 2, rotatedSize.x, rotatedSize.z).ToArray();
+                var cells = NetworkCellIO.RotateIOCells(NetworkCellIO.GetIOArr(NetworkCellIO.DefaultFallbackIfNecessary(pattern, rotatedSize)), rot, def.size);
+
+                var newCells = new List<RenderIOCell>(); //new RenderIOCell[cells.Length*4];
+                for (var c = 0; c < cells.Length; c++)
+                {
+                    var cell = rect[c];
+                    var ioCell = cells[c];
+                    var cellNorth = cell + GenAdj.CardinalDirections[0];
+                    var cellEast = cell + GenAdj.CardinalDirections[1];
+                    var cellSouth = cell + GenAdj.CardinalDirections[2];
+                    var cellWest = cell + GenAdj.CardinalDirections[3];
+
+                    if (!rect.Contains(cellNorth))
+                    {
+                        newCells.Add(new RenderIOCell(new IntVec3Rot(cellNorth, Rot4.North), ioCell.North));
+                    }
+
+                    if (!rect.Contains(cellEast))
+                    {
+                        newCells.Add(new RenderIOCell(new IntVec3Rot(cellEast, Rot4.East), ioCell.East));
+                    }
+
+                    if (!rect.Contains(cellSouth))
+                    {
+                        newCells.Add(new RenderIOCell(new IntVec3Rot(cellSouth, Rot4.South), ioCell.South));
+                    }
+
+                    if (!rect.Contains(cellWest))
+                    {
+                        newCells.Add(new RenderIOCell(new IntVec3Rot(cellWest, Rot4.West), ioCell.West));
+                    }
+                }
+                _cellyByRot.Add(rot, newCells.ToArray());
+            }
+        }
+
+        private static IntVec2 RotatedSize(Rot4 rotation, IntVec2 size)
+        {
+            return !rotation.IsHorizontal ? size : new IntVec2(size.z, size.x);
+        }
+
+        public void Draw(IntVec3 center, ThingDef def, Rot4 rot)
+        {
+            if (_cellyByRot.TryGetValue(rot, out var cells))
+            {
+                foreach (var renderIOCell in cells)
+                {
+                    var cell = center + renderIOCell.pos;
+                    var drawPos = cell.ToVector3ShiftedWithAltitude(AltitudeLayer.MetaOverlays);
+
+                    switch (renderIOCell.mode)
+                    {
+                        case NetworkIOMode.Input:
+                            Graphics.DrawMesh(MeshPool.plane10, drawPos, (renderIOCell.pos.Direction.AsAngle - 180).ToQuat(), TeleContent.IOArrow, 0);
+                            break;
+                        case NetworkIOMode.Output:
+                            Graphics.DrawMesh(MeshPool.plane10, drawPos, renderIOCell.pos.Direction.AsQuat, TeleContent.IOArrow, 0);
+                            break;
+                        case NetworkIOMode.TwoWay:
+                            Graphics.DrawMesh(MeshPool.plane10, drawPos, renderIOCell.pos.Direction.AsQuat, TeleContent.IOArrowTwoWay, 0); 
+                            break;
+                    }
+                }
+            }
+        }
+    }
+
     public class NetworkCellIO
     {
-        private const char _Input = 'I';
-        private const char _Output = 'O';
-        private const char _TwoWay = '+';
-        private const char _Empty = '#';
-        private const char _Visual = '=';
+        internal const char _Input = 'I';
+        internal const char _Output = 'O';
+        internal const char _TwoWay = '+';
+        internal const char _Empty = '#';
+        internal const char _Visual = '=';
+        
+        internal const string regexPattern = @"\[[^\]]*\]|.";
         
         //
-        private static readonly string regexIgnore = @"[^IO+#]";
-        private static readonly string regexMustHave = @"[IO+#|]";
+        private Dictionary<NetworkIOMode, IntVec3Rot[]> _innerCells;
+        private Dictionary<NetworkIOMode, IntVec3Rot[]> _outerCells;
+        private Dictionary<IntVec3, (bool isOuter, NetworkIOMode mode)> _modeByCell;
 
-        //
-        private readonly Thing thing;
-        private string connectionPattern;
-
-        //
-        private IntVec3[] cachedInnerConnectionCells;
-        private IntVec3[] cachedConnectionCells;
-        private IntVec3[] _cachedRenderCells;
-
-        private Dictionary<char, IntVec3[]> InnerCellsByTag;
-        private Dictionary<char, IntVec3Rot[]> OuterCellsByTag;
+        public IntVec3[] InnerConnnectionCells { get; private set; }
+        public IntVec3Rot[] OuterConnnectionCells { get; private set; }
+        public IntVec3[] VisualConnectionCells { get; private set; }
 
         public NetworkCellIO(string pattern, Thing thing)
         {
-            this.connectionPattern = pattern;
-            this.thing = thing;
-            cachedInnerConnectionCells = null;
-            cachedConnectionCells = null;
-            _cachedRenderCells = null;
-            InnerCellsByTag = new Dictionary<char, IntVec3[]>();
-            OuterCellsByTag = new Dictionary<char, IntVec3Rot[]>();
+            _innerCells = new Dictionary<NetworkIOMode, IntVec3Rot[]>();
+            _outerCells = new Dictionary<NetworkIOMode, IntVec3Rot[]>();
+            _modeByCell = new Dictionary<IntVec3, (bool isOuter, NetworkIOMode mode)>();
 
             //
-            GenerateIOCells();
-        }
-
-        public NetworkIOMode InnerModeFor(IntVec3 cell)
-        {
-            if (InnerCellsByTag.TryGetValue(_TwoWay, out var cells) && cells.Contains(cell)) return NetworkIOMode.TwoWay;
-            if (InnerCellsByTag.TryGetValue(_Input, out cells) && cells.Contains(cell)) return NetworkIOMode.Input;
-            if (InnerCellsByTag.TryGetValue(_Output, out cells) && cells.Contains(cell)) return NetworkIOMode.Output;
-            return NetworkIOMode.None;
+            GenerateFromPattern(pattern, thing);
         }
         
-        public NetworkIOMode OuterModeFor(IntVec3 cell)
+        public NetworkIOMode IOModeFor(IntVec3 pos)
         {
-            if (OuterCellsByTag.TryGetValue(_TwoWay, out var cells) && cells.Any(c => c.IntVec == cell)) return NetworkIOMode.TwoWay;
-            if (OuterCellsByTag.TryGetValue(_Input, out cells) && cells.Any(c => c.IntVec == cell)) return NetworkIOMode.Input;
-            if (OuterCellsByTag.TryGetValue(_Output, out cells) && cells.Any(c => c.IntVec == cell)) return NetworkIOMode.Output;
-            return NetworkIOMode.None;
-        }
-
-        public IntVec3[] InnerConnnectionCells => cachedInnerConnectionCells;
-        public IntVec3[] OuterConnnectionCells => cachedConnectionCells;
-
-        public IntVec3Rot[] InputCells => OuterCellsByTag.TryGetValue(_Input, Array.Empty<IntVec3Rot>());
-        public IntVec3Rot[] OutputCells => OuterCellsByTag.TryGetValue(_Output, Array.Empty<IntVec3Rot>());
-        public IntVec3Rot[] TwoWayCells => OuterCellsByTag.TryGetValue(_TwoWay, Array.Empty<IntVec3Rot>());
-
-        private char CharForMode(NetworkIOMode mode)
-        {
-            switch (mode)
-            {
-                case NetworkIOMode.Input:
-                    return _Input;
-                case NetworkIOMode.Output:
-                    return _Output;
-                case NetworkIOMode.TwoWay:
-                    return _TwoWay;
-                default:
-                    return ' ';
-            }
+            return _modeByCell.GetValueOrDefault(pos).mode;
         }
         
-        private NetworkIOMode ModeFromChar(char c)
-        {
-            switch (c)
-            {
-                case _Input:
-                    return NetworkIOMode.Input;
-                case _Output:
-                    return NetworkIOMode.Output;
-                case _TwoWay:
-                    return NetworkIOMode.TwoWay;
-                default:
-                    return NetworkIOMode.None;
-            }
-        }
-        
-        
-        private void AddIOCell<TValue>(Dictionary<char, TValue[]> forDict, NetworkIOMode mode, TValue cell)
-        {
-            // Get the key for the specified mode
-            var modeChar = CharForMode(mode);
+        #region Pattern Gen
 
+        private void AddIOCell(Dictionary<NetworkIOMode, IntVec3Rot[]> forDict, NetworkIOMode mode, IntVec3Rot cell)
+        {
             // Try to retrieve the existing array for the mode
-            if (forDict.TryGetValue(modeChar, out TValue[] existingArr))
+            if (forDict.TryGetValue(mode, out IntVec3Rot[] existingArr))
             {
                 // If the array already exists, create a new array with enough space for the new cell
-                TValue[] newArr = new TValue[existingArr.Length + 1];
+                IntVec3Rot[] newArr = new IntVec3Rot[existingArr.Length + 1];
 
                 // Copy the existing cells into the new array
                 Array.Copy(existingArr, newArr, existingArr.Length);
@@ -150,243 +304,198 @@ namespace TeleCore
                 newArr[existingArr.Length] = cell;
 
                 // Replace the existing array with the new array in the dictionary
-                forDict[modeChar] = newArr;
+                forDict[mode] = newArr;
             }
             else
             {
-                TValue[] newArr = { cell };
-                forDict.Add(modeChar, newArr);
+                IntVec3Rot[] newArr = { cell };
+                forDict.Add(mode, newArr);
             }
         }
 
-        /*private void AddIOCell<TValue>(Dictionary<char, TValue[]> forDict, NetworkIOMode mode, TValue cell)
+        private void GenerateFromPattern(string ioPattern, Thing thing)
         {
-            //Get Mode Key
-            var modeChar = CharForMode(mode);
-
-            //Adjust existing arrays
-            TValue[] newArr = null;
-            if (forDict.TryGetValue(modeChar, out var arr))
-            {
-                newArr = new TValue[arr.Length + 1];
-                for (int i = 0; i < arr.Length; i++)
-                {
-                    newArr[i] = arr[i];
-                }
-                newArr[arr.Length] = cell;
-            }
-        
-            //Add Mode Key if not existant
-            if (!forDict.ContainsKey(modeChar))
-                forDict.Add(modeChar, null);
-
-            //Set new array
-            newArr ??= new TValue[1] {cell};
-            forDict[modeChar] = newArr;
-        }*/
-
-        //
-        private void GenerateIOCells()
-        {
-            var pattern = GetCorrectPattern();
             var rect = thing.OccupiedRect();
             var rectList = rect.ToArray();
-            var cellsInner = new List<IntVec3>();
-            var cellsOuter = new List<IntVec3>();
 
             int width = thing.RotatedSize.x;
             int height = thing.RotatedSize.z;
 
-            //TLog.Message($"Using Pattern: {pattern} from {connectionPattern}");
-            //Inner Connection Cells
+            ioPattern = DefaultFallbackIfNecessary(ioPattern, thing.RotatedSize);
+            IOCell[] arr = RotateIOCells(GetIOArr(ioPattern), thing.Rotation, thing.def.size);
+
+            List<IntVec3> visualCells = new List<IntVec3>();
+
             for (int y = 0; y < height; y++)
             {
                 for (int x = 0; x < width; x++)
                 {
                     int actualIndex = y * width + x;
-                    //int inv = ((height - 1) - y) * width + x;
-
-                    var c = pattern[actualIndex];
+                    var ioCell = arr[actualIndex];
                     var cell = rectList[actualIndex];
                     
-                    if (c != _Empty)
+                    if (ioCell.Inner != NetworkIOMode.None)
                     {
-                        cellsInner.Add(cell);
+                        AddIOCell(_innerCells, ioCell.Inner, cell);
+                        _modeByCell.Add(cell, (false, ioCell.Inner));
+                        visualCells.Add(cell);
                     }
 
-                    if (c == _TwoWay)
+                    var cellNorth = cell + GenAdj.CardinalDirections[0];
+                    var cellEast = cell + GenAdj.CardinalDirections[1];
+                    var cellSouth = cell + GenAdj.CardinalDirections[2];
+                    var cellWest = cell + GenAdj.CardinalDirections[3];
+                    
+                    if (!rect.Contains(cellNorth))
                     {
-                        AddIOCell(InnerCellsByTag, NetworkIOMode.TwoWay, cell);
-                        //AddIOCell(InnerCellsByTag, NetworkIOMode.Input, cell);
-                        //AddIOCell(InnerCellsByTag, NetworkIOMode.Output, cell);
+                        AddIOCell(_outerCells, ioCell.North, new IntVec3Rot(cellNorth, Rot4.North));
+                        _modeByCell.Add(cellNorth, (true, ioCell.North));
                     }
-                    if (c == _Input)
-                        AddIOCell(InnerCellsByTag, NetworkIOMode.Input, cell);
-                    if (c == _Output)
-                        AddIOCell(InnerCellsByTag, NetworkIOMode.Output, cell);
+
+                    if (!rect.Contains(cellEast))
+                    {
+                        AddIOCell(_outerCells, ioCell.East, new IntVec3Rot(cellEast, Rot4.East));
+                        _modeByCell.Add(cellEast, (true, ioCell.East));
+                    }
+
+                    if (!rect.Contains(cellSouth))
+                    {
+                        AddIOCell(_outerCells, ioCell.South, new IntVec3Rot(cellSouth, Rot4.South));
+                        _modeByCell.Add(cellSouth, (true, ioCell.South));
+                    }
+
+                    if (!rect.Contains(cellWest))
+                    {
+                        AddIOCell(_outerCells, ioCell.West, new IntVec3Rot(cellWest, Rot4.West));
+                        _modeByCell.Add(cellWest, (true, ioCell.West));
+                    }
                 }
             }
 
-            //Outer Connection Cells
-            foreach (var edgeCell in thing.OccupiedRect().ExpandedBy(1).EdgeCells)
+            //
+            var innerCells = _innerCells.SelectMany(c => c.Value).ToArray();
+            var outerCells = _outerCells.SelectMany(c => c.Value).ToArray();
+            InnerConnnectionCells = new IntVec3[innerCells.Length];
+            OuterConnnectionCells = new IntVec3Rot[outerCells.Length];
+            VisualConnectionCells = visualCells.ToArray();
+
+            for (var k = 0; k < innerCells.Length; k++)
             {
-                foreach (var inner in cellsInner)
-                {
-                    if (edgeCell.AdjacentToCardinal(inner))
-                    {
-                        cellsOuter.Add(edgeCell);
-                        if (InnerModeFor(inner) == NetworkIOMode.TwoWay)
-                        {
-                            //TODO: Cleanup?
-                            AddIOCell(OuterCellsByTag, NetworkIOMode.TwoWay, new IntVec3Rot(edgeCell, edgeCell.Rot4Relative(inner)));
-                            //AddIOCell(OuterCellsByTag, NetworkIOMode.Input, new IntVec3Rot(edgeCell, edgeCell.Rot4Relative(inner)));
-                            //AddIOCell(OuterCellsByTag, NetworkIOMode.Output, new IntVec3Rot(edgeCell, edgeCell.Rot4Relative(inner)));
-                        }
-                        if (InnerModeFor(inner) == NetworkIOMode.Input)
-                            AddIOCell(OuterCellsByTag, NetworkIOMode.Input, new IntVec3Rot(edgeCell, edgeCell.Rot4Relative(inner)));
-                        if (InnerModeFor(inner) == NetworkIOMode.Output)
-                            AddIOCell(OuterCellsByTag, NetworkIOMode.Output, new IntVec3Rot(edgeCell, edgeCell.Rot4Relative(inner)));
-                    }
-                }
+                InnerConnnectionCells[k] = innerCells[k];
             }
 
-            cachedInnerConnectionCells = cellsInner.ToArray();
-            cachedConnectionCells = cellsOuter.ToArray();
-        }
-        
-        private string GetCorrectPattern()
-        {
-            if (connectionPattern == null)
+            for (var kk = 0; kk < outerCells.Length; kk++)
             {
-                int widthx = thing.RotatedSize.x;
-                int heighty = thing.RotatedSize.z;
-
-                var charArr = new char[widthx * heighty];
-                //Inner Connection Cells
-                for (int x = 0; x < widthx; x++)
-                {
-                    for (int y = 0; y < heighty; y++)
-                    {
-                        charArr[x + (y*widthx)] = _TwoWay;
-                    }
-                }
-                connectionPattern = charArr.ArrayToString();
+                OuterConnnectionCells[kk] = outerCells[kk];
             }
-
-            return PatternByRot(thing.Rotation, thing.def.size);
         }
 
-        private string PatternByRot(Rot4 rotation, IntVec2 size)
+        /// <summary>
+        /// Rotates the pattern array to match the rotation of the thing.
+        /// </summary>
+        internal static IOCell[] RotateIOCells(IOCell[] arr, Rot4 rotation, IntVec2 size)
         {
-            var newPattern = Regex.Replace(connectionPattern, regexIgnore, "").ToCharArray();
-            if (!Regex.IsMatch(connectionPattern, regexMustHave))
-            {
-                TLog.Warning($"Pattern '{connectionPattern}' contains invalid characters. Allowed characters: ({_Input}, {_Output}, {_TwoWay}, {_Empty})");
-            }
-
             int xWidth = size.x;
             int yHeight = size.z;
             if (rotation == Rot4.East)
             {
-                return new string(newPattern.RotateLeft(xWidth, yHeight));
+                arr = arr.RotateLeft(xWidth, yHeight);
             }
-
             if (rotation == Rot4.South)
             {
-                return new string(newPattern.FLipHorizontal(xWidth, yHeight));
+                arr = arr.FLipHorizontal(xWidth, yHeight);
             }
-
             if (rotation == Rot4.West)
             {
-                return new string(newPattern.RotateRight(xWidth, yHeight));
+                arr = arr.RotateRight(xWidth, yHeight);
             }
 
-            return new string(newPattern);
+            for (var c = 0; c < arr.Length; c++)
+            {
+                arr[c] = arr[c].Rotate(rotation);
+            }
+
+            return arr;
         }
         
-        //
-        public void DrawIO()
+        internal static IOCell[] GetIOArr(string input)
         {
-            if (OuterCellsByTag.TryGetValue(_TwoWay, out var twoway))
+            input = input.Replace("|", "");
+            MatchCollection matches = Regex.Matches(input, regexPattern);
+            var io = new IOCell[matches.Count];
+            for (var i = 0; i < matches.Count; i++)
             {
-                foreach (var cell in twoway)
+                var match = matches[i];
+                if (match.Value.Length == 1)
                 {
-                    var drawPos = cell.IntVec.ToVector3ShiftedWithAltitude(AltitudeLayer.MetaOverlays);
-                    Graphics.DrawMesh(MeshPool.plane10, drawPos, cell.Rotation.AsQuat, TeleContent.IOArrowTwoWay, 0);
+                    io[i] = new IOCell(match.Value[0]);
+                }
+                else
+                {
+                    io[i] = new IOCell(match.Value);
                 }
             }
-
-            if (OuterCellsByTag.TryGetValue(_Output, out var output))
-            {
-                foreach (var cell in output)
-                {
-                    var drawPos = cell.IntVec.ToVector3ShiftedWithAltitude(AltitudeLayer.MetaOverlays);
-                    Graphics.DrawMesh(MeshPool.plane10, drawPos, cell.Rotation.AsQuat, TeleContent.IOArrow, 0);
-                }
-            }
-
-            if (OuterCellsByTag.TryGetValue(_Input, out var input))
-            {
-                foreach (var cell in input)
-                {
-                    var drawPos = cell.IntVec.ToVector3ShiftedWithAltitude(AltitudeLayer.MetaOverlays);
-
-                    Graphics.DrawMesh(MeshPool.plane10, drawPos, (cell.Rotation.AsAngle - 180).ToQuat(), TeleContent.IOArrow, 0);
-                }
-            }
+            return io;
         }
 
-        public void PrintIO(SectionLayer layer)
+        internal static string DefaultFallbackIfNecessary(string pattern, IntVec2 size)
         {
-            if (OuterCellsByTag.TryGetValue(_TwoWay, out var twoway))
-            {
-                foreach (var cell in twoway)
-                {
-                    var drawPos = cell.IntVec.ToVector3Shifted();
-                    TDrawing.PrintBasic(layer, drawPos, Vector2.one, TeleContent.IOArrowTwoWay, 0, false);
-                }
-            }
+            if (pattern != null) return pattern;
 
-            if (OuterCellsByTag.TryGetValue(_Output, out var output))
-            {
-                foreach (var cell in output)
-                {
-                    var drawPos = cell.IntVec.ToVector3Shifted();
-                    TDrawing.PrintBasic(layer, drawPos, Vector2.one, TeleContent.IOArrow, cell.Rotation.AsAngle, false);
-                }
-            }
+            int widthx = size.x;
+            int heighty = size.z;
 
-            if (OuterCellsByTag.TryGetValue(_Input, out var input))
+            var charArr = new char[widthx * heighty];
+            
+            for (int x = 0; x < widthx; x++)
             {
-                foreach (var cell in input)
+                for (int y = 0; y < heighty; y++)
                 {
-                    var drawPos = cell.IntVec.ToVector3Shifted();
-                    TDrawing.PrintBasic(layer, drawPos, Vector2.one, TeleContent.IOArrow, (cell.Rotation.AsAngle - 180), false);
+                    charArr[x + (y * widthx)] = _TwoWay;
                 }
             }
+            return charArr.ArrayToString();
         }
+
+        #endregion
+        
+        #region Matching
 
         public bool ConnectsTo(NetworkCellIO otherGeneralIO, out IntVec3 intersectingCell, out NetworkIOMode IOMode)
         {
             intersectingCell = IntVec3.Invalid;
             IOMode = NetworkIOMode.None;
+
             for (var i = 0; i < OuterConnnectionCells.Length; i++)
             {
                 var outerCell = OuterConnnectionCells[i];
-                var outerMode = OuterModeFor(outerCell);
-                if (otherGeneralIO.InnerConnnectionCells.Contains(outerCell) && Matches(otherGeneralIO.InnerModeFor(outerCell), outerMode))
+                var reverse = outerCell.IntVec + outerCell.Direction.Opposite.FacingCell;
+                
+                if (SubMatch(outerCell, otherGeneralIO, out var mode) && otherGeneralIO.SubMatch(reverse, this, out var mode2))
                 {
                     intersectingCell = outerCell;
-                    IOMode = outerMode;
+                    IOMode = mode;
+                    if (mode != mode2)
+                    {
+                        TLog.Warning($"Modes did not match up on connection check {mode} != {mode2}! On {intersectingCell}");
+                    }
+
                     return true;
                 }
             }
-
             return false;
-
-            return OuterConnnectionCells.Where(otherGeneralIO.InnerConnnectionCells.Contains).Any(m => Matches(otherGeneralIO.InnerModeFor(m), OuterModeFor(m)));
         }
 
+        private bool SubMatch(IntVec3 cell, NetworkCellIO other, out NetworkIOMode modeResult)
+        {
+            var outerMode = _modeByCell.GetValueOrDefault(cell, (false, NetworkIOMode.None));
+            var innerMode = other._modeByCell.GetValueOrDefault(cell, (false, NetworkIOMode.None));
+
+            modeResult = outerMode.Item2;
+            if (outerMode.Item1 == innerMode.Item1) return false;
+            return Matches(outerMode.Item2, innerMode.Item2);
+        }
+        
         public static bool Matches(NetworkIOMode innerMode, NetworkIOMode outerMode)
         {
             var innerInput = (innerMode | NetworkIOMode.Input) == NetworkIOMode.Input;
@@ -406,9 +515,69 @@ namespace TeleCore
             return (toInput && fromOutput);
         }
 
-        public bool Contains(IntVec3 cell)
+        #endregion
+
+        #region Rendering
+        public void DrawIO()
         {
-            return InnerConnnectionCells.Contains(cell);
+            if (_outerCells.TryGetValue(NetworkIOMode.TwoWay, out var twoway))
+            {
+                foreach (var cell in twoway)
+                {
+                    var drawPos = cell.IntVec.ToVector3ShiftedWithAltitude(AltitudeLayer.MetaOverlays);
+                    Graphics.DrawMesh(MeshPool.plane10, drawPos, cell.Direction.AsQuat, TeleContent.IOArrowTwoWay, 0);
+                }
+            }
+
+            if (_outerCells.TryGetValue(NetworkIOMode.Output, out var output))
+            {
+                foreach (var cell in output)
+                {
+                    var drawPos = cell.IntVec.ToVector3ShiftedWithAltitude(AltitudeLayer.MetaOverlays);
+                    Graphics.DrawMesh(MeshPool.plane10, drawPos, cell.Direction.AsQuat, TeleContent.IOArrow, 0);
+                }
+            }
+
+            if (_outerCells.TryGetValue(NetworkIOMode.Input, out var input))
+            {
+                foreach (var cell in input)
+                {
+                    var drawPos = cell.IntVec.ToVector3ShiftedWithAltitude(AltitudeLayer.MetaOverlays);
+                    Graphics.DrawMesh(MeshPool.plane10, drawPos, (cell.Direction.AsAngle - 180).ToQuat(), TeleContent.IOArrow, 0);
+                }
+            }
         }
+        
+        public void PrintIO(SectionLayer layer)
+        {
+            if (_outerCells.TryGetValue(NetworkIOMode.TwoWay, out var twoway))
+            {
+                foreach (var cell in twoway)
+                {
+                    var drawPos = cell.IntVec.ToVector3Shifted();
+                    TDrawing.PrintBasic(layer, drawPos, Vector2.one, TeleContent.IOArrowTwoWay, 0, false);
+                }
+            }
+
+            if (_outerCells.TryGetValue(NetworkIOMode.Output, out var output))
+            {
+                foreach (var cell in output)
+                {
+                    var drawPos = cell.IntVec.ToVector3Shifted();
+                    TDrawing.PrintBasic(layer, drawPos, Vector2.one, TeleContent.IOArrow, cell.Direction.AsAngle, false);
+                }
+            }
+
+            if (_outerCells.TryGetValue(NetworkIOMode.Input, out var input))
+            {
+                foreach (var cell in input)
+                {
+                    var drawPos = cell.IntVec.ToVector3Shifted();
+                    TDrawing.PrintBasic(layer, drawPos, Vector2.one, TeleContent.IOArrow, (cell.Direction.AsAngle - 180), false);
+                }
+            }
+        }
+        
+        #endregion
     }
 }

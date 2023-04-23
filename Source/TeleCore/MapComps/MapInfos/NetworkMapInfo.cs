@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using Verse;
 
 namespace TeleCore
@@ -19,7 +20,6 @@ namespace TeleCore
             if (NetworksByType.TryGetValue(networkDef, out var network)) return network;
 
             //Make New
-            TLog.Debug($"Creating NetworkSystem: {networkDef}");
             var networkMaster = new PipeNetworkManager(Map, networkDef);
             NetworksByType.Add(networkDef, networkMaster);
             PipeNetworks.Add(networkMaster);
@@ -43,13 +43,17 @@ namespace TeleCore
         }
 
         //Data Getters
+        /// <summary>
+        /// This checks whether any directly connected parts exist for Linking Graphics.
+        /// </summary>
         public bool HasConnectionAtFor(Thing thing, IntVec3 c)
         {
             var networkStructure = thing.TryGetComp<Comp_Network>();
             if (networkStructure == null) return false;
             foreach (var networkPart in networkStructure.NetworkParts)
             {
-                if (this[networkPart.NetworkDef].HasNetworkConnectionAt(c))
+                if (networkPart.CellIO.VisualConnectionCells.Contains(c)) return true;
+                if (networkPart.DirectPartSet[c] != null)
                 {
                     return true;
                 }

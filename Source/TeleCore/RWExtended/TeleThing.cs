@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using TeleCore.Data.Events;
 using Verse;
 
 namespace TeleCore.RWExtended;
@@ -25,11 +26,28 @@ public class TeleThing : FXThing, IDiscoverable
     {
         base.SpawnSetup(map, respawningAfterLoad);
         Extension = def.TeleExtension();
+        if (Extension.addCustomTick)
+        {
+            TeleEventHandler.EntityTicked += TeleTick;
+        }
     }
-
+    
     public override void DeSpawn(DestroyMode mode = DestroyMode.Vanish)
     {
         base.DeSpawn(mode);
+        if (Extension.addCustomTick)
+        {
+            TeleEventHandler.EntityTicked -= TeleTick;
+        }
+    }
+
+    protected virtual void TeleTick()
+    {
+        foreach (var comp in AllComps)
+        {
+            if (comp is TeleComp teleComp)
+                teleComp.TeleTick();
+        }
     }
 
     public override string GetInspectString()

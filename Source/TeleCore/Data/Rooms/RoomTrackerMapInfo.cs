@@ -13,39 +13,16 @@ namespace TeleCore
      * Update rooms in next tick based on delayed list
      * => efficiency
      */
-    
-    internal enum DelayedRoomUpdateType
-    {
-        Create,
-        Reuse,
-        Destroy,
-    }
 
-    //TODO: Implement delayed worker for roomcomp gen
-    internal struct DelayedRoomUpdateInfo
-    {
-        public DelayedRoomUpdateType type;
-        public RoomUpdateEventArgs args;
-
-        public DelayedRoomUpdateInfo(DelayedRoomUpdateType type, RoomUpdateEventArgs args)
-        {
-            this.type = type;
-            this.args = args;
-        }
-    }
-
-    //Todo: get differences from basegame RegionAndRoomUpdater
-    public class RoomUpdateEventArgs : EventArgs
-    {
-        public Room NewRoom { get; }
-        public Room OldRoom { get; }
-    }
-    
     public class RoomTrackerMapInfo : MapInformation
     {
         private Dictionary<Room, RoomTracker> trackerByRoom;
-        private readonly List<RoomTracker> allTrackers;
-
+        private List<RoomTracker> allTrackers;
+        
+        private RoomUpdater roomUpdater;
+        
+        public RoomUpdater Updater => roomUpdater;
+        
         public Dictionary<Room, RoomTracker> AllTrackers
         {
             get => trackerByRoom;
@@ -64,8 +41,6 @@ namespace TeleCore
                 }
                 if (!trackerByRoom.ContainsKey(room))
                 {
-                    //TRLog.Warning($"RoomMapInfo doesn't contain Room[ID:{room.ID}] on Map[{room.Map}]");
-                    //VerifyState();
                     return null;
                 }
                 return trackerByRoom[room];
@@ -92,11 +67,26 @@ namespace TeleCore
             }
         }
 
-
         public RoomTrackerMapInfo(Map map) : base(map)
         {
             trackerByRoom = new();
             allTrackers = new List<RoomTracker>();
+            roomUpdater = new RoomUpdater(this);
+            
+            TFind.TickManager.RegisterMapUITickAction(() => roomUpdater.Update());
+        }
+
+        public override void ExposeDataExtra()
+        {
+            //Scribe_Collections.Look(ref allTrackers, "trackers", LookMode.Deep);
+        }
+
+        public override void ThreadSafeInit()
+        {
+            foreach (var tracker in allTrackers)
+            {
+                tracker.FinalizeMapInit();
+            }
         }
 
         //
@@ -145,6 +135,8 @@ namespace TeleCore
         public void Disband(RoomTracker tracker)
         {
             tracker.Disband(Map);
+            trackerByRoom.Remove(tracker.Room);
+            allTrackers.Remove(tracker);
         }
 
         public void Notify_RoofChanged(Room room)

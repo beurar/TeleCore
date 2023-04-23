@@ -14,7 +14,9 @@ namespace TeleCore
         private NetworkRole networkRole;
         [Unsaved]
         private Dictionary<NetworkRole, List<NetworkValueDef>> allowedValuesByRoleInt = null!;
-
+        [Unsaved] 
+        private NetworkCellIOSimple _simpleIO;
+        
         //
         public bool requiresController;
 
@@ -24,6 +26,8 @@ namespace TeleCore
         public ContainerConfig<NetworkValueDef> containerConfig;
         public List<NetworkRoleProperties> networkRoles = new(){ NetworkRole.Transmitter };
         public string subIOPattern;
+
+        public NetworkCellIOSimple SimpleIO => _simpleIO;
         
         /// <summary>
         /// Provides sub-managed values by role, if set in the networkRole props.
@@ -64,6 +68,12 @@ namespace TeleCore
                 }
                 return networkRole;
             }
+        }
+
+        public void PostLoadSpecial(ThingDef parent)
+        {
+            if (subIOPattern == null) return;
+            _simpleIO = new NetworkCellIOSimple(subIOPattern, parent);
         }
     }
 }

@@ -63,6 +63,7 @@ namespace TeleCore
             
             //
             var allInjectors = DefInjectors()?.ToArray();
+            TLog.Debug($"Injectors: {allInjectors.ToStringSafeEnumerable()}");
             var skipInjectors = allInjectors is not { Length: > 0 };
             
             var defs = LoadedModManager.RunningMods.SelectMany(s => s.AllDefs).ToArray();
@@ -88,6 +89,11 @@ namespace TeleCore
                 if (skipInjectors) continue;
                 foreach (var injector in allInjectors)
                 {
+                    if (injector.AcceptsSpecial(def))
+                    {
+                        injector.OnDefSpecialInjected(def);
+                    }
+
                     if (isBuildable)
                     {
                         injector.OnBuildableDefInject(bDef);

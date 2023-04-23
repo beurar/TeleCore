@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using TeleCore.Data.Events;
+using Verse;
 
 namespace TeleCore
 {
@@ -15,10 +16,16 @@ namespace TeleCore
         private readonly HashSet<INetworkSubPart> fullSet;
         private readonly HashSet<INetworkSubPart> tickSet;
         private readonly Dictionary<NetworkRole, HashSet<INetworkSubPart>> structuresByRole;
+        private readonly Dictionary<IntVec3,INetworkSubPart> structuresByPosition;
         
-        public HashSet<INetworkSubPart> this[NetworkRole role]
+        public HashSet<INetworkSubPart>? this[NetworkRole role]
         {
             get => structuresByRole.TryGetValue(role, out var value) ? value : null;
+        }
+        
+        public INetworkSubPart? this[IntVec3 pos]
+        {
+            get => structuresByPosition.TryGetValue(pos, out var value) ? value : null;
         }
 
         public HashSet<INetworkSubPart> FullSet => fullSet;
@@ -33,6 +40,7 @@ namespace TeleCore
             fullSet = new HashSet<INetworkSubPart>();
             tickSet = new HashSet<INetworkSubPart>();
             structuresByRole = new Dictionary<NetworkRole, HashSet<INetworkSubPart>>();
+            structuresByPosition = new Dictionary<IntVec3, INetworkSubPart>();
             foreach (NetworkRole role in Enum.GetValues(typeof(NetworkRole)))
             {
                 structuresByRole.Add(role, new HashSet<INetworkSubPart>());
@@ -45,7 +53,6 @@ namespace TeleCore
             parent.RemovedPart += OnPartRemoved;
             parent.NetworkDestroyed += OnNetworkDestroyed;
         }
-
 
         public void Notify_ParentDestroyed()
         {
@@ -93,6 +100,11 @@ namespace TeleCore
                 structuresByRole[flag].Add(part);
             }
 
+            foreach (var cell in part.Parent.Thing.OccupiedRect())
+            {
+                structuresByPosition.Add(cell, part);
+            }
+
             //
             UpdateString();
             return true;
@@ -113,6 +125,11 @@ namespace TeleCore
             foreach (var flag in part.NetworkRole.AllFlags())
             {
                 structuresByRole[flag].Remove(part);
+            }
+            
+            foreach (var cell in part.Parent.Thing.OccupiedRect())
+            {
+                structuresByPosition.Remove(cell);
             }
 
             //

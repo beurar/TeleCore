@@ -1,0 +1,12 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+
+	<!---->
+	<TELE.DEGBUG>Debug</TELE.DEGBUG>
+
+	<!-- Discoveries -->
+	<TELE.Discovery.New>New Discovery!</TELE.Discovery.New>
+	<TELE.Discovery.Title>New Discovery</TELE.Discovery.Title>
+	<TELE.Discovery.Desc>We have made a new discovery:\n\n{0}</TELE.Discovery.Desc>
+	
+</LanguageData>

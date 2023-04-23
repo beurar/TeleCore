@@ -74,7 +74,7 @@ namespace TeleCore
         internal static List<PlaySettingsWorker> _playSettings;
 
         //Static Props
-        public static WorldComp_Tele TeleWorldComp { get; internal set; }
+        public static WorldComp_TeleCore TeleCoreWorldComp { get; internal set; }
 
         public static MapComponent_TeleCore TeleMapComp(int mapInt) => teleMapComps[mapInt];
 
@@ -120,9 +120,9 @@ namespace TeleCore
             teleMapComps[mapComp.map.uniqueID] = mapComp;
         }
 
-        internal static void Notify_NewTeleWorldComp(WorldComp_Tele worldComp)
+        internal static void Notify_NewTeleWorldComp(WorldComp_TeleCore worldComp)
         {
-            TeleWorldComp ??= worldComp;
+            TeleCoreWorldComp ??= worldComp;
         }
 
         #region Def ID
@@ -178,9 +178,9 @@ namespace TeleCore
             return map.TeleCore().ThingGroupCacheInfo;
         }
 
-        public static WorldComp_Tele WorldCompTele()
+        public static WorldComp_TeleCore WorldCompTele()
         {
-            return Find.World.GetComponent<WorldComp_Tele>();
+            return Find.World.GetComponent<WorldComp_TeleCore>();
         }
     }
 }

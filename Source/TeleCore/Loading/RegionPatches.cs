@@ -9,21 +9,62 @@ namespace TeleCore;
 /// </summary>
 internal static class RegionPatches
 {
+    //Hijack Roomtemperature update for cell-based caching
+    #region MyRegion
+
+    [HarmonyPatch(typeof(TemperatureCache), nameof(TemperatureCache.TryCacheRegionTempInfo))]
+    public static class TryCacheRegionTempInfoPatch
+    {
+        public static void Postfix(IntVec3 c, Region reg, Map ___map)
+        {
+            RoomUpdateNotifiers.Notify_RoomUpdateSetDirtyCell(c, reg, ___map);
+        }
+    }
+    
+        
+    [HarmonyPatch(typeof(TemperatureCache), nameof(TemperatureCache.ResetCachedCellInfo))]
+    public static class ResetCachedCellInfoPatch
+    {
+        public static void Postfix(IntVec3 c, Map ___map)
+        {
+            RoomUpdateNotifiers.Notify_RoomUpdateResetDirtyCell(c, ___map);
+        }
+    }
+
+    [HarmonyPatch(typeof(TemperatureCache), nameof(TemperatureCache.TryGetAverageCachedRoomTemp))]
+    public static class TryGetAverageCachedRoomTempPatch
+    {
+        public static void Postfix(Room r)
+        {
+        }
+    }
+
+    #endregion
+    
     [HarmonyPatch(typeof(RegionAndRoomUpdater))]
     [HarmonyPatch("CreateOrUpdateRooms")]
     public static class CreateOrUpdateRoomsPatch
     {
         public static bool Prefix(Map ___map)
         {
-            RoomTrackerUpdater.Notify_RoomUpdatePrefix(___map);
+            RoomUpdateNotifiers.Notify_RoomUpdatePrefix(___map);
             return true;
         }
 
         public static void Postfix(Map ___map)
         {
             //Clear null and void rooms - RW doesnt do this
-            ___map.regionGrid.allRooms.RemoveAll(r => r.Districts.Any(d => d.RegionType == RegionType.None));
-            RoomTrackerUpdater.Notify_RoomUpdatePostfix(___map);
+            for (var i = ___map.regionGrid.allRooms.Count - 1; i >= 0; i--)
+            {
+                var room = ___map.regionGrid.allRooms[i];
+                if (room.Dereferenced)
+                {
+                    ___map.regionGrid.allRooms.RemoveAt(i);
+                }
+            }
+            
+            //
+            RoomUpdateNotifiers.Notify_RoomUpdatePostfix(___map);
         }
     }
 
@@ -35,7 +76,7 @@ internal static class RegionPatches
         {
             if (___map is null) return true;
 
-            RoomTrackerUpdater.Notify_SetNewRoomData(___newRooms, ___reusedOldRooms);
+            RoomUpdateNotifiers.Notify_SetNewRoomData(___newRooms, ___reusedOldRooms);
             return true;
         }
     }
@@ -46,7 +87,7 @@ internal static class RegionPatches
     {
         public static void Postfix(Room __instance)
         {
-            RoomTrackerUpdater.Notify_RoofChanged(__instance);
+            RoomUpdateNotifiers.Notify_RoofChanged(__instance);
         }
     }
 

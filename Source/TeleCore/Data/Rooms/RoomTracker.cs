@@ -1,10 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics.Eventing.Reader;
 using System.Linq;
 using HarmonyLib;
 using RimWorld;
-using TeleCore.Static.Utilities;
+using TeleCore.Data.Logging;
 using UnityEngine;
 using Verse;
 
@@ -12,21 +11,23 @@ namespace TeleCore;
 
 public class RoomTracker
 {
-    private bool wasOutSide = false;
+    //Statics
+    internal static readonly List<Type> RoomComponentTypes;
 
-    private Dictionary<Type, RoomComponent> compsByType = new();
-    private List<RoomComponent> comps = new List<RoomComponent>();
-    private HashSet<RoomTracker> adjacentTrackers;
-    private List<RoomPortal> roomPortals;
+    private readonly Dictionary<Type, RoomComponent> compsByType = new();
+    private readonly List<RoomComponent> comps = new List<RoomComponent>();
+    private readonly HashSet<RoomTracker> adjacentTrackers;
+    private readonly List<RoomPortal> roomPortals;
 
     //Shared Room Data
     private readonly HashSet<Thing> uniqueContainedThingsSet = new HashSet<Thing>();
-    protected ListerThings listerThings;
-    protected ListerThings borderListerThings;
+    private readonly ListerThings listerThings;
+    private readonly ListerThings borderListerThings;
 
     private HashSet<IntVec3> borderCells = new HashSet<IntVec3>();
     private HashSet<IntVec3> thinRoofCells = new HashSet<IntVec3>();
 
+    private bool wasOutSide = false;
     private IntVec3[] cornerCells = new IntVec3[4];
     private IntVec3 minVec;
     private IntVec2 size;
@@ -36,14 +37,13 @@ public class RoomTracker
 
     private RegionType regionTypes;
 
+    public Map Map { get; private set; }
     public bool IsDisbanded { get; private set; }
     public bool IsOutside { get; private set; }
     public bool IsProper { get; private set; }
-
     public int CellCount { get; private set; }
     public int OpenRoofCount { get; private set; }
-
-    public Map Map { get; private set; }
+    
     public Room Room { get; }
 
     public ListerThings ListerThings => listerThings;
@@ -64,6 +64,11 @@ public class RoomTracker
     public Vector3 ActualCenter => actualCenter;
     public Vector3 DrawPos => drawPos;
 
+    static RoomTracker()
+    {
+        RoomComponentTypes = typeof(RoomComponent).AllSubclassesNonAbstract();
+    }
+    
     public RoomTracker(Room room)
     {
         Room = room;
@@ -76,12 +81,25 @@ public class RoomTracker
 
         //Get Group Data
         UpdateGroupData();
-        foreach (var type in typeof(RoomComponent).AllSubclassesNonAbstract())
+        foreach (var type in RoomComponentTypes)
         {
             var comp = (RoomComponent) Activator.CreateInstance(type);
             comp.Create(this);
             compsByType.Add(type, comp);
             comps.Add(comp);
+        }
+        
+        foreach (var comp in comps)
+        {
+            comp.PostCreate(this);
+        }
+    }
+    
+    public void FinalizeMapInit()
+    {
+        foreach (var comp in comps)
+        {
+            comp.FinalizeMapInit();
         }
     }
 
@@ -114,12 +132,13 @@ public class RoomTracker
         foreach (var comp in comps)
         {
             comp.Notify_ThingAdded(thing);
-        }
-
-        //Pawns
-        if (thing is Pawn pawn)
-        {
-            RegisterPawn(pawn);
+            if (thing is Pawn pawn)
+            {
+                //Entered room
+                //var followerExtra = pawn.GetComp<Comp_PathFollowerExtra>();
+                //followerExtra?.Notify_EnteredRoom(this);
+                comp.Notify_PawnEnteredRoom(pawn);
+            }
         }
     }
 
@@ -141,8 +160,6 @@ public class RoomTracker
         foreach (var comp in comps)
         {
             comp.Notify_BorderThingAdded(thing);
-
-            //
             adjacentTrackers.Do(a => comp.AddAdjacent(a.compsByType[comp.GetType()]));
         }
     }
@@ -163,22 +180,8 @@ public class RoomTracker
         }
     }
 
-    protected void RegisterPawn(Pawn pawn)
-    {
-        //Entered room
-        //var followerExtra = pawn.GetComp<Comp_PathFollowerExtra>();
-        //followerExtra?.Notify_EnteredRoom(this);
-
-        //
-        foreach (var comp in comps)
-        {
-            comp.Notify_PawnEnteredRoom(pawn);
-        }
-    }
-
     protected void DeregisterPawn(Pawn pawn)
     {
-        //
         foreach (var comp in comps)
         {
             comp.Notify_PawnLeftRoom(pawn);
@@ -194,14 +197,12 @@ public class RoomTracker
     {
         return ContainedPawns.Contains(pawn);
     }
-
-    //
+    
     public void Reset()
     {
         adjacentTrackers.Clear();
         roomPortals.Clear();
-
-        //
+        
         foreach (var comp in comps)
         {
             comp.Reset();
@@ -210,31 +211,27 @@ public class RoomTracker
 
     public void Notify_Reused()
     {
-        //
         RegenerateData(true);
-        TProfiler.Check("Reused_1");
         foreach (var comp in comps)
         {
             comp.Notify_Reused();
         }
-        TProfiler.Check("Reused_2");
     }
 
-    public void PreApply()
+    public void Init(RoomTracker[]? previous)
     {
         RegenerateData();
         foreach (var comp in comps)
         {
-            comp.PreApply();
+            comp.Init(previous);
         }
     }
 
-    public void FinalizeApply()
+    public void PostInit(RoomTracker[]? previous)
     {
         foreach (var comp in comps)
         {
-            comp.FinalizeApply();
-            TProfiler.Check($"Finalized {comp}");
+            comp.PostInit(previous);
         }
     }
 
@@ -321,12 +318,18 @@ public class RoomTracker
 
     public void RegenerateData(bool ignoreRoomExtents = false, bool regenCellData = true, bool regenListerThings = true)
     {
+        int stepCounter = 0;
         try
         {
             UpdateGroupData();
-            TProfiler.Check("Regen_1");
+            stepCounter = 1;
             if (!ignoreRoomExtents)
             {
+                if (Room.Dereferenced)
+                {
+                    TLog.Warning($"Trying to regenerate dereferenced room. IsDisbanded: {IsDisbanded}");
+                    return;
+                }
                 var extents = Room.ExtentsClose;
                 int minX = extents.minX;
                 int maxX = extents.maxX;
@@ -334,27 +337,31 @@ public class RoomTracker
                 int maxZ = extents.maxZ;
                 cornerCells = extents.Corners.ToArray();
 
+                stepCounter = 2;
                 minVec = new IntVec3(minX, 0, minZ);
                 size = new IntVec2(maxX - minX + 1, maxZ - minZ + 1);
                 actualCenter = extents.CenterVector3;
                 drawPos = new Vector3(minX, AltitudeLayer.FogOfWar.AltitudeFor(), minZ);
+                stepCounter = 3;
             }
             
-            TProfiler.Check("Regen_2");
             //Get Roof and Border Cells
             if (regenCellData)
             {
+                stepCounter = 4;
                 GenerateCellData();
             }
-
-            TProfiler.Check("Regen_3");
+            
+            stepCounter = 5;
             //Get ListerThings
             if (regenListerThings)
             {
+                stepCounter = 6;
                 listerThings.Clear();
                 borderListerThings.Clear();
                 //TODO: Main Performance Killer - Thing processing, maybe parallel for?
                 List<Region> regions = Room.Regions;
+                stepCounter = 7;
                 for (int i = 0; i < regions.Count; i++)
                 {
                     List<Thing> allThings = regions[i].ListerThings.AllThings;
@@ -383,15 +390,15 @@ public class RoomTracker
                         }
                     }
                 }
+                stepCounter = 8;
                 uniqueContainedThingsSet.Clear();
             }
-            TProfiler.Check("Regen_4");
         }
         catch (Exception ex)
         {
             if (ex is OverflowException oEx)
             {
-                TLog.Error($"Arithmetic Overflow Exception in RegenerateData: {oEx}");
+                TLog.Error($"Arithmetic Overflow Exception in RegenerateData - reached step {stepCounter}: {oEx}");
             }
         }
     }
@@ -423,14 +430,14 @@ public class RoomTracker
         thinRoofCells = tCells;
     }
 
+    //Cache Room-Data incase the Room is dereferenced.
     private void UpdateGroupData()
     {
         //
         wasOutSide = IsOutside;
-        IsOutside = Room.UsesOutdoorTemperature;
+        IsOutside = Room.UsesOutdoorTemperature; //Caching to avoid recalc
         IsProper = Room.ProperRoom;
-
-        //
+        
         Map = Room.Map;
         CellCount = Room.CellCount;
 
@@ -440,8 +447,6 @@ public class RoomTracker
             //If not outside, we want to know if there are any open roof cells (implies: small room with a few open roof cells
             OpenRoofCount = Room.OpenRoofCount;
         }
-
-        //
         foreach (var roomRegion in Room.Regions)
         {
             regionTypes |= roomRegion.type;

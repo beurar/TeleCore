@@ -1,6 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <Defs>
-
+<!--
 	<TeleCore.SubMenuDesignationCategoryDef>
 		<defName>TeleCore</defName>
 		<label>TeleCore</label>
@@ -28,5 +28,5 @@
 		<defName>TeleDebug</defName>
 		<label>Debug</label>
 	</TeleCore.SubMenuCategoryDef>  
-  
+  -->
 </Defs>

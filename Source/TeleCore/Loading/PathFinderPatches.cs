@@ -77,9 +77,6 @@ internal static class PathFinderPatches
     
     //
     #region Cell Finding
-
-    
-
     #endregion
 
     //Hanlder Wandering
@@ -128,7 +125,6 @@ internal static class PathFinderPatches
                 //
                 if (previous != null && previous.opcode == OpCodes.Stloc_S && previous.operand is LocalBuilder {LocalIndex: 49})
                 {
-                    TLog.Debug("Patching the thing!!");
                     failSafe2 = false;
                     yield return new CodeInstruction(OpCodes.Ldloc_S, 45);
                     yield return new CodeInstruction(OpCodes.Call, adjustWeight);
@@ -170,7 +166,6 @@ internal static class PathFinderPatches
             {
                 __result += avoidGrid.Grid[index];
             }
-            TLog.Debug($"Postfixing region cellcost factor with {_customAvoidGrids.Count} avoidGrids and base: {__result}");
         }
     }
 }

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using Verse;
 
 namespace TeleCore
@@ -9,6 +10,9 @@ namespace TeleCore
         public virtual void OnPawnInject(ThingDef pawnDef) { }
         public virtual void OnBuildableDefInject(BuildableDef def) { }
 
+        public virtual bool AcceptsSpecial(Def def) => true;
+        public virtual void OnDefSpecialInjected(Def def) { }
+        
         public void Dispose()
         {
             Dispose(true);
