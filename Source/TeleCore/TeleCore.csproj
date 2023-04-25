@@ -110,9 +110,7 @@
     <Folder Include="Data\World\Layers\" />
     <Folder Include="Rendering\Tools\DefEditor" />
     <Folder Include="Rendering\Tools\ModuleVisualizer\ModuleNodes" />
-    <Folder Include="RoomTracking\" />
     <Folder Include="VFX\Particles" />
-    <Folder Include="WorldComps\" />
   </ItemGroup>
 
   <ItemGroup>
@@ -155,6 +153,5 @@
       <Reference Remove="$(PkgKrafs_Rimworld_Ref)\ref\net472\Assembly-CSharp.dll" />
     </ItemGroup>
   </Target>
-
 
 </Project>
