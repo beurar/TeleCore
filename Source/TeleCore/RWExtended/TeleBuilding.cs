@@ -25,19 +25,25 @@ public class TeleBuilding : FXBuilding, IDiscoverable
     public override void SpawnSetup(Map map, bool respawningAfterLoad)
     {
         base.SpawnSetup(map, respawningAfterLoad);
-        Extension = def.TeleExtension();
-        if (Extension is {addCustomTick: true})
+        if (def.HasTeleExtension(out var textension))
         {
-            TeleEventHandler.EntityTicked += TeleTick;
+            Extension = textension;
+            if (Extension.addCustomTick)
+            {
+                TeleEventHandler.EntityTicked += TeleTick;
+            }
         }
     }
     
     public override void DeSpawn(DestroyMode mode = DestroyMode.Vanish)
     {
         base.DeSpawn(mode);
-        if (Extension is {addCustomTick: true})
+        if (Extension != null)
         {
-            TeleEventHandler.EntityTicked -= TeleTick;
+            if (Extension.addCustomTick)
+            {
+                TeleEventHandler.EntityTicked -= TeleTick;
+            }
         }
     }
     

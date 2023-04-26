@@ -12,19 +12,25 @@ public class TeleComp : ThingComp
     public override void PostSpawnSetup(bool respawningAfterLoad)
     {
         base.PostSpawnSetup(respawningAfterLoad);
-        Extension = parent.def.TeleExtension();
-        if (Extension is {addCustomTick: true} && !parent.IsTeleEntity())
+        if (parent.def.HasTeleExtension(out var textension))
         {
-            TeleEventHandler.EntityTicked += TeleTick;
+            Extension = textension;
+            if (Extension.addCustomTick)
+            {
+                TeleEventHandler.EntityTicked += TeleTick;
+            }
         }
     }
 
     public override void PostDeSpawn(Map map)
     {
         base.PostDeSpawn(map);
-        if (Extension is {addCustomTick: true} && !parent.IsTeleEntity())
+        if (Extension != null)
         {
-            TeleEventHandler.EntityTicked -= TeleTick;
+            if (Extension.addCustomTick && !parent.IsTeleEntity())
+            {
+                TeleEventHandler.EntityTicked -= TeleTick;
+            }
         }
     }
 
