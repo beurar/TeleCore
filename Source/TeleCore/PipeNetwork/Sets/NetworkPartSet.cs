@@ -97,12 +97,18 @@ namespace TeleCore
             //
             foreach (var flag in part.NetworkRole.AllFlags())
             {
-                structuresByRole[flag].Add(part);
+                if (!structuresByRole[flag].Add(part))
+                {
+                    TLog.Warning($"Trying to add existing item: {part} for role {flag}.");
+                }
             }
 
             foreach (var cell in part.Parent.Thing.OccupiedRect())
             {
-                structuresByPosition.Add(cell, part);
+                if (!structuresByPosition.TryAdd(cell, part))
+                {
+                    TLog.Warning($"Trying to add existing item on cell: {cell}:{part} with existing Thing: {structuresByPosition[cell]}");
+                }
             }
 
             //
