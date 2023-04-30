@@ -24,8 +24,6 @@ namespace TeleCore
         private int receivingTicks;
         private bool drawNetworkInfo = false;
 
-        //
-
         //DEBUG
         protected bool DebugNetworkCells = false;
 
@@ -627,7 +625,7 @@ namespace TeleCore
             get;
             set;
         } = Rot4.Invalid;
-        
+
         internal void SetFlowDir(INetworkSubPart other)
         {
             /*
