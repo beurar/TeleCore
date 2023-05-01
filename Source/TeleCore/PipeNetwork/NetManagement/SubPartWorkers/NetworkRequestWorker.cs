@@ -52,6 +52,10 @@ public class NetworkRequestWorker : IExposable
         }
     }
 
+    public NetworkRequestWorker()
+    {
+    }
+    
     public NetworkRequestWorker(INetworkRequester requester)
     {
         this.Requester = requester;

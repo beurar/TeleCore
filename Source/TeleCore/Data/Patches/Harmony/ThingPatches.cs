@@ -14,6 +14,7 @@ internal static class ThingPatches
     {
         internal static bool PipeBlocking(ThingDef constr, ThingDef pipe)
         {
+            if (constr == null || pipe == null) return false;
             var networkConstr = constr.GetCompProperties<CompProperties_Network>();
             var networkPipe = pipe.GetCompProperties<CompProperties_Network>();
             if (networkConstr == null || networkPipe == null)
@@ -29,19 +30,19 @@ internal static class ThingPatches
         
         internal static ThingDef GetThingDef(ThingDef thingDef)
         {
-            return (ThingDef)thingDef.entityDefToBuild ?? thingDef;;
+            return thingDef.entityDefToBuild as ThingDef ?? thingDef;;
         }
         
-        internal static ThingDef GetThingDef(Thing thing)
+        internal static ThingDef? GetThingDef(Thing thing)
         {
-            ThingDef thingDef;
+            ThingDef? thingDef;
             if (thing is Blueprint)
             {
-                thingDef = (ThingDef)thing.def.entityDefToBuild;
+                thingDef = thing.def.entityDefToBuild as ThingDef;
             }
             else if (thing is Frame)
             {
-                thingDef = (ThingDef)thing.def.entityDefToBuild;
+                thingDef = thing.def.entityDefToBuild as ThingDef;
             }
             else
             {

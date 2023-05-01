@@ -116,8 +116,6 @@ namespace TeleCore
                 //TODO: Clean this up, shouldnt cast to comp
                 Props = ( (Comp_Network)Parent).Props.networks.Find(p => p.networkDef == internalDef);
             }
-
-            Scribe_Deep.Look(ref requestWorkerInt, nameof(requestWorkerInt));
             
             if (Props.containerConfig != null)
             {
@@ -125,6 +123,8 @@ namespace TeleCore
                 //Scribe_Values.Look(ref requestedCpacityRange, "requestedCpacityRange");
                 Scribe_Container.Look(ref container, Props.containerConfig, this, "container");
             }
+            
+            Scribe_Deep.Look(ref requestWorkerInt, nameof(requestWorkerInt), this);
         }
 
         public void SubPartSetup(bool respawningAfterLoad)
