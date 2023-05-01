@@ -34,44 +34,12 @@ namespace TeleCore
             }
         }
 
-        //Favorited
-        public static bool IsFavorited(BuildableDef def)
-        {
-            return TFind.UIProperties.MenuOptionIsFavorited(def);
-        }
-
-        public static bool ToggleFavorite(BuildableDef def)
-        {
-            TFind.UIProperties.ToggleMenuOptionFavorite(def);
-            return IsFavorited(def);
-        }
-
         //Discovery
-        public static bool HasUnDiscovered(SubBuildMenuDef inMenu, SubMenuGroupDef group)
-        {
-            return Categorized[group].Any(d => HasUnDiscovered(inMenu, group, d.Key));
-        }
-
         public static bool IsActive(SubBuildMenuDef inMenu, BuildableDef def)
         {
             return DebugSettings.godMode || (inMenu.VisWorker?.IsAllowed(def) ?? true);
         }
-
-        public static bool HasUnDiscovered(SubBuildMenuDef inMenu, SubMenuGroupDef group, SubMenuCategoryDef categoryDef)
-        {
-            return Categorized[group][categoryDef].Any(d => !ConstructionOptionDiscovered(d) && IsActive(inMenu, d));
-        }
-
-        internal static bool ConstructionOptionDiscovered(BuildableDef def)
-        {
-            return TFind.Discoveries.MenuOptionHasBeenSeen(def);
-        }
-
-        internal static void Discover_ConstructionOption(BuildableDef def)
-        {
-            TFind.Discoveries.DiscoverInMenu(def);
-        }
-
+        
         public static void Add(BuildableDef def, SubMenuExtension extension)
         {
             var groupDef = extension.groupDef;

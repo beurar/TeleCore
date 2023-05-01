@@ -1,4 +1,8 @@
-﻿namespace TeleCore.Loading;
+﻿using System.Collections.Generic;
+using HarmonyLib;
+using Verse;
+
+namespace TeleCore.Loading;
 
 public static class XMLPatches
 {

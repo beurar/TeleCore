@@ -9,7 +9,7 @@ namespace TeleCore
         public int frames;
         /// <summary>
         /// The list of keyframe collections for each material defined by the parent textureParts list
-        /// </summary>
+        /// </summary>ScribeList
         public List<ScribeList<KeyFrame>> keyFrames;
         public List<AnimationActionEventFlag> eventFlags;
         public IntRange bounds;

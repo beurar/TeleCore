@@ -31,10 +31,29 @@ namespace TeleCore
         
         //
         private Dictionary<SubMenuGroupDef, SubMenuCategoryDef> cachedSelection = new ();
-        private List<BuildableDef> favoriteOptions = new List<BuildableDef>();
         private bool favoriteMenuActive = false;
         
-        //private Dictionary<SubMenuGroupDef, DesignationTexturePack> texturePacks = new ();
+        //SavedData
+        private Dictionary<BuildableDefScribed, SubMenuOptionSettings> optionStates = new ();
+        private List<BuildableDefScribed> favoriteOptions = new (); //Extra cache, Used to render only the favorited options
+
+        public struct SubMenuOptionSettings : IExposable
+        {
+            public bool _isFavorited;
+            public bool _isDiscovered;
+
+            public SubMenuOptionSettings(bool isFavorited, bool isDiscovered)
+            {
+                _isFavorited = isFavorited;
+                _isDiscovered = isDiscovered;
+            }
+
+            public void ExposeData()
+            {
+                Scribe_Values.Look(ref _isDiscovered, "isDiscovered");
+                Scribe_Values.Look(ref _isFavorited, "isFavorite");
+            }
+        }
         
         private SubMenuGroupDef SelectedGroup { get; set; }
         private SubMenuCategoryDef SelectedCategoryDef => cachedSelection[SelectedGroup];
@@ -98,8 +117,11 @@ namespace TeleCore
 
         public void ExposeData()
         {
+            //
             Scribe_Defs.Look(ref menuDef, nameof(menuDef));
-            Scribe_Collections.Look(ref favoriteOptions, nameof(favoriteOptions));
+            Scribe_Collections.Look(ref favoriteOptions, "favoriteOptions");
+            Scribe_Collections.Look(ref optionStates, "optionStates", LookMode.Deep, LookMode.Deep);
+
             if (Scribe.mode == LoadSaveMode.PostLoadInit)
             {
                 Setup(menuDef);
@@ -160,7 +182,7 @@ namespace TeleCore
                         var main = new Rect(0f, curXY.y, DesignatorRect.width, DesignatorRect.height - curXY.y);
                         for (var i = favoriteOptions.Count - 1; i >= 0; i--)
                         {
-                            var def = favoriteOptions[i];
+                            var def = (BuildableDef)favoriteOptions[i];
                             if (!DebugSettings.godMode &&
                                 (def.HasSubMenuExtension(out var subMenu) && subMenu.isDevOption)) continue;
                             if (SubMenuThingDefList.IsActive(menuDef, def))
@@ -185,7 +207,7 @@ namespace TeleCore
                                 ? CurrentTexturePack.tabSelected
                                 : CurrentTexturePack.tab;
                             Widgets.DrawTextureFitted(tabRect, tex, 1f);
-                            if (SubMenuThingDefList.HasUnDiscovered(menuDef, SelectedGroup, cat))
+                            if (HasUnDiscovered(menuDef, SelectedGroup, cat))
                             {
                                 TWidgets.DrawTextureInCorner(tabRect, TeleContent.Undiscovered, 7,
                                     TextAnchor.UpperRight, new Vector2(-6, 3));
@@ -293,7 +315,7 @@ namespace TeleCore
                 Widgets.DrawTextureFitted(rect, TeleContent.Undiscovered, 1);
             }
 
-            var optionDiscovered = SubMenuThingDefList.ConstructionOptionDiscovered(def);
+            var optionDiscovered = OptionIsDiscovered(def);
             if (!optionDiscovered)
             {
                 TWidgets.DrawTextureInCorner(rect, TeleContent.Undiscovered, 7, TextAnchor.UpperRight, new Vector2(-5, 5));
@@ -301,11 +323,11 @@ namespace TeleCore
                 //Widgets.DrawTextureFitted(rect, TiberiumContent.Des_Undisc, 1f);
             }
 
-            var favorited = SubMenuThingDefList.IsFavorited(def);
+            var favorited = OptionIsFavorited(def);
             var favTex = favorited ? TeleContent.Favorite_Filled : TeleContent.Favorite_Unfilled;
             TWidgets.DrawTextureInCorner(rect, favTex, 16, TextAnchor.UpperLeft, new Vector2(5, 5), ()=>
             {
-                if (SubMenuThingDefList.ToggleFavorite(def))
+                if (ToggleOptionFavorite(def))
                 {
                     favoriteOptions.Add(def);
                 }
@@ -319,7 +341,7 @@ namespace TeleCore
             {
                 if (!optionDiscovered)
                 {
-                    SubMenuThingDefList.Discover_ConstructionOption(def);
+                    SetOptionDiscovered(def);
                 }
 
                 var extension = def.SubMenuExtension();
@@ -372,7 +394,7 @@ namespace TeleCore
                 GUI.color = sel ? Color.white : new Color(1f, 1f, 1f, 0.4f);
                 Widgets.DrawTextureFitted(partRect, IconForGroup(groupDef), 1f);
                 GUI.color = Color.white;
-                if (SubMenuThingDefList.HasUnDiscovered(menuDef, groupDef))
+                if (HasUnDiscovered(menuDef, groupDef))
                 {
                     TWidgets.DrawTextureInCorner(partRect, TeleContent.Undiscovered, 8, TextAnchor.UpperRight);
                     //DrawUndiscovered(partRect);
@@ -448,7 +470,60 @@ namespace TeleCore
             return tex;
         }
 
-        //Data
+        #region Menu Item States
+
+        public bool OptionIsFavorited(BuildableDef def)
+        {
+            return optionStates.TryGetValue(def, out var value) && value._isFavorited;
+        }
+        
+        public bool OptionIsDiscovered(BuildableDef def)
+        {
+            return optionStates.TryGetValue(def, out var value) && value._isDiscovered;
+        }
+        
+        public bool ToggleOptionFavorite(BuildableDef def)
+        {
+            if (optionStates.TryGetValue(def, out var state))
+            {
+                state._isFavorited = !state._isFavorited;
+                optionStates[def] = state;
+                return state._isFavorited ;
+            }
+            optionStates.Add(def, new SubMenuOptionSettings(true, false));
+            return true;
+        }
+        
+        public void SetOptionDiscovered(BuildableDef def)
+        {
+            if (OptionIsDiscovered(def)) return;
+            if (optionStates.TryGetValue(def, out var state))
+            {
+                state._isDiscovered = true;
+                optionStates[def] = state;
+                return;
+            }
+            optionStates.Add(def, new SubMenuOptionSettings(false, true));
+        }
+
+        #endregion
+        
+        #region Discovery
+        
+        public bool HasUnDiscovered(SubBuildMenuDef inMenu, SubMenuGroupDef group)
+        {
+            return SubMenuThingDefList.Categorized[group].Any(d => HasUnDiscovered(inMenu, group, d.Key));
+        }
+
+        public bool HasUnDiscovered(SubBuildMenuDef inMenu, SubMenuGroupDef group, SubMenuCategoryDef categoryDef)
+        {
+            return SubMenuThingDefList.Categorized[group][categoryDef].Any(d => !OptionIsDiscovered(d) && SubMenuThingDefList.IsActive(inMenu, d));
+        }
+
+        #endregion
+
+        #region Menu Toggle
+        
         public static void ToggleOpen(SubBuildMenuDef subMenuDef, bool opening)
         {
             if (!StaticData.windowsByDef.TryGetValue(subMenuDef, out SubBuildMenu window))
@@ -477,5 +552,7 @@ namespace TeleCore
                 window.windowRect.center = new Vector2(UI.screenWidth/2f, UI.screenHeight/2f);
             }
         }
+        
+        #endregion
     }
 }

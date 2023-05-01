@@ -67,6 +67,7 @@ namespace TeleCore
 
         //
         internal static Dictionary<SubBuildMenuDef, SubBuildMenu> windowsByDef;
+
         internal static Dictionary<int, MapComponent_TeleCore> teleMapComps;
         internal static Dictionary<BuildableDef, Designator> cachedDesignators;
         
