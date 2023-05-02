@@ -37,6 +37,13 @@ public class HediffComp_ExplodeOnPartDestroyed : HediffComp
     {
         if (hasExploded) return;
         hasExploded = true;
+
+        if (!Pawn.Spawned)
+        {
+            Pawn.TakeDamage(new DamageInfo(Props.explosionProps.damageDef, parent.Part.def.hitPoints, 1));
+            return;
+        }
+        
         if (Props.explosionProps != null)
         {
             Props.explosionProps.DoExplosion(Pawn.Position, Pawn.Map, this.Pawn);
@@ -50,7 +57,7 @@ public class HediffComp_ExplodeOnPartDestroyed : HediffComp
 
         if (Props.destroyBody)
         {
-            Pawn.DeSpawn();
+            Pawn.Destroy();
         }
 
         if (Props.destroyGear)
@@ -79,7 +86,7 @@ public class HediffCompProperties_ExplodeOnPartDestroyed : HediffCompProperties
     public float chanceToExplodeOnPartDestroyed = 1f;
     public bool destroyGear;
     public bool destroyBody;
-    public IntRange damageToGear;
+    public IntRange damageToGear = new(0,0);
     
     public HediffCompProperties_ExplodeOnPartDestroyed()
     {
