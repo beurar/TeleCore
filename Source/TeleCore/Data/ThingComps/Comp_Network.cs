@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using RimWorld;
 using TeleCore.Data.Events;
+using TeleCore.Data.Network;
 using UnityEngine;
 using Verse;
 
@@ -330,26 +331,6 @@ namespace TeleCore
                 action = delegate
                 {
                     NetworkParts[0].Network.Graph.Notify_StateChanged(NetworkParts[0]);
-                }
-            };
-
-            yield return new Command_Target
-            {
-                defaultLabel = "Get Path",
-                targetingParams = TargetingParameters.ForBuilding(),
-                action = delegate (LocalTargetInfo target) {
-                    if (target.Thing is not ThingWithComps compThing) return;
-                    var netComp = compThing.TryGetComp<Comp_Network>();
-                    var part = netComp[NetworkParts[0].NetworkDef];
-                    if (part == null) return;
-
-                    var path = part.Network.Graph.ProcessRequest(new NetworkGraphPathRequest(networkParts[0], part));
-                    if (!path.IsValid) return;
-                    for (var i = 0; i < path.allPaths.Length; i++)
-                    {
-                        var graphPath = path.allPaths[i];
-                        TLog.Debug($"[{i}] {graphPath}");
-                    }
                 }
             };
         }

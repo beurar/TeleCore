@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using TeleCore.Data.Events;
+using TeleCore.Data.Network;
 using Verse;
 
 namespace TeleCore
@@ -47,7 +48,8 @@ namespace TeleCore
             }
         }
         
-        public void RegisterParentForEvents(PipeNetworkManager parent)
+        //TODO: Check relevance
+        public void RegisterParentForEvents(PipeNetworkSystem parent)
         {
             parent.AddedPart += OnPartAdded;
             parent.RemovedPart += OnPartRemoved;

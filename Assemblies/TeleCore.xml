@@ -22,6 +22,11 @@
         <member name="M:TeleCore.GPUTools.CopyRenderTexture(UnityEngine.Texture,UnityEngine.RenderTexture)">
             Copy the contents of one render texture into another. Assumes textures are the same size.
         </member>
+        <member name="M:TeleCore.Data.Network.NetworkMapInfo.HasConnectionAtFor(Verse.Thing,Verse.IntVec3)">
+            <summary>
+            This checks whether any directly connected parts exist for Linking Graphics.
+            </summary>
+        </member>
         <member name="T:TeleCore.ProjectileDefExtension">
             <summary>
             If set on a projectile's def, on Impact, all of these effects will be created - if available.
@@ -307,11 +312,6 @@
         <member name="T:TeleCore.RegionPatches">
             <summary>
             Main handling of changes in regions and rooms of RimWorld
-            </summary>
-        </member>
-        <member name="M:TeleCore.NetworkMapInfo.HasConnectionAtFor(Verse.Thing,Verse.IntVec3)">
-            <summary>
-            This checks whether any directly connected parts exist for Linking Graphics.
             </summary>
         </member>
         <member name="T:TeleCore.PathHelperInfo">

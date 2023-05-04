@@ -545,31 +545,11 @@ namespace TeleCore
                 }
 
                 if (Network == null) yield break;
-
-                yield return new Command_Action
-                {
-                    defaultLabel = $"View Adjacency List",
-                    defaultDesc = Network.Graph.GetAdjacencyList(this)?.ToStringSafeEnumerable(),
-                    action = delegate { }
-                };
-
-                yield return new Command_Action
-                {
-                    defaultLabel = $"View Entire {NetworkDef.defName} Set",
-                    defaultDesc = Network?.PartSet?.ToString() ?? "N/A",
-                    action = delegate { drawNetworkInfo = !drawNetworkInfo; }
-                };
-
+                
                 yield return new Command_Action
                 {
                     defaultLabel = $"Draw Graph",
                     action = delegate { Network.DrawInternalGraph = !Network.DrawInternalGraph; }
-                };
-                
-                yield return new Command_Action
-                {
-                    defaultLabel = $"Draw Results",
-                    action = delegate { Network.DrawGraphCachedResults = !Network.DrawGraphCachedResults; }
                 };
 
                 yield return new Command_Action

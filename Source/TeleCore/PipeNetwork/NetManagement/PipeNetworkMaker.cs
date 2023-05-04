@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using TeleCore.Data.Network;
 using TeleCore.Static;
 using UnityEngine;
 using Verse;
@@ -15,9 +16,9 @@ namespace TeleCore
         internal static HashSet<INetworkSubPart> _OpenSubSet = new();
         internal static HashSet<INetworkSubPart> _CurrentSubSet = new();
 
-        public static PipeNetwork RegenerateNetwork(INetworkSubPart root, PipeNetworkManager manager)
+        public static PipeNetwork RegenerateNetwork(INetworkSubPart root, PipeNetworkSystem system)
         {
-            PipeNetwork newNet = new PipeNetwork(root.NetworkDef, manager);
+            PipeNetwork newNet = new PipeNetwork(root.NetworkDef, system);
             GenerateGraph(root, newNet);
             newNet.Initialize();
             return newNet;
@@ -221,8 +222,7 @@ namespace TeleCore
             newPart.Network = network;
             network.Notify_AddPart(newPart);
         }
-        
-        
+
         private static bool TrySetEdge(NetEdge newEdge, NetworkGraph forGraph)
         {
             //Add Edge To Graph with found nodes

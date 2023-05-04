@@ -12,9 +12,6 @@ namespace TeleCore
         private static readonly Material FilledMat = SolidColorMaterials.NewSolidColorMaterial(Color.green, ShaderDatabase.MetaOverlay);
         private static readonly Material UnFilledMat = SolidColorMaterials.NewSolidColorMaterial(TColor.LightBlack, ShaderDatabase.MetaOverlay);
 
-        //
-        private NetworkGraphRequestManager _requestManager;
-
         //Graph Data
         private readonly List<INetworkSubPart> _allNodes;
         private readonly Dictionary<INetworkSubPart, LinkedList<INetworkSubPart>> _adjacencyLists;
@@ -29,10 +26,7 @@ namespace TeleCore
 
         public List<INetworkSubPart> AllNodes => _allNodes;
         private Dictionary<INetworkSubPart, LinkedList<INetworkSubPart>> AdjacencyLists => _adjacencyLists;
-
         public PipeNetwork ParentNetwork { get; internal set; }
-
-        internal NetworkGraphRequestManager Requester => _requestManager;
 
         public NetworkGraph()
         {
@@ -40,19 +34,10 @@ namespace TeleCore
             _adjacencyListEdge = new Dictionary<INetworkSubPart, List<(INetworkSubPart, NetEdge)>>();
             _adjacencyLists = new Dictionary<INetworkSubPart, LinkedList<INetworkSubPart>>();
             _edges = new Dictionary<(INetworkSubPart, INetworkSubPart), NetEdge>();
-            //_edgePairs = new HashSet<(NetEdge, NetEdge)>();
-
-            _requestManager = new NetworkGraphRequestManager(this);
         }
 
         public void Notify_StateChanged(INetworkSubPart part)
         {
-            _requestManager.Notify_NodeStateChanged(part);
-        }
-
-        public NetworkGraphPathResult ProcessRequest(NetworkGraphPathRequest request)
-        {
-            return _requestManager.ProcessRequest(request);
         }
 
         //
@@ -84,23 +69,42 @@ namespace TeleCore
         public bool AddEdge(NetEdge newEdge)
         {
             var newKey = (fromNode: newEdge.startNode, toNode: newEdge.endNode);
-            var reverseKey = (newEdge.endNode, newEdge.startNode);
-            if (_edges.ContainsKey(newKey) || _edges.ContainsKey(reverseKey))
+            if (_edges.ContainsKey(newKey))
             {
                 TLog.Warning($"Key ({newEdge.startNode.Parent.Thing}, {newEdge.endNode.Parent.Thing}) already exists in graph!");
                 return false;
             }
 
-            _edges.Add(newKey, newEdge);
-            
-            /*
-            if (_edges.TryGetValue((newEdge.toNode, newEdge.fromNode), out var value))
+            if (newEdge.IsValid)
             {
-                TLog.Message("Adding edge pair");
-                _edgePairs.Add((newEdge, value));
+                _edges.Add(newKey, newEdge);
+                if (!_adjacencyLists.TryGetValue(newEdge.startNode, out var listSource))
+                {
+                    AddNode(newEdge.startNode);
+                    listSource = _adjacencyLists[newEdge.startNode];
+                }
+                if (!listSource.Contains(newEdge.endNode))
+                {
+                    listSource.AddFirst(newEdge.endNode);
+                    _adjacencyListEdge[newEdge.startNode].Add((newEdge.endNode, newEdge));
+                }
             }
-            */
+            return true;
+        }
+        
+        /*
+        public bool AddEdge(NetEdge newEdge)
+        {
+            var newKey = (fromNode: newEdge.startNode, toNode: newEdge.endNode);
+            var reverseKey = (newEdge.endNode, newEdge.startNode);
+            if (_edges.ContainsKey(newKey) && _edges.ContainsKey(reverseKey))
+            {
+                TLog.Warning($"Key ({newEdge.startNode.Parent.Thing}, {newEdge.endNode.Parent.Thing}) already exists in graph!");
+                return false;
+            }
             
+            _edges.Add(newKey, newEdge);
+
             if (!_adjacencyLists.TryGetValue(newEdge.startNode, out var listSource))
             {
                 AddNode(newEdge.startNode);
@@ -134,6 +138,7 @@ namespace TeleCore
             }
             return true;
         }
+        */
 
         //
         public bool HasKnownEdgeFor(INetworkSubPart fromRoot, IntVec3 cell, out NetEdge netEdge)
@@ -219,11 +224,6 @@ namespace TeleCore
             }
         }
 
-        public void Debug_DrawCachedResults()
-        {
-            _requestManager.Debug_DrawCachedResults();
-        }
-        
         internal void Debug_DrawPressure()
         {
             foreach (var networkSubPart in AllNodes)
