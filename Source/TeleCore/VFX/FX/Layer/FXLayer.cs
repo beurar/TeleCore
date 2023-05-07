@@ -64,12 +64,8 @@ namespace TeleCore
 
         public FXLayer(CompFX compFX, FXLayerData data, FXParentInfo info, int index)
         {
-            TLog.Message($"Adding Layer {index}: {data.graphicData?.texPath} ({data.fxMode})");
-
-            //
             _materialProperties = new MaterialPropertyBlock();
-
-            //
+            
             this.data = data;
             _index = index;
             parentInfo = info;

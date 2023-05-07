@@ -22,6 +22,16 @@
         <member name="M:TeleCore.GPUTools.CopyRenderTexture(UnityEngine.Texture,UnityEngine.RenderTexture)">
             Copy the contents of one render texture into another. Assumes textures are the same size.
         </member>
+        <member name="T:TeleCore.Data.Network.IO.IntVec3Rot">
+            <summary>
+            An IntVec3 with a relative direction attached.
+            </summary>
+        </member>
+        <member name="M:TeleCore.Data.Network.IO.NetworkCellIO.RotateIOCells(TeleCore.Data.Network.IO.IOCell[],Verse.Rot4,Verse.IntVec2)">
+            <summary>
+            Rotates the pattern array to match the rotation of the thing.
+            </summary>
+        </member>
         <member name="M:TeleCore.Data.Network.NetworkMapInfo.HasConnectionAtFor(Verse.Thing,Verse.IntVec3)">
             <summary>
             This checks whether any directly connected parts exist for Linking Graphics.
@@ -218,6 +228,11 @@
             
             </summary>
         </member>
+        <member name="T:TeleCore.CompProperties_Network">
+            <summary>
+            
+            </summary>
+        </member>
         <member name="T:TeleCore.Memory.GarbageMan">
             <summary>
             Calls the GC after being used.
@@ -337,16 +352,6 @@
         <member name="P:TeleCore.PortableNetworkContainer.ForSelf">
             <summary>
             TargetParams for structures to fill this into
-            </summary>
-        </member>
-        <member name="T:TeleCore.IntVec3Rot">
-            <summary>
-            An IntVec3 with a relative direction attached.
-            </summary>
-        </member>
-        <member name="M:TeleCore.NetworkCellIO.RotateIOCells(TeleCore.IOCell[],Verse.Rot4,Verse.IntVec2)">
-            <summary>
-            Rotates the pattern array to match the rotation of the thing.
             </summary>
         </member>
         <member name="M:TeleCore.NetworkSubPart.RequesterTick">
@@ -582,11 +587,6 @@
             </summary>
         </member>
         <member name="T:TeleCore.Building_TeleTurret">
-            <summary>
-            
-            </summary>
-        </member>
-        <member name="T:TeleCore.CompProperties_Network">
             <summary>
             
             </summary>

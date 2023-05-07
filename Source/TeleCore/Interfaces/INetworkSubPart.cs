@@ -1,4 +1,5 @@
-﻿using TeleCore.FlowCore;
+﻿using TeleCore.Data.Network.IO;
+using TeleCore.FlowCore;
 using Verse;
 
 namespace TeleCore
@@ -39,8 +40,7 @@ namespace TeleCore
 
 
         bool CanInteractWith(INetworkSubPart other);
-        bool ConnectsTo(INetworkSubPart otherPart);
-        bool ConnectsTo(INetworkSubPart otherPart, out IntVec3 intersectingCell, out NetworkIOMode IOMode);
+        IOConnectionResult ConnectsTo(INetworkSubPart otherPart);
         bool CanTransmit(NetEdge netEdge);
         bool NeedsValue(NetworkValueDef value, NetworkRole forRole);
     }

@@ -219,7 +219,6 @@ public class PipeNetworkSystem
         PipeNetwork pipeNet = PipeNetworkAt(cell);
         if (pipeNet != null)
         {
-            TLog.Message($"Destroying network at {cell}");
             DeletePipeNetwork(pipeNet);
         }
     }
