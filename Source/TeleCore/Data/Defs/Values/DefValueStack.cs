@@ -12,14 +12,11 @@ using Verse;
 
 namespace TeleCore
 {
-    [StructLayout(LayoutKind.Explicit)]
-    public unsafe struct UnsafeDefValueStack<TDef>
-        where TDef : Def
+    //TODO:
+    public unsafe struct UnsafeDefValueStack<TDef> where TDef : Def
     {
-         [FieldOffset(0)]
         private fixed ushort _stackPart1[4096];
         
-        [FieldOffset(8192)]//2*4095
         private fixed float _stackPart2[4096];
 
         public DefFloat<TDef> At(int index)

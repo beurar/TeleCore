@@ -9,11 +9,39 @@ using Verse;
 
 namespace TeleCore;
 
+public class Gizmo_ContainerStorage : Gizmo_ContainerStorage<FlowValueDef, ValueContainerBase<FlowValueDef>>
+{
+    public Gizmo_ContainerStorage(ValueContainerBase<FlowValueDef> container) : base(container)
+    {
+    }
+    
+    [SyncMethod]
+    protected override void Debug_AddAll(float part)
+    {
+        foreach (var type in container.AcceptedTypes)
+        {
+            container.TryAddValue(type, part);
+        }
+    }
+
+    [SyncMethod]
+    protected override void Debug_Clear()
+    {
+        container.Clear();
+    }
+
+    [SyncMethod]
+    protected override void Debug_AddType(FlowValueDef type, float part)
+    {
+        container.TryAddValue(type, part);
+    }
+}
+
 public class Gizmo_ContainerStorage<TValue, TContainer> : Gizmo
     where TValue : FlowValueDef
     where TContainer : ValueContainerBase<TValue>
 {
-    private TContainer container;
+    protected TContainer container;
 
     public Gizmo_ContainerStorage(TContainer container)
     {
@@ -104,26 +132,17 @@ public class Gizmo_ContainerStorage<TValue, TContainer> : Gizmo
         }, true, false, 1f);
         return new GizmoResult(GizmoState.Clear);
     }
-
-    [SyncMethod]
-    private void Debug_AddAll(float part)
+    
+    protected virtual void Debug_AddAll(float part)
     {
-        foreach (var type in container.AcceptedTypes)
-        {
-            container.TryAddValue(type, part);
-        }
     }
-
-    [SyncMethod]
-    private void Debug_Clear()
+    
+    protected virtual void Debug_Clear()
     {
-        container.Clear();
     }
-
-    [SyncMethod]
-    private void Debug_AddType(TValue type, float part)
+    
+    protected virtual void Debug_AddType(FlowValueDef type, float part)
     {
-        container.TryAddValue(type, part);
     }
 
     public override IEnumerable<FloatMenuOption> RightClickFloatMenuOptions

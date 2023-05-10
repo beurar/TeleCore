@@ -11,7 +11,7 @@ public static class WidgetStackPanel
 	private const float LabelColumnWidth = 130f;
 	private const float InfoColumnWidth = 170f;
 	private const float WindowPadding = 12f;
-	private const float Padding = 12f;
+	private const float Padding = 6f;
 	private const float LineHeight = 24f;
 	private const float ThingIconSize = 22f;
 

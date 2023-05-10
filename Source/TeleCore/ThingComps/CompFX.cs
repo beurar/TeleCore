@@ -32,8 +32,7 @@ public class CompFX : TeleComp
     private bool _hasEffecters;
     private bool spawnedOnce = false;
     private List<IFXLayerProvider> allHeldFXComps;
-
-    //TODO: Performance comparision
+    
     private IFXLayerProvider[] LayerProviderByLayerIndex;
     private IFXEffecterProvider[] EffecterProviderByLayerIndex;
 

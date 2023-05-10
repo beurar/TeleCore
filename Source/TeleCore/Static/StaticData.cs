@@ -127,9 +127,7 @@ namespace TeleCore
         }
 
         #region Def ID
-
-        //TODO:Could be useful to others, needs documentation
-
+        
         /// <summary>
         /// Returns the relative Def object assignable to the provided ID.
         /// </summary>

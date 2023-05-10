@@ -1,22 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
-using Multiplayer.API;
-using TeleCore;
+using TeleCore.FlowCore;
 using UnityEngine;
 using Verse;
 
-namespace TeleCore.FlowCore;
-
-public enum ContainerFillState
-{
-    Full,
-    Partial,
-    Empty
-}
+namespace TeleCore;
 
 //Base Container Template for Values
 public abstract class ValueContainerBase<TValue> : IExposable where TValue : FlowValueDef
@@ -676,7 +667,7 @@ public abstract class ValueContainerBase<TValue> : IExposable where TValue : Flo
         }
     }
     
-    [SyncMethod]
+    //TODO: cant be in generic class [SyncMethod]
     private void Debug_AddAll(float part)
     {
         foreach (var type in AcceptedTypes)
@@ -685,16 +676,14 @@ public abstract class ValueContainerBase<TValue> : IExposable where TValue : Flo
         }
     }
 
-    [SyncMethod]
     private void Debug_Clear()
     {
         Clear();
     }
-
-    [SyncMethod]
-    private void Debug_AddType(TValue type, float part)
+    
+    private void Debug_AddType(FlowValueDef type, float part)
     {
-        TryAddValue(type, part);
+        TryAddValue((TValue) type, part);
     }
 
     #endregion
@@ -718,139 +707,5 @@ public abstract class ValueContainerBase<TValue> : IExposable where TValue : Flo
         sb.AppendLine($"StoredValues: {StoredValuesByType.ToStringSafeEnumerable()}");
         sb.AppendLine($"FillSate: {FillState}");
         return sb.ToString();
-    }
-}
-
-//Container Template implementing IContainerHolder
-public abstract class ValueContainer<TValue, THolder> : ValueContainerBase<TValue>
-    where TValue : FlowValueDef
-    where THolder : IContainerHolderBase<TValue>
-{
-    public THolder Holder { get; }
-
-    protected ValueContainer(ContainerConfig<TValue> config, THolder holder) : base(config)
-    {
-        Holder = holder;
-    }
-
-    public override void Notify_ContainerStateChanged(NotifyContainerChangedArgs<TValue> stateChangeArgs)
-    {
-        Holder?.Notify_ContainerStateChanged(stateChangeArgs);
-    }
-    
-}
-
-public class ValueContainerThing<TValue, THolder> : ValueContainer<TValue, THolder>
-    where TValue : FlowValueDef
-    where THolder : IContainerHolderThing<TValue>
-{
-    //Cache
-    private Gizmo_ContainerStorage<TValue, ValueContainerThing<TValue, THolder>> containerGizmoInt = null;
-
-
-    public Gizmo_ContainerStorage<TValue, ValueContainerThing<TValue, THolder>> ContainerGizmo
-    {
-        get
-        {
-            return containerGizmoInt ??= new Gizmo_ContainerStorage<TValue, ValueContainerThing<TValue, THolder>>(this);
-        }
-    }
-    
-    public Thing ParentThing => Holder.Thing;
-    
-    public ValueContainerThing(ContainerConfig<TValue> config, THolder holder) : base(config, holder)
-    {
-    }
-    
-    public void Notify_ParentDestroyed(DestroyMode mode, Map previousMap)
-    {
-        if (Holder == null || TotalStored <= 0 || mode == DestroyMode.Vanish) return;
-        OnParentDestroyed(mode, previousMap);
-        Clear();
-    }
-
-    public virtual void OnParentDestroyed(DestroyMode mode, Map previousMap)
-    {
-        if (mode is DestroyMode.KillFinalize)
-        {
-            if (Config.explosionProps != null)
-                if (TotalStored > 0)
-                    //float radius = Props.explosionProps.explosionRadius * StoredPercent;
-                    //int damage = (int)(10 * StoredPercent);
-                    //var mainTypeDef = MainValueType.dropThing;
-                    Config.explosionProps.DoExplosion(ParentThing.Position, previousMap, ParentThing);
-            //GenExplosion.DoExplosion(Parent.Thing.Position, previousMap, radius, DamageDefOf.Bomb, Parent.Thing, damage, 5, null, null, null, null, mainTypeDef, 0.18f);
-            if (Config.dropContents)
-            {
-                var i = 0;
-                var drops = GetThingDrops().ToList();
-                Predicate<IntVec3> pred = c => c.InBounds(previousMap) && c.GetEdifice(previousMap) == null;
-                var action = delegate(IntVec3 c)
-                {
-                    if (i < drops.Count)
-                    {
-                        var drop = drops[i];
-                        if (drop != null)
-                        {
-                            GenSpawn.Spawn(drop, c, previousMap);
-                            drops.Remove(drop);
-                        }
-
-                        i++;
-                    }
-                };
-                _ = TeleFlooder.Flood(previousMap, ParentThing.OccupiedRect(), action, pred, drops.Count);
-            }
-        }
-    }
-    
-    public override IEnumerable<Gizmo> GetGizmos()
-    {
-        if (Capacity <= 0) yield break;
-
-
-        if (Holder.ShowStorageGizmo)
-        {
-            if (Find.Selector.NumSelected == 1 && Find.Selector.IsSelected(ParentThing)) yield return ContainerGizmo;
-        }
-        
-        /*
-        if (DebugSettings.godMode)
-        {
-            yield return new Command_Action
-            {
-                defaultLabel = $"DEBUG: Container Options {Props.maxStorage}",
-                icon = TiberiumContent.ContainMode_TripleSwitch,
-                action = delegate
-                {
-                    List<FloatMenuOption> list = new List<FloatMenuOption>();
-                    list.Add(new FloatMenuOption("Add ALL", delegate
-                    {
-                        foreach (var type in AcceptedTypes)
-                        {
-                            TryAddValue(type, 500, out _);
-                        }
-                    }));
-                    list.Add(new FloatMenuOption("Remove ALL", delegate
-                    {
-                        foreach (var type in AcceptedTypes)
-                        {
-                            TryRemoveValue(type, 500, out _);
-                        }
-                    }));
-                    foreach (var type in AcceptedTypes)
-                    {
-                        list.Add(new FloatMenuOption($"Add {type}", delegate
-                        {
-                            TryAddValue(type, 500, out var _);
-                        }));
-                    }
-                    FloatMenu menu = new FloatMenu(list, $"Add NetworkValue", true);
-                    menu.vanishIfMouseDistant = true;
-                    Find.WindowStack.Add(menu);
-                }
-            };
-        }
-        */
     }
 }

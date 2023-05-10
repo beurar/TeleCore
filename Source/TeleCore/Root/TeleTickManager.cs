@@ -179,6 +179,7 @@ public class TeleTickManager
         isPaused = !isPaused;
     }
 
+    //TODO: Switch to using events
     public void RegisterUITickAction(Action action)
     {
         UITickers += action;

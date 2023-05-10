@@ -50,6 +50,7 @@ public class RoomTracker
     public ListerThings BorderListerThings => borderListerThings;
     public List<Thing> ContainedPawns => listerThings.ThingsInGroup(ThingRequestGroup.Pawn);
 
+    public List<RoomComponent> AllComps => comps;
     public HashSet<RoomTracker> AdjacentTrackers => adjacentTrackers;
     public List<RoomPortal> RoomPortals => roomPortals;
 
