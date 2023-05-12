@@ -261,6 +261,7 @@ namespace TeleCore
         public static DefValueStack<TDef> operator +(DefValueStack<TDef> stack , DefValueStack<TDef> other)
         {
             stack = new DefValueStack<TDef>(stack);
+
             foreach (var value in other._stack)
             {
                 stack[value] += value;

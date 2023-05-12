@@ -275,7 +275,7 @@ namespace TeleCore
             {
                 //Requester overview
                 if (parentComp.HasContainer) return true;
-                if (parentComp.NetworkRole.HasFlag(NetworkRole.Requester)) return true;
+                if ((parentComp.NetworkRole & NetworkRole.Requester) == NetworkRole.Requester) return true;
                 return false;
             }
         }
@@ -321,7 +321,7 @@ namespace TeleCore
         private void SetExtensions()
         {
             tabDrawActions = new Dictionary<string, Action<Rect>>();
-            if (parentComp.NetworkRole.HasFlag(NetworkRole.Requester))
+            if ((parentComp.NetworkRole & NetworkRole.Requester) == NetworkRole.Requester)
             {
                 ExtendoTabs.Add("Requester Settings", delegate (Rect rect)
                 {
@@ -502,17 +502,17 @@ namespace TeleCore
             Rect requestSliderRect = ContainerGroupRect.TopPartPixels(10);
             
             //Custom Behaviour
-            if (parentComp.NetworkRole.HasFlag(NetworkRole.Requester))
+            if ((parentComp.NetworkRole & NetworkRole.Requester) == NetworkRole.Requester)
             {
                 //Mode
                 var selectorRect = contentRect.LeftHalf().TopPartPixels(25);
 
-                if (Widgets.ButtonText(selectorRect, parentComp.RequestWorker.Mode.ToString()))
+                if (Widgets.ButtonText(selectorRect, parentComp.RequestWorker.Mode.ToStringSafe()))
                 {
                     FloatMenu menu = new FloatMenu(new List<FloatMenuOption>()
                     {
-                        new (RequesterMode.Automatic.ToString(), delegate { parentComp.RequestWorker.SetMode(RequesterMode.Automatic);}),
-                        new (RequesterMode.Manual.ToString(), delegate { parentComp.RequestWorker.SetMode(RequesterMode.Manual);}),
+                        new (RequesterMode.Automatic.ToStringSafe(), delegate { parentComp.RequestWorker.SetMode(RequesterMode.Automatic);}),
+                        new (RequesterMode.Manual.ToStringSafe(), delegate { parentComp.RequestWorker.SetMode(RequesterMode.Manual);}),
                     },"Set Mode", true);
                     menu.vanishIfMouseDistant = true;
                     Find.WindowStack.Add(menu);

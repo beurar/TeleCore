@@ -83,7 +83,7 @@ namespace TeleCore
                 {
                     var n = twc.TryGetComp<Comp_Network>();
                     if (n == null) return false;
-                    if (!n[networkDef].NetworkRole.HasFlag(NetworkRole.Storage)) return false;
+                    if ((n[networkDef].NetworkRole & NetworkRole.Storage) != NetworkRole.Storage) return false;
                     if (!Container.StoredDefs.Any(n.AcceptsValue)) return false;
                     if (n[networkDef].Container.FillState == ContainerFillState.Full) return false;
                     return true;

@@ -85,7 +85,7 @@ public struct NetworkGraphPathResult
         //
         allPaths = new INetworkSubPart[1][] {singlePath};
         allPartsUnique = new HashSet<INetworkSubPart>();
-        allPartsUnique.AddRange(result);
+        allPartsUnique.AddRange(result);<
 
         allTargets = new HashSet<INetworkSubPart>() { result.Last() };
         singlePath = null;

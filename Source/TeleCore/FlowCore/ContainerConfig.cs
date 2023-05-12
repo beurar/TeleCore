@@ -25,8 +25,9 @@ where TValue: FlowValueDef
     
     //Assumed for Networks only
     public bool leaveContainer = false;
-    public ThingDef droppedContainerDef;
-    public ExplosionProperties explosionProps;
+    // ReSharper disable local UnassignedField.Global
+    public ThingDef? droppedContainerDef;
+    public ExplosionProperties? explosionProps;
     public FlowValueFilterSettings? defaultFilterSettings;
     
     //

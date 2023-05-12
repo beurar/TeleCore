@@ -14,7 +14,7 @@ namespace TeleCore
 
         public GameComponent_TeleCore(Game game)
         {
-            StaticData.Notify_Reload();
+            StaticData.Notify_ClearData();
             actionCompositionHandler = new ActionCompositionHandler();
             updateManager = new TeleUpdateManager();
         }

@@ -135,24 +135,49 @@ public static class NetworkTransactionUtility
         var part = request.requester;
         var graph = part.Network.Graph;
         var adjacencyList = graph.GetAdjacencyListEdge(part);
-        if (adjacencyList == null) yield break;
         foreach (var partEdge in adjacencyList)
         {
             var subPart = partEdge.Item1;
             var edge = partEdge.Item2;
-            //!subPart.NetworkRole.HasFlag(request.requestedRole) 
             if ((subPart.NetworkRole & request.requestedRole) == 0) continue;
-
+            
             if (edge.IsBiDirectional)
-                yield return subPart;
+                yield return ResolvePartFinal(subPart, request);
 
             if (request.FlowDir == ValueFlowDirection.Positive && edge.startNode == part)
-                yield return subPart;
+                yield return ResolvePartFinal(subPart, request);
 
             if (request.FlowDir == ValueFlowDirection.Negative && edge.endNode == part)
-                yield return subPart;
+                yield return ResolvePartFinal(subPart, request);
         }
     }
+
+    private static INetworkSubPart ResolvePartFinal(INetworkSubPart part, TransactionRequest request)
+    {
+        if ((part.NetworkRole & NetworkRole.Passthrough) == 0) return part;
+        
+        var graph = part.Network.Graph;   
+        var adjacencyList = graph.GetAdjacencyListEdge(part);
+        
+        foreach (var partEdge in adjacencyList)
+        {
+            var subPart = partEdge.Item1;
+            var edge = partEdge.Item2;
+            if ((subPart.NetworkRole & request.requestedRole) == 0) continue;
+            
+            if (edge.IsBiDirectional)
+                 return ResolvePartFinal(subPart, request);
+
+            if (request.FlowDir == ValueFlowDirection.Positive && edge.startNode == part)
+                return ResolvePartFinal(subPart, request);
+
+            if (request.FlowDir == ValueFlowDirection.Negative && edge.endNode == part)
+                return ResolvePartFinal(subPart, request);
+        }
+        
+        return part;
+    }
+    
 
     internal static void DoTransaction(TransactionRequest request)
     {

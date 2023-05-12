@@ -83,7 +83,7 @@ namespace TeleCore
 
         static StaticData()
         {
-            Notify_Reload();
+            Notify_ClearData();
             SetupPlaySettings();
         }
 
@@ -92,13 +92,15 @@ namespace TeleCore
             Scribe_Collections.Look(ref windowsByDef, "windowsByDef", LookMode.Def, LookMode.Deep);
         }
         
-        internal static void Notify_Reload()
+        internal static void Notify_ClearData()
         {
             //TLog.Message("Clearing StaticData!");
             teleMapComps = new Dictionary<int, MapComponent_TeleCore>();
             cachedDesignators = new Dictionary<BuildableDef, Designator>();
             windowsByDef = new Dictionary<SubBuildMenuDef, SubBuildMenu>();
             ActionComposition._ID = 0;
+            
+            ClipBoardUtility.Notify_ClearData();
         }
 
         private static void SetupPlaySettings()

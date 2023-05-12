@@ -11,10 +11,14 @@ namespace TeleCore;
 
 public class Gizmo_ContainerStorage : Gizmo_ContainerStorage<FlowValueDef, ValueContainerBase<FlowValueDef>>
 {
-    public Gizmo_ContainerStorage(ValueContainerBase<FlowValueDef> container) : base(container)
+    public Gizmo_ContainerStorage(object container) : base((ValueContainerBase<FlowValueDef>)container)
     {
     }
     
+    public Gizmo_ContainerStorage(ValueContainerBase<FlowValueDef> container) : base(container)
+    {
+    }
+
     [SyncMethod]
     protected override void Debug_AddAll(float part)
     {

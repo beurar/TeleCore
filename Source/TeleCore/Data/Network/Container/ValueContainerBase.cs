@@ -13,19 +13,19 @@ namespace TeleCore;
 public abstract class ValueContainerBase<TValue> : IExposable where TValue : FlowValueDef
 {
     //
-    private readonly ContainerConfig<TValue> _config;
+    private readonly ContainerConfig<TValue> config;
     
     //Dynamic settings
-    protected float capacity;
+    private float capacity;
     
     //Dynamic Data
-    protected Color colorInt;
-    protected float totalStoredCache;
-    protected Dictionary<TValue, float> storedValues = new();
-    protected ContainerValueFilter<TValue> filter;
+    private Color colorInt;
+    private float totalStoredCache;
+    private Dictionary<TValue, float> storedValues = new();
+    private ContainerValueFilter<TValue> filter;
 
     //
-    public virtual string Label => _config.containerLabel;
+    public virtual string Label => config.containerLabel;
     public Color Color => colorInt;
     
     //Capacity Values
@@ -33,7 +33,7 @@ public abstract class ValueContainerBase<TValue> : IExposable where TValue : Flo
     public float TotalStored => totalStoredCache;
     public float StoredPercent => TotalStored / Capacity;
 
-    public ContainerConfig<TValue> Config => _config;
+    public ContainerConfig<TValue> Config => config;
     
     //Capacity State
     public ContainerFillState FillState
@@ -106,7 +106,7 @@ public abstract class ValueContainerBase<TValue> : IExposable where TValue : Flo
 
     public ValueContainerBase(ContainerConfig<TValue> config)
     {
-        _config = config;
+        this.config = config;
         capacity = config.baseCapacity;
 
         if (config.valueDefs == null)
@@ -334,7 +334,7 @@ public abstract class ValueContainerBase<TValue> : IExposable where TValue : Flo
     public virtual TCopy Copy<TCopy>(ContainerConfig<TValue> configOverride = null)
     where TCopy : ValueContainerBase<TValue>
     {
-        var newContainer = (TCopy) Activator.CreateInstance(typeof(TCopy), _config);
+        var newContainer = (TCopy) Activator.CreateInstance(typeof(TCopy), config);
         newContainer.LoadFromStack(ValueStack);
         
         //Copy Settings

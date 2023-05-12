@@ -5,21 +5,29 @@ namespace TeleCore
     /// <summary>
     /// Dynamic Clipboard utility, allows you to save any type via a string tag, and retrieve it the same way.
     /// </summary>
-    
-    
-    //TODO: FIX CLIPBOARD - NOT SAVING
     public static class ClipBoardUtility
     {
-        private static readonly Dictionary<string, object> _clipboard = new Dictionary<string, object>();
+        private static readonly Dictionary<string, object> Clipboard;
 
-        public static bool IsActive(string clipBoardKey)
+        static ClipBoardUtility()
         {
-            return _clipboard.TryGetValue(clipBoardKey, out var value) && value != null;
+            Clipboard = new Dictionary<string, object>();
+        }
+
+        internal static void Notify_ClearData()
+        {
+            Clipboard.Clear();
         }
         
+        public static bool IsActive(string clipBoardKey)
+        {
+            return Clipboard.ContainsKey(clipBoardKey);
+        }
+
         public static T TryGetClipBoard<T>(string tag)
         {
-            if (_clipboard.TryGetValue(tag, out var value))
+            TLog.Debug($"Getting from clip-board for {tag}");
+            if (Clipboard.TryGetValue(tag, out var value))
             {
                 return (T)value;
             }
@@ -28,9 +36,9 @@ namespace TeleCore
 
         public static void TrySetClipBoard<T>(string tag, T value)
         {
-            if (_clipboard.ContainsKey(tag))
+            if (Clipboard.TryAdd(tag, value))
             {
-                _clipboard.Add(tag, value);
+                TLog.Debug($"Copied to clip-board for {tag}");
             }
         }
     }

@@ -172,7 +172,7 @@ public class NetworkSubPart : IExposable, INetworkSubPart, INetworkRequester, IC
     {
         if (respawningAfterLoad) return;
             
-        if (NetworkRole.HasFlag(NetworkRole.Requester))
+        if ((NetworkRole & NetworkRole.Requester) == NetworkRole.Requester)
         {
             requestWorkerInt = new NetworkRequestWorker(this);
         }
@@ -205,44 +205,31 @@ public class NetworkSubPart : IExposable, INetworkSubPart, INetworkRequester, IC
     //Process current stored values according to rules of the network role
     private void ProcessValues()
     {
-        if (NetworkRole.HasFlag(NetworkRole.Passthrough) && Parent.RoleIsActive(NetworkRole.Passthrough))
-        {
-            PassthroughTick();
-        }
-            
         //Producers push to Storages
-        if (NetworkRole.HasFlag(NetworkRole.Producer) && Parent.RoleIsActive(NetworkRole.Producer))
+        if ((NetworkRole & NetworkRole.Producer) == NetworkRole.Producer && Parent.RoleIsActive(NetworkRole.Producer))
         {
             ProducerTick();
         }
 
         //Storages push to Consumers
-        if (NetworkRole.HasFlag(NetworkRole.Storage) && Parent.RoleIsActive(NetworkRole.Storage))
+        if ((NetworkRole & NetworkRole.Storage) == NetworkRole.Storage && Parent.RoleIsActive(NetworkRole.Storage))
         {
             StorageTick();
         }
 
         //Consumers slowly use up own container
-        if (NetworkRole.HasFlag(NetworkRole.Consumer) && Parent.RoleIsActive(NetworkRole.Consumer))
+        if ((NetworkRole & NetworkRole.Consumer) == NetworkRole.Consumer && Parent.RoleIsActive(NetworkRole.Consumer))
         {
             ConsumerTick();
         }
 
         //
-        if (NetworkRole.HasFlag(NetworkRole.Requester) && Parent.RoleIsActive(NetworkRole.Requester))
+        if ((NetworkRole & NetworkRole.Requester) == NetworkRole.Requester && Parent.RoleIsActive(NetworkRole.Requester))
         {
             RequesterTick();
         }
     }
-
-    protected virtual void PassthroughTick()
-    {
-        NetworkTransactionUtility.DoTransaction(new TransactionRequest(this,
-            NetworkRole.Producer, NetworkRole.Storage,
-            part => NetworkTransactionUtility.Actions.TransferToOther_Equalize(this, part),
-            part => NetworkTransactionUtility.Validators.PartValidator_Sender(this, part)));
-    }
-        
+    
     protected virtual void ProducerTick()
     {
         NetworkTransactionUtility.DoTransaction(new TransactionRequest(this,
@@ -360,7 +347,7 @@ public class NetworkSubPart : IExposable, INetworkSubPart, INetworkRequester, IC
                 continue;
             }
                 
-            if (!subPart.NetworkRole.HasFlag(ofRole)) continue;
+            if ((subPart.NetworkRole & ofRole) != ofRole) continue;
             if(!validator(subPart)) continue;
             funcOnPart(subPart);
         }
@@ -382,7 +369,7 @@ public class NetworkSubPart : IExposable, INetworkSubPart, INetworkRequester, IC
                 continue;
             }
 
-            if (!subPart.NetworkRole.HasFlag(ofRole)) continue;
+            if ((subPart.NetworkRole & ofRole) != ofRole) continue;
             if (Container.FillState == ContainerFillState.Empty || subPart.Container.FillState == ContainerFillState.Full) continue;
             for (int i = usedTypes.Count - 1; i >= 0; i--)
             {
@@ -479,7 +466,7 @@ public class NetworkSubPart : IExposable, INetworkSubPart, INetworkRequester, IC
         
     public bool CanTransmit(NetEdge netEdge)
     {
-        return NetworkRole.HasFlag(NetworkRole.Transmitter);
+        return (NetworkRole & NetworkRole.Transmitter) == NetworkRole.Transmitter;
     }
 
     public bool AcceptsValue(NetworkValueDef value)
@@ -567,10 +554,11 @@ public class NetworkSubPart : IExposable, INetworkSubPart, INetworkRequester, IC
         StringBuilder sb = new StringBuilder();
         if (DebugSettings.godMode)
         {
+            
             //TODO: Move to Debug ITab
-            sb.AppendLine($"[{NetworkDef}]ID: {Network?.ID}");
-            sb.AppendLine($"Has Network: {Network != null}");
-            sb.AppendLine($"Network Valid: {Network?.IsValid}");
+            sb.AppendLine($"[{NetworkDef}]ID: {Network?.ID.ToString()}");
+            sb.AppendLine($"Has Network: {(Network != null).ToString()}");
+            sb.AppendLine($"Network Valid: {Network?.IsValid.ToString()}");
             if (IsNetworkNode)
             {
                 sb.AppendLine("Is Node");

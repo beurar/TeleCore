@@ -76,7 +76,7 @@ namespace TeleCore
                     {
                         yield return $"Network seems unused: Cannot find any {nameof(NetworkSubPartProperties)} using this network.";
                     }
-                    else if(!networkDef.NetworkRole.HasFlag(NetworkRole.Controller))
+                    else if((networkDef.NetworkRole & NetworkRole.Controller) != NetworkRole.Controller)
                     {
                         yield return $"controllerDef {controllerDef} does not have the Controller NetworkRole assigned!";
                     }

@@ -10,16 +10,10 @@ public class ValueContainerThing<TValue, THolder> : ValueContainer<TValue, THold
     where TValue : FlowValueDef
     where THolder : IContainerHolderThing<TValue>
 {
-    private Gizmo_ContainerStorage<TValue, ValueContainerThing<TValue, THolder>> containerGizmoInt = null;
+    private Gizmo_ContainerStorage? _gizmoInt;
 
-    public Gizmo_ContainerStorage<TValue, ValueContainerThing<TValue, THolder>> ContainerGizmo
-    {
-        get
-        {
-            return containerGizmoInt ??= new Gizmo_ContainerStorage<TValue, ValueContainerThing<TValue, THolder>>(this);
-        }
-    }
-    
+    public Gizmo_ContainerStorage ContainerGizmo => _gizmoInt ??= new Gizmo_ContainerStorage(this);
+
     public Thing ParentThing => Holder.Thing;
     
     public ValueContainerThing(ContainerConfig<TValue> config, THolder holder) : base(config, holder)
@@ -28,7 +22,7 @@ public class ValueContainerThing<TValue, THolder> : ValueContainer<TValue, THold
     
     public void Notify_ParentDestroyed(DestroyMode mode, Map previousMap)
     {
-        if (Holder == null || TotalStored <= 0 || mode == DestroyMode.Vanish) return;
+        if (TotalStored <= 0 || mode == DestroyMode.Vanish) return;
         OnParentDestroyed(mode, previousMap);
         Clear();
     }
@@ -38,12 +32,17 @@ public class ValueContainerThing<TValue, THolder> : ValueContainer<TValue, THold
         if (mode is DestroyMode.KillFinalize)
         {
             if (Config.explosionProps != null)
+            {
                 if (TotalStored > 0)
+                {
                     //float radius = Props.explosionProps.explosionRadius * StoredPercent;
                     //int damage = (int)(10 * StoredPercent);
                     //var mainTypeDef = MainValueType.dropThing;
                     Config.explosionProps.DoExplosion(ParentThing.Position, previousMap, ParentThing);
-            //GenExplosion.DoExplosion(Parent.Thing.Position, previousMap, radius, DamageDefOf.Bomb, Parent.Thing, damage, 5, null, null, null, null, mainTypeDef, 0.18f);
+                    //GenExplosion.DoExplosion(Parent.Thing.Position, previousMap, radius, DamageDefOf.Bomb, Parent.Thing, damage, 5, null, null, null, null, mainTypeDef, 0.18f);
+                }
+            }
+
             if (Config.dropContents)
             {
                 var i = 0;
@@ -59,7 +58,6 @@ public class ValueContainerThing<TValue, THolder> : ValueContainer<TValue, THold
                             GenSpawn.Spawn(drop, c, previousMap);
                             drops.Remove(drop);
                         }
-
                         i++;
                     }
                 };
