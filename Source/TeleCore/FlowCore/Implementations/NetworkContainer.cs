@@ -42,10 +42,10 @@ public class NetworkContainer : NetworkContainerThing<IContainerHolderNetwork>
     {
         foreach (var storedValue in StoredValuesByType)
         {
-            if (storedValue.Key.thingDroppedFromContainer == null) continue;
-            var count = Mathf.RoundToInt(storedValue.Value / storedValue.Key.valueToThingRatio);
+            if (storedValue.Key.ThingDroppedFromContainer == null) continue;
+            var count = Mathf.RoundToInt(storedValue.Value / storedValue.Key.ValueToThingRatio);
             if (count <= 0) continue;
-            yield return ThingMaker.MakeThing(storedValue.Key.thingDroppedFromContainer);
+            yield return ThingMaker.MakeThing(storedValue.Key.ThingDroppedFromContainer);
         }
     }
 

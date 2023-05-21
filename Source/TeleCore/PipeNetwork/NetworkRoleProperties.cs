@@ -2,52 +2,56 @@
 using System.Xml;
 using Verse;
 
-namespace TeleCore
+namespace TeleCore;
+
+/// <summary>
+/// <para>Allows to set a network value filter for a specific role.</para>
+/// <para>For example: Storage role allows to contain type A, B, C</para>
+/// <para>While Requester role only allows to request B, C</para>
+/// </summary>
+public class NetworkRoleProperties
 {
-    public class NetworkRoleProperties
+    public NetworkRole role = NetworkRole.Transmitter;
+    public List<NetworkValueDef> subValues;
+
+    public bool HasSubValues => subValues != null;
+
+    public NetworkRoleProperties(){}
+
+    public NetworkRoleProperties(NetworkRole networkRole)
     {
-        public NetworkRole role = NetworkRole.Transmitter;
-        public List<NetworkValueDef> subValues;
+        this.role = networkRole;
+    }
 
-        public bool HasSubValues => subValues != null;
+    public static implicit operator NetworkRole(NetworkRoleProperties props) => props.role;
+    public static implicit operator NetworkRoleProperties(NetworkRole role) => new NetworkRoleProperties(role);
 
-        public NetworkRoleProperties(){}
+    public bool IsRole(NetworkRole role)
+    {
+        return this == role;
+    }
 
-        public NetworkRoleProperties(NetworkRole networkRole)
+    public void LoadDataFromXmlCustom(XmlNode xmlRoot)
+    {
+        //
+        if (xmlRoot.Name != "li")
         {
-            this.role = networkRole;
+            TLog.Error($"Definition for networkRole not a listing.");
+            return;
         }
 
-        public static implicit operator NetworkRole(NetworkRoleProperties props) => props.role;
-        public static implicit operator NetworkRoleProperties(NetworkRole role) => new NetworkRoleProperties(role);
-
-        public bool IsRole(NetworkRole role)
+        if (xmlRoot.ChildNodes.Count == 1)
         {
-            return this == role;
+            role = ParseHelper.FromString<NetworkRole>(xmlRoot.InnerText);
+            return;
         }
 
-        public void LoadDataFromXmlCustom(XmlNode xmlRoot)
-        {
-            //
-            if (xmlRoot.Name != "li")
-            {
-                TLog.Error($"Definition for networkRole not a listing.");
-                return;
-            }
+        role = DirectXmlToObject.ObjectFromXml<NetworkRole>(xmlRoot.SelectSingleNode(nameof(role)), false);
+        subValues = DirectXmlToObject.ObjectFromXml<List<NetworkValueDef>>(xmlRoot.SelectSingleNode(nameof(subValues)), true);
+    }
 
-            if (xmlRoot.ChildNodes.Count == 1)
-            {
-                role = ParseHelper.FromString<NetworkRole>(xmlRoot.InnerText);
-                return;
-            }
-
-            role = DirectXmlToObject.ObjectFromXml<NetworkRole>(xmlRoot.SelectSingleNode(nameof(role)), false);
-            subValues = DirectXmlToObject.ObjectFromXml<List<NetworkValueDef>>(xmlRoot.SelectSingleNode(nameof(subValues)), true);
-        }
-
-        public override string ToString()
-        {
-            return role.ToString();
-        }
+    public override string ToString()
+    {
+        return role.ToString();
     }
 }

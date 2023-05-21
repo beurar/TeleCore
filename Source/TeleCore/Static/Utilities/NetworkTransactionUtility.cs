@@ -179,6 +179,7 @@ public static class NetworkTransactionUtility
     }
     
 
+    //TODO: Part invokes transaction, receiving part processes "transaction package", this package can be forwared to other parts
     internal static void DoTransaction(TransactionRequest request)
     {
          if (!request.IsValid) return;
@@ -187,9 +188,7 @@ public static class NetworkTransactionUtility
         foreach (var adjacentPart in AdjacentParts(request))
         {
             if (!adjacentPart.HasContainer) continue; //Cant do transaction without containers
-            if (!request.partValidator?.Invoke(adjacentPart) ?? false) continue; //Custom Validator check
-            if (request.requester.CanInteractWith(adjacentPart)) //Custom interaction check
-                request.transaction.Invoke(adjacentPart);
+            request.DoTransaction(adjacentPart);
         }
 
         /*

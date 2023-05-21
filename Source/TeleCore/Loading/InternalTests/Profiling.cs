@@ -46,9 +46,9 @@ internal class Profiling
             viscosity = 0,
             capacityFactor = 0,
             collectionDef = null,
-            specialDroppedContainerDef = null,
-            thingDroppedFromContainer = null,
-            valueToThingRatio = 0
+            SpecialDroppedContainerDef = null,
+            ThingDroppedFromContainer = null,
+            ValueToThingRatio = 0
         },
         new NetworkValueDef
         {
@@ -72,9 +72,9 @@ internal class Profiling
             viscosity = 0,
             capacityFactor = 0,
             collectionDef = null,
-            specialDroppedContainerDef = null,
-            thingDroppedFromContainer = null,
-            valueToThingRatio = 0
+            SpecialDroppedContainerDef = null,
+            ThingDroppedFromContainer = null,
+            ValueToThingRatio = 0
         },
     };
 

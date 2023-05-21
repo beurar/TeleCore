@@ -9,7 +9,7 @@ namespace TeleCore;
 //This request can be to send or receive a value
     
 //The request has a filter to find potential interactable partners first
-public struct TransactionRequest
+public readonly struct TransactionRequest
 {
     //Request
     public readonly INetworkSubPart requester;
@@ -44,5 +44,12 @@ public struct TransactionRequest
         this.dirtyChecker = dirtyChecker;
 
         this.transaction = transaction;
+    }
+
+    public void DoTransaction(INetworkSubPart networkSubPart)
+    {
+        if (!partValidator?.Invoke(networkSubPart) ?? false) return; //Custom Validator check
+        if (requester.CanInteractWith(networkSubPart)) //Custom interaction check
+            transaction.Invoke(networkSubPart);
     }
 }

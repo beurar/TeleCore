@@ -242,7 +242,12 @@ public class NetworkSubPart : IExposable, INetworkSubPart, INetworkRequester, IC
     {
         if (Container.ContainsForbiddenType)
         {
-            ClearForbiddenTypesSubTick();
+            if (Container.FillState == ContainerFillState.Empty) return;
+            NetworkTransactionUtility.DoTransaction(new TransactionRequest(this,
+                NetworkRole.Storage, NetworkRole.Consumer|NetworkRole.Storage,
+                part => NetworkTransactionUtility.Actions.TransferToOtherPurge(this, part),
+                part => NetworkTransactionUtility.Validators.PartValidator_Sender(this, part,
+                    ePart => FlowValueUtils.CanExchangeForbidden(Container, ePart.Container))));
         }
             
         if (Container.Config.storeEvenly && Network.HasGraph)
@@ -320,18 +325,6 @@ public class NetworkSubPart : IExposable, INetworkSubPart, INetworkRequester, IC
         }
     }
 
-    private void ClearForbiddenTypesSubTick()
-    {
-        if (Container.FillState == ContainerFillState.Empty) return;
-        NetworkTransactionUtility.DoTransaction(new TransactionRequest(this,
-            NetworkRole.Storage, NetworkRole.Consumer|NetworkRole.Storage,
-            part => NetworkTransactionUtility.Actions.TransferToOtherPurge(this, part),
-            part => NetworkTransactionUtility.Validators.PartValidator_Sender(this, part,
-                ePart => FlowValueUtils.CanExchangeForbidden(Container, ePart.Container))));
-        // Container.AllStoredTypes.Any(v => !ePart.Container.GetFilterFor(v).canStore)
-        // Container.FilterSettings.Any(pair => !pair.Value.canStore && ePart.Container.CanHoldValue(pair.Key)))));
-    }
-        
     private void DoNetworkAction(INetworkSubPart fromPart, INetworkSubPart previous, NetworkRole ofRole, Action<INetworkSubPart> funcOnPart, Predicate<INetworkSubPart> validator)
     {
         var adjacencyList = fromPart.Network.Graph.GetAdjacencyList(this);

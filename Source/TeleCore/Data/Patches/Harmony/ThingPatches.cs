@@ -88,7 +88,7 @@ internal static class ThingPatches
 
     [HarmonyPatch(typeof(Thing))]
     [HarmonyPatch(nameof(Thing.SpawnSetup))]
-    public static class SpawnSetupPatch
+    public static class Tele_SpawnSetupPatch
     {
         public static void Postfix(Thing __instance)
         {

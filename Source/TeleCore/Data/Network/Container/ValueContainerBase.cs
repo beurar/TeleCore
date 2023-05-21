@@ -400,58 +400,6 @@ public abstract class ValueContainerBase<TValue> : IExposable where TValue : Flo
         return result.SetActual(actual).Complete().Resolve();
     }
     
-    [Obsolete]
-    public ValueResult<TValue> TryAddValueDeprecated(DefFloat<TValue> value)
-    {
-        float desired = value.Value;
-        float actual = 0;
-        var result = ValueResult<TValue>.Init(desired,AcceptedTypes);
-
-        //If we cant add the value, the operation fails
-        if (!CanAddValue(value))
-        {
-            return result.Fail();
-        }
-        
-        // If the container is full or doesn't accept the type, we don't add anything
-        if (IsFull(value) || !CanReceiveValue(value))
-        {
-            return result.Fail(); //ValueResult<TValue>.Failed(desired);
-        }
-
-        // Calculate excess value if we add more than we can contain
-        var excessValue = Mathf.Max(TotalStored + desired - Capacity, 0);
-
-        // If we cannot add the full wanted value, adjust it to fit within the available capacity
-        actual = value.Value - excessValue;
-        if (desired - excessValue > 0 && excessValue > 0)
-        {
-            actual = desired - excessValue;
-        }
-
-        // If the excess is equivalent to the desired amount - we cannot add more and thus quit
-        if (desired <= 0)
-        {
-            //TODO: This case technically should never happen due to the IsFull check
-            return result.Fail();
-        }
-
-        // Add the actual value to the stored values dictionary
-        if (storedValues.TryGetValue(value, out var currentValue))
-        {
-            storedValues[value] = currentValue + actual;
-            result.AddDiff(value, actual);
-        }
-        else
-        {
-            storedValues.Add(value, actual);
-        }
-
-        // Notify that a value has been added
-        Notify_AddedValue(value, actual);
-        return result.AddDiff(value, actual).SetActual(actual).Complete().Resolve();
-    }
-    
     public bool TryRemoveValue(TValue valueDef, float amount, out ValueResult<TValue> result)
     {
         return result = TryRemoveValue((valueDef, amount));
@@ -491,29 +439,6 @@ public abstract class ValueContainerBase<TValue> : IExposable where TValue : Flo
 
         //On the result, set actual removed value and resolve completion status
         return result.AddDiff(value, -actual).SetActual(actual).Complete().Resolve();
-
-        /*
-        actualValue = wantedValue;
-        if (_storedValues.TryGetValue(valueType, out float value) && value > 0)
-        {
-            if (value >= wantedValue)
-                //If we have stored more than we need to pay, remove the wanted weight
-                _storedValues[valueType] -= wantedValue;
-            else if (value > 0)
-            {
-                //If not enough stored to "pay" the wanted weight, remove the existing weight and set actual removed weight to removed weight 
-                _storedValues[valueType] = 0;
-                actualValue = value;
-            }
-            
-            if (_storedValues[valueType] <= 0)
-            {
-                _storedValues.Remove(valueType);
-            }
-            Notify_RemovedValue(valueType, actualValue);
-        }
-        return actualValue > 0;
-        */
     }
     
     //What are settings on a container value operation?
