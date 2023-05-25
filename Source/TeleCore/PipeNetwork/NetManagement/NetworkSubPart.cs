@@ -2,8 +2,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using TeleCore.Data.Network.IO;
-using TeleCore.FlowCore;
+using TeleCore.Network;
+using TeleCore.Network.IO;
 using TeleCore.Static.Utilities;
 using UnityEngine;
 using Verse;
@@ -187,18 +187,18 @@ public class NetworkSubPart : IExposable, INetworkSubPart, INetworkRequester, IC
             TLog.Warning("Edges should not be ticked!");
             return;
         }
-        var parent = Parent;
-        var isPowered = parent.IsPowered;
-        if (isPowered && parent.IsWorking)
+        
+        var isPowered = Parent.IsPowered;
+        if (isPowered && Parent.IsWorking)
         {
             if (receivingTicks > 0 && lastReceivedTick < Find.TickManager.TicksGame)
                 receivingTicks--;
 
             if (!NetworkActive) return;
             ProcessValues();
-            parent.NetworkPartProcessorTick(this);
+            Parent.NetworkPartProcessorTick(this);
         }
-        parent.NetworkPostTick(this, isPowered);
+        Parent.NetworkPostTick(this, isPowered);
     }
 
     //Network 
@@ -346,6 +346,12 @@ public class NetworkSubPart : IExposable, INetworkSubPart, INetworkRequester, IC
         }
     }
 
+    //Network Transaction Logic
+    public void Notify_ReceivePackage(TransactionPackage package)
+    {
+        
+    }
+    
     //
     private void SubTransfer(INetworkSubPart previousPart, INetworkSubPart part, List<NetworkValueDef> usedTypes, NetworkRole ofRole)
     {

@@ -14,12 +14,12 @@ where TValue : FlowValueDef
 {
     public ValueState State { get; private set; }
     //Initial desire value
-    public float DesiredAmount { get; private set; }
+    public int DesiredAmount { get; private set; }
     //Actual resulting value
-    public float ActualAmount { get; private set; }
+    public int ActualAmount { get; private set; }
 
-    public float LeftOver => DesiredAmount - ActualAmount;
-    public float Diff { get; private set; }
+    public int LeftOver => DesiredAmount - ActualAmount;
+    public int Diff { get; private set; }
 
     public DefValueStack<TValue> FullDiff { get; private set; }
     
@@ -32,7 +32,7 @@ where TValue : FlowValueDef
     {
     }
 
-    public static ValueResult<TValue> InitFail(float desiredAmount)
+    public static ValueResult<TValue> InitFail(int desiredAmount)
     {
         return new ValueResult<TValue>
         {
@@ -42,7 +42,7 @@ where TValue : FlowValueDef
         };
     }
 
-    public static ValueResult<TValue> Init(float desiredAmount, TValue usedDef)
+    public static ValueResult<TValue> Init(int desiredAmount, TValue usedDef)
     {
         return new ValueResult<TValue>
         {
@@ -53,7 +53,7 @@ where TValue : FlowValueDef
         };
     }
 
-    public static ValueResult<TValue> Init(float desiredAmount, ICollection<TValue> usedDefs)
+    public static ValueResult<TValue> Init(int desiredAmount, ICollection<TValue> usedDefs)
     {
         return new ValueResult<TValue>
         {
@@ -64,14 +64,14 @@ where TValue : FlowValueDef
         };
     }
     
-    public ValueResult<TValue> AddDiff(TValue def, float diffAmount)
+    public ValueResult<TValue> AddDiff(TValue def, int diffAmount)
     {
         FullDiff += (def, diffAmount);
         Diff += diffAmount;
         return this;
     }
     
-    public ValueResult<TValue> SetActual(float actual)
+    public ValueResult<TValue> SetActual(int actual)
     {
         ActualAmount = actual;
         return this;
@@ -83,7 +83,7 @@ where TValue : FlowValueDef
         return this;
     }
 
-    public ValueResult<TValue> Complete(float? finalActual = null)
+    public ValueResult<TValue> Complete(int? finalActual = null)
     {
         State = ValueState.Completed;
         ActualAmount = finalActual ?? ActualAmount;

@@ -5,6 +5,7 @@ namespace TeleCore.FlowCore;
 public struct FlowValueFilterSettings : IExposable
 {
     //TODO: These settings define "Valve" and "Pump" behaviour
+    //TODO:Purge shouldnt be possible without power
     public bool canReceive = true;
     public bool canStore = true;
     public bool canTransfer = true;

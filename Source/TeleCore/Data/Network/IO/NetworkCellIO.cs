@@ -6,7 +6,7 @@ using TMPro;
 using UnityEngine;
 using Verse;
 
-namespace TeleCore.Data.Network.IO;
+namespace TeleCore.Network.IO;
 
 
 public class NetworkCellIO

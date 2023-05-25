@@ -44,15 +44,15 @@
         </member>
         <member name="T:TeleCore.FlowCore.ValueResult`1">
             <summary>
-            The result of a <see cref="T:TeleCore.FlowCore.ValueContainerBase`1"/> Value-Change operation.
+            The result of a <see cref="T:TeleCore.ValueContainerBase`1"/> Value-Change operation.
             </summary>
         </member>
         <member name="T:TeleCore.FlowCore.ValueState">
             <summary>
-            The resulting state of a <see cref="T:TeleCore.FlowCore.ValueContainerBase`1"/> value-change operation.
+            The resulting state of a <see cref="T:TeleCore.ValueContainerBase`1"/> value-change operation.
             </summary>
         </member>
-        <member name="M:TeleCore.FlowCore.FlowValueUtils.NeedsEqualizing``2(TeleCore.FlowCore.ValueContainerBase{``0},TeleCore.FlowCore.ValueContainerBase{``1},TeleCore.FlowCore.ValueFlowDirection@,System.Single@)">
+        <member name="M:TeleCore.FlowCore.FlowValueUtils.NeedsEqualizing``2(TeleCore.ValueContainerBase{``0},TeleCore.ValueContainerBase{``1},TeleCore.FlowCore.ValueFlowDirection@,System.Single@)">
             <summary>
             Checks whether or not two containers need to be equalized.
             </summary>
@@ -67,79 +67,6 @@
         <member name="T:TeleCore.FlowCore.IContainerHolderRoom`1">
             <summary>
             Implements a container for a <see cref="P:TeleCore.FlowCore.IContainerHolderRoom`1.Room"/>
-            </summary>
-        </member>
-        <member name="M:TeleCore.FlowCore.ValueContainerBase`1.CanAddValue(TeleCore.DefFloat{`0})">
-            <summary>
-            Provides an extra condition to check against when trying to add a value.
-            </summary>
-        </member>
-        <member name="M:TeleCore.FlowCore.ValueContainerBase`1.CanRemoveValue(TeleCore.DefFloat{`0})">
-            <summary>
-            Provides an extra condition to check against when trying to remove a value.
-            </summary>
-        </member>
-        <member name="M:TeleCore.FlowCore.ValueContainerBase`1.CanReceiveValue(`0)">
-            <summary>
-            Checks the <see cref="F:TeleCore.FlowCore.FlowValueFilterSettings.canReceive"/> boolean.
-            Determines whether or not this value can be received during a transaction./>
-            </summary>
-        </member>
-        <member name="M:TeleCore.FlowCore.ValueContainerBase`1.CanHoldValue(`0)">
-            <summary>
-            Checks the <see cref="F:TeleCore.FlowCore.FlowValueFilterSettings.canStore"/> boolean.
-            Determines whether or not this value needs to be purged from this container./>
-            </summary>
-        </member>
-        <member name="M:TeleCore.FlowCore.ValueContainerBase`1.OnContainerStateChanged(System.Boolean)">
-            <summary>
-            Internal container state logic notifier.
-            </summary>
-        </member>
-        <member name="M:TeleCore.FlowCore.ValueContainerBase`1.Clear">
-            <summary>
-            Clears all values inside the container.
-            </summary>
-        </member>
-        <member name="M:TeleCore.FlowCore.ValueContainerBase`1.Fill(System.Single)">
-            <summary>
-            Fills the container evenly until reaching a desired capacity.
-            </summary>
-        </member>
-        <member name="M:TeleCore.FlowCore.ValueContainerBase`1.ChangeCapacity(System.Int32)">
-            <summary>
-            Sets a new capacity value, overwriting the <see cref="P:TeleCore.FlowCore.ValueContainerBase`1.Config"/> capacity.
-            </summary>
-        </member>
-        <member name="M:TeleCore.FlowCore.ValueContainerBase`1.LoadFromStack(TeleCore.DefValueStack{`0})">
-            <summary>
-            Sets the container values to be sourced by a stack input.
-            </summary>
-            <param name="stack">Stack to provide values for the container.</param>
-        </member>
-        <member name="M:TeleCore.FlowCore.ValueContainerBase`1.TryTransferValue(TeleCore.FlowCore.ValueContainerBase{`0},`0,System.Single,TeleCore.FlowCore.ValueResult{`0}@)">
-            <summary>
-            Attempts to transfer the desired value and amount to another container, returns how much was transfered
-            </summary>
-        </member>
-        <member name="M:TeleCore.FlowCore.ValueContainerBase`1.TryTransferTo(TeleCore.FlowCore.ValueContainerBase{`0},System.Single,TeleCore.DefValueStack{`0}@)">
-            <summary>
-            Attempts to transfer any held value to the other container, split evenly.
-            </summary>
-        </member>
-        <member name="M:TeleCore.FlowCore.ValueContainerBase`1.TryConsume(System.Collections.Generic.IEnumerable{TeleCore.DefFloat{`0}})">
-            <summary>
-            Attempts to consume each given value.
-            </summary>
-        </member>
-        <member name="M:TeleCore.FlowCore.ValueContainerBase`1.TryConsume(System.Single)">
-            <summary>
-            Consumes a set amount, using any value from the container.
-            </summary>
-        </member>
-        <member name="M:TeleCore.FlowCore.ValueContainerBase`1.TryConsume(TeleCore.DefFloat{`0})">
-            <summary>
-            Consumes a fixed given value.
             </summary>
         </member>
         <member name="T:TeleCore.DefFloatRef`1">
@@ -201,6 +128,79 @@
         <member name="M:TeleCore.MapInformation.TeleUpdate">
             <summary>
             This update is called from the TeleRoot Monobehaviour, offloading rendering from the RW Root.
+            </summary>
+        </member>
+        <member name="M:TeleCore.ValueContainerBase`1.CanAddValue(TeleCore.DefFloat{`0})">
+            <summary>
+            Provides an extra condition to check against when trying to add a value.
+            </summary>
+        </member>
+        <member name="M:TeleCore.ValueContainerBase`1.CanRemoveValue(TeleCore.DefFloat{`0})">
+            <summary>
+            Provides an extra condition to check against when trying to remove a value.
+            </summary>
+        </member>
+        <member name="M:TeleCore.ValueContainerBase`1.CanReceiveValue(`0)">
+            <summary>
+            Checks the <see cref="F:TeleCore.FlowCore.FlowValueFilterSettings.canReceive"/> boolean.
+            Determines whether or not this value can be received during a transaction./>
+            </summary>
+        </member>
+        <member name="M:TeleCore.ValueContainerBase`1.CanHoldValue(`0)">
+            <summary>
+            Checks the <see cref="F:TeleCore.FlowCore.FlowValueFilterSettings.canStore"/> boolean.
+            Determines whether or not this value needs to be purged from this container./>
+            </summary>
+        </member>
+        <member name="M:TeleCore.ValueContainerBase`1.OnContainerStateChanged(System.Boolean)">
+            <summary>
+            Internal container state logic notifier.
+            </summary>
+        </member>
+        <member name="M:TeleCore.ValueContainerBase`1.Clear">
+            <summary>
+            Clears all values inside the container.
+            </summary>
+        </member>
+        <member name="M:TeleCore.ValueContainerBase`1.Fill(System.Single)">
+            <summary>
+            Fills the container evenly until reaching a desired capacity.
+            </summary>
+        </member>
+        <member name="M:TeleCore.ValueContainerBase`1.ChangeCapacity(System.Int32)">
+            <summary>
+            Sets a new capacity value, overwriting the <see cref="P:TeleCore.ValueContainerBase`1.Config"/> capacity.
+            </summary>
+        </member>
+        <member name="M:TeleCore.ValueContainerBase`1.LoadFromStack(TeleCore.DefValueStack{`0})">
+            <summary>
+            Sets the container values to be sourced by a stack input.
+            </summary>
+            <param name="stack">Stack to provide values for the container.</param>
+        </member>
+        <member name="M:TeleCore.ValueContainerBase`1.TryTransferValue(TeleCore.ValueContainerBase{`0},`0,System.Single,TeleCore.FlowCore.ValueResult{`0}@)">
+            <summary>
+            Attempts to transfer the desired value and amount to another container, returns how much was transfered
+            </summary>
+        </member>
+        <member name="M:TeleCore.ValueContainerBase`1.TryTransferTo(TeleCore.ValueContainerBase{`0},System.Single,TeleCore.DefValueStack{`0}@)">
+            <summary>
+            Attempts to transfer any held value to the other container, split evenly.
+            </summary>
+        </member>
+        <member name="M:TeleCore.ValueContainerBase`1.TryConsume(System.Collections.Generic.IEnumerable{TeleCore.DefFloat{`0}})">
+            <summary>
+            Attempts to consume each given value.
+            </summary>
+        </member>
+        <member name="M:TeleCore.ValueContainerBase`1.TryConsume(System.Single)">
+            <summary>
+            Consumes a set amount, using any value from the container.
+            </summary>
+        </member>
+        <member name="M:TeleCore.ValueContainerBase`1.TryConsume(TeleCore.DefFloat{`0})">
+            <summary>
+            Consumes a fixed given value.
             </summary>
         </member>
         <member name="T:TeleCore.PlaySettingsWorker">
@@ -380,6 +380,13 @@
             </summary>
             <param name="min">The minimum amount that may be reached before starting to request.</param>
             <param name="max">The maximum amount that can be requested.</param>
+        </member>
+        <member name="T:TeleCore.NetworkRoleProperties">
+            <summary>
+            <para>Allows to set a network value filter for a specific role.</para>
+            <para>For example: Storage role allows to contain type A, B, C</para>
+            <para>While Requester role only allows to request B, C</para>
+            </summary>
         </member>
         <member name="T:TeleCore.NetworkContainerSet">
             <summary>

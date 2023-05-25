@@ -4,18 +4,18 @@ using Verse;
 
 namespace TeleCore.FlowCore;
 
-public class ContainerValueFilter<TValue> : IExposable where TValue: FlowValueDef
+public class FlowValueFilterSettingsTemplate<TValue> : IExposable where TValue: FlowValueDef
 {
     protected Dictionary<TValue, FlowValueFilterSettings> filterSettings = new();
     protected bool canChange = true;
 
     public bool CanChange => canChange;
     
-    public ContainerValueFilter()
+    public FlowValueFilterSettingsTemplate()
     {
     }
 
-    public ContainerValueFilter(List<TValue> acceptedTypes, FlowValueFilterSettings? defaultSettings = null)
+    public FlowValueFilterSettingsTemplate(List<TValue> acceptedTypes, FlowValueFilterSettings? defaultSettings = null)
     {
         canChange = defaultSettings == null;
         foreach (var value in acceptedTypes)
@@ -101,9 +101,9 @@ public class ContainerValueFilter<TValue> : IExposable where TValue: FlowValueDe
 
     #endregion
 
-    public ContainerValueFilter<TValue> Copy()
+    public FlowValueFilterSettingsTemplate<TValue> Copy()
     {
-        return new ContainerValueFilter<TValue>()
+        return new FlowValueFilterSettingsTemplate<TValue>()
         {
             filterSettings = filterSettings.Copy(),
             canChange = canChange

@@ -1,7 +1,7 @@
 ﻿using System;
 using Verse;
 
-namespace TeleCore.Data.Network.IO;
+namespace TeleCore.Network.IO;
 
 //TODO: single-cell multi states need to ignore Inner, instead an accessor should get the correct mode based on the requesting direction
 public struct IOCell

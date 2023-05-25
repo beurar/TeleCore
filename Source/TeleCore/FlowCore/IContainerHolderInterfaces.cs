@@ -1,7 +1,7 @@
 ﻿using System;
 using TeleCore;
 
-namespace TeleCore.FlowCore;
+namespace TeleCore.Network;
 
 public struct ContainerArgs
 {

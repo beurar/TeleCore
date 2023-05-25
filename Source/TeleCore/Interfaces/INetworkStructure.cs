@@ -1,35 +1,34 @@
 ﻿using System.Collections.Generic;
-using TeleCore.Data.Network.IO;
+using TeleCore.Network.IO;
 using Verse;
 
-namespace TeleCore
+namespace TeleCore;
+
+public interface INetworkStructure
 {
-    public interface INetworkStructure
-    {
-        //Data References
-        public Thing Thing { get; }
-        public List<NetworkSubPart> NetworkParts { get; }
-        public NetworkCellIO GeneralIO { get; }
+    //Data References
+    public Thing Thing { get; }
+    public List<NetworkSubPart> NetworkParts { get; }
+    public NetworkCellIO GeneralIO { get; }
 
-        //States
-        public bool IsPowered { get; }
-        public bool IsWorking { get; }
+    //States
+    public bool IsPowered { get; }
+    public bool IsWorking { get; }
         
-        //
-        void NetworkPartProcessorTick(INetworkSubPart subPart);
-        void NetworkPostTick(NetworkSubPart networkSubPart, bool isPowered);
+    //
+    void NetworkPartProcessorTick(INetworkSubPart subPart);
+    void NetworkPostTick(NetworkSubPart networkSubPart, bool isPowered);
 
-        //
-        void Notify_ReceivedValue();
+    //
+    void Notify_ReceivedValue();
 
-        //Methods
-        void Notify_StructureAdded(INetworkStructure other);
-        void Notify_StructureRemoved(INetworkStructure other);
+    //Methods
+    void Notify_StructureAdded(INetworkStructure other);
+    void Notify_StructureRemoved(INetworkStructure other);
 
-        //
-        bool RoleIsActive(NetworkRole role);
-        bool AcceptsValue(NetworkValueDef value);
-        bool CanInteractWith(INetworkSubPart other);
-        bool CanConnectToOther(INetworkStructure other);
-    }
+    //
+    bool RoleIsActive(NetworkRole role);
+    bool AcceptsValue(NetworkValueDef value);
+    bool CanInteractWith(INetworkSubPart other);
+    bool CanConnectToOther(INetworkStructure other);
 }

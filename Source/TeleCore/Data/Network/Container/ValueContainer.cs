@@ -1,6 +1,6 @@
 ﻿using TeleCore.FlowCore;
 
-namespace TeleCore;
+namespace TeleCore.Network;
 
 //Container Template implementing IContainerHolder
 public abstract class ValueContainer<TValue, THolder> : ValueContainerBase<TValue>

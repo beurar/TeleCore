@@ -3,7 +3,7 @@ using System.Linq;
 using UnityEngine;
 using Verse;
 
-namespace TeleCore.Data.Network.IO;
+namespace TeleCore.Network.IO;
 
 public class NetworkCellIOSimple
 {

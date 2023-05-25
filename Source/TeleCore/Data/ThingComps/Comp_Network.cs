@@ -4,8 +4,8 @@ using System.Linq;
 using System.Text;
 using RimWorld;
 using TeleCore.Data.Events;
-using TeleCore.Data.Network;
-using TeleCore.Data.Network.IO;
+using TeleCore.Network;
+using TeleCore.Network.IO;
 using UnityEngine;
 using Verse;
 

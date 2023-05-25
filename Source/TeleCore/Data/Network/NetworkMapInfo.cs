@@ -2,7 +2,7 @@
 using System.Linq;
 using Verse;
 
-namespace TeleCore.Data.Network;
+namespace TeleCore.Network;
 
 public class NetworkMapInfo : MapInformation
 {

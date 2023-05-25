@@ -1,62 +1,61 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 
-namespace TeleCore
+namespace TeleCore;
+
+public class NetworkCostSet
 {
-    public class NetworkCostSet
+    //Cache
+    private float? totalCost;
+    private float? totalSpecificCost;
+
+    private List<NetworkValueDef> acceptedTypes;
+    private List<NetworkCostValue> specificCostsWithValues;
+
+    //
+    public float mainCost;
+    public List<NetworkCostValue> specificCosts;
+
+    public bool HasSpecifics => SpecificCosts.Any();
+
+    public float TotalSpecificCost
     {
-        //Cache
-        private float? totalCost;
-        private float? totalSpecificCost;
-
-        private List<NetworkValueDef> acceptedTypes;
-        private List<NetworkCostValue> specificCostsWithValues;
-
-        //
-        public float mainCost;
-        public List<NetworkCostValue> specificCosts;
-
-        public bool HasSpecifics => SpecificCosts.Any();
-
-        public float TotalSpecificCost
+        get
         {
-            get
-            {
-                totalSpecificCost ??= HasSpecifics ? SpecificCosts.Sum(t => t.value) : 0;
-                return totalSpecificCost.Value;
-            }
+            totalSpecificCost ??= HasSpecifics ? SpecificCosts.Sum(t => t.value) : 0;
+            return totalSpecificCost.Value;
         }
+    }
 
-        public List<NetworkValueDef> AcceptedValueTypes
+    public List<NetworkValueDef> AcceptedValueTypes
+    {
+        get
         {
-            get
-            {
-                acceptedTypes ??= specificCosts.Select(t => t.valueDef).ToList();
-                return acceptedTypes;
-            }
+            acceptedTypes ??= specificCosts.Select(t => t.valueDef).ToList();
+            return acceptedTypes;
         }
+    }
 
-        public List<NetworkCostValue> SpecificCosts
+    public List<NetworkCostValue> SpecificCosts
+    {
+        get
         {
-            get
-            {
-                specificCostsWithValues ??= specificCosts.Where(t => t.HasValue).ToList();
-                return specificCostsWithValues;
-            }
+            specificCostsWithValues ??= specificCosts.Where(t => t.HasValue).ToList();
+            return specificCostsWithValues;
         }
+    }
 
-        public float TotalCost
+    public float TotalCost
+    {
+        get
         {
-            get
-            {
-                totalCost ??= mainCost + TotalSpecificCost;
-                return totalCost.Value;
-            }
+            totalCost ??= mainCost + TotalSpecificCost;
+            return totalCost.Value;
         }
+    }
 
-        public override string ToString()
-        {
-            return $"[Total: {TotalCost}|AT: {AcceptedValueTypes.Count}|SC: {SpecificCosts.Count}]";
-        }
+    public override string ToString()
+    {
+        return $"[Total: {TotalCost}|AT: {AcceptedValueTypes.Count}|SC: {SpecificCosts.Count}]";
     }
 }

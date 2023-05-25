@@ -5,7 +5,7 @@ using UnityEngine;
 using Verse;
 using Verse.Noise;
 
-namespace TeleCore.FlowCore;
+namespace TeleCore.Network;
 
 public interface IContainerHolderNetworkThing : IContainerHolderThing<NetworkValueDef>
 {
@@ -58,7 +58,7 @@ public class NetworkContainer : NetworkContainerThing<IContainerHolderNetwork>
         }
     }
 
-    public override void Notify_AddedValue(NetworkValueDef valueType, float value)
+    public override void Notify_AddedValue(NetworkValueDef valueType, int value)
     {
         Holder?.ContainerSet?.Notify_AddedValue(valueType, value, Holder.NetworkPart);
         base.Notify_AddedValue(valueType, value);
@@ -67,7 +67,7 @@ public class NetworkContainer : NetworkContainerThing<IContainerHolderNetwork>
         Holder.NetworkPart?.Notify_ReceivedValue();
     }
 
-    public override void Notify_RemovedValue(NetworkValueDef valueType, float value)
+    public override void Notify_RemovedValue(NetworkValueDef valueType, int value)
     {
         Holder?.ContainerSet?.Notify_RemovedValue(valueType, value, Holder.NetworkPart);
         base.Notify_RemovedValue(valueType, value);

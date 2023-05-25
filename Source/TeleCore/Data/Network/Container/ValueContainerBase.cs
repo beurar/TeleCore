@@ -3,11 +3,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
+using OneOf;
 using TeleCore.FlowCore;
 using UnityEngine;
 using Verse;
 
-namespace TeleCore;
+namespace TeleCore.Network;
 
 //Base Container Template for Values
 public abstract class ValueContainerBase<TValue> : IExposable where TValue : FlowValueDef
@@ -16,23 +17,23 @@ public abstract class ValueContainerBase<TValue> : IExposable where TValue : Flo
     private readonly ContainerConfig<TValue> config;
     
     //Dynamic settings
-    private float capacity;
+    private int totalStoredCache;
+    private int capacity;
     
     //Dynamic Data
     private Color colorInt;
-    private float totalStoredCache;
-    private Dictionary<TValue, float> storedValues = new();
-    private ContainerValueFilter<TValue> filter;
-
+    private Dictionary<TValue, int> storedValues = new();
+    private FlowValueFilterSettingsTemplate<TValue> filter;
+    
     //
     public virtual string Label => config.containerLabel;
     public Color Color => colorInt;
     
     //Capacity Values
-    public float Capacity => capacity;
-    public float TotalStored => totalStoredCache;
-    public float StoredPercent => TotalStored / Capacity;
-
+    public int Capacity => capacity;
+    public int TotalStored => totalStoredCache;
+    public float StoredPercent => TotalStored / (float)Capacity;
+    
     public ContainerConfig<TValue> Config => config;
     
     //Capacity State
@@ -55,7 +56,7 @@ public abstract class ValueContainerBase<TValue> : IExposable where TValue : Flo
     public bool ContainsForbiddenType => StoredDefs.Any(t => !CanHoldValue(t));
 
     //Value Stuff
-    public Dictionary<TValue, float> StoredValuesByType => storedValues;
+    public Dictionary<TValue, int> StoredValuesByType => storedValues;
     public ICollection<TValue> StoredDefs => storedValues.Keys;
 
     public TValue CurrentMainValueType => storedValues.MaxBy(x => x.Value).Key;
@@ -68,20 +69,20 @@ public abstract class ValueContainerBase<TValue> : IExposable where TValue : Flo
     #region Value Getters
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public virtual float CapacityOf(TValue def)
+    public virtual int CapacityOf(TValue def)
     {
         return Capacity;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public float StoredValueOf(TValue def)
+    public int StoredValueOf(TValue def)
     {
         if (def == null) return 0;
-        return storedValues.GetValueOrDefault(def, 0f);
+        return storedValues.GetValueOrDefault(def, 0);
     }
     
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public float TotalStoredOfMany(IEnumerable<TValue> defs)
+    public int TotalStoredOfMany(IEnumerable<TValue> defs)
     {
         return defs.Sum(StoredValueOf);
     }
@@ -119,7 +120,7 @@ public abstract class ValueContainerBase<TValue> : IExposable where TValue : Flo
         AcceptedTypes = new List<TValue>(config.AllowedValues);
         
         //Setup Filter
-        filter = new ContainerValueFilter<TValue>(AcceptedTypes, config.defaultFilterSettings);
+        filter = new FlowValueFilterSettingsTemplate<TValue>(AcceptedTypes, config.defaultFilterSettings);
 
         ValueStack = new DefValueStack<TValue>(AcceptedTypes, capacity);
     }
@@ -145,9 +146,9 @@ public abstract class ValueContainerBase<TValue> : IExposable where TValue : Flo
     #region Helper Methods
 
     //
-    public float GetMaxTransferRate(TValue valueDef, float desiredValue)
+    public int GetMaxTransferRate(TValue valueDef, float desiredValue)
     {
-        return Mathf.Clamp(desiredValue, 0, CapacityOf(valueDef) - StoredValueOf(valueDef));
+        return (int)Mathf.Clamp(desiredValue, 0, CapacityOf(valueDef) - StoredValueOf(valueDef));
     }
     
     //
@@ -160,7 +161,7 @@ public abstract class ValueContainerBase<TValue> : IExposable where TValue : Flo
     /// <summary>
     /// Provides an extra condition to check against when trying to add a value.
     /// </summary>
-    protected virtual bool CanAddValue(DefFloat<TValue> value)
+    protected virtual bool CanAddValue(DefValue<TValue> value)
     {
         return true;
     }
@@ -168,7 +169,7 @@ public abstract class ValueContainerBase<TValue> : IExposable where TValue : Flo
     /// <summary>
     /// Provides an extra condition to check against when trying to remove a value.
     /// </summary>
-    protected virtual bool CanRemoveValue(DefFloat<TValue> value)
+    protected virtual bool CanRemoveValue(DefValue<TValue> value)
     {
         return true;
     }
@@ -192,19 +193,19 @@ public abstract class ValueContainerBase<TValue> : IExposable where TValue : Flo
         return filter.CanStore(valueType);
     }
     
-    public bool CanTransferAmountTo(ValueContainerBase<TValue> other, float amount)
+    public bool CanTransferAmountTo(ValueContainerBase<TValue> other, int amount)
     {
         return other.TotalStored + amount <= other.Capacity;
     }
     
-    public bool CanTransferAmountTo(ValueContainerBase<TValue> other, TValue valueDef, float amount)
+    public bool CanTransferAmountTo(ValueContainerBase<TValue> other, TValue valueDef, int amount)
     {
         if (storedValues.TryGetValue(valueDef) < amount) return false;
         return other.StoredValueOf(valueDef) + amount <= other.CapacityOf(valueDef);
     }
 
     
-    private bool CanResolveTransfer(ValueContainerBase<TValue> other, TValue type, float amount, out float actualTransfer)
+    private bool CanResolveTransfer(ValueContainerBase<TValue> other, TValue type, int amount, out int actualTransfer)
     {
         var remainingCapacity = type.sharesCapacity
             ? other.CapacityOf(type) - other.StoredValueOf(type)
@@ -215,7 +216,7 @@ public abstract class ValueContainerBase<TValue> : IExposable where TValue : Flo
         return actualTransfer > 0;
     }
 
-    public ContainerValueFilter<TValue> Filter => filter;
+    public FlowValueFilterSettingsTemplate<TValue> Filter => filter;
     
     public FlowValueFilterSettings GetFilterFor(TValue value)
     {
@@ -227,13 +228,13 @@ public abstract class ValueContainerBase<TValue> : IExposable where TValue : Flo
         this.filter.SetSettings(value, filter);
     }
 
-    public ContainerValueFilter<TValue> GetFilterCopy() => filter.Copy();
+    public FlowValueFilterSettingsTemplate<TValue> GetFilterCopy() => filter.Copy();
 
     #endregion
 
     #region State Notifiers
 
-    public virtual void Notify_AddedValue(TValue valueType, float value)
+    public virtual void Notify_AddedValue(TValue valueType, int value)
     {
         totalStoredCache += value;
 
@@ -241,7 +242,7 @@ public abstract class ValueContainerBase<TValue> : IExposable where TValue : Flo
         OnContainerStateChanged();
     }
 
-    public virtual void Notify_RemovedValue(TValue valueType, float value)
+    public virtual void Notify_RemovedValue(TValue valueType, int value)
     {
         totalStoredCache -= value;
 
@@ -258,14 +259,15 @@ public abstract class ValueContainerBase<TValue> : IExposable where TValue : Flo
     {
         //Cache previous stack
         var previous = ValueStack;
-        
-        ValueStack = new DefValueStack<TValue>(storedValues); //Set new stack
+
+        var dict = storedValues.ToDictionary(c => c.Key, v => (OneOf<int,float>)v.Value);
+        ValueStack = new DefValueStack<TValue>(dict); //Set new stack
         var stackDelta = ValueStack - previous; //Get stack delta
         
         //Update metadata
         if (updateMetaData)
         {
-            totalStoredCache = ValueStack.TotalValue;
+            totalStoredCache = ValueStack.TotalValue.AsT0;
         }
 
         //
@@ -299,10 +301,10 @@ public abstract class ValueContainerBase<TValue> : IExposable where TValue : Flo
     /// <summary>
     /// Fills the container evenly until reaching a desired capacity.
     /// </summary>
-    public void Fill(float toCapacity)
+    public void Fill(int toCapacity)
     {
-        float totalValue = toCapacity - TotalStored;
-        float valuePerType = totalValue / AcceptedTypes.Count;
+        int totalValue = toCapacity - TotalStored;
+        int valuePerType = totalValue / AcceptedTypes.Count;
     
         foreach (TValue def in AcceptedTypes)
         {
@@ -325,9 +327,9 @@ public abstract class ValueContainerBase<TValue> : IExposable where TValue : Flo
     public void LoadFromStack(DefValueStack<TValue> stack)
     {
         Clear();
-        foreach (var def in stack)
+        foreach (var defVal in stack)
         {
-            _ = TryAddValue(def.Def, def.Value);
+            _ = TryAddValue(defVal.Def, defVal.ValueInt);
         }
     }
 
@@ -352,19 +354,19 @@ public abstract class ValueContainerBase<TValue> : IExposable where TValue : Flo
     
     #region Processor Methods
 
-    public bool TryAddValue(TValue valueDef, float amount, out ValueResult<TValue> result)
+    public bool TryAddValue(TValue valueDef, int amount, out ValueResult<TValue> result)
     {
         return result = TryAddValue((valueDef, amount));
     }
     
-    public ValueResult<TValue> TryAddValue(TValue valueDef, float amount)
+    public ValueResult<TValue> TryAddValue(TValue valueDef, int amount)
     {
         return TryAddValue((valueDef, amount));
     }
     
-    public ValueResult<TValue> TryAddValue(DefFloat<TValue> value)
+    public ValueResult<TValue> TryAddValue(DefValue<TValue> value)
     {
-        var desired = value.Value; //Local cache for desired value
+        var desired = value.ValueInt; //Local cache for desired value
         var result = ValueResult<TValue>.Init(desired, AcceptedTypes); //ValueResult Init
 
         //Lazy sanity checks for failure
@@ -400,19 +402,19 @@ public abstract class ValueContainerBase<TValue> : IExposable where TValue : Flo
         return result.SetActual(actual).Complete().Resolve();
     }
     
-    public bool TryRemoveValue(TValue valueDef, float amount, out ValueResult<TValue> result)
+    public bool TryRemoveValue(TValue valueDef, int amount, out ValueResult<TValue> result)
     {
         return result = TryRemoveValue((valueDef, amount));
     }
 
-    public ValueResult<TValue> TryRemoveValue(TValue valueDef, float value)
+    public ValueResult<TValue> TryRemoveValue(TValue valueDef, int value)
     {
         return TryRemoveValue((valueDef, value));
     }
 
-    public ValueResult<TValue> TryRemoveValue(DefFloat<TValue> value)
+    public ValueResult<TValue> TryRemoveValue(DefValue<TValue> value)
     {
-        var desired = value.Value;
+        var desired = value.ValueInt;
         var result = ValueResult<TValue>.Init(desired,AcceptedTypes);
 
         //Lazy sanity checks for failure
@@ -448,7 +450,7 @@ public abstract class ValueContainerBase<TValue> : IExposable where TValue : Flo
     /// <summary>
     /// Attempts to transfer the desired value and amount to another container, returns how much was transfered
     /// </summary>
-    public bool TryTransferValue(ValueContainerBase<TValue> other, TValue valueDef, float amount, out ValueResult<TValue> result)
+    public bool TryTransferValue(ValueContainerBase<TValue>? other, TValue valueDef, int amount, out ValueResult<TValue> result)
     {
         //Attempt to transfer a weight to another container
         //Check if anything of that type is stored, check if transfer of weight is possible without loss, try remove the weight from this container
@@ -474,7 +476,7 @@ public abstract class ValueContainerBase<TValue> : IExposable where TValue : Flo
     /// <summary>
     /// Attempts to transfer any held value to the other container, split evenly.
     /// </summary>
-    public ValueResult<TValue> TryTransferTo(ValueContainerBase<TValue> other, float amount, out DefValueStack<TValue> transferedDiff)
+    public ValueResult<TValue> TryTransferTo(ValueContainerBase<TValue> other, int amount, out DefValueStack<TValue> transferedDiff)
     {
         //Even split for each value
         var evenAmount = amount / StoredDefs.Count;
@@ -496,7 +498,7 @@ public abstract class ValueContainerBase<TValue> : IExposable where TValue : Flo
         return transferedDiff switch
         {
             var n when n == 0 => ValueResult<TValue>.InitFail(amount),
-            var n when n > 0 => ValueResult<TValue>.Init(amount, AcceptedTypes).Complete(transferedDiff.TotalValue),
+            var n when n > 0 => ValueResult<TValue>.Init(amount, AcceptedTypes).Complete(transferedDiff.TotalValue.AsT0),
             var n when n == amount => ValueResult<TValue>.Init(amount, AcceptedTypes).Complete(amount),
         };
     }
@@ -504,7 +506,7 @@ public abstract class ValueContainerBase<TValue> : IExposable where TValue : Flo
     /// <summary>
     /// Attempts to consume each given value.
     /// </summary>
-    public bool TryConsume(IEnumerable<DefFloat<TValue>> values)
+    public bool TryConsume(IEnumerable<DefValue<TValue>> values)
     {
         foreach (var value in values)
         {
@@ -519,13 +521,13 @@ public abstract class ValueContainerBase<TValue> : IExposable where TValue : Flo
     /// <summary>
     /// Consumes a set amount, using any value from the container.
     /// </summary>
-    public ValueResult<TValue> TryConsume(float wantedValue)
+    public ValueResult<TValue> TryConsume(int wantedValue)
     {
         if (TotalStored >= wantedValue)
         {
             var allTypes = StoredDefs;
             var equalSplit = wantedValue/allTypes.Count;
-            float actualConsumed = 0;
+            int actualConsumed = 0;
             foreach (var type in allTypes)
             {
                 var remResult = TryRemoveValue(type, equalSplit);
@@ -547,7 +549,7 @@ public abstract class ValueContainerBase<TValue> : IExposable where TValue : Flo
         return ValueResult<TValue>.InitFail(wantedValue);
     }
 
-    public ValueResult<TValue> TryConsume(TValue def, float amount)
+    public ValueResult<TValue> TryConsume(TValue def, int amount)
     {
         return TryConsume((def, amount));
     }
@@ -555,13 +557,13 @@ public abstract class ValueContainerBase<TValue> : IExposable where TValue : Flo
     /// <summary>
     /// Consumes a fixed given value.
     /// </summary>
-    public ValueResult<TValue> TryConsume(DefFloat<TValue> value)
+    public ValueResult<TValue> TryConsume(DefValue<TValue> value)
     {
-        if (StoredValueOf(value) >= (float)value)
+        if (StoredValueOf(value) >= value.ValueInt)
         {
             return TryRemoveValue(value);
         }
-        return ValueResult<TValue>.InitFail((float)value);
+        return ValueResult<TValue>.InitFail(value.ValueInt);
     }
 
     #endregion
@@ -578,7 +580,7 @@ public abstract class ValueContainerBase<TValue> : IExposable where TValue : Flo
             if (_debugFloatMenuOptions == null)
             {
                 _debugFloatMenuOptions = new List<FloatMenuOption>();
-                float part = Capacity / AcceptedTypes.Count;
+                int part = Capacity / AcceptedTypes.Count;
                 _debugFloatMenuOptions.Add(new FloatMenuOption("Add ALL", delegate { Debug_AddAll(part); }));
 
                 _debugFloatMenuOptions.Add(new FloatMenuOption("Remove ALL", Debug_Clear));
@@ -593,7 +595,7 @@ public abstract class ValueContainerBase<TValue> : IExposable where TValue : Flo
     }
     
     //TODO: cant be in generic class [SyncMethod]
-    private void Debug_AddAll(float part)
+    private void Debug_AddAll(int part)
     {
         foreach (var type in AcceptedTypes)
         {
@@ -606,7 +608,7 @@ public abstract class ValueContainerBase<TValue> : IExposable where TValue : Flo
         Clear();
     }
     
-    private void Debug_AddType(FlowValueDef type, float part)
+    private void Debug_AddType(FlowValueDef type, int part)
     {
         TryAddValue((TValue) type, part);
     }

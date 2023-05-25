@@ -1,4 +1,4 @@
-﻿namespace TeleCore.FlowCore;
+﻿namespace TeleCore.Network;
 
 public struct FlowResult
 {

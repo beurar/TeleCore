@@ -1,6 +1,6 @@
 ﻿using Verse;
 
-namespace TeleCore.Data.Network.IO;
+namespace TeleCore.Network.IO;
 
 /// <summary>
 /// An IntVec3 with a relative direction attached.

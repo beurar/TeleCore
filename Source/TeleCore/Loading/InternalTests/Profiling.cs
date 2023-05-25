@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using TeleCore.FlowCore;
+using TeleCore.Network;
 using Verse;
 
 namespace TeleCore.Loading.InternalTests;
@@ -124,10 +125,10 @@ internal class Profiling
 
     internal void ProfileTest1()
     {
-        var values = new List<DefFloat<NetworkValueDef>>();
+        var values = new List<DefValue<NetworkValueDef>>();
         for (int i = 0; i < 1000; i++)
         {
-            values.Add(new DefFloat<NetworkValueDef>(ValueDefs[0], 1 + i));
+            values.Add(new DefValue<NetworkValueDef>(ValueDefs[0], 1 + i));
         }
 
         TLog.Debug("Running Arithmetic Profiling");
@@ -154,9 +155,9 @@ internal class Profiling
         TLog.Debug($"Testing {values.Count} DefValueStack<> Additions - Immutability & Performance");
         stopwatch.Restart();
         var initStack = new DefValueStack<NetworkValueDef>(ValueDefs);
-        initStack += new DefFloat<NetworkValueDef>(ValueDefs[0], 1337);
+        initStack += new DefValue<NetworkValueDef>(ValueDefs[0], 1337);
         var localStack = new DefValueStack<NetworkValueDef>(ValueDefs);
-        localStack += new DefFloat<NetworkValueDef>(ValueDefs[0], 1);
+        localStack += new DefValue<NetworkValueDef>(ValueDefs[0], 1);
         for (int i = 0; i < values.Count; i++)
         {
             localStack += localStack;
@@ -171,8 +172,8 @@ internal class Profiling
 
         stopwatch.Restart();
         TLog.Debug($"Testing {values.Count} DefFloat<> Additions - Immutability & Performance");
-        DefFloat<NetworkValueDef> valueDef = new DefFloat<NetworkValueDef>(ValueDefs[0], 66);
-        var newValueFloat = new DefFloat<NetworkValueDef>(ValueDefs[0], 0);
+        DefValue<NetworkValueDef> valueDef = new DefValue<NetworkValueDef>(ValueDefs[0], 66);
+        var newValueFloat = new DefValue<NetworkValueDef>(ValueDefs[0], 0);
         foreach (var value in values)
         {
             newValueFloat = valueDef + value.Value;

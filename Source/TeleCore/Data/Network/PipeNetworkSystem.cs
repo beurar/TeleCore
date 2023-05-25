@@ -3,7 +3,7 @@ using TeleCore.Data.Events;
 using TeleCore.Data.Network.Generation;
 using Verse;
 
-namespace TeleCore.Data.Network;
+namespace TeleCore.Network;
 
 public class PipeNetworkSystem
 {

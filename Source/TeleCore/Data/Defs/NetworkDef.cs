@@ -2,84 +2,83 @@
 using TeleCore.Static;
 using Verse;
 
-namespace TeleCore
+namespace TeleCore;
+
+//Defines the logical ruleset for a network
+public class NetworkDef : FlowValueCollectionDef
 {
-    //Defines the logical ruleset for a network
-    public class NetworkDef : FlowValueCollectionDef
+    //Cached Data
+    [Unsaved]
+    private Graphic_LinkedNetworkStructure cachedTransmitterGraphic;
+    [Unsaved]
+    private Graphic_Linked_NetworkStructureOverlay cachedOverlayGraphic;
+
+    //General Label
+    public string containerLabel;
+    public string labelShort;
+        
+    //
+    public GraphicData transmitterGraphic;
+    public GraphicData overlayGraphic;
+
+    //
+    public ThingDef portableContainerDefFallback = TeleDefOf.PortableContainer;
+        
+    //Structure Ruleset
+    public ThingDef controllerDef;
+    public ThingDef transmitterDef;
+
+    public bool UsesController => controllerDef != null;
+
+    public Graphic_LinkedNetworkStructure TransmitterGraphic
     {
-        //Cached Data
-        [Unsaved]
-        private Graphic_LinkedNetworkStructure cachedTransmitterGraphic;
-        [Unsaved]
-        private Graphic_Linked_NetworkStructureOverlay cachedOverlayGraphic;
-
-        //General Label
-        public string containerLabel;
-        public string labelShort;
-        
-        //
-        public GraphicData transmitterGraphic;
-        public GraphicData overlayGraphic;
-
-        //
-        public ThingDef portableContainerDefFallback = TeleDefOf.PortableContainer;
-        
-        //Structure Ruleset
-        public ThingDef controllerDef;
-        public ThingDef transmitterDef;
-
-        public bool UsesController => controllerDef != null;
-
-        public Graphic_LinkedNetworkStructure TransmitterGraphic
+        get
         {
-            get
-            {
-                return cachedTransmitterGraphic ??= new Graphic_LinkedNetworkStructure(transmitterGraphic.Graphic);
-            }
+            return cachedTransmitterGraphic ??= new Graphic_LinkedNetworkStructure(transmitterGraphic.Graphic);
+        }
+    }
+
+    public Graphic_Linked_NetworkStructureOverlay OverlayGraphic
+    {
+        get
+        {
+            return cachedOverlayGraphic ??= new Graphic_Linked_NetworkStructureOverlay(overlayGraphic.Graphic);
+        }
+    }
+
+    public override IEnumerable<string> ConfigErrors()
+    {
+        foreach (var configError in base.ConfigErrors())
+        {
+            yield return configError;
         }
 
-        public Graphic_Linked_NetworkStructureOverlay OverlayGraphic
+        if (labelShort == null)
         {
-            get
-            {
-                return cachedOverlayGraphic ??= new Graphic_Linked_NetworkStructureOverlay(overlayGraphic.Graphic);
-            }
+            labelShort = label ?? defName.Substring(0, 2);
         }
 
-        public override IEnumerable<string> ConfigErrors()
+        if (controllerDef != null)
         {
-            foreach (var configError in base.ConfigErrors())
+            var compProps = controllerDef.GetCompProperties<CompProperties_Network>();
+            if (compProps == null)
             {
-                yield return configError;
+                yield return $"controllerDef {controllerDef} does not have a Network ThingComp!";
             }
-
-            if (labelShort == null)
+            else if (compProps.networks.NullOrEmpty())
             {
-                labelShort = label ?? defName.Substring(0, 2);
+                yield return $"controllerDef {controllerDef} has no networks defined!";
             }
-
-            if (controllerDef != null)
+            else
             {
-                var compProps = controllerDef.GetCompProperties<CompProperties_Network>();
-                if (compProps == null)
+                var networkDef = compProps.networks.Find(n => n.networkDef == this);
+                if (networkDef == null)
                 {
-                    yield return $"controllerDef {controllerDef} does not have a Network ThingComp!";
+                    yield return $"Network seems unused: Cannot find any {nameof(NetworkSubPartProperties)} using this network.";
                 }
-                else if (compProps.networks.NullOrEmpty())
+                else if((networkDef.NetworkRole & NetworkRole.Controller) != NetworkRole.Controller)
                 {
-                    yield return $"controllerDef {controllerDef} has no networks defined!";
-                }
-                else
-                {
-                    var networkDef = compProps.networks.Find(n => n.networkDef == this);
-                    if (networkDef == null)
-                    {
-                        yield return $"Network seems unused: Cannot find any {nameof(NetworkSubPartProperties)} using this network.";
-                    }
-                    else if((networkDef.NetworkRole & NetworkRole.Controller) != NetworkRole.Controller)
-                    {
-                        yield return $"controllerDef {controllerDef} does not have the Controller NetworkRole assigned!";
-                    }
+                    yield return $"controllerDef {controllerDef} does not have the Controller NetworkRole assigned!";
                 }
             }
         }

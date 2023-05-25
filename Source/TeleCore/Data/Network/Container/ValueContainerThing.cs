@@ -4,7 +4,7 @@ using System.Linq;
 using TeleCore.FlowCore;
 using Verse;
 
-namespace TeleCore;
+namespace TeleCore.Network;
 
 public class ValueContainerThing<TValue, THolder> : ValueContainer<TValue, THolder>
     where TValue : FlowValueDef

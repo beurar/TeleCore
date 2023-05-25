@@ -3,10 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Xml;
 using TeleCore;
+using TeleCore.FlowCore;
 using TeleCore.Static;
 using Verse;
 
-namespace TeleCore.FlowCore;
+namespace TeleCore.Network;
 
 public class ContainerConfig<TValue> : IExposable
 where TValue: FlowValueDef
@@ -31,7 +32,7 @@ where TValue: FlowValueDef
     public FlowValueFilterSettings? defaultFilterSettings;
     
     //
-    public ContainerValueSettings valueDefs;
+    public FlowValueDefFilter valueDefs;
 
     public List<TValue> AllowedValues
     {
@@ -58,12 +59,12 @@ where TValue: FlowValueDef
         }
     }
     
-    public sealed class ContainerValueSettings : IExposable
+    public sealed class FlowValueDefFilter : IExposable
     {
         public FlowValueCollectionDef fromCollection;
         public List<TValue> values;
 
-        public static implicit operator ContainerValueSettings(List<TValue> values) => new ContainerValueSettings()
+        public static implicit operator FlowValueDefFilter(List<TValue> values) => new FlowValueDefFilter()
         {
             values = values,
         };

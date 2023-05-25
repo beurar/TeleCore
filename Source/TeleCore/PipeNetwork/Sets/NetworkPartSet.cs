@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using TeleCore.Data.Events;
-using TeleCore.Data.Network;
+using TeleCore.Network;
 using Verse;
 
 namespace TeleCore

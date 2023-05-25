@@ -3,7 +3,7 @@ using TeleCore.Static;
 using UnityEngine;
 using Verse;
 
-namespace TeleCore.FlowCore;
+namespace TeleCore.Network;
 
 public static class FlowValueUtils
 {

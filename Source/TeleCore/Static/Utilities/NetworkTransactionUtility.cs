@@ -29,7 +29,7 @@ public static class NetworkTransactionUtility
             }
         }
         
-        internal static void TransferToOther_AnyDesired(INetworkSubPart sender, INetworkSubPart receiver)
+        internal static void TransferToOther_AnyDesired(INetworkSubPart sender, INetworkSubPart? receiver)
         {
             if (receiver == null)
             {
@@ -130,16 +130,16 @@ public static class NetworkTransactionUtility
         }
     }
 
-    private static IEnumerable<INetworkSubPart> AdjacentParts(TransactionRequest request)
+    internal static IEnumerable<INetworkSubPart> AdjacentParts(TransactionRequest request, INetworkSubPart? newRoot = null)
     {
-        var part = request.requester;
+        var part = newRoot ?? request.Requester;
         var graph = part.Network.Graph;
         var adjacencyList = graph.GetAdjacencyListEdge(part);
         foreach (var partEdge in adjacencyList)
         {
             var subPart = partEdge.Item1;
             var edge = partEdge.Item2;
-            if ((subPart.NetworkRole & request.requestedRole) == 0) continue;
+            if ((subPart.NetworkRole & request.RequestedRole) == 0) continue;
             
             if (edge.IsBiDirectional)
                 yield return ResolvePartFinal(subPart, request);
@@ -155,6 +155,7 @@ public static class NetworkTransactionUtility
     private static INetworkSubPart ResolvePartFinal(INetworkSubPart part, TransactionRequest request)
     {
         if ((part.NetworkRole & NetworkRole.Passthrough) == 0) return part;
+        if (!part.Parent.IsWorking) return null;
         
         var graph = part.Network.Graph;   
         var adjacencyList = graph.GetAdjacencyListEdge(part);
@@ -163,7 +164,7 @@ public static class NetworkTransactionUtility
         {
             var subPart = partEdge.Item1;
             var edge = partEdge.Item2;
-            if ((subPart.NetworkRole & request.requestedRole) == 0) continue;
+            if ((subPart.NetworkRole & request.RequestedRole) == 0) continue;
             
             if (edge.IsBiDirectional)
                  return ResolvePartFinal(subPart, request);
@@ -177,18 +178,17 @@ public static class NetworkTransactionUtility
         
         return part;
     }
-    
 
     //TODO: Part invokes transaction, receiving part processes "transaction package", this package can be forwared to other parts
     internal static void DoTransaction(TransactionRequest request)
     {
          if (!request.IsValid) return;
-        
-        //Search for potential transaction partners
+         
         foreach (var adjacentPart in AdjacentParts(request))
         {
+            if (adjacentPart == null) continue;
             if (!adjacentPart.HasContainer) continue; //Cant do transaction without containers
-            request.DoTransaction(adjacentPart);
+            request.FinalizeTransaction(adjacentPart);
         }
 
         /*

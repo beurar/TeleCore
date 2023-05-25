@@ -1,6 +1,6 @@
 ﻿using TeleCore;
 
-namespace TeleCore.FlowCore;
+namespace TeleCore.Network;
 
 //Implementer - glues both the holder and the container together and exposes a Container Property
 public interface IContainerImplementer<TValue, THolder, out TContainer>

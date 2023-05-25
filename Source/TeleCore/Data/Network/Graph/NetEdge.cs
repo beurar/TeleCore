@@ -1,8 +1,8 @@
-﻿using TeleCore.Data.Network.IO;
+﻿using TeleCore.Network.IO;
 using UnityEngine;
 using Verse;
 
-namespace TeleCore;
+namespace TeleCore.Network;
 
 public struct NetEdge
 {

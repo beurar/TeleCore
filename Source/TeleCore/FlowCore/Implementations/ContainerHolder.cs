@@ -1,7 +1,7 @@
 ﻿using TeleCore;
 using Verse;
 
-namespace TeleCore.FlowCore;
+namespace TeleCore.Network;
 
 //Base holder provides settings for the container
 public interface IContainerHolderBase<TValue>
