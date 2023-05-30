@@ -115,10 +115,6 @@
 
   <ItemGroup>
     <Compile Remove="NodeEditorFramework\**" />
-    <Compile Remove="Data\Defs\Values\DefFloat.cs" />
-    <Compile Remove="Data\Defs\Values\DefFloatRef.cs" />
-    <Compile Remove="Data\Defs\Values\DefInt.cs" />
-    <Compile Remove="Data\Defs\Values\DefIntRef.cs" />
   </ItemGroup>
 
   <ItemGroup>

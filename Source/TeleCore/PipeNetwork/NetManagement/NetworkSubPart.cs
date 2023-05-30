@@ -10,6 +10,8 @@ using Verse;
 
 namespace TeleCore;
 
+//TODO: Refer to factorios fluidbox improvement by creating memory-efficient container logic
+//Bind parts to their containers in a network managing class
 public class NetworkSubPart : IExposable, INetworkSubPart, INetworkRequester, IContainerHolderNetwork
 {
     //
@@ -122,7 +124,7 @@ public class NetworkSubPart : IExposable, INetworkSubPart, INetworkRequester, IC
         {
             //Scribe_Values.Look(ref requestedCapacityPercent, "requesterPercent");
             //Scribe_Values.Look(ref requestedCpacityRange, "requestedCpacityRange");
-            Scribe_Container.Look(ref container, Props.containerConfig, this, "container");
+            Scribe_Container.Look<NetworkContainer, NetworkValueDef>(ref container, Props.containerConfig, this, "container");
         }
             
         Scribe_Deep.Look(ref requestWorkerInt, nameof(requestWorkerInt), this);
@@ -195,47 +197,71 @@ public class NetworkSubPart : IExposable, INetworkSubPart, INetworkRequester, IC
                 receivingTicks--;
 
             if (!NetworkActive) return;
-            ProcessValues();
-            Parent.NetworkPartProcessorTick(this);
+            
+            //Producers push to Storages
+            if ((NetworkRole & NetworkRole.Producer) == NetworkRole.Producer && Parent.RoleIsActive(NetworkRole.Producer))
+            {
+                ProducerTick();
+            }
+
+            //Storages push to Consumers
+            if ((NetworkRole & NetworkRole.Storage) == NetworkRole.Storage && Parent.RoleIsActive(NetworkRole.Storage))
+            {
+                StorageTick();
+            }
+
+            //Consumers slowly use up own container
+            if ((NetworkRole & NetworkRole.Consumer) == NetworkRole.Consumer && Parent.RoleIsActive(NetworkRole.Consumer))
+            {
+                ConsumerTick();
+            }
+
+            //
+            if ((NetworkRole & NetworkRole.Requester) == NetworkRole.Requester && Parent.RoleIsActive(NetworkRole.Requester))
+            {
+                RequesterTick();
+            }
         }
         Parent.NetworkPostTick(this, isPowered);
-    }
-
-    //Network 
-    //Process current stored values according to rules of the network role
-    private void ProcessValues()
-    {
-        //Producers push to Storages
-        if ((NetworkRole & NetworkRole.Producer) == NetworkRole.Producer && Parent.RoleIsActive(NetworkRole.Producer))
-        {
-            ProducerTick();
-        }
-
-        //Storages push to Consumers
-        if ((NetworkRole & NetworkRole.Storage) == NetworkRole.Storage && Parent.RoleIsActive(NetworkRole.Storage))
-        {
-            StorageTick();
-        }
-
-        //Consumers slowly use up own container
-        if ((NetworkRole & NetworkRole.Consumer) == NetworkRole.Consumer && Parent.RoleIsActive(NetworkRole.Consumer))
-        {
-            ConsumerTick();
-        }
-
-        //
-        if ((NetworkRole & NetworkRole.Requester) == NetworkRole.Requester && Parent.RoleIsActive(NetworkRole.Requester))
-        {
-            RequesterTick();
-        }
     }
     
     protected virtual void ProducerTick()
     {
-        NetworkTransactionUtility.DoTransaction(new TransactionRequest(this,
-            NetworkRole.Producer, NetworkRole.Storage,
-            part => NetworkTransactionUtility.Actions.TransferToOther_AnyDesired(this, part),
-            part => NetworkTransactionUtility.Validators.PartValidator_Sender(this, part)));
+        var adjacencyList = Network.Graph.GetAdjacencyList(this);
+        var adjCount = adjacencyList.Count;
+        var stackPart = container.ValueStack / adjCount;
+
+        float totalExcess = 0;
+        float totalDeficit = 0;
+
+        // Calculate the total excess and deficit amounts
+        foreach (var adjPart in adjacencyList)
+        {
+            float difference = adjPart.Container.TotalStored - stackPart.TotalValue.AsT0;
+            if (difference > 0)
+                totalExcess += difference;
+            else
+                totalDeficit += Math.Abs(difference);
+        }
+
+        foreach (var adjPart in adjacencyList)
+        {
+            float difference = adjPart.Container.TotalStored - stackPart.TotalValue.AsT0;
+            float ratio = difference > 0 ? difference / totalExcess : Math.Abs(difference) / totalDeficit;
+
+            foreach (var value in container.ValueStack)
+            {
+                int amountToDistribute = Mathf.RoundToInt(value.ValueInt * ratio);
+                var result = difference > 0 ? adjPart.Container.TryAddValue(value, amountToDistribute) : adjPart.Container.TryRemoveValue(value, amountToDistribute);
+                if (result)
+                {
+                    if (difference > 0)
+                        container.TryRemoveValue(value, result.ActualAmount);
+                    else
+                        container.TryAddValue(value, result.ActualAmount);
+                }
+            }
+        }
     }
 
     protected virtual void StorageTick()

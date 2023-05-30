@@ -16,7 +16,6 @@ public interface INetworkStructure
     public bool IsWorking { get; }
         
     //
-    void NetworkPartProcessorTick(INetworkSubPart subPart);
     void NetworkPostTick(NetworkSubPart networkSubPart, bool isPowered);
 
     //

@@ -41,11 +41,6 @@ public class Comp_Network_Valve : Comp_Network
         Flick = parent.TryGetComp<CompFlickable>();
     }
 
-    public override void NetworkPartProcessorTick(INetworkSubPart netPart)
-    {
-        base.NetworkPartProcessorTick(netPart);
-    }
-
     internal override void TeleTick()
     {
         if (Flick.SwitchIsOn)
