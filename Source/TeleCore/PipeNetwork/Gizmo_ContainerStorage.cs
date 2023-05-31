@@ -2,8 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Multiplayer.API;
-using TeleCore;
-using TeleCore.FlowCore;
+using TeleCore.Network;
 using UnityEngine;
 using Verse;
 
@@ -20,7 +19,7 @@ public class Gizmo_ContainerStorage : Gizmo_ContainerStorage<FlowValueDef, Value
     }
 
     [SyncMethod]
-    protected override void Debug_AddAll(float part)
+    protected override void Debug_AddAll(int part)
     {
         foreach (var type in container.AcceptedTypes)
         {
@@ -35,7 +34,7 @@ public class Gizmo_ContainerStorage : Gizmo_ContainerStorage<FlowValueDef, Value
     }
 
     [SyncMethod]
-    protected override void Debug_AddType(FlowValueDef type, float part)
+    protected override void Debug_AddType(FlowValueDef type, int part)
     {
         container.TryAddValue(type, part);
     }
@@ -137,7 +136,7 @@ public class Gizmo_ContainerStorage<TValue, TContainer> : Gizmo
         return new GizmoResult(GizmoState.Clear);
     }
     
-    protected virtual void Debug_AddAll(float part)
+    protected virtual void Debug_AddAll(int part)
     {
     }
     
@@ -145,7 +144,7 @@ public class Gizmo_ContainerStorage<TValue, TContainer> : Gizmo
     {
     }
     
-    protected virtual void Debug_AddType(FlowValueDef type, float part)
+    protected virtual void Debug_AddType(FlowValueDef type, int part)
     {
     }
 
