@@ -20,27 +20,6 @@ public struct ClampModel
     }
 }
 
-public struct PressureConfig
-{
-    public ConfigItem cSquared;
-    public ConfigItem friction;
-}
-
-public struct ConfigItem
-{
-    public string desc;
-    public float value;
-    public FloatRange range;
-}
-
-public struct PressureModel
-{
-    public string modelName;
-    public Func<FlowBox, FlowBox, int> flowFn;
-    public Func<int> pressureFn;
-    public PressureConfig config;
-}
-
 public class FrameData
 {
     public int frame;
@@ -98,29 +77,27 @@ public class FlowSystem
             if (of > 0) OverFlow.frame += of;
             UpdateFlowRate(fb);
         }
-        
-        //
-        for (y = 0; y < height; y++) {
-            for (x = 0; x < width; x++) {
-                t = tile[x][y];
-                if (t.content < 0) UnderFlow.frame -= fb.content;
-                var of = t.content - t.maxContent;
-                if (of > 0) overflow.frame += of;
-                updateFlowRate(t);
-                if (t.type != NONE) draw(t);
-            }
-        }
     }
 
     public void UpdateFlow(FlowBox fb)
     {
         var pMid = fb;
-        var f;
+
+        foreach (var conn in fb.Conns)
+        {
+            var flow = conn.flow;
+            flow = _pressureModel.GetFlow(conn, fb, flow);
+            conn.flow = _clampModel.Clamp(conn, fb, flow, FLOW_SPEED);
+            measureClamp = true;
+            conn.move = _clampModel.Clamp(conn, fb, flow, FLUID_MOVE);
+            measureClamp = false;
+        }
+        
         if (y > 0) {
-            var pTop = tile[x][y-1];
+            var pTop = fb.Conn;
             if (pTop.type != NONE) {
                 f = pMid.flowTop;
-                f = _pressureModel.FlowFn(pTop, pMid, f);
+                f = _pressureModel.flowFn(pTop, pMid, f);
                 pMid.flowTop = _clampModel.clampFn(pTop, pMid, f, FLOW_SPEED);
                 measureClamp = true;
                 pMid.moveTop = _clampModel.clampFn(pTop, pMid, f, FLUID_MOVE);
@@ -130,6 +107,7 @@ public class FlowSystem
                 pMid.moveTop = 0;
             }
         }
+        
         if (x > 0) {
             var pLeft = tile[x-1][y];
             if (pLeft.type != NONE) {
