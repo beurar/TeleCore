@@ -4,7 +4,6 @@ using Verse;
 
 namespace TeleCore.Network.PressureSystem;
 
-
 public class FlowBox
 {
     public int prevContent;
