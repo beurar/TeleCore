@@ -102,7 +102,7 @@ namespace TeleCore
             {
                 var container = structure[type.NetworkDef].Container;
                 
-                var result = container.TryRemoveValue(type, totalCost);
+                var result = container.TryRemove(type, totalCost);
                 if (result)
                 {
                     totalCost -= result.ActualAmount;
@@ -130,7 +130,7 @@ namespace TeleCore
 
                 foreach (var type in Cost.AcceptedValueTypes)
                 {
-                    var result = storage.Container.TryRemoveValue(type, totalCost);
+                    var result = storage.Container.TryRemove(type, totalCost);
                     if (result)
                     {
                         totalCost -= result.ActualAmount;

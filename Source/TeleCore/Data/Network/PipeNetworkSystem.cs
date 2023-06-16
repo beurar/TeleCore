@@ -5,6 +5,9 @@ using Verse;
 
 namespace TeleCore.Network;
 
+/// <summary>
+/// A system containing all the networks of a single type on a single map.
+/// </summary>
 public class PipeNetworkSystem
 {
     internal static int MasterID = 0;

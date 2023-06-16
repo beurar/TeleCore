@@ -11,17 +11,21 @@ namespace TeleCore;
 //TODO: Cleanup
 public class PipeNetwork : IExposable
 {
+    //Network Config
+    private PipeNetworkSystem _parentSystem;
+    
     protected NetworkDef def;
     protected NetworkRank networkRank = NetworkRank.Alpha;
-
-    protected PipeNetworkSystem parentSystem;
-
+    
+    //Dynamics
     protected NetworkPartSet partSet;
     protected NetworkContainerSet containerSet;
 
-    public PipeNetworkSystem ParentSystem => parentSystem;
+    #region Properties
 
-    public NetworkGraph Graph { get; internal set; }
+    public PipeNetworkSystem ParentSystem => _parentSystem;
+
+    public NetGraph Graph { get; internal set; }
     public NetworkPartSet PartSet => partSet;
     public NetworkContainerSet ContainerSet => containerSet;
 
@@ -31,12 +35,13 @@ public class PipeNetwork : IExposable
     public NetworkDef Def => def;
     public NetworkRank NetworkRank => networkRank;
     public int ID { get; set; } = -1;
-
-        
+    
     public bool Initialized { get; internal set; }
-    public bool IsValid => parentSystem.AllNetworks.Contains(this);
+    public bool IsValid => _parentSystem.AllNetworks.Contains(this);
     public bool HasGraph => Graph != null && Graph.AllNodes.Count > 1;
-        
+
+    #endregion
+
     public virtual bool IsWorking => !def.UsesController || (NetworkController?.IsPowered ?? false);
     public virtual float TotalNetworkValue => ContainerSet.TotalNetworkValue;
     public virtual float TotalStorageNetworkValue => ContainerSet.TotalStorageValue;
@@ -49,7 +54,7 @@ public class PipeNetwork : IExposable
     {
         this.ID = PipeNetworkSystem.MasterID++;
         this.def = def;
-        parentSystem = system;
+        _parentSystem = system;
         partSet = new NetworkPartSet(def, null);
         containerSet = new NetworkContainerSet();
         NetworkCells = new List<IntVec3>();

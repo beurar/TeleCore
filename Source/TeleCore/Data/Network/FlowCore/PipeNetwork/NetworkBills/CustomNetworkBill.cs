@@ -173,7 +173,7 @@ public class CustomNetworkBill : IExposable
                 {
                     TLog.Warning($"Tried to add byproduct to non-existent network: {byProduct.Def.NetworkDef} | {byProduct.Def}");
                 }
-                network?.Container.TryAddValue(byProduct.Def, byProduct.Value);
+                network?.Container.TryAdd(byProduct.Def, byProduct.Value);
             }
         }
 

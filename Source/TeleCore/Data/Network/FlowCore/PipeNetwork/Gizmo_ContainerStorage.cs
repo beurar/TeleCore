@@ -23,7 +23,7 @@ public class Gizmo_ContainerStorage : Gizmo_ContainerStorage<FlowValueDef, Value
     {
         foreach (var type in container.AcceptedTypes)
         {
-            container.TryAddValue(type, part);
+            container.TryAdd(type, part);
         }
     }
 
@@ -36,7 +36,7 @@ public class Gizmo_ContainerStorage : Gizmo_ContainerStorage<FlowValueDef, Value
     [SyncMethod]
     protected override void Debug_AddType(FlowValueDef type, int part)
     {
-        container.TryAddValue(type, part);
+        container.TryAdd(type, part);
     }
 }
 

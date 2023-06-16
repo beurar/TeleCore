@@ -4,6 +4,9 @@ using Verse;
 
 namespace TeleCore.Network;
 
+/// <summary>
+/// Main network manager for a map. Contains all network systems and handles network creation and destruction.
+/// </summary>
 public class NetworkMapInfo : MapInformation
 {
     private readonly Dictionary<NetworkDef, PipeNetworkSystem> NetworksByType = new ();

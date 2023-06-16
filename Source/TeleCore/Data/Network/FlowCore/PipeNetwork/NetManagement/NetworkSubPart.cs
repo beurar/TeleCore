@@ -48,6 +48,7 @@ public class NetworkSubPart : IExposable, INetworkSubPart, INetworkRequester, IC
         
     //States
     public bool IsMainController => Network?.NetworkController == Parent;
+    public bool IsEdge => NetworkRole == NetworkRole.Transmitter;
     public bool IsNetworkNode => NetworkRole != NetworkRole.Transmitter;// || IsJunction; //|| IsPipeEndPoint;
     public bool IsNetworkEdge => !IsNetworkNode;
     public bool IsJunction => NetworkRole == NetworkRole.Transmitter && DirectPartSet[NetworkRole.Transmitter]?.Count > 2;
@@ -180,7 +181,7 @@ public class NetworkSubPart : IExposable, INetworkSubPart, INetworkRequester, IC
         }
     }
 
-    //
+    //TODO: Receiving ticks can be replaced with last tick flow in fluidbox
     public void NetworkTick()
     {
         if (!Initialized) return;
@@ -193,239 +194,10 @@ public class NetworkSubPart : IExposable, INetworkSubPart, INetworkRequester, IC
         var isPowered = Parent.IsPowered;
         if (isPowered && Parent.IsWorking)
         {
-            if (receivingTicks > 0 && lastReceivedTick < Find.TickManager.TicksGame)
-                receivingTicks--;
-
-            if (!NetworkActive) return;
-            
-            //Producers push to Storages
-            if ((NetworkRole & NetworkRole.Producer) == NetworkRole.Producer && Parent.RoleIsActive(NetworkRole.Producer))
-            {
-                ProducerTick();
-            }
-
-            //Storages push to Consumers
-            if ((NetworkRole & NetworkRole.Storage) == NetworkRole.Storage && Parent.RoleIsActive(NetworkRole.Storage))
-            {
-                StorageTick();
-            }
-
-            //Consumers slowly use up own container
-            if ((NetworkRole & NetworkRole.Consumer) == NetworkRole.Consumer && Parent.RoleIsActive(NetworkRole.Consumer))
-            {
-                ConsumerTick();
-            }
-
-            //
-            if ((NetworkRole & NetworkRole.Requester) == NetworkRole.Requester && Parent.RoleIsActive(NetworkRole.Requester))
-            {
-                RequesterTick();
-            }
+            // if (receivingTicks > 0 && lastReceivedTick < Find.TickManager.TicksGame)
+            //     receivingTicks--;
         }
         Parent.NetworkPostTick(this, isPowered);
-    }
-    
-    protected virtual void ProducerTick()
-    {
-        var adjacencyList = Network.Graph.GetAdjacencyList(this);
-        var adjCount = adjacencyList.Count;
-        var stackPart = container.ValueStack / adjCount;
-
-        float totalExcess = 0;
-        float totalDeficit = 0;
-
-        // Calculate the total excess and deficit amounts
-        foreach (var adjPart in adjacencyList)
-        {
-            float difference = adjPart.Container.TotalStored - stackPart.TotalValue.AsT0;
-            if (difference > 0)
-                totalExcess += difference;
-            else
-                totalDeficit += Math.Abs(difference);
-        }
-
-        foreach (var adjPart in adjacencyList)
-        {
-            float difference = adjPart.Container.TotalStored - stackPart.TotalValue.AsT0;
-            float ratio = difference > 0 ? difference / totalExcess : Math.Abs(difference) / totalDeficit;
-
-            foreach (var value in container.ValueStack)
-            {
-                int amountToDistribute = Mathf.RoundToInt(value.ValueInt * ratio);
-                var result = difference > 0 ? adjPart.Container.TryAddValue(value, amountToDistribute) : adjPart.Container.TryRemoveValue(value, amountToDistribute);
-                if (result)
-                {
-                    if (difference > 0)
-                        container.TryRemoveValue(value, result.ActualAmount);
-                    else
-                        container.TryAddValue(value, result.ActualAmount);
-                }
-            }
-        }
-    }
-
-    protected virtual void StorageTick()
-    {
-        if (Container.ContainsForbiddenType)
-        {
-            if (Container.FillState == ContainerFillState.Empty) return;
-            NetworkTransactionUtility.DoTransaction(new TransactionRequest(this,
-                NetworkRole.Storage, NetworkRole.Consumer|NetworkRole.Storage,
-                part => NetworkTransactionUtility.Actions.TransferToOtherPurge(this, part),
-                part => NetworkTransactionUtility.Validators.PartValidator_Sender(this, part,
-                    ePart => FlowValueUtils.CanExchangeForbidden(Container, ePart.Container))));
-        }
-            
-        if (Container.Config.storeEvenly && Network.HasGraph)
-        {
-            NetworkTransactionUtility.DoTransaction(new TransactionRequest(this,
-                NetworkRole.Storage, NetworkRole.Storage,
-                part => NetworkTransactionUtility.Actions.TransferToOther_Equalize(this, part),
-                part => NetworkTransactionUtility.Validators.StoreEvenly_EQ_Check(this, part)));
-            return;
-        }
-            
-        //
-        NetworkTransactionUtility.DoTransaction(new TransactionRequest(this,
-            NetworkRole.Storage, NetworkRole.Consumer,
-            part => NetworkTransactionUtility.Actions.TransferToOther_AnyDesired(this, part),
-            part => NetworkTransactionUtility.Validators.PartValidator_Sender(this, part)));
-    }
-
-    protected virtual void ConsumerTick()
-    {
-    }
-
-    /// <summary>
-    /// When using the Requester NetworkRole, will pull values in according to <see cref="RequestedCpacityRange"/>.
-    /// </summary>
-    protected virtual void RequesterTick()
-    {
-        if (RequestWorker.RequestTick())
-        {
-            //When set to automatic, adjusts settings to pull equal amounts of each value-type
-            if (RequestWorker.Mode == RequesterMode.Automatic)
-            {
-                //Resolve..
-                //var maxVal = RequestedCapacityPercent * Container.Capacity;
-                var maxPercent = RequestWorker.ReqRange.max; //Get max percentage
-                foreach (var valType in Props.AllowedValuesByRole[NetworkRole.Requester])
-                {
-                    //var requestedTypeValue = container.ValueForType(valType);
-                    var requestedTypeNetworkValue = Network.TotalValueFor(valType, NetworkRole.Storage);
-                    if (requestedTypeNetworkValue > 0)
-                    {
-                        var setValue = Mathf.Min(maxPercent,
-                            requestedTypeNetworkValue / Container.Capacity);
-                        var tempVal = RequestWorker.Settings[valType];
-
-                        tempVal.Item2 = setValue;
-                        RequestWorker.Settings[valType] = tempVal;
-                        maxPercent = Mathf.Clamp(maxPercent - setValue, 0, maxPercent);
-                    }
-                }
-            }
-
-            //Pull values according to settings
-            //if (container.StoredPercent >= RequestedCapacityPercent) return;
-            foreach (var setting in RequestWorker.Settings)
-            {
-                //If not requested, skip
-                if (!setting.Value.isActive) continue;
-                if (container.StoredPercentOf(setting.Key) < setting.Value.desiredAmt)
-                {
-                    NetworkTransactionUtility.DoTransaction(new TransactionRequest(this,
-                        NetworkRole.Requester, NetworkRole.Storage,
-                        part =>
-                        {
-                            var partContainer = part.Container;
-                            if (partContainer.FillState == ContainerFillState.Empty) return;
-                            if (partContainer.StoredValueOf(setting.Key) <= 0) return;
-                            if (partContainer.TryTransferValue(container, setting.Key, 1, out _))
-                            {
-                                _ = true;
-                            }
-                        }));
-                }
-            }
-        }
-    }
-
-    private void DoNetworkAction(INetworkSubPart fromPart, INetworkSubPart previous, NetworkRole ofRole, Action<INetworkSubPart> funcOnPart, Predicate<INetworkSubPart> validator)
-    {
-        var adjacencyList = fromPart.Network.Graph.GetAdjacencyList(this);
-        if (adjacencyList == null) return;
-            
-        foreach (var subPart in adjacencyList)
-        {
-            if (subPart == previous) continue;
-
-            if (subPart.IsJunction)
-            {
-                DoNetworkAction(subPart, fromPart, ofRole, funcOnPart, validator);
-                continue;
-            }
-                
-            if ((subPart.NetworkRole & ofRole) != ofRole) continue;
-            if(!validator(subPart)) continue;
-            funcOnPart(subPart);
-        }
-    }
-
-    //Network Transaction Logic
-    public void Notify_ReceivePackage(TransactionPackage package)
-    {
-        
-    }
-    
-    //
-    private void SubTransfer(INetworkSubPart previousPart, INetworkSubPart part, List<NetworkValueDef> usedTypes, NetworkRole ofRole)
-    {
-        var adjacencyList = part.Network.Graph.GetAdjacencyList(this);
-        if (adjacencyList == null) return;
-            
-        foreach (var subPart in adjacencyList)
-        {
-            if(subPart == previousPart) continue;
-                
-            if (subPart.IsJunction)
-            {
-                SubTransfer(part, subPart, usedTypes, ofRole);
-                continue;
-            }
-
-            if ((subPart.NetworkRole & ofRole) != ofRole) continue;
-            if (Container.FillState == ContainerFillState.Empty || subPart.Container.FillState == ContainerFillState.Full) continue;
-            for (int i = usedTypes.Count - 1; i >= 0; i--)
-            {
-                var type = usedTypes[i];
-                if (!subPart.NeedsValue(type, ofRole)) continue;
-                if (Container.TryTransferValue(subPart.Container, type, 1, out _))
-                {
-                    subPart.Notify_ReceivedValue();
-                }
-            }
-        }
-    }
-        
-    private void Processor_Transfer(INetworkSubPart part, NetworkRole fromRole, NetworkRole ofRole)
-    {
-        if (part == null)
-        {
-            TLog.Warning("Target part of path is null");
-            return;
-        }
-            
-        var usedTypes = Props.AllowedValuesByRole[fromRole];
-        for (int i = usedTypes.Count - 1; i >= 0; i--)
-        {
-            var type = usedTypes[i];
-            if (!part.NeedsValue(type, ofRole)) continue;
-            if (Container.TryTransferValue(part.Container, type, 1, out _))
-            {
-                part.Notify_ReceivedValue();
-            }
-        }
     }
 
     //Data Notifiers

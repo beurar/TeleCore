@@ -42,6 +42,16 @@ where TValue : FlowValueDef
         };
     }
 
+    public static ValueResult<TValue> Init(int desiredAmount)
+    {
+        return new ValueResult<TValue>
+        {
+            State = ValueState.Incomplete,
+            DesiredAmount = desiredAmount,
+            ActualAmount = 0,
+        };
+    }
+    
     public static ValueResult<TValue> Init(int desiredAmount, TValue usedDef)
     {
         return new ValueResult<TValue>

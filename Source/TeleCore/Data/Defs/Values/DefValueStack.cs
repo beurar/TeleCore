@@ -14,19 +14,6 @@ using Verse;
 
 namespace TeleCore;
 
-//TODO:
-public unsafe struct UnsafeDefValueStack<TDef> where TDef : Def
-{
-    private fixed ushort _stackPart1[4096];
-        
-    private fixed float _stackPart2[4096];
-
-    public DefValue<TDef> At(int index)
-    {
-        return new DefValue<TDef>(_stackPart1[index].ToDef<TDef>(), _stackPart2[index]);
-    }
-}
-    
 /// <summary>
 /// Manages any Def as a numeric value in a stack.
 /// </summary>

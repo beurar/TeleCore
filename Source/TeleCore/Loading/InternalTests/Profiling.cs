@@ -142,7 +142,7 @@ internal class Profiling
         var failCount = 0;
         foreach (var value in values)
         {
-            var result = TestContainer.TryAddValue(value);
+            var result = TestContainer.TryAdd(value);
             if (result.State == ValueState.Failed)
                 failCount++;
         }

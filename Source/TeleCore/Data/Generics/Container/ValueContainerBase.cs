@@ -294,7 +294,7 @@ public abstract class ValueContainerBase<TValue> : IExposable where TValue : Flo
     {
         foreach (var def in storedValues.Keys.ToArray())
         {
-            _ = TryRemoveValue(def, storedValues[def]);
+            _ = TryRemove(def, storedValues[def]);
         }
     }
 
@@ -308,7 +308,7 @@ public abstract class ValueContainerBase<TValue> : IExposable where TValue : Flo
     
         foreach (TValue def in AcceptedTypes)
         {
-            _ = TryAddValue(def, valuePerType);
+            _ = TryAdd(def, valuePerType);
         }
     }
 
@@ -329,7 +329,7 @@ public abstract class ValueContainerBase<TValue> : IExposable where TValue : Flo
         Clear();
         foreach (var defVal in stack)
         {
-            _ = TryAddValue(defVal.Def, defVal.ValueInt);
+            _ = TryAdd(defVal.Def, defVal.ValueInt);
         }
     }
 
@@ -354,17 +354,26 @@ public abstract class ValueContainerBase<TValue> : IExposable where TValue : Flo
     
     #region Processor Methods
 
-    public bool TryAddValue(TValue valueDef, int amount, out ValueResult<TValue> result)
+    public bool TryAdd(TValue valueDef, int amount, out ValueResult<TValue> result)
     {
-        return result = TryAddValue((valueDef, amount));
+        return result = TryAdd((valueDef, amount));
     }
     
-    public ValueResult<TValue> TryAddValue(TValue valueDef, int amount)
+    public ValueResult<TValue> TryAdd(TValue valueDef, int amount)
     {
-        return TryAddValue((valueDef, amount));
+        return TryAdd((valueDef, amount));
     }
     
-    public ValueResult<TValue> TryAddValue(DefValue<TValue> value)
+    public void TryAdd(DefValueStack<TValue> stack)
+    {
+        for (var i = 0; i < stack.Length; i++)
+        {
+            var value = stack[i];
+            TryAdd(value);
+        }
+    }
+    
+    public ValueResult<TValue> TryAdd(DefValue<TValue> value)
     {
         var desired = value.ValueInt; //Local cache for desired value
         var result = ValueResult<TValue>.Init(desired, AcceptedTypes); //ValueResult Init
@@ -402,23 +411,35 @@ public abstract class ValueContainerBase<TValue> : IExposable where TValue : Flo
         return result.SetActual(actual).Complete().Resolve();
     }
     
-    public bool TryRemoveValue(TValue valueDef, int amount, out ValueResult<TValue> result)
+    public bool TryRemove(TValue valueDef, int amount, out ValueResult<TValue> result)
     {
-        return result = TryRemoveValue((valueDef, amount));
+        return result = TryRemove((valueDef, amount));
     }
 
-    public ValueResult<TValue> TryRemoveValue(TValue valueDef, int value)
+    public ValueResult<TValue> TryRemove(DefValue<TValue> value)
     {
-        return TryRemoveValue((valueDef, value));
+        return TryRemove(value.Def, value.ValueInt);
     }
 
-    public ValueResult<TValue> TryRemoveValue(DefValue<TValue> value)
+    public ValueResult<TValue> TryRemove(ICollection<DefValue<TValue>> values)
     {
-        var desired = value.ValueInt;
+        var result = new ValueResult<TValue>();
+        foreach (var value in values)
+        {
+            var tmp = TryRemove(value);
+            var val = tmp.FullDiff[0];
+            result.AddDiff(val.Def, val.ValueInt);
+        }
+        return result.Resolve().Complete();
+    }
+    
+    public ValueResult<TValue> TryRemove(TValue def, int value)//TValue valueDef, int value
+    {
+        var desired = value;
         var result = ValueResult<TValue>.Init(desired,AcceptedTypes);
 
         //Lazy sanity checks for failure
-        if (!CanRemoveValue(value) || !storedValues.TryGetValue(value, out var available))
+        if (!CanRemoveValue((def, value)) || !storedValues.TryGetValue(def, out var available))
         {
             return result.Fail();
         }
@@ -429,18 +450,18 @@ public abstract class ValueContainerBase<TValue> : IExposable where TValue : Flo
         //Remove the value from the dictionary or update the value if there is still some left
         if (available - actual <= 0)
         {
-            storedValues.Remove(value.Def);
+            storedValues.Remove(def);
         }
         else
         {
-            storedValues[value] -= actual;
+            storedValues[def] -= actual;
         }
 
         //Notify internal cached data
-        Notify_RemovedValue(value, actual);
+        Notify_RemovedValue(def, actual);
 
         //On the result, set actual removed value and resolve completion status
-        return result.AddDiff(value, -actual).SetActual(actual).Complete().Resolve();
+        return result.AddDiff(def, -actual).SetActual(actual).Complete().Resolve();
     }
     
     //What are settings on a container value operation?
@@ -462,11 +483,11 @@ public abstract class ValueContainerBase<TValue> : IExposable where TValue : Flo
 
         if (CanResolveTransfer(other, valueDef, amount, out var possibleTransfer))
         {
-            var remResult = TryRemoveValue(valueDef, possibleTransfer);
+            var remResult = TryRemove(valueDef, possibleTransfer);
             if (remResult)
             {
                 //If passed, try to add the actual weight removed from this container, to the other.
-                return  result = other.TryAddValue(valueDef, remResult.ActualAmount);
+                return  result = other.TryAdd(valueDef, remResult.ActualAmount);
             }
         }
 
@@ -530,7 +551,7 @@ public abstract class ValueContainerBase<TValue> : IExposable where TValue : Flo
             int actualConsumed = 0;
             foreach (var type in allTypes)
             {
-                var remResult = TryRemoveValue(type, equalSplit);
+                var remResult = TryRemove(type, equalSplit);
                 if (actualConsumed < wantedValue && remResult)
                 {
                     actualConsumed += equalSplit - remResult.ActualAmount;
@@ -561,7 +582,7 @@ public abstract class ValueContainerBase<TValue> : IExposable where TValue : Flo
     {
         if (StoredValueOf(value) >= value.ValueInt)
         {
-            return TryRemoveValue(value);
+            return TryRemove(value);
         }
         return ValueResult<TValue>.InitFail(value.ValueInt);
     }
@@ -599,7 +620,7 @@ public abstract class ValueContainerBase<TValue> : IExposable where TValue : Flo
     {
         foreach (var type in AcceptedTypes)
         {
-            TryAddValue(type, part);
+            TryAdd(type, part);
         }
     }
 
@@ -610,7 +631,7 @@ public abstract class ValueContainerBase<TValue> : IExposable where TValue : Flo
     
     private void Debug_AddType(FlowValueDef type, int part)
     {
-        TryAddValue((TValue) type, part);
+        TryAdd((TValue) type, part);
     }
 
     #endregion
