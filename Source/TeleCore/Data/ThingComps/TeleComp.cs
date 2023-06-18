@@ -5,7 +5,10 @@ using Verse.AI;
 
 namespace TeleCore;
 
-public class TeleComp : ThingComp
+/// <summary>
+/// Base class for TeleCore ThingComps.
+/// </summary>
+public abstract class TeleComp : ThingComp
 {
     public TeleDefExtension Extension { get; private set; }
     
