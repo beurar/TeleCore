@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using RimWorld.Planet;
 using TeleCore.Data.Network;
 using TeleCore.Network;
 using UnityEngine;
 using Verse;
+using DebugTools = TeleCore.Static.Utilities.DebugTools;
 
 namespace TeleCore;
 
@@ -76,19 +78,19 @@ public class PipeNetwork : IExposable
     public virtual void Draw()
     {
         //
-        Graph.Debug_DrawPressure();
-            
+        DebugTools.Debug_DrawPressure(Graph);
+
         //
         var selThing = Find.Selector.SingleSelectedThing;
         if (selThing != null && selThing.TryGetComp(out Comp_Network comp))
         {
             foreach (var compNetworkPart in comp.NetworkParts)
             {
-                if (DrawAdjacencyList)
+                if (DrawAdjacencyList) //Debug
                 {
                     var adjacencyLis = Graph.GetAdjacencyList(compNetworkPart);
                     if (adjacencyLis != null)
-                        GenDraw.DrawFieldEdges(adjacencyLis.Select(c => c.Parent.Thing.Position).ToList(), Color.red);
+                        GenDraw.DrawFieldEdges(adjacencyLis.Select(c => c.Holder.Parent.Thing.Position).ToList(), Color.red);
                 }  
                 compNetworkPart.CellIO.DrawIO();
             }
@@ -97,9 +99,9 @@ public class PipeNetwork : IExposable
 
     public void DrawOnGUI()
     {
-        Graph.Debug_DrawOverlays();
+        DebugTools.Debug_DrawOverlays(Graph);
         if(DrawInternalGraph)
-            Graph.Debug_DrawGraphOnUI();
+            DebugTools.Debug_DrawGraphOnUI(Graph);
     }
 
     //

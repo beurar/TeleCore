@@ -13,8 +13,8 @@ public struct DefInt<TDef>
 
     public static implicit operator DefInt<TDef>((TDef Def, int Value) value) => new (value.Def, value.Value);
 
-    public static implicit operator DefValueGeneric<TDef, int>(DefInt<TDef> defInt) => new (defInt.Def, defInt.value);
-    public static explicit operator DefInt<TDef>(DefValueGeneric<TDef, int> defInt) => new (defInt.Def, defInt.Value);
+    public static implicit operator DefValueLoadable<TDef, int>(DefInt<TDef> defInt) => new (defInt.Def, defInt.value);
+    public static explicit operator DefInt<TDef>(DefValueLoadable<TDef, int> defInt) => new (defInt.Def, defInt.Value);
     public static implicit operator TDef(DefInt<TDef> defInt) => defInt.Def;
     public static explicit operator int(DefInt<TDef> defInt) => defInt.Value;
     

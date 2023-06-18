@@ -315,7 +315,7 @@ public class Comp_Network : FXThingComp, INetworkStructure
             {
                 foreach (var networkPart in NetworkParts)
                 {
-                    networkInfo[networkPart.NetworkDef].ToggleShowNetworks();
+                    networkInfo[networkPart.NetworkDef].DEBUG_ToggleShowNetworks();
                 }
             }
         };

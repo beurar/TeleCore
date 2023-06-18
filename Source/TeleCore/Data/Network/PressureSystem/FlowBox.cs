@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using TeleCore.FlowCore;
 using TeleCore.Network.Graph;
 using UnityEngine;
@@ -24,6 +25,11 @@ public class FlowBox
     {
         _holder = node;
         _interfaces = GenerateInterfaces(node);
+    }
+    
+    internal void Notify_SetDirty()
+    {
+        
     }
 
     private List<FluidInterface> GenerateInterfaces(NetNode node)
@@ -69,21 +75,31 @@ public class FlowBox
 public struct FluidInterface
 {
     private bool _flowResolved;
-    private double _flow;
-    
+    private bool _flowUpdated;
+  
     public FlowBox Holder;
     public FlowBox EndPoint;
     public NetEdge Edge;
+    
+    public double Flow { get; set; }
+    public double Move { get; set; }
 
     public bool Resolved => _flowResolved;
+    public bool Updated => _flowUpdated;
 
     internal void Notify_Dirty()
     {
         _flowResolved = false;
+        _flowUpdated = false;
     }
 
     internal void Notify_Resolved()
     {
         _flowResolved = true;
+    }
+    
+    internal void Notify_Updated()
+    {
+        _flowUpdated = true;
     }
 }

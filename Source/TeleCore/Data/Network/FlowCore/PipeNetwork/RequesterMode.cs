@@ -1,8 +1,7 @@
-﻿namespace TeleCore
+﻿namespace TeleCore;
+
+public enum RequesterMode : byte
 {
-    public enum RequesterMode : byte
-    {
-        Automatic,
-        Manual
-    }
+    Automatic,
+    Manual
 }

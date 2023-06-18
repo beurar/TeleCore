@@ -22,7 +22,7 @@ public class PressureWorker_WaveEquation : PressureWorker
         }
     };
     
-    public override float FlowFunction(FlowBox t0, FlowBox t1, float f) 
+    public override double FlowFunction(FlowBox t0, FlowBox t1, double f) 
     {
         var cfg = this.Config;
         f += (this.PressureFunction(t0) - this.PressureFunction(t1)) * cfg.CSquared.Value;
@@ -30,7 +30,7 @@ public class PressureWorker_WaveEquation : PressureWorker
         return f;
     }
     
-    public override float PressureFunction(FlowBox t) 
+    public override double PressureFunction(FlowBox t) 
     {
         return t.Content / t.MaxContent * 100;
     }

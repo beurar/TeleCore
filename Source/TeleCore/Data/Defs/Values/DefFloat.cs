@@ -13,7 +13,7 @@ public struct DefFloat<TDef> : IExposable
 
     public static implicit operator DefFloat<TDef>((TDef Def, float Value) value) => new (value.Def, value.Value);
     
-    public static implicit operator DefValueGeneric<TDef, float>(DefFloat<TDef> defInt) => new (defInt.Def, defInt.value);
+    public static implicit operator DefValueLoadable<TDef, float>(DefFloat<TDef> defInt) => new (defInt.Def, defInt.value);
     public static implicit operator TDef(DefFloat<TDef> defInt) => defInt.Def;
     public static explicit operator float(DefFloat<TDef> defInt) => defInt.Value;
     

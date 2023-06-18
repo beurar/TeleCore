@@ -20,7 +20,7 @@ public struct DefValue<TDef> where TDef : Def
     public static implicit operator TDef(DefValue<TDef> defInt) => defInt.Def;
     public static explicit operator OneOf<int, float>(DefValue<TDef> defInt) => defInt.Value;
 
-    public DefValue(DefValueLoadable<TDef> defValue)
+    public DefValue(DefValueLoadable<TDef, int> defValue)
     {
         Def = defValue.Def;
         Value = defValue.Value;

@@ -7,37 +7,6 @@ using Verse;
 
 namespace TeleCore.Network.PressureSystem;
 
-public class NetworkComplex
-{
-    private PipeNetwork network;
-    private NetGraph graph;
-    private FlowSystem flow;
-
-    public PipeNetwork Network => network;
-    public NetGraph Graph => graph;
-    public FlowSystem FlowSystem => flow;
-    
-    public static NetworkComplex Create(INetworkSubPart root, PipeNetworkSystem system, out PipeNetwork newNet,
-        out NetGraph newGraph, out FlowSystem newFlowSys)
-    {
-        var complex = new NetworkComplex();
-        newNet = new PipeNetwork(root.NetworkDef, system);
-        newGraph = new NetGraph();
-        newFlowSys = new FlowSystem();
-        
-        //
-        newNet.Graph = newGraph;
-
-        return complex;
-    }
-
-    public void Tick()
-    {
-        network.Tick();
-        flow.Tick();
-    }
-}
-
 public class FlowSystem
 {
     public List<FlowBox> _flowBoxes;
@@ -86,44 +55,34 @@ public class FlowSystem
 
     private void UpdateFlow(FlowBox flowBox)
     {
-        float f = 0;
-        foreach (var fi in flowBox.Interfaces)
+        double f = 0;
+        for (var i = 0; i < flowBox.Interfaces.Count; i++)
         {
-            if(fi.Resolved) continue;
+            var fi = flowBox.Interfaces[i];
+            if (fi.Resolved) continue;
 
             f = fi.Flow;
             f = PressureWorker.FlowFunction(fi.EndPoint, fi.Holder, f);
-            fi.Flow = ClampWorker.ClampFunction(fi.EndPoint, fi.Holder, f, ClampType.FlowSpeed);;
-            fi.Move = ClampWorker.ClampFunction(fi.EndPoint, fi.Holder, f, ClampType.FluidMove);;
+            fi.Flow = ClampWorker.ClampFunction(fi.EndPoint, fi.Holder, f, ClampType.FlowSpeed); ;
+            fi.Move = ClampWorker.ClampFunction(fi.EndPoint, fi.Holder, f, ClampType.FluidMove); ;
             fi.Notify_Resolved();
+            
+            flowBox.Interfaces[i] = fi;
         }
-        
-        var pMid = flowBox;
-        var pTop = flowBox.Top;
-        
-        var f = pMid.FlowTop;
-        f = PressureWorker.FlowFunction(pTop, pMid, f);
-        pMid.FlowTop = ClampWorker.ClampFunction(pTop, pMid, f, ClampType.FlowSpeed);
-        pMid.MoveTop = ClampWorker.ClampFunction(pTop, pMid, f, ClampType.FluidMove);
-
-        var pLeft = flowBox.Left;
-        f = pMid.FlowLeft;
-        f = PressureWorker.FlowFunction(pLeft, pMid, f);
-        pMid.FlowLeft = ClampWorker.ClampFunction(pLeft, pMid, f, ClampType.FlowSpeed);
-        pMid.MoveLeft = ClampWorker.ClampFunction(pLeft, pMid, f, ClampType.FluidMove);
     }
 
     private void UpdateContent(FlowBox flowBox)
     {
-        var pMid = flowBox;
-        
-        var pTop = flowBox.Top;
-        var res = pTop.RemoveContent(pMid.MoveTop);
-        pMid.AddContent(res.FullDiff);
 
-        var pLeft = flowBox.Left;
-        var res2 = pLeft.RemoveContent(pMid.MoveLeft);
-        pMid.AddContent(res2.FullDiff);
+        for (var i = 0; i < flowBox.Interfaces.Count; i++)
+        {
+            var fi = flowBox.Interfaces[i];
+            if(fi.Updated) continue;
+            var res = fi.EndPoint.RemoveContent((float)fi.Move);
+            flowBox.AddContent(res.FullDiff);
+            fi.Notify_Updated();
+            flowBox.Interfaces[i] = fi;
+        }
     }
 
     private void UpdateFlowRate(FlowBox pMid)

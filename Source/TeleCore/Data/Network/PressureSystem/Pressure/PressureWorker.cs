@@ -6,7 +6,7 @@ public abstract class PressureWorker
 
     public abstract PressureConfig Config { get; }
     
-    public abstract float FlowFunction(FlowBox t0, FlowBox t1, float f);
+    public abstract double FlowFunction(FlowBox t0, FlowBox t1, double f);
 
-    public abstract float PressureFunction(FlowBox t);
+    public abstract double PressureFunction(FlowBox t);
 }

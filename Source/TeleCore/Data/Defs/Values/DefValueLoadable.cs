@@ -5,42 +5,29 @@ using Verse;
 
 namespace TeleCore;
 
-public struct OneOfLoadable
-{
-    public OneOf<int, float> Value { get; set; }
-
-    public void LoadDataFromXmlCustom(XmlNode xmlRoot)
-    {
-        var val = xmlRoot.InnerText;
-        var isF = xmlRoot.InnerText.EndsWith("f");
-        var valTxt = isF ? val.Substring(0, val.Length - 1) : val;
-
-        if (xmlRoot.InnerText.EndsWith("f"))
-        {
-            Value = ParseHelper.FromString<float>(valTxt);
-        }
-        else
-        {
-            Value = ParseHelper.FromString<int>(valTxt);
-        }
-    }
-}
-
-public class DefValueLoadable<TDef> : IExposable
+public class DefValueLoadable<TDef, TValue> : IExposable
 where TDef : Def
 {
-    private TDef? def;
-    private OneOf<int, float> value;
-    
-    public TDef Def => def;
-    
-    public OneOf<int, float> Value
+    private TDef _def;
+    private TValue _value;
+
+    public DefValueLoadable(){}
+
+    public DefValueLoadable(TDef def, TValue value)
     {
-        get => value;
-        set => this.value = value;
+        _def = def;
+        _value = value;
     }
 
-    public bool IsValid => def != null && value.Value != null;
+    public TDef Def => _def;
+    
+    public TValue Value
+    {
+        get => _value;
+        set => this._value = value;
+    }
+
+    public bool IsValid => _def != null && _value != null;
     
     public void LoadDataFromXmlCustom(XmlNode xmlRoot)
     {
@@ -50,36 +37,20 @@ where TDef : Def
             var innerValue = xmlRoot.InnerText;
             string s = Regex.Replace(innerValue, @"\s+", "");
             string[] array = s.Split(',');
-            DirectXmlCrossRefLoader.RegisterObjectWantsCrossRef(this, $"{nameof(def)}", array[0]);
-            value = ParseHelper.FromString<OneOfLoadable>(array.Length > 1 ? array[1] : "0").Value;
+            DirectXmlCrossRefLoader.RegisterObjectWantsCrossRef(this, $"{nameof(_def)}", array[0]);
+            _value = ParseHelper.FromString<TValue>(array.Length > 1 ? array[1] : "0");
         }
 
         //InLined
         else
         {
-            DirectXmlCrossRefLoader.RegisterObjectWantsCrossRef(this, $"{nameof(def)}", xmlRoot.Name);
-            value = ParseHelper.FromString<OneOfLoadable>(xmlRoot.FirstChild.Value).Value;
+            DirectXmlCrossRefLoader.RegisterObjectWantsCrossRef(this, $"{nameof(_def)}", xmlRoot.Name);
+            _value = ParseHelper.FromString<TValue>(xmlRoot.FirstChild.Value);
         }
     }
     
     public void ExposeData()
     {
-        int? t0 = value.IsT0 ? value.AsT0 : null;
-        float? t1 = value.IsT1 ? value.AsT1 : null;
-        
-        Look<TDef>(ref def, "def");
-        Scribe_Values.Look(ref t0, "intVal");
-        Scribe_Values.Look(ref t1, "floatVal");
-
-        if (t0.HasValue)
-        {
-            value = t0.Value;
-        }
-        
-        if (t1.HasValue)
-        {
-            value = t1.Value;
-        }
     }
 
     private static void Look<T>(ref T value, string label) where T : Def

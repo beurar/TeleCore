@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using RimWorld;
+using TeleCore.Network.Graph;
 using UnityEngine;
 using Verse;
 
@@ -10,25 +11,25 @@ namespace TeleCore.Network;
 public class NetGraph
 {
     //Graph Data
-    private readonly List<INetworkSubPart> _allNodes;
-    private readonly Dictionary<INetworkSubPart, LinkedList<INetworkSubPart>> _adjacencyLists;
-    private readonly Dictionary<(INetworkSubPart, INetworkSubPart), NetEdge> _edgeLookUp;
+    private readonly List<NetNode> _allNodes;
+    private readonly Dictionary<NetNode, LinkedList<NetNode>> _adjacencyLists;
+    private readonly Dictionary<(NetNode, NetNode), NetEdge> _edgeLookUp;
 
-    private readonly Dictionary<INetworkSubPart, List<(INetworkSubPart, NetEdge)>> _adjacencyLookUp;
+    private readonly Dictionary<NetNode, List<(NetNode, NetEdge)>> _adjacencyLookUp;
 
     //Props
     public int NodeCount => _adjacencyLists.Count;
     public int EdgeCount => _edgeLookUp.Count;
 
-    public List<INetworkSubPart> AllNodes => _allNodes;
-    public Dictionary<(INetworkSubPart, INetworkSubPart), NetEdge> EdgeLookUp => _edgeLookUp;
+    public List<NetNode> AllNodes => _allNodes;
+    public Dictionary<(NetNode, NetNode), NetEdge> EdgeLookUp => _edgeLookUp;
 
     public NetGraph()
     {
-        _allNodes = new List<INetworkSubPart>();
-        _edgeLookUp = new Dictionary<(INetworkSubPart, INetworkSubPart), NetEdge>();
-        _adjacencyLookUp = new Dictionary<INetworkSubPart, List<(INetworkSubPart, NetEdge)>>();
-        _adjacencyLists = new Dictionary<INetworkSubPart, LinkedList<INetworkSubPart>>();
+        _allNodes = new List<NetNode>();
+        _edgeLookUp = new Dictionary<(NetNode, NetNode), NetEdge>();
+        _adjacencyLookUp = new Dictionary<NetNode, List<(NetNode, NetEdge)>>();
+        _adjacencyLists = new Dictionary<NetNode, LinkedList<NetNode>>();
     }
 
     public void Notify_StateChanged(INetworkSubPart part)
@@ -36,7 +37,7 @@ public class NetGraph
     }
 
     //
-    public LinkedList<INetworkSubPart>? GetAdjacencyList(INetworkSubPart forPart)
+    public LinkedList<NetNode>? GetAdjacencyList(NetworkSubPart forPart)
     {
         if (_adjacencyLists.TryGetValue(forPart, out var list))
         {
@@ -45,7 +46,7 @@ public class NetGraph
         return null;
     }
         
-    public IEnumerable<(INetworkSubPart,NetEdge)> GetAdjacencyListEdge(INetworkSubPart forPart)
+    public IEnumerable<(NetNode,NetEdge)> GetAdjacencyListEdge(NetworkSubPart forPart)
     {
         if (_adjacencyLookUp.TryGetValue(forPart, out var list))
         {
@@ -54,16 +55,16 @@ public class NetGraph
         return null;
     }
 
-    public void AddNode(INetworkSubPart node)
+    public void AddNode(NetNode node)
     {
         _allNodes.Add(node);
-        _adjacencyLists.Add(node, new LinkedList<INetworkSubPart>());
-        _adjacencyLookUp.Add(node, new List<(INetworkSubPart, NetEdge)>());
+        _adjacencyLists.Add(node, new LinkedList<NetNode>());
+        _adjacencyLookUp.Add(node, new List<(NetNode, NetEdge)>());
     }
 
     public bool AddEdge(NetEdge newEdge)
     {
-        var newKey = (fromNode: newEdge.startNode, toNode: newEdge.endNode);
+        var newKey = (fromNode: (NetNode)(NetworkSubPart)newEdge.startNode, toNode: (NetNode)(NetworkSubPart)newEdge.endNode);
         if (_edgeLookUp.ContainsKey(newKey))
         {
             TLog.Warning($"Key ({newEdge.startNode.Parent.Thing}, {newEdge.endNode.Parent.Thing}) already exists in graph!");

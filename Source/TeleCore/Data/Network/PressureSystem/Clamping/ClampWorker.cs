@@ -8,9 +8,9 @@ public abstract class ClampWorker
 
     public abstract ClampConfig Config { get;}
     
-    public abstract float ClampFunction(FlowBox t0, FlowBox t1, float f, ClampType type);
+    public abstract double ClampFunction(FlowBox t0, FlowBox t1, double f, ClampType type);
     
-    public float ClampFlow(float content, float flow, float limit)
+    public double ClampFlow(double content, double flow, double limit)
     {
         // 'content' can be available fluid or remaining space
         if (content <= 0)

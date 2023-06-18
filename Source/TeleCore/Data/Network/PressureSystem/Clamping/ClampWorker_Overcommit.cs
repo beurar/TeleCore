@@ -35,7 +35,7 @@ public class ClampWorker_Overcommit : ClampWorker
         },      
     };
     
-    public override float ClampFunction(FlowBox t0, FlowBox t1, float f, ClampType type) 
+    public override double ClampFunction(FlowBox t0, FlowBox t1, double f, ClampType type) 
     {
         var cfg = this.Config;     
         float d, c, r;

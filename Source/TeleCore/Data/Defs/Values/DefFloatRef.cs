@@ -18,6 +18,6 @@ public class DefFloatRef<TDef> : DefValueLoadable<TDef, float> where TDef : Def
         
     public string ToStringPercent()
     {
-        return $"{def?.defName}: ({value.ToStringPercent()})";
+        return $"{Def?.defName}: ({Value.ToStringPercent()})";
     }
 }

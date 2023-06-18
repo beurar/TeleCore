@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using TeleCore.Network.Graph;
 using TeleCore.Network.PressureSystem;
 using TeleCore.Static;
 using Verse;
@@ -18,8 +19,7 @@ public static class PipeNetworkFactory
         _ClosedGlobalSet.Clear();
         FillGraph(newPart, complex);
         _ClosedGlobalSet.Clear();
-        
-        
+
         return complex;
     }
 
@@ -35,8 +35,9 @@ public static class PipeNetworkFactory
         //Add Edge To Graph with found nodes
         if (forGraph.AddEdge(newEdge))
         {
-            newEdge.startNode.Notify_SetConnection(newEdge, newEdge.fromCell);
-            newEdge.endNode.Notify_SetConnection(newEdge, newEdge.toCell);
+            //TODO: This shouldnt be necessary, connection logic should be handled by NetGraph
+            newEdge.nodeA.Holder.Notify_SetConnection(newEdge, newEdge.cellA);
+            newEdge.nodeB.Holder.Notify_SetConnection(newEdge, newEdge.cellB);
             return true;
         }
         return false;

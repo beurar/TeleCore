@@ -11,6 +11,9 @@ public struct NetNode
 
     public INetworkSubPart Holder => _holder;
     public List<NetInterface> Interfaces => _interfaces;
+
+    public static implicit operator NetNode(NetworkSubPart subPart) => new NetNode(subPart);
+    public static implicit operator NetworkSubPart(NetNode node) => node._holder as NetworkSubPart;
     
     public NetNode(INetworkSubPart node)
     {
@@ -23,15 +26,4 @@ public struct NetInterface
     public INetworkSubPart Holder;
     public INetworkSubPart Endpoint;
     public NetEdge Edge;
-}
-
-public struct NetEdge
-{
-    public NetNode nodeA;
-    public NetNode nodeB;
-    public IntVec3Rot cellA;
-    public IntVec3Rot cellB;
-    public NetworkIOMode modeA;
-    public NetworkIOMode modeB;
-    
 }
