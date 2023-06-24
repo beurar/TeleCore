@@ -14,7 +14,7 @@ public static class NetworkTransactionUtility
 {
     internal static class Actions
     {
-        internal static void TransferToOther_Equalize(INetworkSubPart sender, INetworkSubPart receiver)
+        internal static void TransferToOther_Equalize(INetworkPart sender, INetworkPart receiver)
         {
             if (receiver == null)
             {
@@ -29,7 +29,7 @@ public static class NetworkTransactionUtility
             }
         }
         
-        internal static void TransferToOther_AnyDesired(INetworkSubPart sender, INetworkSubPart? receiver)
+        internal static void TransferToOther_AnyDesired(INetworkPart sender, INetworkPart? receiver)
         {
             if (receiver == null)
             {
@@ -51,7 +51,7 @@ public static class NetworkTransactionUtility
             }
         }
 
-        internal static void TransferToOtherSpecific(INetworkSubPart sender, INetworkSubPart receiver, NetworkValueDef def)
+        internal static void TransferToOtherSpecific(INetworkPart sender, INetworkPart receiver, NetworkValueDef def)
         {
             if (!receiver.Parent.AcceptsValue(def)) return;
             if (sender.Container.TryTransferValue(receiver.Container, def, 1, out var val))
@@ -61,7 +61,7 @@ public static class NetworkTransactionUtility
             }
         }
         
-        internal static void TransferToOtherPurge(INetworkSubPart sender, INetworkSubPart? receiver)
+        internal static void TransferToOtherPurge(INetworkPart sender, INetworkPart? receiver)
         {
             if (receiver == null)
             {
@@ -79,7 +79,7 @@ public static class NetworkTransactionUtility
             temp.Clear();
         }
         
-        internal static void TransferToOther_FullFiltered(INetworkSubPart sender, INetworkSubPart? receiver, NetworkRole fromRole, NetworkRole ofRole)
+        internal static void TransferToOther_FullFiltered(INetworkPart sender, INetworkPart? receiver, NetworkRole fromRole, NetworkRole ofRole)
         {
             if (receiver == null)
             {
@@ -87,7 +87,7 @@ public static class NetworkTransactionUtility
                 return;
             }
 
-            var usedTypes = sender.Props.AllowedValuesByRole[fromRole];
+            var usedTypes = sender.Config.AllowedValuesByRole[fromRole];
             for (int i = usedTypes.Count - 1; i >= 0; i--)
             {
                 var type = usedTypes[i];
@@ -106,7 +106,7 @@ public static class NetworkTransactionUtility
         /// <summary>
         /// Determines whether there should be a equalization between two network parts.
         /// </summary>
-        internal static bool StoreEvenly_EQ_Check(INetworkSubPart sender, INetworkSubPart receiver)
+        internal static bool StoreEvenly_EQ_Check(INetworkPart sender, INetworkPart receiver)
         {
             if (!sender.HasContainer || !receiver.HasContainer) return false;
             
@@ -114,23 +114,23 @@ public static class NetworkTransactionUtility
             return sender.Container.StoredPercent - receiver.Container.StoredPercent >= FlowValueUtils.MIN_FLOAT_COMPARE;
         }
 
-        internal static bool PartValidator_Sender(INetworkSubPart sender, INetworkSubPart receiver, Predicate<INetworkSubPart> extraValidator = null)
+        internal static bool PartValidator_Sender(INetworkPart sender, INetworkPart receiver, Predicate<INetworkPart> extraValidator = null)
         {
             return (receiver.HasContainer && receiver.Container.FillState != ContainerFillState.Full) && sender.Container.FillState != ContainerFillState.Empty && (extraValidator?.Invoke(receiver) ?? true);
         }
         
-        internal static bool PartValidator_Receiver(INetworkSubPart receiver, INetworkSubPart sender, Predicate<INetworkSubPart> extraValidator = null)
+        internal static bool PartValidator_Receiver(INetworkPart receiver, INetworkPart sender, Predicate<INetworkPart> extraValidator = null)
         {
             return (sender.HasContainer && sender.Container.FillState != ContainerFillState.Empty) && receiver.Container.FillState != ContainerFillState.Full && (extraValidator?.Invoke(sender) ?? true);
         }
         
-        internal static bool PartValidator_AnyWithContainer(INetworkSubPart part)
+        internal static bool PartValidator_AnyWithContainer(INetworkPart part)
         {
             return part.HasContainer;
         }
     }
 
-    internal static IEnumerable<INetworkSubPart> AdjacentParts(TransactionRequest request, INetworkSubPart? newRoot = null)
+    internal static IEnumerable<INetworkPart> AdjacentParts(TransactionRequest request, INetworkPart? newRoot = null)
     {
         var part = newRoot ?? request.Requester;
         var graph = part.Network.Graph;
@@ -152,7 +152,7 @@ public static class NetworkTransactionUtility
         }
     }
 
-    private static INetworkSubPart ResolvePartFinal(INetworkSubPart part, TransactionRequest request)
+    private static INetworkPart ResolvePartFinal(INetworkPart part, TransactionRequest request)
     {
         if ((part.NetworkRole & NetworkRole.Passthrough) == 0) return part;
         if (!part.Parent.IsWorking) return null;

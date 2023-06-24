@@ -6,6 +6,7 @@ using System.Runtime.CompilerServices;
 using System.Xml;
 using RimWorld;
 using TeleCore.Data.Events;
+using TeleCore.Defs;
 using TeleCore.RWExtended;
 using UnityEngine;
 using Verse;
@@ -239,13 +240,13 @@ namespace TeleCore
             return false;
         }
 
-        public static bool TryGetNetworkPart(this Thing thing, NetworkDef def, out INetworkSubPart subPart)
+        public static bool TryGetNetworkPart(this Thing thing, NetworkDef def, out INetworkPart part)
         {
-            subPart = null;
+            part = null;
             var networkComp = thing.TryGetComp<Comp_Network>();
             if (networkComp == null) return false;
-            subPart = networkComp[def];
-            return subPart != null;
+            part = networkComp[def];
+            return part != null;
         }
         
         //

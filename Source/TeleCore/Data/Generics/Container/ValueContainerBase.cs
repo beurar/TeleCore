@@ -4,7 +4,8 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
 using OneOf;
-using TeleCore.FlowCore;
+using TeleCore.Defs;
+using TeleCore.Primitive;
 using UnityEngine;
 using Verse;
 

@@ -1,5 +1,7 @@
 ﻿using RimWorld;
 using TeleCore.Network;
+using TeleCore.Network.Flow;
+using TeleCore.Network.Graph;
 using UnityEngine;
 using Verse;
 
@@ -20,8 +22,8 @@ internal static class DebugTools
         foreach (var netEdge in graph.EdgeLookUp)
         {
             var subParts = netEdge.Key;
-            var thingA = subParts.Item1.Parent.Thing;
-            var thingB = subParts.Item2.Parent.Thing;
+            var thingA = subParts.Item1.Value.Thing;
+            var thingB = subParts.Item2.Value.Thing;
 
             //TWidgets.DrawHalfArrow(ScreenPositionOf(thingA.TrueCenter()), ScreenPositionOf(thingB.TrueCenter()), Color.red, 8);
 
@@ -29,7 +31,7 @@ internal static class DebugTools
             //TODO: some edges probably get setup broken (because only one edge is set)
             if (netEdge.Value.IsValid)
             {
-                TWidgets.DrawHalfArrow(netEdge.Value.startNode.Parent.Thing.TrueCenter().ToScreenPos(),
+                TWidgets.DrawHalfArrow(netEdge.Value.From.Parent.Thing.TrueCenter().ToScreenPos(),
                     netEdge.Value.endNode.Parent.Thing.TrueCenter().ToScreenPos(), Color.red, size);
                 if (netEdge.Value.IsBiDirectional)
                 {
@@ -43,15 +45,14 @@ internal static class DebugTools
         }
     }
 
-    internal static void Debug_DrawPressure(NetGraph graph)
+    internal static void Debug_DrawPressure(FlowSystem flowSys)
     {
-        foreach (var networkSubPart in graph.AllNodes)
+        foreach (var (part, fb) in flowSys.Relations)
         {
-            if (!networkSubPart.HasContainer) continue;
             GenDraw.FillableBarRequest r = default(GenDraw.FillableBarRequest);
-            r.center = networkSubPart.Parent.Thing.Position.ToVector3() + new Vector3(0.25f, 0, 0.75f);
+            r.center = part.Parent.Thing.Position.ToVector3() + new Vector3(0.25f, 0, 0.75f);
             r.size = new Vector2(1.5f, 0.5f);
-            r.fillPercent = networkSubPart.Container.StoredPercent;
+            r.fillPercent = (float)fb.FillPercent;
             r.filledMat = FilledMat;
             r.unfilledMat = UnFilledMat;
             r.margin = 0f;
@@ -62,10 +63,10 @@ internal static class DebugTools
 
     internal static void Debug_DrawOverlays(NetGraph graph)
     {
-        foreach (var networkSubPart in graph.AllNodes)
+        foreach (var node in graph.Nodes)
         {
-            var pos = networkSubPart.Parent.Thing.DrawPos;
-            GenMapUI.DrawText(new Vector2(pos.x, pos.z), $"[{networkSubPart.Parent.Thing}]", Color.green);
+            var pos = node.Parent.Thing.DrawPos;
+            GenMapUI.DrawText(new Vector2(pos.x, pos.z), $"[{node.Parent.Thing}]", Color.green);
         }
     }
 

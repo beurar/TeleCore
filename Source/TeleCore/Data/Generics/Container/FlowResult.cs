@@ -1,6 +1,6 @@
 ﻿namespace TeleCore.Network;
 
-public struct FlowResult
+/*public struct FlowResult
 {
     private bool hadFlow = false;
     private bool flowToOther = false;
@@ -59,4 +59,4 @@ public struct FlowResult
     {
         return $"HadFlow: {hadFlow}; FlowToOther: {flowToOther}; IsVoided: {isVoided}; FlowDir: {flowDirection} [{FromIndex} -> {ToIndex}]";
     }
-}
+}*/

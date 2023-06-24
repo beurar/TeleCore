@@ -1,17 +1,18 @@
 ﻿using System;
 using System.Collections.Generic;
 using TeleCore.Network;
+using TeleCore.Network.Data;
 using Verse;
 
 namespace TeleCore.Static.Utilities;
 
 internal class GenGraphPath
 {
-    private static List<INetworkSubPart> _WorkingList = new();
-    private static Dictionary<INetworkSubPart, int> _Distances = new();
-    private static Dictionary<INetworkSubPart, INetworkSubPart> _PreviousOf = new();
+    private static List<INetworkPart> _WorkingList = new();
+    private static Dictionary<INetworkPart, int> _Distances = new();
+    private static Dictionary<INetworkPart, INetworkPart> _PreviousOf = new();
         
-    public static List<INetworkSubPart> Djikstra_Single(NetGraph graph, INetworkSubPart source, Predicate<INetworkSubPart> validator, int maxDepth = int.MaxValue)
+    public static List<INetworkPart> Djikstra_Single(NetGraph graph, INetworkPart source, Predicate<INetworkPart> validator, int maxDepth = int.MaxValue)
     {
         //
         _WorkingList.Clear();
@@ -19,7 +20,7 @@ internal class GenGraphPath
         _PreviousOf.Clear();
 
         //Current
-        List<INetworkSubPart> validParts = new List<INetworkSubPart>();
+        List<INetworkPart> validParts = new List<INetworkPart>();
             
         //Setup
         for (var k = 0; k < graph.AllNodes.Count; k++)
@@ -48,7 +49,7 @@ internal class GenGraphPath
         while (_WorkingList.Count > 0)
         {
             //Check current state for end
-            INetworkSubPart part = null;
+            INetworkPart part = null;
             if (validParts.Any())
             {
                 foreach (var toPart in validParts)
@@ -56,7 +57,7 @@ internal class GenGraphPath
                     part = toPart;
                     if (_PreviousOf[part] != null || part == source)
                     {
-                        List<INetworkSubPart> pathResult = new List<INetworkSubPart>();
+                        List<INetworkPart> pathResult = new List<INetworkPart>();
                         var depthCount = 0;
                         while (part != null)
                         {
@@ -109,12 +110,12 @@ internal class GenGraphPath
         return null;
     }
 
-    public static List<INetworkSubPart> GetPaths()
+    public static List<INetworkPart> GetPaths()
     {
         return null;
     }
 
-    public static List<List<INetworkSubPart>> Dijkstra(NetworkGraph graph, INetworkSubPart source, Predicate<INetworkSubPart> validator, int maxDepth = int.MaxValue)
+    public static List<List<INetworkPart>> Dijkstra(NetworkGraph graph, INetworkPart source, Predicate<INetworkPart> validator, int maxDepth = int.MaxValue)
     {
         //
         _WorkingList.Clear();
@@ -122,10 +123,10 @@ internal class GenGraphPath
         _PreviousOf.Clear();
 
         //
-        List<INetworkSubPart> validParts = new List<INetworkSubPart>();
-        List<List<INetworkSubPart>> allPaths = new List<List<INetworkSubPart>>();
+        List<INetworkPart> validParts = new List<INetworkPart>();
+        List<List<INetworkPart>> allPaths = new List<List<INetworkPart>>();
 
-        bool Validator(INetworkSubPart part) => validator(part) && part != source;
+        bool Validator(INetworkPart part) => validator(part) && part != source;
 
         //
         for (var k = 0; k < graph.AllNodes.Count; k++)
@@ -150,7 +151,7 @@ internal class GenGraphPath
         while (_WorkingList.Count > 0)
         {
             //
-            INetworkSubPart part = null;
+            INetworkPart part = null;
             if (validParts.Any())
             {
                 foreach (var toPart in validParts)
@@ -158,7 +159,7 @@ internal class GenGraphPath
                     part = toPart;
                     if (_PreviousOf[part] != null || (_PreviousOf[part] == null && part == source))
                     {
-                        List<INetworkSubPart> pathResult = new List<INetworkSubPart>();
+                        List<INetworkPart> pathResult = new List<INetworkPart>();
                         var depthCount = 0;
                         while (part != null)
                         {

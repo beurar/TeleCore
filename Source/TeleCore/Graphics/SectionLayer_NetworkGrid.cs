@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using HarmonyLib;
 using RimWorld;
+using TeleCore.Defs;
 using UnityEngine;
 using Verse;
 

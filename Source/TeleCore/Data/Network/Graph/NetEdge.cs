@@ -1,74 +1,43 @@
-﻿using TeleCore.Network.Graph;
+﻿using TeleCore.Network.Data;
 using TeleCore.Network.IO;
-using UnityEngine;
 using Verse;
 
 namespace TeleCore.Network.Graph;
 
 public struct NetEdge
 {
-    internal readonly int _weight;
+    #region Properties
 
-    //Direction
-    public readonly NetNode nodeA;
-    public readonly NetNode nodeB;
-    public readonly IntVec3Rot cellA;
-    public readonly IntVec3Rot cellB;
-    public readonly NetworkIOMode modeA;
-    public readonly NetworkIOMode modeB;
-
-    public bool IsDirect => _weight == 0 && cellA == IntVec3.Invalid && cellB == IntVec3.Invalid;
-    public bool IsBiDirectional => modeA == NetworkIOMode.TwoWay && modeB == NetworkIOMode.TwoWay;
+    public NetworkPart From { get; set; }
+    public NetworkPart To { get; set; }
     
-    public bool IsValid
+    public IntVec3 FromPos { get; set; }
+    public IntVec3 ToPos { get; set; }
+    
+    public NetworkIOMode FromIO { get; set; }
+    public NetworkIOMode ToIO { get; set; }
+    
+    #endregion
+
+    public int Length { get; set; }
+    
+    public bool BiDirectional { get; set; }
+    public bool IsValid => From != null && To != null;
+
+    public NetEdge Reverse => new NetEdge(To, From, ToPos, FromPos, FromIO, ToIO, Length);
+    
+    public static implicit operator NetEdge((NetworkPart, NetworkPart) edge) => new NetEdge(edge.Item1, edge.Item2);
+    public static implicit operator (NetworkPart, NetworkPart)(NetEdge edge) => (edge.From, edge.To);
+
+    public NetEdge(NetworkPart from, NetworkPart to)
     {
-        get
-        {
-            if (!NetworkCellIO.MatchesFromTo(modeA, modeB)) return false;
-            if (nodeA == nodeB) return false;
-            if (!cellA.IntVec.IsValid || !cellB.IntVec.IsValid) return false;
-            return true;
-        }
+        From = from;
+        To = to;
     }
 
-    public NetEdge Reverse => new NetEdge(nodeB, nodeA, cellB, cellA, modeB, modeA, _weight);
-
-    public static NetEdge Invalid { get; }
-
-    public NetEdge(INetworkSubPart startNode, INetworkSubPart endNode, IntVec3 fromCell, IntVec3 toCell, NetworkIOMode fromMode, NetworkIOMode toMode, int weight)
+    public NetEdge(INetworkPart from, INetworkPart to, IntVec3 fromPos, IntVec3 toPos, NetworkIOMode fromMode, NetworkIOMode toMode, int length)
     {
-        this.nodeA = startNode;
-        this.nodeB = endNode;
-        this.cellA = fromCell;
-        this.cellB = toCell;
-        this.modeA = fromMode;
-        this.modeB = toMode;
-        this._weight = weight;
+        
     }
 
-    public NetEdge(INetworkSubPart startNode, INetworkSubPart endNode)
-    {
-        this.nodeA = startNode;
-        this.nodeB = endNode;
-        this.cellA = IntVec3.Invalid;
-        this.cellB = IntVec3.Invalid;
-        this.modeA = NetworkIOMode.None;
-        this.modeB = NetworkIOMode.None;
-        this._weight = 0;
-    }
-
-    public bool HasAnchorCell(IntVec3 cell)
-    {
-        return cellA == cell || cellB == cell;
-    }
-
-    public string ToStringSimple(INetworkSubPart node)
-    {
-        return $"{($"{nodeA.Holder.Parent.Thing}".Colorize(node == nodeA.Holder ? Color.cyan : Color.white))} -> {($"{nodeB.Holder.Parent.Thing}".Colorize(node == nodeB.Holder ? Color.cyan : Color.white))}";
-    }
-
-    public string ToString(INetworkSubPart node)
-    {
-        return $"{($"{nodeA.Holder.Parent.Thing}".Colorize(node == nodeA.Holder ? Color.cyan : Color.white))} -> {($"{nodeB.Holder.Parent.Thing}".Colorize(node == nodeB.Holder ? Color.cyan : Color.white))}| ({cellA},{cellB})";
-    }
 }

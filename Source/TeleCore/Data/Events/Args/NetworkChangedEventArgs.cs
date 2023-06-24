@@ -13,7 +13,7 @@ public enum NetworkChangeType
 public class NetworkChangedEventArgs : EventArgs
 {
     public NetworkChangeType ChangeType { get; }
-    public INetworkSubPart Part { get; }
+    public INetworkPart Part { get; }
 
     public NetworkChangedEventArgs(NetworkChangeType changeType)
     {
@@ -21,7 +21,7 @@ public class NetworkChangedEventArgs : EventArgs
         Part = null;
     }
     
-    public NetworkChangedEventArgs(NetworkChangeType changeType, INetworkSubPart part)
+    public NetworkChangedEventArgs(NetworkChangeType changeType, INetworkPart part)
     {
         ChangeType = changeType;
         Part = part;

@@ -4,7 +4,9 @@ using System.Linq;
 using System.Text;
 using RimWorld;
 using TeleCore.Data.Events;
+using TeleCore.Defs;
 using TeleCore.Network;
+using TeleCore.Network.Data;
 using TeleCore.Network.IO;
 using UnityEngine;
 using Verse;
@@ -15,10 +17,10 @@ namespace TeleCore;
 public class Comp_Network : FXThingComp, INetworkStructure
 {
     //
-    private NetworkMapInfo networkInfo;
+    private PipeNetworkMapInfo networkInfo;
 
-    private List<NetworkSubPart> networkParts;
-    private Dictionary<NetworkDef, NetworkSubPart> networkPartByDef;
+    private List<INetworkPart> networkParts;
+    private Dictionary<NetworkDef, INetworkPart> networkPartByDef;
     private NetworkCellIO cellIO;
 
     //Debug
@@ -26,7 +28,7 @@ public class Comp_Network : FXThingComp, INetworkStructure
     private IFXLayerProvider ifxHolderImplementation;
 
     //
-    public NetworkSubPart this[NetworkDef def] => networkPartByDef.TryGetValue(def, out var value) ? value : null;
+    public INetworkPart this[NetworkDef def] => networkPartByDef.TryGetValue(def, out var value) ? value : null;
 
     //
     public CompProperties_Network Props => (CompProperties_Network)base.props;
@@ -184,7 +186,7 @@ public class Comp_Network : FXThingComp, INetworkStructure
         return true;
     }
         
-    public virtual bool CanInteractWith(INetworkSubPart otherPart)
+    public virtual bool CanInteractWith(INetworkPart otherPart)
     {
         return true;
     }
@@ -194,7 +196,7 @@ public class Comp_Network : FXThingComp, INetworkStructure
 
     }
 
-    public virtual void NetworkPartProcessorTick(INetworkSubPart netPart)
+    public virtual void NetworkPartProcessorTick(INetworkPart netPart)
     {
     }
 

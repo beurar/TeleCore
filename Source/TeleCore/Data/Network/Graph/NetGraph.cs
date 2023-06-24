@@ -1,113 +1,68 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using RimWorld;
-using TeleCore.Network.Graph;
-using UnityEngine;
-using Verse;
+﻿using System.Collections.Generic;
 
-namespace TeleCore.Network;
+namespace TeleCore.Network.Graph;
 
-[StaticConstructorOnStartup]
 public class NetGraph
 {
-    //Graph Data
-    private readonly List<NetNode> _allNodes;
-    private readonly Dictionary<NetNode, LinkedList<NetNode>> _adjacencyLists;
-    private readonly Dictionary<(NetNode, NetNode), NetEdge> _edgeLookUp;
+    private List<NetNode> _nodes;
+    private List<NetEdge> _edges;
+    private Dictionary<NetNode, List<(NetEdge, NetNode)>> _adjacencyList;
+    private Dictionary<(NetNode, NetNode), NetEdge> _edgeLookUp;
 
-    private readonly Dictionary<NetNode, List<(NetNode, NetEdge)>> _adjacencyLookUp;
-
-    //Props
-    public int NodeCount => _adjacencyLists.Count;
-    public int EdgeCount => _edgeLookUp.Count;
-
-    public List<NetNode> AllNodes => _allNodes;
+    public List<NetNode> Nodes => _nodes;
+    public List<NetEdge> Edges => _edges;
+    public Dictionary<NetNode, List<(NetEdge, NetNode)>> AdjacencyList => _adjacencyList;
     public Dictionary<(NetNode, NetNode), NetEdge> EdgeLookUp => _edgeLookUp;
 
     public NetGraph()
-    {
-        _allNodes = new List<NetNode>();
+    { 
+        _nodes = new List<NetNode>();
+        _edges = new List<NetEdge>();
+        _adjacencyList = new Dictionary<NetNode, List<(NetEdge, NetNode)>>();
         _edgeLookUp = new Dictionary<(NetNode, NetNode), NetEdge>();
-        _adjacencyLookUp = new Dictionary<NetNode, List<(NetNode, NetEdge)>>();
-        _adjacencyLists = new Dictionary<NetNode, LinkedList<NetNode>>();
     }
 
-    public void Notify_StateChanged(INetworkSubPart part)
+    private void AddNode(NetNode node)
     {
+        Nodes.Add(node);
+        AdjacencyList.Add(node, new());
     }
 
-    //
-    public LinkedList<NetNode>? GetAdjacencyList(NetworkSubPart forPart)
+    public bool AddEdge(NetEdge edge)
     {
-        if (_adjacencyLists.TryGetValue(forPart, out var list))
-        {
-            return list;
-        }
-        return null;
-    }
+        //Ignore invalid edges
+        if (!edge.IsValid) return true;
         
-    public IEnumerable<(NetNode,NetEdge)> GetAdjacencyListEdge(NetworkSubPart forPart)
-    {
-        if (_adjacencyLookUp.TryGetValue(forPart, out var list))
+        //Check existing
+        var key = (fromNode: (NetNode)edge.From, toNode: (NetNode)edge.To);
+        if (_edgeLookUp.ContainsKey(key))
         {
-            return list;
-        }
-        return null;
-    }
-
-    public void AddNode(NetNode node)
-    {
-        _allNodes.Add(node);
-        _adjacencyLists.Add(node, new LinkedList<NetNode>());
-        _adjacencyLookUp.Add(node, new List<(NetNode, NetEdge)>());
-    }
-
-    public bool AddEdge(NetEdge newEdge)
-    {
-        var newKey = (fromNode: (NetNode)(NetworkSubPart)newEdge.startNode, toNode: (NetNode)(NetworkSubPart)newEdge.endNode);
-        if (_edgeLookUp.ContainsKey(newKey))
-        {
-            TLog.Warning($"Key ({newEdge.startNode.Parent.Thing}, {newEdge.endNode.Parent.Thing}) already exists in graph!");
+            TLog.Warning($"Key ({edge.From}, {edge.To}) already exists in graph!");
             return false;
         }
-
-        if (newEdge.IsValid)
+        
+        _edgeLookUp.Add(key, edge);
+        if (!AdjacencyList.TryGetValue(edge.From, out var listSource))
         {
-            _edgeLookUp.Add(newKey, newEdge);
-            if (!_adjacencyLists.TryGetValue(newEdge.startNode, out var listSource))
-            {
-                AddNode(newEdge.startNode);
-                listSource = _adjacencyLists[newEdge.startNode];
-            }
-            if (!listSource.Contains(newEdge.endNode))
-            {
-                listSource.AddFirst(newEdge.endNode);
-                _adjacencyLookUp[newEdge.startNode].Add((newEdge.endNode, newEdge));
-            }
+            AddNode(edge.From);
+            listSource = AdjacencyList[edge.From];
+        }
+        
+        if (!listSource.Contains((edge, edge.To)))
+        {
+            listSource.Add((edge, edge.To));
+            AdjacencyList[edge.From].Add((edge, edge.To));
         }
         return true;
     }
-    
-    //
-    public bool TryGetEdge(INetworkSubPart source, INetworkSubPart dest, out NetEdge value)
+
+    internal void Draw()
     {
-        value = GetEdgeFor(source, dest);
-        return value.IsValid;
-        return _edgeLookUp.TryGetValue((source, dest), out value);// || _edges.TryGetValue((dest, source), out value);
+        throw new System.NotImplementedException();
     }
 
-    private NetEdge GetEdgeFor(INetworkSubPart source, INetworkSubPart dest, bool any = false)
+    internal void OnGUI()
     {
-        if (_edgeLookUp.TryGetValue((source, dest), out var value))
-        {
-            return value;
-        }
-
-        if (_edgeLookUp.TryGetValue((dest, source), out value))
-        {
-            return any ? value : value.Reverse;
-        }
-
-        return NetEdge.Invalid;
+        throw new System.NotImplementedException();
     }
 }

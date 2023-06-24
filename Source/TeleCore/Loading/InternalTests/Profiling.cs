@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using TeleCore.Defs;
 using TeleCore.FlowCore;
 using TeleCore.Network;
+using TeleCore.Network.Data;
 using Verse;
 
 namespace TeleCore.Loading.InternalTests;
@@ -97,7 +99,7 @@ internal class Profiling
         public Thing Thing { get; }
 
         public bool ShowStorageGizmo { get; }
-        public INetworkSubPart NetworkPart { get; }
+        public INetworkPart NetworkPart { get; }
         public NetworkContainerSet ContainerSet { get; }
         public NetworkContainer Container { get; }
         public NetworkDef NetworkDef { get; }

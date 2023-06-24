@@ -1,29 +1,16 @@
-﻿using System.Collections.Generic;
-using TeleCore.Network.IO;
-using TeleCore.Network.PressureSystem;
+﻿using TeleCore.Network.Data;
 
 namespace TeleCore.Network.Graph;
 
 public struct NetNode
 {
-    private INetworkSubPart _holder;
-    private List<NetInterface> _interfaces;
+    public NetworkPart Value { get; }
 
-    public INetworkSubPart Holder => _holder;
-    public List<NetInterface> Interfaces => _interfaces;
+    public static implicit operator NetworkPart(NetNode node) => node.Value;
+    public static implicit operator NetNode(NetworkPart node) => new NetNode(node);
 
-    public static implicit operator NetNode(NetworkSubPart subPart) => new NetNode(subPart);
-    public static implicit operator NetworkSubPart(NetNode node) => node._holder as NetworkSubPart;
-    
-    public NetNode(INetworkSubPart node)
+    public NetNode(NetworkPart value)
     {
-        _holder = node;
+        Value = value;
     }
-}
-
-public struct NetInterface
-{
-    public INetworkSubPart Holder;
-    public INetworkSubPart Endpoint;
-    public NetEdge Edge;
 }

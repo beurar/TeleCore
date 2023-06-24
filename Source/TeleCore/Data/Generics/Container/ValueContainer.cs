@@ -1,4 +1,4 @@
-﻿using TeleCore.FlowCore;
+﻿using TeleCore.Defs;
 
 namespace TeleCore.Network;
 
@@ -18,5 +18,4 @@ public abstract class ValueContainer<TValue, THolder> : ValueContainerBase<TValu
     {
         Holder?.Notify_ContainerStateChanged(stateChangeArgs);
     }
-    
 }

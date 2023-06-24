@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using TeleCore.FlowCore;
+using TeleCore.Defs;
 using Verse;
 
 namespace TeleCore.Network;

@@ -1,216 +1,47 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using RimWorld.Planet;
-using TeleCore.Data.Network;
-using TeleCore.Network;
-using UnityEngine;
-using Verse;
-using DebugTools = TeleCore.Static.Utilities.DebugTools;
+﻿using TeleCore.Defs;
+using TeleCore.Network.Flow;
+using TeleCore.Network.Graph;
+using TeleCore.Network.Utility;
 
-namespace TeleCore;
+namespace TeleCore.Network;
 
-//TODO: Cleanup
-public class PipeNetwork : IExposable
+public class PipeNetwork
 {
-    //Network Config
-    private PipeNetworkSystem _parentSystem;
+    private NetworkDef _def;
+    private int _id;
+
+    private NetGraph _graph;
+    private FlowSystem _flowSystem;
     
-    protected NetworkDef def;
-    protected NetworkRank networkRank = NetworkRank.Alpha;
-    
-    //Dynamics
-    protected NetworkPartSet partSet;
-    protected NetworkContainerSet containerSet;
+    public int ID => _id;
+    public NetworkDef NetworkDef => _def;
 
-    #region Properties
-
-    public PipeNetworkSystem ParentSystem => _parentSystem;
-
-    public NetGraph Graph { get; internal set; }
-    public NetworkPartSet PartSet => partSet;
-    public NetworkContainerSet ContainerSet => containerSet;
-
-    public INetworkStructure NetworkController => PartSet.Controller?.Parent;
-    public List<IntVec3> NetworkCells { get; }
-
-    public NetworkDef Def => def;
-    public NetworkRank NetworkRank => networkRank;
-    public int ID { get; set; } = -1;
-    
-    public bool Initialized { get; internal set; }
-    public bool IsValid => _parentSystem.AllNetworks.Contains(this);
-    public bool HasGraph => Graph != null && Graph.AllNodes.Count > 1;
-
-    #endregion
-
-    public virtual bool IsWorking => !def.UsesController || (NetworkController?.IsPowered ?? false);
-    public virtual float TotalNetworkValue => ContainerSet.TotalNetworkValue;
-    public virtual float TotalStorageNetworkValue => ContainerSet.TotalStorageValue;
-
-    //DEBUG
-    internal bool DrawInternalGraph = false;
-    internal bool DrawAdjacencyList = false;
-
-    public PipeNetwork(NetworkDef def, PipeNetworkSystem system)
+    public PipeNetwork(NetworkDef def)
     {
-        this.ID = PipeNetworkSystem.MasterID++;
-        this.def = def;
-        _parentSystem = system;
-        partSet = new NetworkPartSet(def, null);
-        containerSet = new NetworkContainerSet();
-        NetworkCells = new List<IntVec3>();
+        _id = PipeNetworkFactory.MasterNetworkID++;
+        _def = def;
     }
 
-    public virtual void ExposeData()
+    internal void PrepareForRegen(out NetGraph graph, out FlowSystem flow)
     {
-
+        graph = _graph = new NetGraph();
+        flow = _flowSystem = new FlowSystem();
     }
 
-    public virtual void Tick()
+    internal void Tick()
     {
-        foreach (var part in PartSet.TickList)
-        {
-            part.NetworkTick();
-        }
+        _flowSystem.Tick();
     }
 
-    public virtual void Draw()
+    internal void Draw()
     {
-        //
-        DebugTools.Debug_DrawPressure(Graph);
-
-        //
-        var selThing = Find.Selector.SingleSelectedThing;
-        if (selThing != null && selThing.TryGetComp(out Comp_Network comp))
-        {
-            foreach (var compNetworkPart in comp.NetworkParts)
-            {
-                if (DrawAdjacencyList) //Debug
-                {
-                    var adjacencyLis = Graph.GetAdjacencyList(compNetworkPart);
-                    if (adjacencyLis != null)
-                        GenDraw.DrawFieldEdges(adjacencyLis.Select(c => c.Holder.Parent.Thing.Position).ToList(), Color.red);
-                }  
-                compNetworkPart.CellIO.DrawIO();
-            }
-        }
+        _flowSystem.Draw();
+        _graph.Draw();
     }
 
-    public void DrawOnGUI()
+    internal void OnGUI()
     {
-        DebugTools.Debug_DrawOverlays(Graph);
-        if(DrawInternalGraph)
-            DebugTools.Debug_DrawGraphOnUI(Graph);
-    }
-
-    //
-    public float TotalValueFor(NetworkValueDef valueDef)
-    {
-        return ContainerSet.GetValueByType(valueDef);
-    }
-
-    public float TotalValueFor(NetworkRole ofRole)
-    {
-        return ContainerSet.GetTotalValueByRole(ofRole);
-    }
-
-    public float TotalValueFor(NetworkValueDef valueDef, NetworkRole ofRole)
-    {
-        return ContainerSet.GetValueByTypeByRole(valueDef, ofRole);
-    }
-
-    public bool ValidFor(NetworkRole role, out string reason)
-    {
-        reason = string.Empty;
-        NetworkRole[] values = (NetworkRole[])Enum.GetValues(typeof(NetworkRole));
-        foreach (var value in values)
-        {
-            if ((role & value) == value)
-            {
-                switch (value)
-                {
-                    case NetworkRole.Consumer:
-                        reason = "TR_ConsumerLack";
-                        return PartSet.FullSet.Any(x => x.NetworkRole.HasFlag(NetworkRole.Storage) || x.NetworkRole.HasFlag(NetworkRole.Producer));
-                    case NetworkRole.Producer:
-                        reason = "TR_ProducerLack";
-                        return PartSet.FullSet.Any(x => x.NetworkRole.HasFlag(NetworkRole.Storage) || x.NetworkRole.HasFlag(NetworkRole.Consumer));
-                    case NetworkRole.Transmitter:
-                        break;
-                    case NetworkRole.Storage:
-                        break;
-                    case NetworkRole.Controller:
-                        break;
-                    case NetworkRole.AllContainers:
-                        break;
-                    default: break;
-                }
-            }
-        }
-        return true;
-    }
-
-    //
-    public bool TryGetNodePath(NetworkSubPart networkSubPart, NetworkRole storage)
-    {
-            
-        return false;
-    }
-
-    //Data Updates
-    public void Notify_AddPart(INetworkSubPart part)
-    {
-        ParentSystem.Notify_AddPart(part);
-
-        //
-        if (PartSet.AddNewComponent(part))
-            NetworkCells.AddRange(part.Parent.Thing.OccupiedRect().Cells);
-
-        ContainerSet.AddNewContainerFrom(part);
-    }
-
-    public void Notify_RemovePart(INetworkSubPart part)
-    {
-        ParentSystem.Notify_RemovePart(part);
-
-        //
-        PartSet.RemoveComponent(part);
-        containerSet.RemoveContainerFrom(part);
-        foreach (var cell in part.Parent.Thing.OccupiedRect())
-        {
-            NetworkCells.Remove(cell);
-        }
-    }
-        
-    public void Initialize()
-    {
-        Initialized = true;
-    }
-
-    public override string ToString()
-    {
-        return $"{def}[{ID}][{networkRank}]";
-    }
-
-    public string GreekLetter
-    {
-        get
-        {
-            switch (networkRank)
-            {
-                case NetworkRank.Alpha:
-                    return "α";
-                case NetworkRank.Beta:
-                    return "β";
-                case NetworkRank.Gamma:
-                    return "γ";
-                case NetworkRank.Delta:
-                    return "δ";
-                case NetworkRank.Epsilon:
-                    return "ε";
-            }
-            return "";
-        }
+        _flowSystem.OnGUI();
+        _graph.OnGUI();
     }
 }

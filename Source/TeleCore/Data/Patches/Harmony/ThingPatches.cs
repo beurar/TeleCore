@@ -107,6 +107,12 @@ internal static class ThingPatches
             GlobalEventHandler.OnThingDespawning(new ThingStateChangedEventArgs(ThingChangeFlag.Despawning, __instance));
             return true;
         }
+        
+        public static void Postfix(Thing __instance)
+        {
+            //Event Handling
+            GlobalEventHandler.OnThingDespawned(new ThingStateChangedEventArgs(ThingChangeFlag.Despawned, __instance));
+        }
     }
         
     [HarmonyPatch(typeof(ThingWithComps))]

@@ -107,6 +107,7 @@
     <Folder Include="Data\AI\JobDrivers\" />
     <Folder Include="Data\Research\" />
     <Folder Include="Data\World\Layers\" />
+    <Folder Include="Interfaces\" />
     <Folder Include="Rendering\Tools\DefEditor" />
     <Folder Include="Rendering\Tools\ModuleVisualizer\ModuleNodes" />
     <Folder Include="VFX\Particles" />

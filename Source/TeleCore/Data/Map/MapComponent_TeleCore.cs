@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using TeleCore.Data.Network;
 using TeleCore.Network;
 using Verse;
 
@@ -11,7 +10,7 @@ public class MapComponent_TeleCore : MapComponent
     private List<MapInformation> allMapInfos = new();
     private readonly Dictionary<Type, MapInformation> mapInfoByType = new();
 
-    public NetworkMapInfo NetworkInfo { get; private set; }
+    public PipeNetworkMapInfo NetworkInfo { get; private set; }
     public ThingGroupCacheInfo ThingGroupCacheInfo { get; private set; }
     public ThingTrackerMapInfo ThingTrackerMapInfo { get; private set; }
 
@@ -60,7 +59,7 @@ public class MapComponent_TeleCore : MapComponent
         }
 
         //
-        NetworkInfo = (NetworkMapInfo) mapInfoByType[typeof(NetworkMapInfo)];
+        NetworkInfo = (PipeNetworkMapInfo) mapInfoByType[typeof(PipeNetworkMapInfo)];
         ThingGroupCacheInfo = (ThingGroupCacheInfo) mapInfoByType[typeof(ThingGroupCacheInfo)];
         ThingTrackerMapInfo = (ThingTrackerMapInfo) mapInfoByType[typeof(ThingTrackerMapInfo)];
     }

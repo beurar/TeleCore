@@ -7,6 +7,7 @@ public static class GlobalEventHandler
 {
     public static event ThingSpawnedEvent ThingSpawned;
     public static event ThingDespawnedEvent ThingDespawning;
+    public static event ThingDespawnedEvent ThingDespawned;
     public static event ThingStateChangedEvent ThingSentSignal;
     public static event PawnHediffChangedEvent PawnHediffChanged;
     public static event TerrainChangedEvent TerrainChanged;
@@ -41,6 +42,19 @@ public static class GlobalEventHandler
         }
     }
 
+    internal static void OnThingDespawned(ThingStateChangedEventArgs args)
+    {
+        try
+        {
+            ThingDespawned?.Invoke(args);
+            CellChanged?.Invoke(new CellChangedEventArgs(args));
+        }
+        catch (Exception ex)
+        {
+            TLog.Error($"Error trying to deregister despawned thing: {args.Thing}\n{ex.Message}");
+        }
+    }
+    
     internal static void OnThingSentSignal(ThingStateChangedEventArgs args)
     {
         try

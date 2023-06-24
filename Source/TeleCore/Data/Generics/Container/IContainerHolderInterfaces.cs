@@ -1,5 +1,7 @@
 ﻿using System;
 using TeleCore;
+using TeleCore.Defs;
+using TeleCore.Primitive;
 
 namespace TeleCore.Network;
 
