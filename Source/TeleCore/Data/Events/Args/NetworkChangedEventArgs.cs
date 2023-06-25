@@ -1,6 +1,7 @@
 ﻿using System;
+using TeleCore.Network.Data;
 
-namespace TeleCore.Data.Events;
+namespace TeleCore.Events;
 
 public enum NetworkChangeType
 {

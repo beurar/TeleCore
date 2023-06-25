@@ -1,4 +1,4 @@
-﻿namespace TeleCore.Data.Events;
+﻿namespace TeleCore.Events;
 
 public enum CellChangeFlag
 {

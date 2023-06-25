@@ -9,15 +9,18 @@ public class PlaceWorker_NetworkIO : PlaceWorker
     {
         var network = def.GetCompProperties<CompProperties_Network>();
 
-        if (network.generalIOPattern != null)
+        if (network.generalIOConfig != null)
         {
-            network.SimpleIO.Draw(center, def, rot);
+            network.RenderIO.Draw(center, def, rot);
             return;
         }
         
         foreach (var part in network.networks)
         {
-            part.SimpleIO.Draw(center, def, rot);
+            foreach (var cell in part.netIOConfig.cells)
+            {
+                
+            }
         }
     }
 }

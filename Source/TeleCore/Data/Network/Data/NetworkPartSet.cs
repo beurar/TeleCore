@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -14,12 +15,35 @@ public class NetworkPartSetExtended : NetworkPartSet
     private string? _cachedString;
     
     //stores references to all ticking parts
-    private readonly HashSet<INetworkPart> tickSet;
+    private readonly HashSet<INetworkPart> _tickSet;
+    
+    public ICollection<INetworkPart> TickSet => _tickSet;
     
     public NetworkPartSetExtended(NetworkDef def) : base(def)
     {
     }
-    
+
+    public override void Dispose()
+    {
+        _tickSet.Clear();
+    }
+
+    protected override void OnPartAdded(INetworkPart part)
+    {
+        if (!part.IsEdge)
+        {
+            _tickSet.Add(part);
+        }
+
+        UpdateString();
+    }
+
+    protected override void OnPartRemoved(INetworkPart part)
+    {
+        _tickSet.Remove(part);
+        UpdateString();
+    }
+
     private void UpdateString()
     {
         var sb = new StringBuilder();
@@ -36,9 +60,16 @@ public class NetworkPartSetExtended : NetworkPartSet
         sb.AppendLine($"Total Count: {_fullSet.Count}");
         _cachedString = sb.ToString();
     }
+
+    public override string ToString()
+    {
+        if (_cachedString == null)
+            UpdateString();
+        return _cachedString;
+    }
 }
 
-public class NetworkPartSet
+public class NetworkPartSet : IDisposable
 {
     protected readonly NetworkDef _def;
     protected readonly HashSet<INetworkPart> _fullSet;
@@ -69,9 +100,15 @@ public class NetworkPartSet
         _partsByRole = new Dictionary<NetworkRole, HashSet<INetworkPart>>();
     }
 
+    public virtual void Dispose()
+    {
+        _fullSet.Clear();
+        _partsByRole.Clear();
+    }
+    
     #region Registration
     
-    private bool TryAddComponent(INetworkPart? part)
+    public bool AddComponent(INetworkPart? part)
     {
         if (part == null) return false;
         if (part.Config.networkDef != _def) return false;
@@ -85,6 +122,8 @@ public class NetworkPartSet
                 TLog.Warning($"Trying to add existing item: {part} for role {flag}.");
             }
         }
+        
+        OnPartAdded(part);
         return true;
     }
     
@@ -98,8 +137,16 @@ public class NetworkPartSet
         }
         
         _fullSet.Remove(part);
+        OnPartRemoved(part);
+    }
+
+    protected virtual void OnPartAdded(INetworkPart part)
+    {
     }
     
+    protected virtual void OnPartRemoved(INetworkPart part)
+    {
+    }
 
     #endregion
 

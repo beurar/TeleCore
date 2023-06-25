@@ -2,9 +2,11 @@
 using System.Collections.Generic;
 using System.Linq;
 using TeleCore.Defs;
+using TeleCore.Generics.Container.Gizmos;
+using TeleCore.Generics.Container.Holder;
 using Verse;
 
-namespace TeleCore.Network;
+namespace TeleCore.Generics.Container;
 
 public class ValueContainerThing<TValue, THolder> : ValueContainer<TValue, THolder>
     where TValue : FlowValueDef

@@ -1,4 +1,6 @@
 ﻿
+using TeleCore.Events;
+
 namespace TeleCore.Data.Events;
 
 public delegate void ThingSpawnedEvent(ThingStateChangedEventArgs args);

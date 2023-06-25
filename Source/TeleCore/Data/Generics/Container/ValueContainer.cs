@@ -1,6 +1,8 @@
 ﻿using TeleCore.Defs;
+using TeleCore.Generics.Container.Holder;
+using TeleCore.Network;
 
-namespace TeleCore.Network;
+namespace TeleCore.Generics.Container;
 
 //Container Template implementing IContainerHolder
 public abstract class ValueContainer<TValue, THolder> : ValueContainerBase<TValue>

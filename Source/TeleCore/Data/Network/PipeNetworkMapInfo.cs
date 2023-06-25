@@ -34,7 +34,7 @@ public class PipeNetworkMapInfo : MapInformation
     {
         foreach (var part in structure.NetworkParts)
         {
-            GetOrCreateNewNetworkSystemFor(part.NetworkDef).Notify_PartSpawned(part, structure);
+            GetOrCreateNewNetworkSystemFor(part.Config.networkDef).Notify_PartSpawned(part);
         }
     }
 
@@ -42,7 +42,7 @@ public class PipeNetworkMapInfo : MapInformation
     {
         foreach (var part in structure.NetworkParts)
         {
-            GetOrCreateNewNetworkSystemFor(part.NetworkDef).Notify_PartDespawned(part, structure);
+            GetOrCreateNewNetworkSystemFor(part.Config.networkDef).Notify_PartDespawned(part);
         }
     }
     
@@ -53,12 +53,14 @@ public class PipeNetworkMapInfo : MapInformation
     {
         var networkStructure = thing.TryGetComp<Comp_Network>();
         if (networkStructure == null) return false;
-        foreach (var networkPart in networkStructure.NetworkParts)
+        for (var i = 0; i < networkStructure.NetworkParts.Count; i++)
         {
-            if (networkPart.CellIO.VisualConnectionCells.Contains(c)) return true;
-            if (networkPart.DirectPartSet[c] != null)
+            var networkPart = networkStructure.NetworkParts[i];
+            var system = GetOrCreateNewNetworkSystemFor(networkPart.Config.networkDef);
+            if (networkPart.NetworkIO.Connections.Any(io => io.Pos == c))
             {
-                return true;
+                if (system.NetworkAt(c, thing.Map) == networkPart.Network)
+                    return true;
             }
         }
         return false;
@@ -71,8 +73,16 @@ public class PipeNetworkMapInfo : MapInformation
             //TLog.Message($"Ticking all networks | {TFind.TickManager.CurrentTick}");
             foreach (var system in _systemsByType)
             {
-                system.TickNetworks();
+                system.Value.Tick();
             }
+        }
+    }
+    
+    public override void Update()
+    {
+        foreach (var system in _systemsByType)
+        {
+            system.Value.Draw();
         }
     }
     
@@ -80,15 +90,7 @@ public class PipeNetworkMapInfo : MapInformation
     {
         foreach (var system in _systemsByType)
         {
-            system.DrawNetworkOnGUI();
-        }
-    }
-
-    public override void Update()
-    {
-        foreach (var system in _systemsByType)
-        {
-            system.DrawNetwork();
+            system.Value.DrawOnGUI();
         }
     }
 }

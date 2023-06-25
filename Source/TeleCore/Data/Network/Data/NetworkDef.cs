@@ -77,7 +77,7 @@ public class NetworkDef : FlowValueCollectionDef
                 {
                     yield return $"Network seems unused: Cannot find any {nameof(NetworkPartConfig)} using this network.";
                 }
-                else if((networkDef.NetworkRole & NetworkRole.Controller) != NetworkRole.Controller)
+                else if((networkDef.role & NetworkRole.Controller) != NetworkRole.Controller)
                 {
                     yield return $"controllerDef {controllerDef} does not have the Controller NetworkRole assigned!";
                 }

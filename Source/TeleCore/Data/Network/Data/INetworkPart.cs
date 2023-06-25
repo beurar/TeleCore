@@ -13,7 +13,7 @@ public interface INetworkPart
     public NetworkPartConfig Config { get; }
     public INetworkStructure Parent { get; }
     public Thing Thing { get; }
-    public PipeNetwork Network { get; }
+    public PipeNetwork Network { get; internal set; }
     public NetworkIO NetworkIO { get; }
     public NetworkPartSet AdjacentSet { get; }
     //public NetworkPartSet DirectPartSet { get; }

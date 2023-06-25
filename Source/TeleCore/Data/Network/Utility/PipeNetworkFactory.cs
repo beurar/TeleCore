@@ -45,11 +45,19 @@ public static class PipeNetworkFactory
         _curNetwork = null;
     }
 
+    private static void Notify_FoundConsecutivePart(INetworkPart part)
+    {
+        if (_curNetwork.Notify_AddPart(part))
+        {
+            part.Network = _curNetwork;
+            _curGraph.AddCells(part);
+        }  
+    }
+    
     private static void Notify_FoundEdge(NetEdge edge)
     {
         if (_curGraph.AddEdge(edge))
         {
-            
         }
     }
     
@@ -94,7 +102,6 @@ public static class PipeNetworkFactory
                         Notify_FoundEdge(edgeBi.Reverse);
                         continue;
                     }
-
                     var edge = new NetEdge(rootNode, directPart, connResult.In, connResult.Out, connResult.InMode,connResult.OutMode, 0);
                     Notify_FoundEdge(edge);
                 }
@@ -102,8 +109,7 @@ public static class PipeNetworkFactory
             else if (directPart.IsEdge)
             {
                 var directPos = directPart.Parent.Thing.Position;
-                var adj = GenAdj.CardinalDirections.First(c => (c + directPos).GetFirstThing(map, rootNode.Parent.Thing.def) != null) + directPos;
-                InternalEdgeSearch(directPart, directPos, rootNode.NetworkIO.IOModeFor(directPos, adj), rootNode);
+                InternalEdgeSearch(directPart, directPos, rootNode.NetworkIO.IOModeAt(directPos), rootNode);
             }
         }
 
@@ -122,23 +128,22 @@ public static class PipeNetworkFactory
                 foreach (var item in openSet)
                 {
                     closedSet.Add(item);
-                    //TODO:Check if needed
-                    //AddNetworkDataCallback(item, graph.Network);
                     closedSetGlobalLocal.Add(item);
+                    Notify_FoundConsecutivePart(item);
                 }
                 (currentSet, openSet) = (openSet, currentSet);
                 openSet.Clear();
                 foreach (INetworkPart part in currentSet)
                 {
-                    foreach (IntVec3 output in part.CellIO.OuterConnnectionCells)
+                    foreach (IntVec3 output in part.NetworkIO.Connections)
                     {
                         if(!output.InBounds(map)) continue;
                         List<Thing> thingList = output.GetThingList(map);
                         foreach (var thing in thingList)
                         {
-                            if (!Fits(thing, rootNode.NetworkDef, out var newPart)) continue;
+                            if (!Fits(thing, rootNode.Config.networkDef, out var newPart)) continue;
                             if (closedSet.Concat(closedSetGlobalLocal).Contains(newPart)) continue;
-                            var result = newPart.ConnectsTo(part);
+                            var result = newPart.HasIOConnectionTo(part);
                             if (result.IsValid)
                             {
                                 //Make Edge When Node Found
@@ -209,16 +214,16 @@ public static class PipeNetworkFactory
             openSet.Clear();
             foreach (INetworkPart part in currentSet)
             {
-                foreach (IntVec3 output in part.CellIO.OuterConnnectionCells)
+                foreach (IntVec3 output in part.NetworkIO.Connections)
                 {
                     if(!output.InBounds(map)) continue;
                         
                     List<Thing> thingList = output.GetThingList(map);
                     foreach (var thing in thingList)
                     {
-                        if (!Fits(thing, root.NetworkDef, out var newPart)) continue;
+                        if (!Fits(thing, root.Config.networkDef, out var newPart)) continue;
                         if (closedSet.Contains(newPart)) continue;
-                        if (newPart.ConnectsTo(part))
+                        if (newPart.HasIOConnectionTo(part))
                         {
                             openSet.Add(newPart);
                             break;

@@ -3,6 +3,7 @@ using System.Text;
 using RimWorld;
 using TeleCore.Defs;
 using TeleCore.FlowCore;
+using TeleCore.Network.Data;
 using UnityEngine;
 using Verse;
 
@@ -13,8 +14,8 @@ public class CompPowerPlant_Network : CompPowerPlant
     private int powerTicksRemaining;
     private float internalPowerOutput = 0f;
 
-    private Comp_Network compNetwork;
-    private NetworkSubPart _networkComponent;
+    private Comp_Network _comp;
+    private NetworkPart _netPart;
 
     public new CompProperties_NetworkPowerPlant Props =>
         (CompProperties_NetworkPowerPlant) base.Props;
@@ -32,8 +33,8 @@ public class CompPowerPlant_Network : CompPowerPlant
     public override void PostSpawnSetup(bool respawningAfterLoad)
     {
         base.PostSpawnSetup(respawningAfterLoad);
-        compNetwork = parent.GetComp<Comp_Network>();
-        _networkComponent = compNetwork[Props.fromNetwork];
+        _comp = parent.GetComp<Comp_Network>();
+        _netPart = _comp[Props.fromNetwork];
     }
 
     public override void CompTick()
@@ -42,7 +43,7 @@ public class CompPowerPlant_Network : CompPowerPlant
         PowerTick();
     }
 
-    public bool CanConsume => !IsAtCapacity && !_networkComponent.RequestWorker.RequestingNow;
+    public bool CanConsume => !IsAtCapacity && !_netPart.RequestWorker.RequestingNow;
     
     private void PowerTick()
     {
@@ -55,12 +56,12 @@ public class CompPowerPlant_Network : CompPowerPlant
         }
         
         //If no value
-        if (CanConsume && _networkComponent.Container.FillState != ContainerFillState.Empty)
+        if (CanConsume && _netPart.Container.FillState != ContainerFillState.Empty)
         {
             foreach (var conversion in Props.valueToTickRules)
             {
-                if (_networkComponent.Container.StoredValueOf(conversion.valueDef) <= 0) continue;
-                if (_networkComponent.Container.TryConsume(conversion.valueDef, conversion.cost))
+                if (_netPart.Container.StoredValueOf(conversion.valueDef) <= 0) continue;
+                if (_netPart.Container.TryConsume(conversion.valueDef, conversion.cost))
                 {
                     powerTicksRemaining += Mathf.RoundToInt(conversion.seconds.SecondsToTicks());
                 }

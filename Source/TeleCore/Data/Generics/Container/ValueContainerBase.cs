@@ -5,11 +5,12 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using OneOf;
 using TeleCore.Defs;
+using TeleCore.Network;
 using TeleCore.Primitive;
 using UnityEngine;
 using Verse;
 
-namespace TeleCore.Network;
+namespace TeleCore.Generics.Container;
 
 //Base Container Template for Values
 public abstract class ValueContainerBase<TValue> : IExposable where TValue : FlowValueDef

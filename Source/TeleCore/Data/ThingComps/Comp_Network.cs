@@ -17,18 +17,18 @@ namespace TeleCore;
 public class Comp_Network : FXThingComp, INetworkStructure
 {
     //
-    private PipeNetworkMapInfo networkInfo;
+    private PipeNetworkMapInfo _mapInfo;
 
-    private List<INetworkPart> networkParts;
-    private Dictionary<NetworkDef, INetworkPart> networkPartByDef;
-    private NetworkCellIO cellIO;
+    private List<INetworkPart> _allNetParts;
+    private Dictionary<NetworkDef, INetworkPart> _netPartByDef;
+    private NetworkIO io;
 
     //Debug
     protected static bool DebugConnectionCells = false;
     private IFXLayerProvider ifxHolderImplementation;
 
     //
-    public INetworkPart this[NetworkDef def] => networkPartByDef.TryGetValue(def, out var value) ? value : null;
+    public INetworkPart this[NetworkDef def] => _netPartByDef.TryGetValue(def, out var value) ? value : null;
 
     //
     public CompProperties_Network Props => (CompProperties_Network)base.props;
@@ -38,8 +38,8 @@ public class Comp_Network : FXThingComp, INetworkStructure
 
     //
     public Thing Thing => parent;
-    public List<NetworkSubPart> NetworkParts => networkParts;
-    public NetworkCellIO GeneralIO => cellIO;
+    public List<INetworkPart> NetworkParts => _allNetParts;
+    public NetworkIO GeneralIO => io;
 
     public bool IsPowered => CompPower?.PowerOn ?? true;
     public bool IsWorking => IsWorkingOverride;
@@ -66,7 +66,7 @@ public class Comp_Network : FXThingComp, INetworkStructure
     {
         return args.index switch
         {
-            1 => networkParts.Any(t => t?.HasConnection ?? false),
+            1 => _allNetParts.Any(t => t?.HasConnection ?? false),
             _ => true
         };
     }
@@ -80,7 +80,7 @@ public class Comp_Network : FXThingComp, INetworkStructure
     {
         return args.index switch
         {
-            0 => networkParts[0].Container.Color,
+            0 => _allNetParts[0].Container.Color,
             _ => Color.white
         };
     }
@@ -107,12 +107,12 @@ public class Comp_Network : FXThingComp, INetworkStructure
     public override void PostExposeData()
     {
         base.PostExposeData();
-        Scribe_Collections.Look(ref networkParts, "networkParts", LookMode.Deep, this);
+        Scribe_Collections.Look(ref _allNetParts, "networkParts", LookMode.Deep, this);
 
         //
         if (Scribe.mode == LoadSaveMode.PostLoadInit)
         {
-            if (networkParts.NullOrEmpty())
+            if (_allNetParts.NullOrEmpty())
             {
                 TLog.Warning($"Could not load network parts for {parent}... Correcting.");
             }
@@ -131,40 +131,40 @@ public class Comp_Network : FXThingComp, INetworkStructure
         CompFX = parent.TryGetComp<CompFX>();
 
         //
-        cellIO = new NetworkCellIO(Props.generalIOPattern, parent);
-        networkInfo = parent.Map.TeleCore().NetworkInfo;
+        io = new NetworkIO(Props.generalIOPattern, parent);
+        _mapInfo = parent.Map.TeleCore().NetworkInfo;
 
         //Create NetworkComponents
-        if (respawningAfterLoad && (networkParts.Count != Props.networks.Count))
+        if (respawningAfterLoad && (_allNetParts.Count != Props.networks.Count))
         {
             TLog.Warning($"Spawning {parent} after load with missing parts... Correcting.");
         }
             
         //
         if(!respawningAfterLoad)
-            networkParts = new List<NetworkSubPart>(Math.Max(1, Props.networks.Count));
+            _allNetParts = new List<NetworkSubPart>(Math.Max(1, Props.networks.Count));
             
-        networkPartByDef = new Dictionary<NetworkDef, NetworkSubPart>(Props.networks.Count);
+        _netPartByDef = new Dictionary<NetworkDef, NetworkSubPart>(Props.networks.Count);
         for (var i = 0; i < Props.networks.Count; i++)
         {
             var compProps = Props.networks[i];
             NetworkSubPart subPart = null;
-            if (!networkParts.Any(p => p.NetworkDef == compProps.networkDef))
+            if (!_allNetParts.Any(p => p.NetworkDef == compProps.networkDef))
             {
                 subPart = (NetworkSubPart) Activator.CreateInstance(compProps.workerType, args: new object[] {this, compProps});
-                networkParts.Add(subPart);
+                _allNetParts.Add(subPart);
             }
 
             if (subPart == null)
-                subPart = networkParts[i];
+                subPart = _allNetParts[i];
 
-            networkPartByDef.Add(compProps.networkDef, subPart);
+            _netPartByDef.Add(compProps.networkDef, subPart);
             subPart.SubPartSetup(respawningAfterLoad);
         }
             
         //Check for neighbor intersections
         //Regen network after all data is set
-        networkInfo.Notify_NewNetworkStructureSpawned(this);
+        _mapInfo.Notify_NewNetworkStructureSpawned(this);
     }
         
     //Deconstruction
@@ -172,7 +172,7 @@ public class Comp_Network : FXThingComp, INetworkStructure
     {
         base.PostDestroy(mode, previousMap);
         //Regen network after all data is set
-        networkInfo.Notify_NetworkStructureDespawned(this);
+        _mapInfo.Notify_NetworkStructureDespawned(this);
 
         foreach (var networkPart in NetworkParts)
         {
@@ -207,7 +207,7 @@ public class Comp_Network : FXThingComp, INetworkStructure
     //
     public bool HasPartFor(NetworkDef networkDef)
     {
-        return networkPartByDef.ContainsKey(networkDef);
+        return _netPartByDef.ContainsKey(networkDef);
     }
         
     //
@@ -317,7 +317,7 @@ public class Comp_Network : FXThingComp, INetworkStructure
             {
                 foreach (var networkPart in NetworkParts)
                 {
-                    networkInfo[networkPart.NetworkDef].DEBUG_ToggleShowNetworks();
+                    _mapInfo[networkPart.NetworkDef].DEBUG_ToggleShowNetworks();
                 }
             }
         };

@@ -11,7 +11,7 @@ namespace TeleCore.Network.Flow;
 /// <summary>
 /// The main algorithm container for fluid flow.
 /// </summary>
-public class FlowSystem
+public class FlowSystem : IDisposable
 {
     private List<FlowBox> _flowBoxes;
     private Dictionary<NetworkPart, FlowBox> _flowBoxByPart;
@@ -31,6 +31,13 @@ public class FlowSystem
         
         ClampWorker = new ClampWorker_Overcommit();
         PressureWorker = new PressureWorker_WaveEquation();
+    }
+    
+    public void Dispose()
+    {
+        _flowBoxes.Clear();
+        _flowBoxByPart.Clear();
+        _connections.Clear();
     }
 
     internal void Notify_Populate(NetGraph graph)

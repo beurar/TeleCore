@@ -18,7 +18,12 @@ public class NetworkPart : INetworkPart
     public INetworkStructure Parent => _parent;
     public Thing Thing => _parent.Thing;
     
-    public PipeNetwork Network => _network;
+    public PipeNetwork Network
+    {
+        get => _network;
+        set => _network = value;
+    }
+
     public NetworkIO NetworkIO => _networkIO;
     public NetworkPartSet AdjacentSet => _adjSet;
 
@@ -53,5 +58,13 @@ public class NetworkPart : INetworkPart
     public void Tick()
     {
         
+    }
+
+    public IOConnectionResult HasIOConnectionTo(INetworkPart other)
+    {
+        if (other == this) return IOConnectionResult.Invalid;
+        if (!_config.networkDef.Equals(other.Config.networkDef)) return IOConnectionResult.Invalid;
+        if (!Parent.CanConnectToOther(other.Parent)) return IOConnectionResult.Invalid;
+        return _networkIO.ConnectsTo(other.NetworkIO);
     }
 }

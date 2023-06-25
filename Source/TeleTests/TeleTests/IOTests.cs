@@ -1,6 +1,10 @@
 ﻿using System.Collections.Generic;
 using NUnit.Framework;
 using TeleCore.Network.IO;
+using TeleCore.Network.IO.Experimental;
+using TeleCore.Primitive;
+using Verse;
+using NetworkIO = TeleCore.Network.IO.NetworkIO;
 
 namespace TeleTests;
 
@@ -10,29 +14,29 @@ public class IOTests
     [Test]
     public void ConnectionTest()
     {
-        var config = new IOConfig()
+        var config = new NetIOConfig()
         {
-            cells = new List<IOCell>()
+            cells = new List<IOCellPrototype>()
             {
-                new IOCell()
+                new ()
                 {
                     direction = Rot4.North,
                     mode = NetworkIOMode.Input,
                     offset = Rot4.North.FacingCell,
                 },
-                new IOCell()
+                new ()
                 {
                     direction = Rot4.South,
                     mode = NetworkIOMode.Output,
                     offset = Rot4.South.FacingCell,
                 },
-                new IOCell()
+                new ()
                 {
                     direction = Rot4.East,
                     mode = NetworkIOMode.TwoWay,
                     offset = Rot4.East.FacingCell,
                 },
-                new IOCell()
+                new ()
                 {
                     direction = Rot4.West,
                     mode = NetworkIOMode.TwoWay,
