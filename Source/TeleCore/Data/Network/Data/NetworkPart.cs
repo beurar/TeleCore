@@ -1,4 +1,5 @@
-﻿using TeleCore.Defs;
+﻿using System.Collections.Generic;
+using TeleCore.Defs;
 using TeleCore.Network.Flow;
 using TeleCore.Network.Graph;
 using TeleCore.Network.IO;
@@ -90,5 +91,47 @@ public class NetworkPart : INetworkPart
     public string InspectString()
     {
         throw new System.NotImplementedException();
+    }
+
+    public virtual IEnumerable<Gizmo> GetPartGizmos()
+    {
+        if (DebugSettings.godMode)
+        {
+            /*if (IsController)
+            {
+                yield return new Command_Action()
+                {
+                    defaultLabel = "Show Entire Network",
+                    action = delegate
+                    {
+                        DebugNetworkCells = !DebugNetworkCells;
+                    }
+                };
+            }
+
+            if (Network == null) yield break;
+                
+            yield return new Command_Action
+            {
+                defaultLabel = $"Draw Graph",
+                action = delegate { Network.DrawInternalGraph = !Network.DrawInternalGraph; }
+            };
+
+            yield return new Command_Action
+            {
+                defaultLabel = $"Draw AdjacencyList",
+                action = delegate { Network.DrawAdjacencyList = !Network.DrawAdjacencyList; }
+            };
+                
+                
+            yield return new Command_Action
+            {
+                defaultLabel = $"Draw FlowDirections",
+                action = delegate { Debug_DrawFlowDir = !Debug_DrawFlowDir; }
+            };*/
+        }
+        
+        //
+        yield break;
     }
 }

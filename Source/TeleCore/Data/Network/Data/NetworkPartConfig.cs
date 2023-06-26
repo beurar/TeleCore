@@ -107,13 +107,6 @@ public class NetworkValueFilter : FlowValueFilter
 
 public class NetworkPartConfig
 {
-    #region Cached Data
-    
-    [Unsaved]
-    private NetworkRole networkRole;
-
-    #endregion
-
     #region XML Fields
     
     public Type workerType = typeof(NetworkPart);

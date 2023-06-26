@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -61,6 +62,9 @@ public class FlowBox
         }
     }
 
+    //TODO => Move into container config
+    public IList<FlowValueDef> AcceptedTypes { get; set; }
+
     #region Data Getters
     
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -112,5 +116,16 @@ public class FlowBox
     public void AddContent(FlowValueStack fullDiff)
     {
         _mainStack += fullDiff;
+    }
+
+    //
+    public void TryAddValue(FlowValueDef type, float part)
+    {
+        throw new NotImplementedException();
+    }
+
+    public void Clear()
+    {
+        throw new NotImplementedException();
     }
 }

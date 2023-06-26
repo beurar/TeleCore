@@ -2,6 +2,7 @@
 using TeleCore.Defs;
 using TeleCore.Generics.Container;
 using TeleCore.Network.Flow;
+using TeleCore.Static;
 using UnityEngine;
 using Verse;
 using DebugTools = TeleCore.Static.Utilities.DebugTools;
@@ -68,35 +69,34 @@ public static class NetworkUI
         {
             if (TWidgets.MouseClickIn(rect, 1))
             {
-                FloatMenu menu = new FloatMenu(DebugTools.DebugFloatMenuOptions, "", true);
+                FloatMenu menu = new FloatMenu(DebugFloatMenuOptions(fb), "", true);
                 menu.vanishIfMouseDistant = true;
                 Find.WindowStack.Add(menu);
             }
         }
     }
-    
-    public List<FloatMenuOption> DebugFloatMenuOptions()
+
+    public static List<FloatMenuOption> DebugFloatMenuOptions(FlowBox fb)
     {
-        get
+        var tempList = StaticListHolder<FloatMenuOption>.RequestList($"FlowMenuOptions_{fb.GetHashCode()}");
+        /*
+        if (tempList.Count == 0)
         {
-            if (_debugFloatMenuOptions == null)
+            int part = (int)(fb.MaxCapacity / fb.AcceptedTypes.Count);
+            tempList.Add(new FloatMenuOption("Add ALL", delegate { Debug_AddAll(part); }));
+
+            tempList.Add(new FloatMenuOption("Remove ALL", Debug_Clear));
+
+            foreach (var type in fb.AcceptedTypes)
             {
-                _debugFloatMenuOptions = new List<FloatMenuOption>();
-                int part = Capacity / AcceptedTypes.Count;
-                _debugFloatMenuOptions.Add(new FloatMenuOption("Add ALL", delegate { Debug_AddAll(part); }));
-
-                _debugFloatMenuOptions.Add(new FloatMenuOption("Remove ALL", Debug_Clear));
-
-                foreach (var type in AcceptedTypes)
-                {
-                    _debugFloatMenuOptions.Add(new FloatMenuOption($"Add {type}", delegate { Debug_AddType(type, part); }));
-                }
+                tempList.Add(new FloatMenuOption($"Add {type}", delegate { Debug_AddType(type, part); }));
             }
-            return _debugFloatMenuOptions;
         }
+        */
+        return tempList;
     }
 
-    
+
     /*
     public static float DrawNetworkValueTypeReadout(Rect rect, GameFont font, float textYOffset, NetworkContainerSet containerSet)
     {

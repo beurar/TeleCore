@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using TeleCore.Defs;
 using TeleCore.Network.Flow;
 using TeleCore.Network.Graph;
@@ -58,4 +59,5 @@ public interface INetworkPart
     bool CanTransmit(NetEdge netEdge);
     bool NeedsValue(NetworkValueDef value, NetworkRole forRole);
     */
+    IEnumerable<Gizmo> GetPartGizmos();
 }

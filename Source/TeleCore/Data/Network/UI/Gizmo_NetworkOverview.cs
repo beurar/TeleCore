@@ -1,0 +1,267 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using RimWorld;
+using TeleCore.Network.Data;
+using TeleCore.Network.Utility;
+using UnityEngine;
+using Verse;
+
+namespace TeleCore.Network.UI;
+
+public class Gizmo_NetworkOverview : Gizmo, IDisposable
+{
+    private readonly Comp_Network compNetwork;
+    private readonly Dictionary<INetworkPart, NetworkInfoView> _viewByPart;
+
+    //Sizes
+    private const float mainWidth = 200f;
+    private const int gizmoPadding = 5;
+
+    //Extendo Consts
+    private float currentExtendedY = 0;
+    private float desiredExtendedY;
+    internal const int selSettingHeight = 22;
+
+    //Part Extendo Consts
+    private readonly Vector2 partSelectionSize;
+    private float curExtendedPartX = 0;
+    private float desiredExtendedPartX;
+    private FloatRange partSelRange;
+
+    //
+    public NetworkInfoView SelectedPart { get; private set; }
+
+    public Gizmo_NetworkOverview(Comp_Network compParent) : base()
+    {
+        this.order = -250f;
+        compNetwork = compParent;
+        _viewByPart = new Dictionary<INetworkPart, NetworkInfoView>();
+
+        //
+        var maxTextSize = 50f;
+        foreach (var part in compNetwork.NetworkParts)
+        {
+            _viewByPart.Add(part, new NetworkInfoView(part));
+            maxTextSize = Mathf.Max(maxTextSize, Text.CalcSize(part.Config.networkDef.labelShort).x + 10);
+        }
+
+        //Set First Selection
+        SelectedPart = _viewByPart.First().Value;
+
+        //
+        partSelectionSize = new Vector2(maxTextSize, 25);
+        partSelRange = new FloatRange(10, MaxPartSelX());
+
+        //
+        TFind.TickManager.RegisterMapUITickAction(Tick);
+    }
+
+    public override float GetWidth(float maxWidth)
+    {
+        return 0;
+    }
+
+    public float GetWidthSpecial()
+    {
+        return mainWidth + GetPartSelectionSize().x;
+    }
+
+    private void InspectorRef(Vector2 topLeft, out Vector2 newPos, out Vector2 size)
+    {
+        var inspector = Find.MainTabsRoot.OpenTab.TabWindow as MainTabWindow_Inspect;
+        if (inspector == null)
+        {
+            newPos = topLeft;
+            size = new Vector2(mainWidth, mainWidth);
+            return;
+        }
+
+        var inspectorSize = inspector.RequestedTabSize;
+        newPos = new Vector2(inspector.RequestedTabSize.x, inspector.PaneTopY);
+        size = new Vector2(mainWidth, inspectorSize.y);
+    }
+
+    private Vector2 GetPartSelectionSize()
+    {
+        if (_viewByPart.Count <= 1) return Vector2.zero;
+        return new Vector2(curExtendedPartX, 0);
+        var inspector = Find.MainTabsRoot.OpenTab.TabWindow as MainTabWindow_Inspect;
+        var inspectorSize = inspector.RequestedTabSize;
+        var maxY = inspectorSize.y - 10;
+        var fitted = Mathf.FloorToInt((partSelectionSize.y * _viewByPart.Count) / maxY);
+        return new Vector2((fitted + 1) * curExtendedPartX, inspectorSize.y);
+    }
+
+    private float MaxPartSelX()
+    {
+        var inspector = Find.MainTabsRoot.OpenTab.TabWindow as MainTabWindow_Inspect;
+        var inspectorSize = inspector.RequestedTabSize;
+        var maxY = inspectorSize.y - 10;
+        var fitted = Mathf.FloorToInt((partSelectionSize.y * _viewByPart.Count) / maxY);
+        return (fitted + 1) * partSelectionSize.x;
+    }
+
+    public override GizmoResult GizmoOnGUI(Vector2 topLeft, float maxWidth, GizmoRenderParms parms)
+    {
+        InspectorRef(topLeft, out var pos, out var size);
+        Rect mainRect = new Rect(pos, size);
+
+        //Draw Part Selection
+        if (_viewByPart.Count > 1)
+            DrawPartSelection(mainRect);
+
+        //Draw Extendo Tabs
+        DrawExtendoTabs(mainRect);
+
+        //Draw Extended Setting
+        DrawExtendedTab(mainRect);
+
+        //Draw Main
+        SelectedPart.DrawMainContent(mainRect);
+
+        //
+        var firstEv = Mouse.IsOver(mainRect) ? GizmoState.Mouseover : GizmoState.Clear;
+        var eventRes = Event.current.isMouse && firstEv == GizmoState.Mouseover ? GizmoState.Interacted : firstEv;
+        return new GizmoResult(eventRes);
+    }
+
+    private void DrawPartSelection(Rect mainRect)
+    {
+        Rect hoverArea = new Rect(mainRect.xMax, mainRect.y, Mathf.Max(15, curExtendedPartX), mainRect.height);
+        Rect area = new Rect(mainRect.xMax, mainRect.y + 5, curExtendedPartX, mainRect.height - 10);
+        Notify_PartSelHovered(Mouse.IsOver(hoverArea));
+
+        Vector2 curPos = area.position;
+        float t = Mathf.InverseLerp(partSelRange.min, partSelRange.max, curExtendedPartX);
+        float partWidth = Mathf.Max(partSelectionSize.x * t, 10);
+        Vector2 partSize = new Vector2(partWidth, partSelectionSize.y);
+        foreach (var partView in _viewByPart)
+        {
+            var part = partView.Key;
+            var partRect = new Rect(curPos, partSize);
+            var textRect = new Rect(new Vector2(curPos.x - (partSelRange.max - curExtendedPartX), curPos.y),
+                partSelectionSize);
+
+            var isSelected = SelectedPart == partView.Value;
+            var colorBG = isSelected ? TColor.OptionSelectedBGFillColor : TColor.WindowBGFillColor;
+            var colorBorder = isSelected ? TColor.OptionSelectedBGBorderColor : TColor.WindowBGBorderColor;
+
+            TWidgets.DrawColoredBox(partRect, colorBG, colorBorder, 1);
+            TWidgets.DrawHighlightIfMouseOverColor(partRect, TColor.White05);
+            NetworkUI.HoverFlowBoxReadout(partRect, part.FlowBox);
+
+            Text.Anchor = TextAnchor.MiddleLeft;
+            Widgets.Label(textRect.ContractedBy(5, 0), part.Config.networkDef.labelShort);
+            Text.Anchor = default;
+
+            if (Widgets.ButtonInvisible(partRect))
+            {
+                SelectedPart = partView.Value;
+            }
+
+            //
+            curPos.y += partSelectionSize.y;
+            if (curPos.y >= area.yMax)
+            {
+                curPos.x += partSelectionSize.x;
+                curPos.y = area.y;
+            }
+        }
+    }
+
+    private void DrawExtendoTabs(Rect mainRect)
+    {
+        if (!SelectedPart.HasExtensions) return;
+
+        var yMax = Math.Max(15, currentExtendedY) + 10;
+        Rect extendTriggerArea = new Rect(mainRect.x, mainRect.y - (yMax - 5), mainRect.width, yMax);
+        Rect extendedButton = new Rect(mainRect.x, mainRect.y - (currentExtendedY + 1), mainRect.width,
+            currentExtendedY + 1);
+        Notify_ExtendHovered(Mouse.IsOver(extendTriggerArea));
+
+        Widgets.DrawWindowBackground(extendedButton);
+        Text.Anchor = TextAnchor.MiddleCenter;
+        var curY = extendedButton.y;
+        foreach (var setting in SelectedPart.ExtendoTabs)
+        {
+            if (curY > extendedButton.yMax) continue;
+            Rect labelRect = new Rect(extendedButton.x, curY, extendedButton.width,
+                Math.Min(extendedButton.height, selSettingHeight));
+            Widgets.Label(labelRect, setting.Key);
+            Widgets.DrawHighlightIfMouseover(labelRect);
+            if (Widgets.ButtonInvisible(labelRect))
+            {
+                SelectedPart.SetExtendoTab(setting.Key);
+            }
+
+            curY += selSettingHeight;
+        }
+
+        Text.Anchor = default;
+    }
+
+    private void DrawExtendedTab(Rect mainRect)
+    {
+        if (SelectedPart.ExtendedTab == null) return;
+
+        //Extend Rect
+        Rect settingRect = new Rect(mainRect.x, mainRect.y - mainRect.height, mainRect.width, mainRect.height);
+        var closeButtonSize = new Vector2(settingRect.width - (gizmoPadding * 2), 16);
+        var offset = (settingRect.width / 2) - (closeButtonSize.x / 2);
+        Rect closeButtonRect = new Rect(settingRect.x + offset, settingRect.y - closeButtonSize.y, closeButtonSize.x,
+            closeButtonSize.y + gizmoPadding);
+
+        Widgets.DrawWindowBackground(closeButtonRect);
+        Widgets.DrawHighlightIfMouseover(closeButtonRect);
+
+        Text.Anchor = TextAnchor.UpperCenter;
+        //var matrix = GUI.matrix;
+        //UI.RotateAroundPivot(90, closeButtonRect.center);
+        Widgets.Label(closeButtonRect, "<CLOSE>");
+        //GUI.matrix = matrix;
+        Text.Anchor = default;
+
+        if (Widgets.ButtonInvisible(closeButtonRect))
+        {
+            SelectedPart.SetExtendoTab(null);
+            return;
+        }
+
+        //
+        SelectedPart.DrawExtendedTab(settingRect);
+    }
+
+    private void Notify_ExtendHovered(bool isHovered)
+    {
+        desiredExtendedY = isHovered ? SelectedPart.ExtendoRange.TrueMax : SelectedPart.ExtendoRange.TrueMin;
+    }
+
+    private void Notify_PartSelHovered(bool isHovered)
+    {
+        desiredExtendedPartX = isHovered ? partSelRange.TrueMax : partSelRange.TrueMin;
+    }
+
+    private void Tick()
+    {
+        if (!Visible) return;
+        if (Math.Abs(currentExtendedY - desiredExtendedY) > 0.01)
+        {
+            var val = desiredExtendedY > currentExtendedY ? 1.5f : -1.5f;
+            currentExtendedY = Mathf.Clamp(currentExtendedY + val * SelectedPart.ExtendoTabs.Count,
+                SelectedPart.ExtendoRange.TrueMin, SelectedPart.ExtendoRange.TrueMax);
+        }
+
+        if (Math.Abs(curExtendedPartX - desiredExtendedPartX) > 0.01)
+        {
+            var val = desiredExtendedPartX > curExtendedPartX ? 3f : -3f;
+            curExtendedPartX = Mathf.Clamp(curExtendedPartX + (val * (partSelRange.TrueMax / partSelectionSize.x)),
+                partSelRange.TrueMin, partSelRange.TrueMax);
+        }
+    }
+
+    public void Dispose()
+    {
+        //TODO: Deregister Tick
+    }
+}

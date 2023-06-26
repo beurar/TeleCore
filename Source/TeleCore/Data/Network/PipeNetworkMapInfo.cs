@@ -13,6 +13,11 @@ public class PipeNetworkMapInfo : MapInformation
     //
     private readonly Dictionary<NetworkDef, PipeSystem> _systemsByType;
     
+    public PipeSystem this[NetworkDef def]
+    {
+        get => _systemsByType.TryGetValue(def, out var value) ? value : null;
+    }
+    
     public PipeNetworkMapInfo(Map map) : base(map)
     {
         //GlobalEventHandler.ThingSpawned += Notify_NewNetworkStructureSpawned;

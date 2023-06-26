@@ -8,12 +8,14 @@ using TeleCore.Defs;
 using TeleCore.Network;
 using TeleCore.Network.Data;
 using TeleCore.Network.IO;
+using TeleCore.Network.UI;
 using UnityEngine;
 using Verse;
 
 namespace TeleCore;
 
 //TODO: Add leaking functionality, broken transmitters losing values
+//TODO: Cleanup / Revise
 public class Comp_Network : FXThingComp, INetworkStructure
 {
     //
@@ -201,6 +203,11 @@ public class Comp_Network : FXThingComp, INetworkStructure
     {
     }
 
+    public void NetworkPostTick(INetworkPart networkSubPart, bool isPowered)
+    {
+        
+    }
+
     public virtual void Notify_ReceivedValue()
     {
     }
@@ -312,31 +319,23 @@ public class Comp_Network : FXThingComp, INetworkStructure
 
         if (!DebugSettings.godMode) yield break;
 
-        yield return new Command_Action()
-        {
-            defaultLabel = "Draw Networks",
-            action = delegate
-            {
-                foreach (var networkPart in NetworkParts)
-                {
-                    _mapInfo[networkPart.NetworkDef].DEBUG_ToggleShowNetworks();
-                }
-            }
-        };
+        //TODO: Legacy debug command
+        // yield return new Command_Action()
+        // {
+        //     defaultLabel = "Draw Networks",
+        //     action = delegate
+        //     {
+        //         foreach (var networkPart in NetworkParts)
+        //         {
+        //             _mapInfo[networkPart.Config.networkDef].DEBUG_ToggleShowNetworks();
+        //         }
+        //     }
+        // };
 
         yield return new Command_Action
         {
             defaultLabel = "Draw Connections",
             action = delegate { DebugConnectionCells = !DebugConnectionCells; }
-        };
-
-        yield return new Command_Action
-        {
-            defaultLabel = "Set Node Dirty",
-            action = delegate
-            {
-                NetworkParts[0].Network.Graph.Notify_StateChanged(NetworkParts[0]);
-            }
         };
     }
 }
