@@ -1,7 +1,8 @@
 ﻿using System.Collections.Generic;
+using TeleCore.Defs;
 using Verse;
 
-namespace TeleCore.Defs;
+namespace TeleCore;
 
 public class NetworkValueDef : FlowValueDef
 {

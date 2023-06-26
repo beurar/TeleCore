@@ -80,7 +80,8 @@ public class Comp_Network : FXThingComp, INetworkStructure
     {
         return args.index switch
         {
-            0 => _allNetParts[0].Container.Color,
+            //TODO: Access color from flowsystem
+            //0 => _allNetParts[0].Container.Color,
             _ => Color.white
         };
     }
@@ -131,7 +132,7 @@ public class Comp_Network : FXThingComp, INetworkStructure
         CompFX = parent.TryGetComp<CompFX>();
 
         //
-        io = new NetworkIO(Props.generalIOPattern, parent);
+        io = new NetworkIO(Props.generalIOConfig, parent.Position, parent);
         _mapInfo = parent.Map.TeleCore().NetworkInfo;
 
         //Create NetworkComponents
@@ -142,24 +143,24 @@ public class Comp_Network : FXThingComp, INetworkStructure
             
         //
         if(!respawningAfterLoad)
-            _allNetParts = new List<NetworkSubPart>(Math.Max(1, Props.networks.Count));
+            _allNetParts = new List<INetworkPart>(Math.Max(1, Props.networks.Count));
             
-        _netPartByDef = new Dictionary<NetworkDef, NetworkSubPart>(Props.networks.Count);
+        _netPartByDef = new Dictionary<NetworkDef, INetworkPart>(Props.networks.Count);
         for (var i = 0; i < Props.networks.Count; i++)
         {
             var compProps = Props.networks[i];
-            NetworkSubPart subPart = null;
-            if (!_allNetParts.Any(p => p.NetworkDef == compProps.networkDef))
+            NetworkPart part = null;
+            if (!_allNetParts.Any(p => p.Config.networkDef == compProps.networkDef))
             {
-                subPart = (NetworkSubPart) Activator.CreateInstance(compProps.workerType, args: new object[] {this, compProps});
-                _allNetParts.Add(subPart);
+                part = (NetworkPart) Activator.CreateInstance(compProps.workerType, args: new object[] {this, compProps});
+                _allNetParts.Add(part);
             }
 
-            if (subPart == null)
-                subPart = _allNetParts[i];
+            if (part == null)
+                part = (NetworkPart)_allNetParts[i];
 
-            _netPartByDef.Add(compProps.networkDef, subPart);
-            subPart.SubPartSetup(respawningAfterLoad);
+            _netPartByDef.Add(compProps.networkDef, part);
+            part.PartSetup(respawningAfterLoad);
         }
             
         //Check for neighbor intersections
@@ -191,7 +192,7 @@ public class Comp_Network : FXThingComp, INetworkStructure
         return true;
     }
 
-    public virtual void NetworkPostTick(NetworkSubPart networkSubPart, bool isPowered)
+    public virtual void NetworkPostTick(NetworkPart networkSubPart, bool isPowered)
     {
 
     }
@@ -239,11 +240,12 @@ public class Comp_Network : FXThingComp, INetworkStructure
         foreach (var networkPart in NetworkParts)
         {
             networkPart.Draw();
-            if (DebugConnectionCells && Find.Selector.IsSelected(parent))
-            {
-                GenDraw.DrawFieldEdges(networkPart.CellIO.OuterConnnectionCells.Select(t => t.IntVec).ToList(), Color.cyan);
-                GenDraw.DrawFieldEdges(networkPart.CellIO.InnerConnnectionCells.ToList(), Color.green);
-            }
+            //TODO: legacy debug data
+            // if (DebugConnectionCells && Find.Selector.IsSelected(parent))
+            // {
+            //     GenDraw.DrawFieldEdges(networkPart.CellIO.OuterConnnectionCells.Select(t => t.IntVec).ToList(), Color.cyan);
+            //     GenDraw.DrawFieldEdges(networkPart.CellIO.InnerConnnectionCells.ToList(), Color.green);
+            // }
         }
     }
 
@@ -252,7 +254,7 @@ public class Comp_Network : FXThingComp, INetworkStructure
         base.PostPrintOnto(layer);
         foreach (var networkPart in NetworkParts)
         {
-            networkPart.NetworkDef.TransmitterGraphic?.Print(layer, Thing, 0, networkPart);
+            networkPart.Config.networkDef.TransmitterGraphic?.Print(layer, Thing, 0, networkPart);
         }
     }
 
@@ -261,7 +263,7 @@ public class Comp_Network : FXThingComp, INetworkStructure
         StringBuilder sb = new StringBuilder();
         foreach (var networkSubPart in NetworkParts)
         {
-            sb.AppendLine(networkSubPart.NetworkInspectString());
+            sb.AppendLine(networkSubPart.InspectString());
         }
 
         /*TODO: ADD THIS TO COMPONENT DESC

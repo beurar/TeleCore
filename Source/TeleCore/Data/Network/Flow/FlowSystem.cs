@@ -22,7 +22,7 @@ public class FlowSystem : IDisposable
 
     internal Dictionary<NetworkPart, FlowBox> Relations => _flowBoxByPart;
     internal Dictionary<FlowBox, List<FlowInterface>> ConnectionTable => _connections;
-    
+
     public FlowSystem()
     {
         _flowBoxes = new List<FlowBox>();

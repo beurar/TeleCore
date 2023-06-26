@@ -25,7 +25,6 @@ public static class PipeNetworkFactory
     //  -If it is a node, add a direct edge (0 distance, infinitely small)
     //  -If it is a pipe, search along pipe for next node, start with cell and mode
     //      +Once a viable node is found, try to connect IO with the previously started mode
-    
 
     public static void CreateNetwork(INetworkPart part, out PipeNetwork network)
     {

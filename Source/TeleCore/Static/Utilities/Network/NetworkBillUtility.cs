@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using TeleCore.Defs;
 using TeleCore.Primitive;
 using Verse;
 
@@ -8,7 +9,7 @@ namespace TeleCore;
 
 internal static class NetworkBillUtility
 {
-    public static DefValueStack<NetworkValueDef> ConstructCustomCostStack(List<DefValueLoadable<CustomRecipeRatioDef>> list, bool isByProduct = false)
+    public static DefValueStack<NetworkValueDef> ConstructCustomCostStack(List<DefIntRef<CustomRecipeRatioDef>> list, bool isByProduct = false)
     {
         DefValueStack<NetworkValueDef> stack = new DefValueStack<NetworkValueDef>();
         foreach (var defIntRef in list)
@@ -17,14 +18,14 @@ internal static class NetworkBillUtility
             {
                 foreach (var ratio in defIntRef.Def.byProducts)
                 {
-                    stack += (DefValue<NetworkValueDef>) ratio * defIntRef.Value.AsT0;
+                    stack += new DefValue<NetworkValueDef>(ratio.Def, ratio.Value * defIntRef.Value);
                 }
                 continue;
             }
 
             foreach (var ratio in defIntRef.Def.inputRatio)
             {
-                stack += (DefValue<NetworkValueDef>) ratio * defIntRef.Value.AsT0;
+                stack += new DefValue<NetworkValueDef>(ratio.Def, ratio.Value * defIntRef.Value);
             }
         }
         return stack;
@@ -39,14 +40,14 @@ internal static class NetworkBillUtility
             {
                 foreach (var ratio in defIntRef.Key.byProducts)
                 {
-                    stack += (DefValue<NetworkValueDef>) ratio * defIntRef.Value;
+                    stack += new DefValue<NetworkValueDef>(ratio.Def, ratio.Value * defIntRef.Value);
                 }
                 continue;
             }
                 
             foreach (var ratio in defIntRef.Key.inputRatio)
             {
-                stack += (DefFloat<NetworkValueDef>) ratio * defIntRef.Value;
+                stack += new DefValue<NetworkValueDef>(ratio.Def, ratio.Value * defIntRef.Value);
             }
         }
         return stack;

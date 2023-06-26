@@ -10,5 +10,7 @@ public enum NetworkIOMode : byte
     Input = 1,                  //0001
     Output = 2,                 //0010
     Visual = 8,                 //1000
-    TwoWay = Input | Output     //0011
+    TwoWay = Input | Output,    //0011
+    
+    ForRender = Visual | Input | Output
 }

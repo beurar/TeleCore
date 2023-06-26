@@ -2,9 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using RimWorld;
-using TeleCore;
-using TeleCore.Defs;
-using TeleCore.FlowCore;
 using UnityEngine;
 using Verse;
 using Verse.Sound;
@@ -632,46 +629,6 @@ namespace TeleCore
         }
 
         //
-        public static Vector2 GetValueContainerReadoutSize<TValue>(ValueContainerBase<TValue> container) where TValue : FlowValueDef
-        {
-            Vector2 size = new Vector2(10, 10);
-            foreach (var type in container.StoredDefs)
-            {
-                Vector2 typeSize = Text.CalcSize($"{type.labelShort}: {container.StoredValueOf(type)} ({container.StoredPercentOf(type).ToStringPercent()})");
-                size.y += 10 + 2;
-                var sizeX = typeSize.x + 20;
-                if (size.x <= sizeX)
-                    size.x += sizeX;
-            }
-            return size;
-        }
-
-        public static float DrawNetworkValueTypeReadout(Rect rect, GameFont font, float textYOffset, NetworkContainerSet containerSet)
-        {
-            float height = 5;
-
-            Widgets.BeginGroup(rect);
-            Text.Font = font;
-            Text.Anchor = TextAnchor.UpperLeft;
-            foreach (var type in containerSet.AllTypes)
-            {
-                // float value = GetNetwork(Find.CurrentMap).NetworkValueFor(type);
-                //if(value <= 0) continue;
-                string label = $"{type}: {containerSet.GetValueByType(type)}";
-                Rect typeRect = new Rect(5, height, 10, 10);
-                Vector2 typeSize = Text.CalcSize(label);
-                Rect typeLabelRect = new Rect(20, height + textYOffset, typeSize.x, typeSize.y);
-                Widgets.DrawBoxSolid(typeRect, type.valueColor);
-                Widgets.Label(typeLabelRect, label);
-                height += 10 + 2;
-            }
-            Text.Font = default;
-            Text.Anchor = default;
-            Widgets.EndGroup();
-
-            return height;
-        }
-
         public static Vector2 FittedSizeFor(Texture2D texture, float width)
         {
             Vector2 dimensions = new Vector2(texture.width, texture.height);
@@ -680,54 +637,6 @@ namespace TeleCore
             return dimensions;
         }
 
-        public static void DrawValueContainerReadout<TValue>(Rect rect, ValueContainerBase<TValue> container) 
-            where TValue : FlowValueDef
-        {
-            float height = 5;
-            Widgets.DrawMenuSection(rect);
-            Widgets.BeginGroup(rect);
-            Text.Font = GameFont.Tiny;
-            Text.Anchor = TextAnchor.UpperLeft;
-            foreach (var type in container.StoredDefs)
-            {
-                string label = $"{type.labelShort}: {container.StoredValueOf(type)} ({container.StoredPercentOf(type).ToStringPercent()})";
-                Rect typeRect = new Rect(5, height, 10, 10);
-                Vector2 typeSize = Text.CalcSize(label);
-                Rect typeLabelRect = new Rect(20, height - 2, typeSize.x, typeSize.y);
-                Widgets.DrawBoxSolid(typeRect, type.valueColor);
-                Widgets.Label(typeLabelRect, label);
-                height += 10 + 2;
-            }
-            Text.Font = default;
-            Text.Anchor = default;
-            Widgets.EndGroup();
-
-            if (DebugSettings.godMode)
-            {
-                if (MouseClickIn(rect, 1))
-                {
-                    FloatMenu menu = new FloatMenu(container.DebugFloatMenuOptions, "", true);
-                    menu.vanishIfMouseDistant = true;
-                    Find.WindowStack.Add(menu);
-                }
-            }
-        }
-        
-        public static void HoverContainerReadout<TValue>(Rect hoverArea, ValueContainerBase<TValue> container) 
-            where TValue : FlowValueDef
-        {
-            if (container == null) return;
-            
-            //Draw Hovered Readout
-            if (container.FillState != ContainerFillState.Empty && Mouse.IsOver(hoverArea))
-            {
-                var mousePos = Event.current.mousePosition;
-                var containerReadoutSize = TWidgets.GetValueContainerReadoutSize(container);
-                Rect rectAtMouse = new Rect(mousePos.x, mousePos.y - containerReadoutSize.y, containerReadoutSize.x, containerReadoutSize.y);
-                DrawValueContainerReadout(rectAtMouse, container);
-            }
-        }
-        
         //Internals
         internal static string GetPathOf(GraphicData data)
         {

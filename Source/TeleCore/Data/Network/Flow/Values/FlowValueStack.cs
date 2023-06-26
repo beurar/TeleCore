@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections;
+using System.Collections.Immutable;
 using TeleCore.Defs;
 using TeleCore.Primitive;
 using UnityEngine;
@@ -11,7 +13,7 @@ namespace TeleCore.Network.Flow.Values;
 public struct FlowValueStack
 {
     private readonly double _maxCapacity;
-    private FlowValue[] _stack;
+    private ImmutableArray<FlowValue> _stack;
     private double _totalValue;
     
     public int Length => _stack.Length;
@@ -27,6 +29,8 @@ public struct FlowValueStack
             return _totalValue >= _maxCapacity;
         }
     }
+
+    public ImmutableArray<FlowValue> Values => _stack;
     
     public FlowValue this[int index] => _stack[index];
 
@@ -38,7 +42,7 @@ public struct FlowValueStack
 
     public FlowValueStack()
     {
-        _stack = Array.Empty<FlowValue>();
+        _stack = ImmutableArray<FlowValue>.Empty;
         _totalValue = 0;
     }
 
@@ -54,12 +58,8 @@ public struct FlowValueStack
             TLog.Warning($"[{GetType()}.ctor]Tried to create new FlowValueStack from invalid FlowValueStack.");
             return;
         }
-            
-        _stack = new FlowValue[other._stack.Length];
-        for (var i = 0; i < _stack.Length; i++)
-        {
-            _stack[i] = other._stack[i];
-        }
+
+        _stack = other._stack;
         _totalValue = other._totalValue;
     }
 
@@ -92,18 +92,14 @@ public struct FlowValueStack
         //Add onto stack
         if (!TryGetValue(newValue.Def, out var index, out var previous))
         {
-            //Set new value
-            index = _stack.Length;
-            Array.Resize(ref _stack, _stack.Length + 1);
-            var oldArr = _stack;
-            for (int i = 0; i < index; i++)
-            {
-                _stack[i] = oldArr[i];
-            }
+            _stack = _stack.Add(newValue);
         }
-
-        _stack[index] = newValue;
-            
+        else
+        {
+            //Set new value
+            _stack = _stack.Replace(previous, newValue);
+        }
+        
         //Get Delta
         var delta = _stack[index] - previous;
         _totalValue += delta.Value;
@@ -150,7 +146,7 @@ public struct FlowValueStack
 
     public static FlowValueStack operator +(FlowValueStack stack, FlowValueStack other)
     {
-        stack = new FlowValueStack(stack);
+        //stack = new FlowValueStack(stack);
         foreach (var value in other._stack)
         {
             stack[value] += value;
@@ -160,7 +156,7 @@ public struct FlowValueStack
 
     public static FlowValueStack operator -(FlowValueStack stack, FlowValueStack other)
     {
-        stack = new FlowValueStack(stack);
+        //stack = new FlowValueStack(stack);
         foreach (var value in other._stack)
         {
             stack[value] -= other[value];
@@ -170,10 +166,11 @@ public struct FlowValueStack
 
     public static FlowValueStack operator /(FlowValueStack stack, int split)
     {
-        stack = new FlowValueStack(stack);
+        //stack = new FlowValueStack(stack);
         for (var i = 0; i < stack.Length; i++)
         {
-            stack._stack[i] = stack[i] / split;
+            //stack._stack[i] = stack[i] / split;
+            stack._stack = stack._stack.Replace(stack._stack[i], stack[i] / split);
         }
         return stack;
     }

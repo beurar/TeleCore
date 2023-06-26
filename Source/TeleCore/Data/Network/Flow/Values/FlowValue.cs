@@ -1,9 +1,10 @@
-﻿using TeleCore.Defs;
+﻿using System;
+using TeleCore.Defs;
 using TeleCore.Primitive;
 
 namespace TeleCore.Network.Flow.Values;
 
-public struct FlowValue 
+public struct FlowValue : IComparable<FlowValue>
 {
     public FlowValueDef Def { get; set; }
     public double Value { get; set; }
@@ -55,5 +56,15 @@ public struct FlowValue
     public static FlowValue operator /(FlowValue a, double b)
     {
         return new FlowValue(a.Def, a.Value / b);
+    }
+
+    public override bool Equals(object obj)
+    {
+        return (obj is FlowValue other && other.Def == Def && other.Value.Equals(Value));
+    }
+
+    public int CompareTo(FlowValue other)
+    {
+        return Value.CompareTo(other.Value);
     }
 }

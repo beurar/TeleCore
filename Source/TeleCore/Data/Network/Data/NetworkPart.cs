@@ -1,7 +1,7 @@
 ﻿using TeleCore.Defs;
+using TeleCore.Network.Flow;
 using TeleCore.Network.Graph;
 using TeleCore.Network.IO;
-using TeleCore.Primitive;
 using Verse;
 
 namespace TeleCore.Network.Data;
@@ -26,6 +26,7 @@ public class NetworkPart : INetworkPart
 
     public NetworkIO NetworkIO => _networkIO;
     public NetworkPartSet AdjacentSet => _adjSet;
+    public FlowBox FlowBox => _network.FlowSystem.Relations[this];
 
     public bool IsController => (_config.role | NetworkRole.Controller) == NetworkRole.Controller;
     
@@ -51,10 +52,23 @@ public class NetworkPart : INetworkPart
     public NetworkPart(INetworkStructure parent, NetworkPartConfig config) : this(parent)
     {
         _config = config;
+
+        if(config.netIOConfig != null)
+            _networkIO = new NetworkIO(config.netIOConfig, parent.Thing.Position, parent.Thing);
     }
 
     #endregion
     
+    public void PartSetup(bool respawningAfterLoad)
+    {
+        
+    }
+    
+    public void PostDestroy(DestroyMode mode, Map map)
+    {
+        
+    }
+
     public void Tick()
     {
         
@@ -66,5 +80,15 @@ public class NetworkPart : INetworkPart
         if (!_config.networkDef.Equals(other.Config.networkDef)) return IOConnectionResult.Invalid;
         if (!Parent.CanConnectToOther(other.Parent)) return IOConnectionResult.Invalid;
         return _networkIO.ConnectsTo(other.NetworkIO);
+    }
+
+    public void Draw()
+    {
+        throw new System.NotImplementedException();
+    }
+
+    public string InspectString()
+    {
+        throw new System.NotImplementedException();
     }
 }

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Xml;
 using JetBrains.Annotations;
 using TeleCore.Defs;
-using TeleCore.Network.IO.Experimental;
+using TeleCore.Network.IO;
 using Verse;
 using NetworkIOMode = TeleCore.Network.IO.NetworkIOMode;
 
@@ -121,43 +121,14 @@ public class NetworkPartConfig
     public NetworkRole role = NetworkRole.Transmitter;
     public NetworkValueFilter valueFilter;
     public bool requiresController;
-    public NetIOConfig netIOConfig;
+    public NetIOConfig? netIOConfig;
 
     #endregion
     
 
     public void PostLoadSpecial(ThingDef parent)
     {
-        //TODO:
-        //if (subIOPattern == null) return;
-        //_simpleIO = new NetworkCellIOSimple(subIOPattern, parent);
-    }
-
-    internal void DrawForPlaceworker(IntVec3 center, ThingDef def, Rot4 rot)
-    {
-
-        foreach (var renderIOCell in _cells)
-        {
-            var cell = center + renderIOCell.pos;
-            var drawPos = cell.ToVector3ShiftedWithAltitude(AltitudeLayer.MetaOverlays);
-
-            switch (renderIOCell.mode)
-            {
-                case NetworkIOMode.Input:
-                    Graphics.DrawMesh(MeshPool.plane10, drawPos,
-                        (renderIOCell.pos.Direction.AsAngle - 180).ToQuat(), TeleContent.IOArrow, 0);
-                    break;
-                case NetworkIOMode.Output:
-                    Graphics.DrawMesh(MeshPool.plane10, drawPos, renderIOCell.pos.Direction.AsQuat,
-                        TeleContent.IOArrow, 0);
-                    break;
-                case NetworkIOMode.TwoWay:
-                    Graphics.DrawMesh(MeshPool.plane10, drawPos, renderIOCell.pos.Direction.AsQuat,
-                        TeleContent.IOArrowTwoWay, 0);
-                    break;
-            }
-        }
-
+        netIOConfig?.PostLoad(parent);
     }
 
 }

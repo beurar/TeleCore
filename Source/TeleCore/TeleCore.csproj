@@ -72,6 +72,8 @@
     </PackageReference>
     
     <PackageReference Include="OneOf" Version="3.0.243" />
+    
+    <PackageReference Include="System.Collections.Immutable" Version="7.0.0" />
 
     <PackageReference Include="TaskPubliciser" Version="1.0.3">
       <PrivateAssets>all</PrivateAssets>

@@ -1,5 +1,6 @@
 ﻿using System;
 using TeleCore.Defs;
+using TeleCore.Network.Flow;
 using TeleCore.Network.Graph;
 using TeleCore.Network.IO;
 using TeleCore.Primitive;
@@ -16,8 +17,9 @@ public interface INetworkPart
     public PipeNetwork Network { get; internal set; }
     public NetworkIO NetworkIO { get; }
     public NetworkPartSet AdjacentSet { get; }
+    public FlowBox FlowBox { get; }
     //public NetworkPartSet DirectPartSet { get; }
-
+    
     //States
     public bool IsController { get; }
     public bool IsNode { get; }
@@ -33,10 +35,16 @@ public interface INetworkPart
     public bool HasConnection { get; }
     public bool IsLeaking { get; }
 
+    public void PostDestroy(DestroyMode mode, Map map);
+    
     void Tick();
     
     IOConnectionResult HasIOConnectionTo(INetworkPart otherPart);
-    
+
+    public void Draw();
+
+    public string InspectString();
+
     /*
     void Notify_ReceivedValue();
     void Notify_StateChanged(string signal);
