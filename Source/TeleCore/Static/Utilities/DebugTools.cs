@@ -32,11 +32,11 @@ internal static class DebugTools
             if (netEdge.Value.IsValid)
             {
                 TWidgets.DrawHalfArrow(netEdge.Value.From.Parent.Thing.TrueCenter().ToScreenPos(),
-                    netEdge.Value.endNode.Parent.Thing.TrueCenter().ToScreenPos(), Color.red, size);
-                if (netEdge.Value.IsBiDirectional)
+                    netEdge.Value.To.Parent.Thing.TrueCenter().ToScreenPos(), Color.red, size);
+                if (netEdge.Value.BiDirectional)
                 {
-                    TWidgets.DrawHalfArrow(netEdge.Value.endNode.Parent.Thing.TrueCenter().ToScreenPos(),
-                        netEdge.Value.startNode.Parent.Thing.TrueCenter().ToScreenPos(), Color.blue, size);
+                    TWidgets.DrawHalfArrow(netEdge.Value.To.Parent.Thing.TrueCenter().ToScreenPos(),
+                        netEdge.Value.From.Parent.Thing.TrueCenter().ToScreenPos(), Color.blue, size);
                 }
             }
 
@@ -65,8 +65,8 @@ internal static class DebugTools
     {
         foreach (var node in graph.Nodes)
         {
-            var pos = node.Parent.Thing.DrawPos;
-            GenMapUI.DrawText(new Vector2(pos.x, pos.z), $"[{node.Parent.Thing}]", Color.green);
+            var pos = node.Value.Thing.DrawPos;
+            GenMapUI.DrawText(new Vector2(pos.x, pos.z), $"[{node.Value.Thing}]", Color.green);
         }
     }
 

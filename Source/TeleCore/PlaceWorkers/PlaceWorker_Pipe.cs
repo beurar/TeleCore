@@ -16,7 +16,7 @@ namespace TeleCore
             if (comp is null) return true;
 
             var networks = ((checkingDef as ThingDef)?.comps.Find(c => c is CompProperties_Network) as CompProperties_Network)?.networks?.Select(n => n.networkDef).ToArray();
-            if (comp.NetworkParts.Select(t => t.NetworkDef).Any(networks.Contains))
+            if (comp.NetworkParts.Select(t => t.Config.networkDef).Any(networks.Contains))
             {
                 return false;
             }

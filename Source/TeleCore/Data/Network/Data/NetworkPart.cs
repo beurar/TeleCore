@@ -35,7 +35,7 @@ public class NetworkPart : INetworkPart
     public bool IsNode => !IsEdge;
     
     public bool IsJunction { get; }
-    public bool Working { get; }
+    public bool IsWorking { get; }
     public bool IsReceiving { get; }
     public bool HasContainer { get; }
     public bool HasConnection { get; }
@@ -130,8 +130,10 @@ public class NetworkPart : INetworkPart
                 action = delegate { Debug_DrawFlowDir = !Debug_DrawFlowDir; }
             };*/
         }
-        
-        //
-        yield break;
+
+        foreach (var g in _network.GetGizmos())
+        {
+            yield return g;
+        }
     }
 }

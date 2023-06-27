@@ -1,11 +1,12 @@
 ﻿using System.Collections.Generic;
 using RimWorld;
+using TeleCore.Network.Bills;
 using UnityEngine;
 using Verse;
 
-namespace TeleCore
-{
-    internal static class CustomNetworkBillUtility
+namespace TeleCore.Network.Utility;
+
+internal static class CustomNetworkBillUtility
     {
         private static string repeatCountEditBuffer;
         private static string targetCountEditBuffer;
@@ -207,4 +208,3 @@ namespace TeleCore
             return (compQuality == null);
         }
     }
-}

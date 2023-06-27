@@ -1,11 +1,12 @@
 ﻿using TeleCore.Defs;
 using TeleCore.Generics.Container;
+using TeleCore.Generics.Container.Holder;
 using TeleCore.Network;
 using Verse;
 
 namespace TeleCore;
 
-public class Scribe_Container
+public static class Scribe_Container
 {
     internal static bool InvalidState = true;
 

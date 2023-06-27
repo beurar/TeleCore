@@ -1,13 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using Multiplayer.API;
-using RimWorld;
-using TeleCore.FlowCore;
-using TeleCore.Loading.InternalTests;
-using TeleCore.Memory;
-using UnityEngine;
 using Verse;
 
 namespace TeleCore;
@@ -16,8 +10,7 @@ namespace TeleCore;
 internal static class TeleCoreStaticStartup
 {
     static TeleCoreStaticStartup()
-    {
-        using var garbo = new GarbageMan(); 
+    { 
         TLog.Message("Startup Init...");
             
         //MP Hook

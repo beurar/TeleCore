@@ -363,7 +363,7 @@ public class NetworkInfoView
     {
         foreach (var type in FlowBox.AcceptedTypes)
         {
-            FlowBox.TryAddValue(type, part);
+            FlowBox.TryAdd(type, part);
         }
     }
 
@@ -376,7 +376,7 @@ public class NetworkInfoView
     [SyncMethod]
     private void Debug_AddType(FlowValueDef type, float part)
     {
-        FlowBox.TryAddValue(type, part);
+        FlowBox.TryAdd(type, part);
     }
 
     #endregion

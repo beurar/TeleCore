@@ -1,8 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using RimWorld;
+using TeleCore.Defs;
 using TeleCore.Network.Data;
 using TeleCore.Network.Flow.Clamping;
 using TeleCore.Network.Flow.Pressure;
+using TeleCore.Network.Flow.Values;
 using TeleCore.Network.Graph;
 using Enumerable = System.Linq.Enumerable;
 
@@ -13,6 +16,7 @@ namespace TeleCore.Network.Flow;
 /// </summary>
 public class FlowSystem : IDisposable
 {
+    private FlowValueStack _totalStack;
     private List<FlowBox> _flowBoxes;
     private Dictionary<NetworkPart, FlowBox> _flowBoxByPart;
     private Dictionary<FlowBox, List<FlowInterface>> _connections;
@@ -23,6 +27,8 @@ public class FlowSystem : IDisposable
     internal Dictionary<NetworkPart, FlowBox> Relations => _flowBoxByPart;
     internal Dictionary<FlowBox, List<FlowInterface>> ConnectionTable => _connections;
 
+    public double TotalValue => _totalStack.TotalValue;
+    
     public FlowSystem()
     {
         _flowBoxes = new List<FlowBox>();
@@ -60,10 +66,50 @@ public class FlowSystem : IDisposable
 
     private FlowBox GenerateFor(NetworkPart part)
     {
-        var fb = new FlowBox(1,1,0);
+        var fb = new FlowBox(part.Config.flowBoxConfig);
+        fb.FlowBoxEvent += OnFlowBoxEvent;
         _flowBoxByPart.Add(part, fb);
         return fb;
     }
+
+    private void OnFlowBoxEvent(FlowBox sender, FlowBoxEventArgs e)
+    {
+        
+    }
+
+    public double TotalValueFor(FlowValueDef def)
+    {
+        return _totalStack[def].Value;
+    }
+
+    public double TotalValueFor(NetworkValueDef def, NetworkRole role)
+    {
+        //TODO: Implement
+        return 0;
+    }
+    
+    public void TryAddValue(FlowBox fb, FlowValueDef def, double amount)
+    {
+        throw new NotImplementedException();
+    }
+
+    public void TryRemoveValue(FlowBox fb, FlowValueDef def, double amount)
+    {
+        throw new NotImplementedException();
+    }
+    
+    public bool TryConsume(FlowBox fb, NetworkValueDef def, double value)
+    {
+        return false;
+    }
+    
+    public void Clear(FlowBox fb)
+    {
+        
+        throw new NotImplementedException();
+    }
+    
+    #region Updates
 
     /// <summary>
     /// Update flow.
@@ -145,6 +191,8 @@ public class FlowSystem : IDisposable
         //
         fb.FlowRate = Math.Max(fp, fn);
     }
+
+    #endregion
 
     internal void Draw()
     {

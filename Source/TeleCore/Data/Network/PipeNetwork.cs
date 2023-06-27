@@ -1,9 +1,12 @@
 ﻿using System;
+using System.Collections.Generic;
 using TeleCore.Defs;
 using TeleCore.Network.Data;
 using TeleCore.Network.Flow;
 using TeleCore.Network.Graph;
 using TeleCore.Network.Utility;
+using Verse;
+using DebugTools = TeleCore.Static.Utilities.DebugTools;
 
 namespace TeleCore.Network;
 
@@ -16,13 +19,20 @@ public class PipeNetwork : IDisposable
     private FlowSystem _flowSystem;
     protected NetworkPartSetExtended _partSet;    
     
+    //Debug
+    private bool DEBUG_DrawGraph;
+    private bool DEBUG_DrawFlowPressure;
+    
     public int ID => _id;
     public NetworkDef NetworkDef => _def;
     
     public NetGraph Graph => _graph;
     public FlowSystem FlowSystem => _flowSystem;
-    public NetworkPartSet PartSet => _partSet;
+    public NetworkPartSetExtended PartSet => _partSet;
     
+    public bool IsWorking => !_def.UsesController || (PartSet.Controller?.IsWorking ?? false);
+
+
     public PipeNetwork(NetworkDef def)
     {
         _id = PipeNetworkFactory.MasterNetworkID++;
@@ -77,11 +87,39 @@ public class PipeNetwork : IDisposable
     {
         _flowSystem.Draw();
         _graph.Draw();
+
+        if (DEBUG_DrawFlowPressure)
+        {
+            DebugTools.Debug_DrawPressure(_flowSystem);
+        }
     }
 
     internal void OnGUI()
     {
         _flowSystem.OnGUI();
         _graph.OnGUI();
+        
+        if (DEBUG_DrawGraph)
+        {
+            DebugTools.Debug_DrawGraphOnUI(_graph);
+        }
+    }
+
+    internal IEnumerable<Gizmo> GetGizmos()
+    {
+        if (DebugSettings.godMode)
+        {
+            yield return new Command_Action
+            {
+                defaultLabel = "Draw Graph",
+                defaultDesc = "Renders the graph which represents connections between structures.",
+                icon = BaseContent.WhiteTex,
+                action = delegate
+                {
+                    DEBUG_DrawGraph = !DEBUG_DrawGraph;
+                }
+            };
+        }
+        yield break;
     }
 }

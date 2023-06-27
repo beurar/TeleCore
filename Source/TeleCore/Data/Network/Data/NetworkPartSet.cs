@@ -11,11 +11,13 @@ namespace TeleCore.Network.Data;
 public class NetworkPartSetExtended : NetworkPartSet
 {
     private readonly INetworkPart? _holder;
-    private INetworkPart? _controller;
     private string? _cachedString;
+    private INetworkPart? _controller;
     
-    //stores references to all ticking parts
+    //Stores references to all ticking parts
     private readonly HashSet<INetworkPart> _tickSet;
+
+    public INetworkPart? Controller => _controller;
     
     public ICollection<INetworkPart> TickSet => _tickSet;
     
@@ -30,6 +32,11 @@ public class NetworkPartSetExtended : NetworkPartSet
 
     protected override void OnPartAdded(INetworkPart part)
     {
+        //Controller
+        if ((part.Config.role | NetworkRole.Controller) == NetworkRole.Controller)
+        {
+            _controller = part;
+        }
         if (!part.IsEdge)
         {
             _tickSet.Add(part);

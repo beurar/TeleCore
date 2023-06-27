@@ -12,7 +12,7 @@ public class PlaceWorker_NetworkIO : PlaceWorker
 
         if (network.generalIOConfig != null)
         {
-            Draw(network.generalIOConfig.Value, center, def, rot);
+            Draw(network.generalIOConfig, center, def, rot);
             return;
         }
         

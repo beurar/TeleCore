@@ -1,5 +1,6 @@
 ﻿using RimWorld;
 using TeleCore.Data.Events;
+using TeleCore.Network.Bills;
 using UnityEngine;
 using Verse;
 

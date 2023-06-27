@@ -61,7 +61,6 @@ public class NetworkValueFilterByRole
     }
 }
 
-
 public class FlowValueFilter
 {
     public List<FlowValueDef> allowedValues;
@@ -105,6 +104,19 @@ public class NetworkValueFilter : FlowValueFilter
     }
 }
 
+public class FlowBoxConfig
+{
+    private const int AREA_VALUE = 100;
+    
+    public int area;
+    public int height;
+    public int elevation;
+    
+    public double Volume => area * height * AREA_VALUE;
+    
+    public List<FlowValueDef> allowedValues;
+}
+
 public class NetworkPartConfig
 {
     #region XML Fields
@@ -115,13 +127,12 @@ public class NetworkPartConfig
     public NetworkValueFilter valueFilter;
     public bool requiresController;
     public NetIOConfig? netIOConfig;
+    public FlowBoxConfig flowBoxConfig;
 
     #endregion
     
-
     public void PostLoadSpecial(ThingDef parent)
     {
         netIOConfig?.PostLoad(parent);
     }
-
 }

@@ -27,7 +27,7 @@ public interface INetworkPart
     public bool IsEdge { get; }
     public bool IsJunction { get; }
 
-    public bool Working { get; }
+    public bool IsWorking { get; }
     
     [Obsolete("This has been basically replaced by the FlowSystem, if prevflow has a value it means there was value transfer")]
     public bool IsReceiving { get; }

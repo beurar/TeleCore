@@ -19,7 +19,7 @@ public enum ValueState
 /// <summary>
 /// The result of a FlowBox operation.
 /// </summary>
-public struct FlowResult
+public struct FlowValueResult
 {
     public ValueState State { get; private set; }
     
@@ -28,23 +28,23 @@ public struct FlowResult
     
     public FlowValueStack FullDiff { get; private set; }
     
-    public static implicit operator bool(FlowResult result)
+    public static implicit operator bool(FlowValueResult valueResult)
     {
-        return result.State != ValueState.Failed;
+        return valueResult.State != ValueState.Failed;
     }
 
-    public FlowResult() { }
+    public FlowValueResult() { }
 
-    public FlowResult(FlowValueStack stack)
+    public FlowValueResult(FlowValueStack stack)
     {
         FullDiff = stack;
     }
 
     #region Resolver
     
-    public static FlowResult Init(double desiredAmount)
+    public static FlowValueResult Init(double desiredAmount)
     {
-        return new FlowResult
+        return new FlowValueResult
         {
             State = ValueState.Incomplete,
             DesiredAmount = desiredAmount,
@@ -52,20 +52,20 @@ public struct FlowResult
         };
     }
     
-    public FlowResult Fail()
+    public FlowValueResult Fail()
     {
         State = ValueState.Failed;
         return this;
     }
     
-    public FlowResult Complete(double? finalActual = null)
+    public FlowValueResult Complete(double? finalActual = null)
     {
         State = ValueState.Completed;
         ActualAmount = finalActual ?? ActualAmount;
         return this;
     }
 
-    public FlowResult Resolve()
+    public FlowValueResult Resolve()
     {
         if (Math.Abs(ActualAmount - DesiredAmount) < Mathf.Epsilon)
             State = ValueState.Completed;

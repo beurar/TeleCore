@@ -5,29 +5,44 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using TeleCore.Defs;
 using TeleCore.Generics.Container;
+using TeleCore.Network.Data;
 using TeleCore.Network.Flow.Values;
 using UnityEngine;
 
 namespace TeleCore.Network.Flow;
 
+public interface INotifyFlowBoxEvent
+{
+    event FlowBoxEventHandler FlowBoxEvent;
+    void OnFlowBoxEvent(FlowBoxEventArgs e);
+}
+
+public delegate void FlowBoxEventHandler(FlowBox sender, FlowBoxEventArgs e);
+
+public class FlowBoxEventArgs : EventArgs
+{
+    public FlowValue Value { get; private set; }
+
+    public FlowBoxEventArgs(FlowValue valueChange)
+    {
+        Value = valueChange;
+    }
+}
+
 /// <summary>
 /// The logical handler for fluid flow.
 /// Area and height define the total content, elevation allows for flow control.
 /// </summary>
-public class FlowBox
+public class FlowBox : INotifyFlowBoxEvent
 {
-    private const int AREA_VALUE = 100;
-    
-    //Config
-    private readonly int _area;
-    private readonly int _heigth;
-    private readonly int _elevation;
-
     //
+    private FlowBoxConfig _config;
     private double _flowRate;
 
     private FlowValueStack _mainStack;
     private FlowValueStack _prevStack;
+    
+    public event FlowBoxEventHandler? FlowBoxEvent;
     
     public FlowValueStack Stack => _mainStack;
     
@@ -44,9 +59,9 @@ public class FlowBox
     }
 
     public double TotalValue => _mainStack.TotalValue;
-    public double MaxCapacity => _area * _heigth * AREA_VALUE;
+    public double MaxCapacity => _config.Volume;
 
-    public double FillHeight => (TotalValue / MaxCapacity) * _heigth;
+    public double FillHeight => (TotalValue / MaxCapacity) * _config.height;
     public double FillPercent => TotalValue /MaxCapacity;
     
     public ContainerFillState FillState
@@ -101,16 +116,25 @@ public class FlowBox
     
     #endregion
 
-    public FlowBox(int area, int height, int elevation)
+    public FlowBox(FlowBoxConfig config)
     {
-        _area = area;
-        _heigth = height;
-        _elevation = elevation;
+        _config = config;
     }
 
+    #region Value Changing
+
+    public void AddValue(FlowValue value)
+    {
+        _mainStack += value;
+    }
+
+    #endregion
+    
     public FlowValueStack RemoveContent(double moveAmount)
     {
-        return _mainStack * moveAmount;
+        var rem = _mainStack * moveAmount;
+        _mainStack -= rem;
+        return rem;
     }
 
     public void AddContent(FlowValueStack fullDiff)
@@ -118,14 +142,30 @@ public class FlowBox
         _mainStack += fullDiff;
     }
 
-    //
-    public void TryAddValue(FlowValueDef type, float part)
+    public void OnFlowBoxEvent(FlowBoxEventArgs e)
     {
-        throw new NotImplementedException();
+        FlowBoxEvent?.Invoke(this, e);
     }
 
+    public FlowValueResult TryAdd(FlowValueDef def, double value)
+    {
+        _mainStack += new FlowValue(def, value);
+        return FlowValueResult.Init(value).Complete(value);
+    }
+
+    public FlowValueResult TryRemove(FlowValueDef def, double value)
+    {
+        _mainStack -= new FlowValue(def, value);
+        return FlowValueResult.Init(-value).Complete(-value);
+    }
+
+    public FlowValueResult TryConsume(NetworkValueDef def, double value)
+    {
+        return TryRemove(def, value);
+    }
+    
     public void Clear()
     {
-        throw new NotImplementedException();
+        
     }
 }

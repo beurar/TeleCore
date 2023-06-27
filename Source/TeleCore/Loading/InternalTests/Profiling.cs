@@ -1,11 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using TeleCore.Defs;
-using TeleCore.FlowCore;
-using TeleCore.Network;
-using TeleCore.Network.Data;
-using Verse;
+﻿using TeleCore.Defs;
 
 namespace TeleCore.Loading.InternalTests;
 
@@ -81,7 +74,7 @@ internal class Profiling
         },
     };
 
-    internal class NetworkClassTest : IContainerImplementer<NetworkValueDef, IContainerHolderNetwork, NetworkContainer>,
+    /*internal class NetworkClassTest : IContainerImplementer<NetworkValueDef, IContainerHolderNetwork, NetworkContainer>,
         IContainerHolderNetwork
     {
         public NetworkClassTest()
@@ -123,5 +116,5 @@ internal class Profiling
             valueDefs = new List<NetworkValueDef>(ValueDefs),
             explosionProps = null
         }, new NetworkClassTest());
-    }
+    }*/
 }

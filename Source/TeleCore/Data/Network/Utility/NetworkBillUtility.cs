@@ -1,11 +1,9 @@
 ﻿using System.Collections.Generic;
-using System.Linq;
 using System.Text;
-using TeleCore.Defs;
 using TeleCore.Primitive;
 using Verse;
 
-namespace TeleCore;
+namespace TeleCore.Network.Utility;
 
 internal static class NetworkBillUtility
 {

@@ -12,7 +12,7 @@ namespace TeleCore
 
     public class SectionLayer_NetworkGrid : SectionLayer_Things
     {
-        internal static NetworkDef CURRENTNETWORK;
+        internal static NetworkDef CURRENT_NETWORK;
         private readonly Dictionary<NetworkDef, List<LayerSubMesh>> SubmeshesByNetwork = new();
 
         public SectionLayer_NetworkGrid(Section section) : base(section)
@@ -107,10 +107,10 @@ namespace TeleCore
             if (material == null) return null;
 
             List<LayerSubMesh> subMeshes;
-            if (!SubmeshesByNetwork.TryGetValue(CURRENTNETWORK, out subMeshes))
+            if (!SubmeshesByNetwork.TryGetValue(CURRENT_NETWORK, out subMeshes))
             {
                 subMeshes = new List<LayerSubMesh>();
-                SubmeshesByNetwork.Add(CURRENTNETWORK, subMeshes);
+                SubmeshesByNetwork.Add(CURRENT_NETWORK, subMeshes);
             }
             else
             {
@@ -129,7 +129,7 @@ namespace TeleCore
             value.Encapsulate(section.botLeft.ToVector3() + new Vector3(17f, 0f, 17f));
             value.Encapsulate(section.botLeft.ToVector3() + new Vector3(0f, 0f, 17f));
             LayerSubMesh layerSubMesh = new LayerSubMesh(mesh, material, value);
-            SubmeshesByNetwork[CURRENTNETWORK].Add(layerSubMesh);
+            SubmeshesByNetwork[CURRENT_NETWORK].Add(layerSubMesh);
             return layerSubMesh;
         }
 
@@ -139,9 +139,9 @@ namespace TeleCore
             if (comp == null) return;
             foreach (var networkComponent in comp.NetworkParts)
             {
-                CURRENTNETWORK = networkComponent.NetworkDef;
-                CURRENTNETWORK.OverlayGraphic?.Print(this, t, 0);
-                CURRENTNETWORK = null;
+                CURRENT_NETWORK = networkComponent.Config.networkDef;
+                CURRENT_NETWORK.OverlayGraphic?.Print(this, t, 0);
+                CURRENT_NETWORK = null;
             }
         }
     }

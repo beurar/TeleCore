@@ -68,7 +68,6 @@ public static class PipeNetworkFactory
             //Register part in network
             //AddNetworkDataCallback(part, network);
             
-            //
             StartAdjacentEdgeSearch(part);
         }
     }
