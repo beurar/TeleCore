@@ -134,7 +134,7 @@ public class Comp_Network : FXThingComp, INetworkStructure
         CompFX = parent.TryGetComp<CompFX>();
 
         //
-        io = new NetworkIO(Props.generalIOConfig, parent.Position, parent);
+        io = new NetworkIO(Props.generalIOConfig, parent.Position, parent.Rotation);
         _mapInfo = parent.Map.TeleCore().NetworkInfo;
 
         //Create NetworkComponents

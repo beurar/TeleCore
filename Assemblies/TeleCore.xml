@@ -22,233 +22,216 @@
         <member name="M:TeleCore.GPUTools.CopyRenderTexture(UnityEngine.Texture,UnityEngine.RenderTexture)">
             Copy the contents of one render texture into another. Assumes textures are the same size.
         </member>
-        <member name="T:TeleCore.Data.Network.IO.IntVec3Rot">
-            <summary>
-            An IntVec3 with a relative direction attached.
-            </summary>
-        </member>
-        <member name="M:TeleCore.Data.Network.IO.NetworkCellIO.RotateIOCells(TeleCore.Data.Network.IO.IOCell[],Verse.Rot4,Verse.IntVec2)">
-            <summary>
-            Rotates the pattern array to match the rotation of the thing.
-            </summary>
-        </member>
-        <member name="M:TeleCore.Data.Network.NetworkMapInfo.HasConnectionAtFor(Verse.Thing,Verse.IntVec3)">
-            <summary>
-            This checks whether any directly connected parts exist for Linking Graphics.
-            </summary>
-        </member>
         <member name="T:TeleCore.ProjectileDefExtension">
             <summary>
             If set on a projectile's def, on Impact, all of these effects will be created - if available.
             </summary>
         </member>
-        <member name="T:TeleCore.FlowCore.ValueResult`1">
-            <summary>
-            The result of a <see cref="T:TeleCore.ValueContainerBase`1"/> Value-Change operation.
-            </summary>
-        </member>
-        <member name="T:TeleCore.FlowCore.ValueState">
-            <summary>
-            The resulting state of a <see cref="T:TeleCore.ValueContainerBase`1"/> value-change operation.
-            </summary>
-        </member>
-        <member name="M:TeleCore.FlowCore.FlowValueUtils.NeedsEqualizing``2(TeleCore.ValueContainerBase{``0},TeleCore.ValueContainerBase{``1},TeleCore.FlowCore.ValueFlowDirection@,System.Single@)">
-            <summary>
-            Checks whether or not two containers need to be equalized.
-            </summary>
-            <param name="flow">The flow direction output relative to the first container.</param>
-            <param name="diffPct">The difference in content by percentage.</param>
-        </member>
-        <member name="T:TeleCore.FlowCore.IContainerHolderThing`1">
-            <summary>
-            Container Implementation extension which allows you to expose a <see cref="P:TeleCore.FlowCore.IContainerHolderThing`1.Thing"/> reference
-            </summary>
-        </member>
-        <member name="T:TeleCore.FlowCore.IContainerHolderRoom`1">
-            <summary>
-            Implements a container for a <see cref="P:TeleCore.FlowCore.IContainerHolderRoom`1.Room"/>
-            </summary>
-        </member>
         <member name="T:TeleCore.DefFloatRef`1">
             <summary>
-            Used to load a <see cref="T:TeleCore.DefFloat`1"/> struct via xml.
+            Used to load a <see cref="T:TeleCore.Primitive.DefFloat`1"/> struct via xml.
             </summary>
         </member>
         <!-- Badly formed XML comment ignored for member "T:TeleCore.DefIntRef`1" -->
-        <member name="T:TeleCore.DefValueGeneric`2">
+        <member name="T:TeleCore.Generics.Container.Holder.IContainerHolderRoom`1">
             <summary>
-            Wraps any <see cref="P:TeleCore.DefValueGeneric`2.Def"/> Type into a struct, attaching a numeric value
-            </summary>
-            <typeparam name="TDef">The <see cref="P:TeleCore.DefValueGeneric`2.Def"/> Type of the value.</typeparam>
-            <typeparam name="TValue">A numeric Type, can be <see cref="T:System.Int32"/> or <see cref="T:System.Single"/></typeparam>
-        </member>
-        <member name="T:TeleCore.DefValueStack`1">
-            <summary>
-            Manages any Def as a numeric value in a stack.
-            </summary>
-            <typeparam name="TDef">The <see cref="T:Verse.Def"/> of the stack.</typeparam>
-        </member>
-        <member name="M:TeleCore.MapInformation.InfoInit(System.Boolean)">
-            <summary>
-            Initializier run on MapComponent.FinalizeInit
-            </summary>
-            <param name="initAfterReload"></param>
-        </member>
-        <member name="M:TeleCore.MapInformation.ThreadSafeInit">
-            <summary>
-            Thread safe initializer for data on the main game thread
+            Implements a container for a <see cref="P:TeleCore.Generics.Container.Holder.IContainerHolderRoom`1.Room"/>
             </summary>
         </member>
-        <member name="M:TeleCore.MapInformation.OnMapGenerated">
+        <member name="T:TeleCore.Generics.Container.Holder.IContainerHolderThing`1">
             <summary>
-            Runs on MapComponent.MapGenerated
+            Container Implementation extension which allows you to expose a <see cref="P:TeleCore.Generics.Container.Holder.IContainerHolderThing`1.Thing"/> reference
             </summary>
         </member>
-        <member name="M:TeleCore.MapInformation.TeleTick">
-            <summary>
-            This tick is called by the TeleRoot Monobehaviour, offloading work from the RW Root.
-            </summary>
-        </member>
-        <member name="M:TeleCore.MapInformation.CellSteadyEffect(Verse.IntVec3)">
-            <summary>
-            Allows to run code on each cell on a map, similar to GameConditions.
-            </summary>
-            <param name="c">Affected Celll</param>
-        </member>
-        <member name="M:TeleCore.MapInformation.UpdateOnGUI">
-            <summary>
-            Allows to run custom UI render code.
-            </summary>
-        </member>
-        <member name="M:TeleCore.MapInformation.Update">
-            <summary>
-            Allows to run custom map rendering code.
-            </summary>
-        </member>
-        <member name="M:TeleCore.MapInformation.TeleUpdate">
-            <summary>
-            This update is called from the TeleRoot Monobehaviour, offloading rendering from the RW Root.
-            </summary>
-        </member>
-        <member name="M:TeleCore.ValueContainerBase`1.CanAddValue(TeleCore.DefFloat{`0})">
+        <member name="M:TeleCore.Generics.Container.ValueContainerBase`1.CanAddValue(TeleCore.Primitive.DefValue{`0})">
             <summary>
             Provides an extra condition to check against when trying to add a value.
             </summary>
         </member>
-        <member name="M:TeleCore.ValueContainerBase`1.CanRemoveValue(TeleCore.DefFloat{`0})">
+        <member name="M:TeleCore.Generics.Container.ValueContainerBase`1.CanRemoveValue(TeleCore.Primitive.DefValue{`0})">
             <summary>
             Provides an extra condition to check against when trying to remove a value.
             </summary>
         </member>
-        <member name="M:TeleCore.ValueContainerBase`1.CanReceiveValue(`0)">
+        <member name="M:TeleCore.Generics.Container.ValueContainerBase`1.CanReceiveValue(`0)">
             <summary>
-            Checks the <see cref="F:TeleCore.FlowCore.FlowValueFilterSettings.canReceive"/> boolean.
+            Checks the <see cref="F:TeleCore.Generics.Container.FlowValueFilterSettings.canReceive"/> boolean.
             Determines whether or not this value can be received during a transaction./>
             </summary>
         </member>
-        <member name="M:TeleCore.ValueContainerBase`1.CanHoldValue(`0)">
+        <member name="M:TeleCore.Generics.Container.ValueContainerBase`1.CanHoldValue(`0)">
             <summary>
-            Checks the <see cref="F:TeleCore.FlowCore.FlowValueFilterSettings.canStore"/> boolean.
+            Checks the <see cref="F:TeleCore.Generics.Container.FlowValueFilterSettings.canStore"/> boolean.
             Determines whether or not this value needs to be purged from this container./>
             </summary>
         </member>
-        <member name="M:TeleCore.ValueContainerBase`1.OnContainerStateChanged(System.Boolean)">
+        <member name="M:TeleCore.Generics.Container.ValueContainerBase`1.OnContainerStateChanged(System.Boolean)">
             <summary>
             Internal container state logic notifier.
             </summary>
         </member>
-        <member name="M:TeleCore.ValueContainerBase`1.Clear">
+        <member name="M:TeleCore.Generics.Container.ValueContainerBase`1.Clear">
             <summary>
             Clears all values inside the container.
             </summary>
         </member>
-        <member name="M:TeleCore.ValueContainerBase`1.Fill(System.Single)">
+        <member name="M:TeleCore.Generics.Container.ValueContainerBase`1.Fill(System.Int32)">
             <summary>
             Fills the container evenly until reaching a desired capacity.
             </summary>
         </member>
-        <member name="M:TeleCore.ValueContainerBase`1.ChangeCapacity(System.Int32)">
+        <member name="M:TeleCore.Generics.Container.ValueContainerBase`1.ChangeCapacity(System.Int32)">
             <summary>
-            Sets a new capacity value, overwriting the <see cref="P:TeleCore.ValueContainerBase`1.Config"/> capacity.
+            Sets a new capacity value, overwriting the <see cref="P:TeleCore.Generics.Container.ValueContainerBase`1.Config"/> capacity.
             </summary>
         </member>
-        <member name="M:TeleCore.ValueContainerBase`1.LoadFromStack(TeleCore.DefValueStack{`0})">
+        <member name="M:TeleCore.Generics.Container.ValueContainerBase`1.LoadFromStack(TeleCore.Primitive.DefValueStack{`0})">
             <summary>
             Sets the container values to be sourced by a stack input.
             </summary>
             <param name="stack">Stack to provide values for the container.</param>
         </member>
-        <member name="M:TeleCore.ValueContainerBase`1.TryTransferValue(TeleCore.ValueContainerBase{`0},`0,System.Single,TeleCore.FlowCore.ValueResult{`0}@)">
+        <member name="M:TeleCore.Generics.Container.ValueContainerBase`1.TryTransferValue(TeleCore.Generics.Container.ValueContainerBase{`0},`0,System.Int32,TeleCore.Generics.Container.ValueResult{`0}@)">
             <summary>
             Attempts to transfer the desired value and amount to another container, returns how much was transfered
             </summary>
         </member>
-        <member name="M:TeleCore.ValueContainerBase`1.TryTransferTo(TeleCore.ValueContainerBase{`0},System.Single,TeleCore.DefValueStack{`0}@)">
+        <member name="M:TeleCore.Generics.Container.ValueContainerBase`1.TryTransferTo(TeleCore.Generics.Container.ValueContainerBase{`0},System.Int32,TeleCore.Primitive.DefValueStack{`0}@)">
             <summary>
             Attempts to transfer any held value to the other container, split evenly.
             </summary>
         </member>
-        <member name="M:TeleCore.ValueContainerBase`1.TryConsume(System.Collections.Generic.IEnumerable{TeleCore.DefFloat{`0}})">
+        <member name="M:TeleCore.Generics.Container.ValueContainerBase`1.TryConsume(System.Collections.Generic.IEnumerable{TeleCore.Primitive.DefValue{`0}})">
             <summary>
             Attempts to consume each given value.
             </summary>
         </member>
-        <member name="M:TeleCore.ValueContainerBase`1.TryConsume(System.Single)">
+        <member name="M:TeleCore.Generics.Container.ValueContainerBase`1.TryConsume(System.Int32)">
             <summary>
             Consumes a set amount, using any value from the container.
             </summary>
         </member>
-        <member name="M:TeleCore.ValueContainerBase`1.TryConsume(TeleCore.DefFloat{`0})">
+        <member name="M:TeleCore.Generics.Container.ValueContainerBase`1.TryConsume(TeleCore.Primitive.DefValue{`0})">
             <summary>
             Consumes a fixed given value.
             </summary>
         </member>
-        <member name="T:TeleCore.PlaySettingsWorker">
+        <member name="T:TeleCore.Generics.Container.ValueResult`1">
             <summary>
-            Provides an entry point to add a custom PlaySettings Option
+            The result of a <see cref="T:TeleCore.Generics.Container.ValueContainerBase`1"/> Value-Change operation.
             </summary>
         </member>
-        <member name="M:TeleCore.RoomComponent.Notify_Reused">
+        <member name="T:TeleCore.Network.Data.NetworkValueFilterByRole">
             <summary>
-            Runs once when the room is reused.
+            <para>Allows to set a network value filter for a specific role.</para>
+            <para>For example: Storage role allows to contain type A, B, C</para>
+            <para>While Requester role only allows to request B, C</para>
             </summary>
         </member>
-        <member name="M:TeleCore.RoomComponent.Init(TeleCore.RoomTracker[])">
+        <member name="P:TeleCore.Network.Data.NetworkValueFilter.AllowedValuesByRole">
             <summary>
-            Runs once on initiliazation.
+            Provides sub-managed values by role, if set in the networkRole props.
             </summary>
         </member>
-        <member name="M:TeleCore.RoomComponent.PostInit(TeleCore.RoomTracker[])">
+        <member name="P:TeleCore.Network.Flow.Clamping.ClampWorker.EnforceMinPipe">
             <summary>
-            Runs once after all components have been initialized.
+            "Enforce pipe min content (= 0)"
             </summary>
         </member>
-        <member name="T:TeleCore.RoomOverlayRenderer">
+        <member name="P:TeleCore.Network.Flow.Clamping.ClampWorker.EnforceMaxPipe">
+            <summary>
+            "Enforce pipe max content (= 100)"
+            </summary>
+        </member>
+        <member name="P:TeleCore.Network.Flow.Clamping.ClampWorker.MaintainFlowSpeed">
+            <summary>
+            "Do not reduce flow speed when clamping"
+            </summary>
+        </member>
+        <member name="P:TeleCore.Network.Flow.Clamping.ClampWorker.MinDivider">
+            <summary>
+            "Divider for available fluid [1..4]"
+            </summary>
+        </member>
+        <member name="P:TeleCore.Network.Flow.Clamping.ClampWorker.MaxDivider">
+            <summary>
+             "Divider for remaining space [1..4]"
+            </summary>
+        </member>
+        <member name="T:TeleCore.Network.Flow.FlowBox">
+            <summary>
+            The logical handler for fluid flow.
+            Area and height define the total content, elevation allows for flow control.
+            </summary>
+        </member>
+        <member name="T:TeleCore.Network.Flow.FlowInterface">
+            <summary>
+            A connection point for pipes between flow boxes.
+            </summary>
+        </member>
+        <member name="T:TeleCore.Network.Flow.FlowSystem">
+            <summary>
+            The main algorithm container for fluid flow.
+            </summary>
+        </member>
+        <member name="M:TeleCore.Network.Flow.FlowSystem.Tick">
+            <summary>
+            Update flow.
+            </summary>
+        </member>
+        <member name="T:TeleCore.Network.Flow.Values.ValueState">
+            <summary>
+            The resulting state of a FlowBox value-change operation.
+            </summary>
+        </member>
+        <member name="T:TeleCore.Network.Flow.Values.FlowValueResult">
+            <summary>
+            The result of a FlowBox operation.
+            </summary>
+        </member>
+        <member name="T:TeleCore.Network.Flow.Values.FlowValueStack">
+            <summary>
+            Redundant replication 
+            </summary>
+        </member>
+        <member name="T:TeleCore.Network.IO.IOCellPrototype">
+            <summary>
+            Meant to be set and created in XML
+            </summary>
+        </member>
+        <member name="T:TeleCore.Network.IO.IOCell">
+            <summary>
+            Implements the actual IO Cell of NetworkPart
+            </summary>
+        </member>
+        <member name="T:TeleCore.Network.IO.NetIOConfig">
+            <summary>
+            The config for the IO cells around a network structure.
+            </summary>
+        </member>
+        <member name="T:TeleCore.Network.IO.NetworkIO">
             <summary>
             
             </summary>
         </member>
-        <member name="T:TeleCore.CompProperties_Network">
+        <member name="M:TeleCore.Network.PipeNetworkMapInfo.HasConnectionAtFor(Verse.Thing,Verse.IntVec3)">
             <summary>
-            
+            This checks whether any directly connected parts exist for Linking Graphics.
             </summary>
         </member>
-        <member name="T:TeleCore.Memory.GarbageMan">
+        <member name="T:TeleCore.Network.PipeSystem">
             <summary>
-            Calls the GC after being used.
-            Use in any method with a using statement to ensure garbage collection when finished.
+            Creates, Modifies and Destroys PipeNetworks of the same NetworkDef.
             </summary>
         </member>
-        <member name="T:TeleCore.ScribeList`1">
+        <member name="M:TeleCore.Network.Utility.IOUtils.RotateIOCells(TeleCore.Network.IO.IOCell[],Verse.Rot4,Verse.IntVec2)">
             <summary>
-            A wrapper to expose generic lists as values. I.e: A <see cref="T:System.Collections.Generic.List`1"/> of <see cref="T:TeleCore.ScribeList`1"/>
+            Rotates the pattern array to match the rotation of the thing.
             </summary>
-            <typeparam name="T"></typeparam>
         </member>
-        <member name="T:TeleCore.ThingValue">
+        <member name="M:TeleCore.Network.Utility.PipeNetworkFactory.Fits(Verse.Thing,TeleCore.Defs.NetworkDef,TeleCore.Network.Data.INetworkPart@)">
             <summary>
-            Define a Def with various values for dynamic and versatile uses.
-            XML Notation: <defName>value, chance, QualityCategory, stuffDef</defName>
+            Checks whether or not a thing is part of a specific network.
             </summary>
         </member>
         <member name="T:TeleCore.IFXBase">
@@ -324,6 +307,117 @@
             Returns a bool which defines where the actual layer draw function should be run.
             </summary>
         </member>
+        <member name="M:TeleCore.MapInformation.InfoInit(System.Boolean)">
+            <summary>
+            Initializier run on MapComponent.FinalizeInit
+            </summary>
+            <param name="initAfterReload"></param>
+        </member>
+        <member name="M:TeleCore.MapInformation.ThreadSafeInit">
+            <summary>
+            Thread safe initializer for data on the main game thread
+            </summary>
+        </member>
+        <member name="M:TeleCore.MapInformation.OnMapGenerated">
+            <summary>
+            Runs on MapComponent.MapGenerated
+            </summary>
+        </member>
+        <member name="M:TeleCore.MapInformation.TeleTick">
+            <summary>
+            This tick is called by the TeleRoot Monobehaviour, offloading work from the RW Root.
+            </summary>
+        </member>
+        <member name="M:TeleCore.MapInformation.CellSteadyEffect(Verse.IntVec3)">
+            <summary>
+            Allows to run code on each cell on a map, similar to GameConditions.
+            </summary>
+            <param name="c">Affected Celll</param>
+        </member>
+        <member name="M:TeleCore.MapInformation.UpdateOnGUI">
+            <summary>
+            Allows to run custom UI render code.
+            </summary>
+        </member>
+        <member name="M:TeleCore.MapInformation.Update">
+            <summary>
+            Allows to run custom map rendering code.
+            </summary>
+        </member>
+        <member name="M:TeleCore.MapInformation.TeleUpdate">
+            <summary>
+            This update is called from the TeleRoot Monobehaviour, offloading rendering from the RW Root.
+            </summary>
+        </member>
+        <member name="T:TeleCore.PlaySettingsWorker">
+            <summary>
+            Provides an entry point to add a custom PlaySettings Option
+            </summary>
+        </member>
+        <member name="T:TeleCore.Primitive.DefValue`1">
+            <summary>
+            Wraps any <see cref="P:TeleCore.Primitive.DefValue`1.Def"/> Type into a struct, attaching a numeric value
+            </summary>
+            <typeparam name="TDef">The <see cref="P:TeleCore.Primitive.DefValue`1.Def"/> Type of the value.</typeparam>
+        </member>
+        <member name="T:TeleCore.Primitive.DefValueStack`1">
+            <summary>
+            Manages any Def as a numeric value in a stack.
+            </summary>
+            <typeparam name="TDef">The <see cref="T:Verse.Def"/> of the stack.</typeparam>
+        </member>
+        <member name="T:TeleCore.Primitive.IntVec3Rot">
+            <summary>
+            An IntVec3 with a relative direction attached.
+            </summary>
+        </member>
+        <member name="T:TeleCore.Primitive.OneOfLoadable">
+            <summary>
+            Allows loading a simple <see cref="N:OneOf"/> for int and float.
+            </summary>
+        </member>
+        <member name="M:TeleCore.RoomComponent.Notify_Reused">
+            <summary>
+            Runs once when the room is reused.
+            </summary>
+        </member>
+        <member name="M:TeleCore.RoomComponent.Init(TeleCore.RoomTracker[])">
+            <summary>
+            Runs once on initiliazation.
+            </summary>
+        </member>
+        <member name="M:TeleCore.RoomComponent.PostInit(TeleCore.RoomTracker[])">
+            <summary>
+            Runs once after all components have been initialized.
+            </summary>
+        </member>
+        <member name="T:TeleCore.RoomOverlayRenderer">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="T:TeleCore.CompProperties_Network">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="T:TeleCore.TeleComp">
+            <summary>
+            Base class for TeleCore ThingComps.
+            </summary>
+        </member>
+        <member name="T:TeleCore.ScribeList`1">
+            <summary>
+            A wrapper to expose generic lists as values. I.e: A <see cref="T:System.Collections.Generic.List`1"/> of <see cref="T:TeleCore.ScribeList`1"/>
+            </summary>
+            <typeparam name="T"></typeparam>
+        </member>
+        <member name="T:TeleCore.ThingValue">
+            <summary>
+            Define a Def with various values for dynamic and versatile uses.
+            XML Notation: <defName>value, chance, QualityCategory, stuffDef</defName>
+            </summary>
+        </member>
         <member name="T:TeleCore.RegionPatches">
             <summary>
             Main handling of changes in regions and rooms of RimWorld
@@ -342,55 +436,6 @@
         <member name="T:TeleCore.ThingTrackerComp">
             <summary>
             Provides an abstract base for custom Thing-tracking worker classes which process Thing-Data on Spawn/Despawn/State change events
-            </summary>
-        </member>
-        <member name="T:TeleCore.PortableNetworkContainer">
-            <summary>
-            Temporary <see cref="T:TeleCore.FlowCore.NetworkContainer"/> Thing spawned upon deconstruction of a <see cref="T:Verse.Building"/> containing a <see cref="T:TeleCore.Comp_Network"/> comp.
-            </summary>
-        </member>
-        <member name="P:TeleCore.PortableNetworkContainer.ForSelf">
-            <summary>
-            TargetParams for structures to fill this into
-            </summary>
-        </member>
-        <member name="M:TeleCore.NetworkSubPart.RequesterTick">
-            <summary>
-            When using the Requester NetworkRole, will pull values in according to <see cref="!:RequestedCpacityRange"/>.
-            </summary>
-        </member>
-        <member name="P:TeleCore.NetworkSubPartProperties.AllowedValuesByRole">
-            <summary>
-            Provides sub-managed values by role, if set in the networkRole props.
-            </summary>
-        </member>
-        <member name="T:TeleCore.NetworkReceiverWorker">
-            <summary>
-            Handles how a <see cref="T:TeleCore.NetworkSubPart"/> manages receiving values.
-            </summary>
-        </member>
-        <member name="T:TeleCore.NetworkRequestWorker">
-            <summary>
-            Manages the requesting process as a state machine
-            </summary>
-        </member>
-        <member name="P:TeleCore.NetworkRequestWorker.ReqRange">
-            <summary>
-            This range defines the Requester behaviour.
-            </summary>
-            <param name="min">The minimum amount that may be reached before starting to request.</param>
-            <param name="max">The maximum amount that can be requested.</param>
-        </member>
-        <member name="T:TeleCore.NetworkRoleProperties">
-            <summary>
-            <para>Allows to set a network value filter for a specific role.</para>
-            <para>For example: Storage role allows to contain type A, B, C</para>
-            <para>While Requester role only allows to request B, C</para>
-            </summary>
-        </member>
-        <member name="T:TeleCore.NetworkContainerSet">
-            <summary>
-            
             </summary>
         </member>
         <member name="T:TeleCore.PlaceWorker_Pipe">
@@ -451,11 +496,6 @@
         <member name="T:TeleCore.ClipBoardUtility">
             <summary>
             Dynamic Clipboard utility, allows you to save any type via a string tag, and retrieve it the same way.
-            </summary>
-        </member>
-        <member name="M:TeleCore.Static.Utilities.NetworkTransactionUtility.Validators.StoreEvenly_EQ_Check(TeleCore.INetworkSubPart,TeleCore.INetworkSubPart)">
-            <summary>
-            Determines whether there should be a equalization between two network parts.
             </summary>
         </member>
         <member name="M:TeleCore.StaticData.ToDef``1(System.UInt16)">

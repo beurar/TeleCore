@@ -15,12 +15,12 @@ public class NetworkIO
     public List<IOCell> Connections => _cells;
     public List<IOCell> VisualCells => _visCells;
     
-    public NetworkIO(NetIOConfig config, IntVec3 refPos, Thing parentThing)
+    public NetworkIO(NetIOConfig config, IntVec3 refPos, Rot4 parentRotation)
     {
         _cells = new List<IOCell>();
         _visCells = new List<IOCell>();
         
-        var cells = config.GetCellsFor(parentThing.Rotation);
+        var cells = config.GetCellsFor(parentRotation);
         foreach (var cell in cells)
         {
             if(cell.mode == NetworkIOMode.None) continue;

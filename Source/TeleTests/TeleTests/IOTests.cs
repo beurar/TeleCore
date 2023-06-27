@@ -15,7 +15,7 @@ public class IOTests
     {
         var config = new NetIOConfig()
         {
-            cells = new List<IOCellPrototype>()
+            cellsNorth = new List<IOCellPrototype>()
             {
                 new ()
                 {
@@ -44,6 +44,8 @@ public class IOTests
             }
         };
         
+        config.PostLoad(null);
+        
         //5
         //#  +
         //# +3+
@@ -51,8 +53,8 @@ public class IOTests
         //#   
         //0####5####0####5####0
 
-        NetworkIO io1 = new NetworkIO(config, new IntVec3(3, 0, 3));
-        NetworkIO io2 = new NetworkIO(config, new IntVec3(4, 0, 3));
+        NetworkIO io1 = new NetworkIO(config, new IntVec3(3, 0, 3), Rot4.North);
+        NetworkIO io2 = new NetworkIO(config, new IntVec3(4, 0, 3), Rot4.North);
         
         Assert.IsTrue(io1.ConnectsTo(io2));
     }

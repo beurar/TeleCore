@@ -3,7 +3,7 @@ using TeleCore.Defs;
 using TeleCore.Network.Flow;
 using Verse;
 
-namespace TeleCore.Network.Data;
+namespace TeleCore;
 
 public class PortableNetworkContainer : FXThing
 {

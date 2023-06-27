@@ -43,6 +43,19 @@ public class NetGraph : IDisposable
         _edgeLookUp = null;
     }
     
+    public List<(NetEdge, NetNode)>? GetAdjacencyList(INetworkPart forPart)
+    {
+        if (forPart is NetworkPart part)
+        {
+            if (_adjacencyList.TryGetValue(part, out var list))
+            {
+                return list;
+            }
+        }
+
+        return null;
+    }
+    
     private void AddNode(NetNode node, NetEdge fromEdge)
     {
         Nodes.Add(node);

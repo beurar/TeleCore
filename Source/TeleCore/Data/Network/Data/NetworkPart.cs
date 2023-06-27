@@ -55,7 +55,7 @@ public class NetworkPart : INetworkPart
         _config = config;
 
         if(config.netIOConfig != null)
-            _networkIO = new NetworkIO(config.netIOConfig, parent.Thing.Position, parent.Thing);
+            _networkIO = new NetworkIO(config.netIOConfig, parent.Thing.Position, parent.Thing.Rotation);
     }
 
     #endregion
