@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using Verse;
 
 namespace TeleCore;
@@ -43,12 +44,8 @@ public class RoomPortal
         
         //Generate Workers
         var subclasses = typeof(RoomPortalWorker).AllSubclassesNonAbstract();
-        if (subclasses.NullOrEmpty()) return;
-        workers = new System.Collections.Generic.List<RoomPortalWorker>(subclasses.Count);
-        foreach (var type in subclasses)
-        {
-            workers.Add((RoomPortalWorker)Activator.CreateInstance(type, this));
-        }
+        if (subclasses is not {Count: > 0}) return; // Early exit if "subclasses" is null or empty.
+        workers = subclasses.Select(type => (RoomPortalWorker)Activator.CreateInstance(type, this)).ToList();
     }
 
     public bool ConnectsToOutside => connections[0].IsOutside || connections[1].IsOutside;

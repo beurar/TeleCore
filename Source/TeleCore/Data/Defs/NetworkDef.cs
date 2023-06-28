@@ -3,7 +3,7 @@ using TeleCore.Network.Data;
 using TeleCore.Static;
 using Verse;
 
-namespace TeleCore.Defs;
+namespace TeleCore;
 
 //Defines the logical ruleset for a network
 public class NetworkDef : FlowValueCollectionDef

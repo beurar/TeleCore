@@ -48,16 +48,16 @@ public class RoomTracker
 
     public ListerThings ListerThings => listerThings;
     public ListerThings BorderListerThings => borderListerThings;
-    public List<Thing> ContainedPawns => listerThings.ThingsInGroup(ThingRequestGroup.Pawn);
+    public IReadOnlyCollection<Thing> ContainedPawns => listerThings.ThingsInGroup(ThingRequestGroup.Pawn);
 
-    public List<RoomComponent> AllComps => comps;
-    public HashSet<RoomTracker> AdjacentTrackers => adjacentTrackers;
-    public List<RoomPortal> RoomPortals => roomPortals;
+    public IReadOnlyCollection<RoomComponent> AllComps => comps;
+    public IReadOnlyCollection<RoomTracker> AdjacentTrackers => adjacentTrackers;
+    public IReadOnlyCollection<RoomPortal> RoomPortals => roomPortals;
 
     public RegionType RegionTypes => regionTypes;
 
-    public HashSet<IntVec3> BorderCellsNoCorners => borderCells;
-    public HashSet<IntVec3> ThinRoofCells => thinRoofCells;
+    public IReadOnlyCollection<IntVec3> BorderCellsNoCorners => borderCells;
+    public IReadOnlyCollection<IntVec3> ThinRoofCells => thinRoofCells;
 
     public IntVec3[] MinMaxCorners => cornerCells;
     public IntVec3 MinVec => minVec;
