@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using RimWorld;
 using TeleCore.Defs;
+using TeleCore.FlowCore;
 using TeleCore.Network.Data;
 using TeleCore.Network.Flow.Clamping;
 using TeleCore.Network.Flow.Pressure;
@@ -67,12 +68,12 @@ public class FlowSystem : IDisposable
     private FlowBox GenerateFor(NetworkPart part)
     {
         var fb = new FlowBox(part.Config.flowBoxConfig);
-        fb.FlowBoxEvent += OnFlowBoxEvent;
+        fb.FlowEvent += OnFlowBoxEvent;
         _flowBoxByPart.Add(part, fb);
         return fb;
     }
 
-    private void OnFlowBoxEvent(FlowBox sender, FlowBoxEventArgs e)
+    private void OnFlowBoxEvent(object sender, FlowEventArgs e)
     {
         
     }
@@ -140,17 +141,16 @@ public class FlowSystem : IDisposable
 
     private void UpdateFlow(FlowBox fb)
     {
-        double f = 0;
         for (var i = 0; i < _connections[fb].Count; i++)
         {
             var conn = _connections[fb][i];
             if (conn.ResolvedFlow) continue;
 
-            f = conn.Flow;
-            f = PressureWorker.FlowFunction(conn.To, conn.From, f);
-            conn.Flow = ClampWorker.ClampFunction(conn.To, conn.From, f, ClampType.FlowSpeed); ;
-            conn.Move = ClampWorker.ClampFunction(conn.To, conn.From, f, ClampType.FluidMove); ;
-            conn.Notify_ResolveFlow();
+            var flow = conn.Flow;
+            flow = PressureWorker.FlowFunction(conn.To, conn.From, flow);
+            conn.Flow = ClampWorker.ClampFunction(conn.To, conn.From, flow, ClampType.FlowSpeed);
+            conn.Move = ClampWorker.ClampFunction(conn.To, conn.From, flow, ClampType.FluidMove);
+            conn.Notify_ResolvedFlow();
             
             //TODO: Structify for: _connections[fb][i] = conn;
         }
@@ -164,7 +164,7 @@ public class FlowSystem : IDisposable
             if(conn.ResolvedMove) continue;
             var res = conn.To.RemoveContent(conn.Move);
             fb.AddContent(res);
-            conn.Notify_ResolveMove();
+            conn.Notify_ResolvedMove();
             
             //TODO: Structify for: _connections[fb][i] = conn;
         }

@@ -22,7 +22,7 @@ public class NetworkCost
         return useDirectStorage ? CanPayWith(subPart.FlowBox) : CanPayWith(subPart.Network);
     }
 
-    private bool CanPayWith(FlowBox fb)
+    private bool CanPayWith(Flow.FlowBox fb)
     {
         if (fb.TotalValue < Cost.TotalCost) return false;
         double totalNeeded = Cost.TotalCost;

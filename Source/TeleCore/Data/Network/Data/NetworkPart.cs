@@ -27,7 +27,7 @@ public class NetworkPart : INetworkPart
 
     public NetworkIO NetworkIO => _networkIO;
     public NetworkPartSet AdjacentSet => _adjSet;
-    public FlowBox FlowBox => _network.FlowSystem.Relations[this];
+    public Flow.FlowBox FlowBox => _network.FlowSystem.Relations[this];
 
     public bool IsController => (_config.role | NetworkRole.Controller) == NetworkRole.Controller;
     

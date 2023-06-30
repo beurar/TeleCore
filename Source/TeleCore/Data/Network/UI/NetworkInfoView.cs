@@ -38,7 +38,7 @@ public class NetworkInfoView
     }
 
     //
-    public FlowBox FlowBox => _part.FlowBox;
+    public Flow.FlowBox FlowBox => _part.FlowBox;
 
     //Extendo Tabs
     public Dictionary<string, Action<Rect>> ExtendoTabs => tabDrawActions;

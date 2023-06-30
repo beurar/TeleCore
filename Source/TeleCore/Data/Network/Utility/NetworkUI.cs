@@ -25,7 +25,7 @@ public static class NetworkUI
         return size;
     }
 
-    public static Vector2 GetFlowBoxReadoutSize(FlowBox fb)
+    public static Vector2 GetFlowBoxReadoutSize(Flow.FlowBox fb)
     {
         var size = new Vector2(10, 10);
         var stack = fb.Stack;
@@ -42,7 +42,7 @@ public static class NetworkUI
         return size;
     }
     
-    public static void DrawFlowBoxReadout(Rect rect, FlowBox fb)
+    public static void DrawFlowBoxReadout(Rect rect, Flow.FlowBox fb)
     {
         float height = 5;
         Widgets.DrawMenuSection(rect);
@@ -76,7 +76,7 @@ public static class NetworkUI
         }
     }
 
-    public static List<FloatMenuOption> DebugFloatMenuOptions(FlowBox fb)
+    public static List<FloatMenuOption> DebugFloatMenuOptions(Flow.FlowBox fb)
     {
         var tempList = StaticListHolder<FloatMenuOption>.RequestList($"FlowMenuOptions_{fb.GetHashCode()}");
         /*
@@ -177,7 +177,7 @@ public static class NetworkUI
     }
 
 
-    public static void HoverFlowBoxReadout(Rect hoverArea, FlowBox flowBox)
+    public static void HoverFlowBoxReadout(Rect hoverArea, Flow.FlowBox flowBox)
     {
         if (flowBox == null) return;
         

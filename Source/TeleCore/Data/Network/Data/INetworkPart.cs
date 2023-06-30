@@ -18,7 +18,7 @@ public interface INetworkPart
     public PipeNetwork Network { get; internal set; }
     public NetworkIO NetworkIO { get; }
     public NetworkPartSet AdjacentSet { get; }
-    public FlowBox FlowBox { get; }
+    public Flow.FlowBox FlowBox { get; }
     //public NetworkPartSet DirectPartSet { get; }
     
     //States

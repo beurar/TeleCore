@@ -1,66 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using TeleCore.Data.Events;
-using TeleCore.Data.Logging;
-using TeleCore.RoomTrackerUpdates;
-using TeleCore.Static.Utilities;
 using Verse;
 
-namespace TeleCore;
+namespace TeleCore.Rooms.Updates;
 
 internal enum DelayedRoomUpdateType
 {
     Added,
     Reused,
     Disbanded
-}
-
-internal struct DelayedCacheAction
-{
-    public IntVec3 Cell { get; }
-    public int Index { get; }
-
-    public DelayedCacheAction(IntVec3 cell, int index)
-    {
-        Cell = cell;
-        Index = index;
-    }
-}
-
-internal class DelayedRoomUpdate
-{
-    public DelayedRoomUpdateType Type { get; }
-    public RoomTracker Tracker { get; private set; }
-    public RoomTracker[] Previous { get; set; }
-    public Room Room { get; }
-
-    public DelayedRoomUpdate(DelayedRoomUpdateType type, Room room)
-    {
-        Type = type;
-        Room = room;
-    }
-    
-    public DelayedRoomUpdate(DelayedRoomUpdateType type, RoomTracker tracker)
-    {
-        Type = type;
-        Tracker = tracker;
-    }
-
-    public override string ToString()
-    {
-        return $"{Tracker.Room.ID}:{Type}";
-    }
-
-    public void SetTracker(RoomTracker newTracker)
-    {
-        Tracker = newTracker;
-    }
-
-    public void SetPrevious(RoomTracker[] previous)
-    {
-        Previous = previous;
-    }
 }
 
 public class RoomUpdater

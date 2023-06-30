@@ -1,25 +1,24 @@
 ﻿using System;
 
-namespace TeleCore
+namespace TeleCore;
+
+public class DisposableAction : IDisposable
 {
-    public class DisposableAction : IDisposable
+    private Action action;
+
+    public DisposableAction(Action action)
     {
-        private Action action;
+        this.action = action;
+    }
 
-        public DisposableAction(Action action)
-        {
-            this.action = action;
-        }
+    public void DoAction()
+    {
+        action.Invoke();
+        Dispose();
+    }
 
-        public void DoAction()
-        {
-            action.Invoke();
-            Dispose();
-        }
-
-        public void Dispose()
-        {
-            action = null;
-        }
+    public void Dispose()
+    {
+        action = null;
     }
 }

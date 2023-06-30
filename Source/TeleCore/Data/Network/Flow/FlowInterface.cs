@@ -32,12 +32,12 @@ public class FlowInterface
         _resolvedFlow = false;
     }
     
-    internal void Notify_ResolveMove()
+    internal void Notify_ResolvedMove()
     {
         _resolvedMove = true;
     }
     
-    internal void Notify_ResolveFlow()
+    internal void Notify_ResolvedFlow()
     {
         _resolvedFlow = true;
     }

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using HarmonyLib;
 using RimWorld;
 using TeleCore.Data.Logging;
@@ -14,37 +15,43 @@ public class RoomTracker
     //Statics
     internal static readonly List<Type> RoomComponentTypes;
 
+    //
+    private readonly Room _room;
     private readonly Dictionary<Type, RoomComponent> compsByType = new();
-    private readonly List<RoomComponent> comps = new List<RoomComponent>();
+    private readonly List<RoomComponent> comps = new();
     private readonly HashSet<RoomTracker> adjacentTrackers;
     private readonly List<RoomPortal> roomPortals;
+    private readonly RoomPortal _selfPortal;
 
     //Shared Room Data
-    private readonly HashSet<Thing> uniqueContainedThingsSet = new HashSet<Thing>();
+    private readonly HashSet<Thing> uniqueContainedThingsSet = new();
     private readonly ListerThings listerThings;
     private readonly ListerThings borderListerThings;
 
-    private HashSet<IntVec3> borderCells = new HashSet<IntVec3>();
-    private HashSet<IntVec3> thinRoofCells = new HashSet<IntVec3>();
-
-    private bool wasOutSide = false;
+    private HashSet<IntVec3> borderCells = new();
+    private HashSet<IntVec3> thinRoofCells = new();
+    
     private IntVec3[] cornerCells = new IntVec3[4];
     private IntVec3 minVec;
     private IntVec2 size;
 
     private Vector3 actualCenter;
     private Vector3 drawPos;
-
-    private RegionType regionTypes;
-
+    
+    private bool _wasOutSide;
+    private RegionType _regionTypes;
+    
     public Map Map { get; private set; }
     public bool IsDisbanded { get; private set; }
     public bool IsOutside { get; private set; }
     public bool IsProper { get; private set; }
     public int CellCount { get; private set; }
     public int OpenRoofCount { get; private set; }
-    
-    public Room Room { get; }
+
+    public Room Room
+    {
+        get => _room;
+    }
 
     public ListerThings ListerThings => listerThings;
     public ListerThings BorderListerThings => borderListerThings;
@@ -53,8 +60,9 @@ public class RoomTracker
     public IReadOnlyCollection<RoomComponent> AllComps => comps;
     public IReadOnlyCollection<RoomTracker> AdjacentTrackers => adjacentTrackers;
     public IReadOnlyCollection<RoomPortal> RoomPortals => roomPortals;
+    public RoomPortal SelfPortal => _selfPortal;
 
-    public RegionType RegionTypes => regionTypes;
+    public RegionType RegionTypes => _regionTypes;
 
     public IReadOnlyCollection<IntVec3> BorderCellsNoCorners => borderCells;
     public IReadOnlyCollection<IntVec3> ThinRoofCells => thinRoofCells;
@@ -72,7 +80,7 @@ public class RoomTracker
     
     public RoomTracker(Room room)
     {
-        Room = room;
+        _room = room;
         listerThings = new ListerThings(ListerThingsUse.Region);
         borderListerThings = new ListerThings(ListerThingsUse.Region);
 
@@ -82,6 +90,17 @@ public class RoomTracker
 
         //Get Group Data
         UpdateGroupData();
+        
+        //Try get self portal
+        if (Room.IsDoorway)
+        {
+            var door = room.Regions[0].door;
+            var roomFacing = door.Rotation.FacingCell + door.Position;
+            var roomOpposite = door.Rotation.Opposite.FacingCell + door.Position;
+            _selfPortal = new RoomPortal(Room.Regions[0].door, roomFacing.GetRoom(Map).RoomTracker(), roomOpposite.GetRoom(Map).RoomTracker(), this);
+        }
+        
+        //Create Components
         foreach (var type in RoomComponentTypes)
         {
             var comp = (RoomComponent) Activator.CreateInstance(type);
@@ -164,7 +183,7 @@ public class RoomTracker
             adjacentTrackers.Do(a => comp.AddAdjacent(a.compsByType[comp.GetType()]));
         }
     }
-
+    
     public void Notify_DeregisterThing(Thing thing)
     {
         //Things
@@ -191,7 +210,7 @@ public class RoomTracker
 
     public bool ContainsRegionType(RegionType type)
     {
-        return regionTypes.HasFlag(type);
+        return _regionTypes.HasFlag(type);
     }
 
     public bool ContainsPawn(Pawn pawn)
@@ -219,7 +238,7 @@ public class RoomTracker
         }
     }
 
-    public void Init(RoomTracker[]? previous)
+    public void Init(RoomTracker?[] previous)
     {
         RegenerateData();
         foreach (var comp in comps)
@@ -228,7 +247,7 @@ public class RoomTracker
         }
     }
 
-    public void PostInit(RoomTracker[]? previous)
+    public void PostInit(RoomTracker?[] previous)
     {
         foreach (var comp in comps)
         {
@@ -240,12 +259,12 @@ public class RoomTracker
     {
         RegenerateData(true, false, false);
         //Check if room closed
-        if (wasOutSide && !IsOutside)
+        if (_wasOutSide && !IsOutside)
         {
             RoofClosed();
         }
 
-        if (!wasOutSide && IsOutside)
+        if (!_wasOutSide && IsOutside)
         {
             RoofOpened();
         }
@@ -363,6 +382,30 @@ public class RoomTracker
                 //TODO: Main Performance Killer - Thing processing, maybe parallel for?
                 List<Region> regions = Room.Regions;
                 stepCounter = 7;
+
+                void ProcessItem(Thing item)
+                {
+                    if (item.Position.GetRoomFast(Map) != Room)
+                    {
+                        if (uniqueContainedThingsSet.Add(item))
+                        {
+                            Notify_RegisterBorderThing(item);
+                        }
+                        return;
+                    }
+
+                    if (IsOutside) return;
+
+                    if (uniqueContainedThingsSet.Add(item))
+                    {
+                        Notify_RegisterThing(item);
+                    }
+                }
+
+                //TODO: Research viability of parallel
+                //var allThingsRegions = regions.SelectMany(r => r.ListerThings.AllThings);
+                //Parallel.ForEach(allThingsRegions, ProcessItem);
+                
                 for (int i = 0; i < regions.Count; i++)
                 {
                     List<Thing> allThings = regions[i].ListerThings.AllThings;
@@ -435,7 +478,7 @@ public class RoomTracker
     private void UpdateGroupData()
     {
         //
-        wasOutSide = IsOutside;
+        _wasOutSide = IsOutside;
         IsOutside = Room.UsesOutdoorTemperature; //Caching to avoid recalc
         IsProper = Room.ProperRoom;
         
@@ -450,7 +493,7 @@ public class RoomTracker
         }
         foreach (var roomRegion in Room.Regions)
         {
-            regionTypes |= roomRegion.type;
+            _regionTypes |= roomRegion.type;
         }
     }
 }

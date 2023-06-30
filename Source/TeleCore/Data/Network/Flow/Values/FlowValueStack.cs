@@ -66,8 +66,7 @@ public struct FlowValueStack
     public DefValueStack<FlowValueDef> ToValueStack => new();
 
     #region Helpers
-
-        
+    
     public FlowValue TryGetWithFallback(FlowValueDef key, FlowValue fallback)
     {
         return TryGetValue(key, out _, out var value) ? value : fallback;
@@ -126,7 +125,7 @@ public struct FlowValueStack
     
     #endregion
 
-    #region MyRegion
+    #region Double Math
 
     public static FlowValueStack operator *(FlowValueStack stack, double value)
     {
@@ -218,7 +217,9 @@ public struct FlowValueStack
 
     public override bool Equals(object? obj)
     {
-        return obj is FlowValueStack other && Equals(other);
+        if (obj == null || GetType() != obj.GetType())
+            return false;
+        return Equals((FlowValueStack)obj);
     }
 
     public override int GetHashCode()
