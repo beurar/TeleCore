@@ -1,73 +1,92 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
-using OneOf;
-using UnityEngine;
 using Verse;
 
 namespace TeleCore.Primitive;
 
 /// <summary>
-/// Manages any Def as a numeric value in a stack.
+///     Manages any Def as a numeric value in a stack.
 /// </summary>
-/// <typeparam name="TDef">The <see cref="Def"/> of the stack.</typeparam>
-public struct DefValueStack<TDef> : IExposable
+/// <typeparam name="TDef">The <see cref="Def" /> of the stack.</typeparam>
+/// <typeparam name="TValue">The numeric type of the stack.</typeparam>
+public struct DefValueStack<TDef, TValue> : IExposable
     where TDef : Def
+    where TValue : struct
 {
-    private OneOf<int, float>? _maxCapacity;
-    private DefValue<TDef>[] _stack;
-    private OneOf<int, float> _totalValue;
-        
+    private ImmutableArray<DefValue<TDef, TValue>> _stack;
+    private Numeric<TValue> _maxCapacity;
+    private Numeric<TValue> _totalValue;
+
     //States
+    public int Length => _stack.Length;
+    public Numeric<TValue> TotalValue => _totalValue;
     public bool IsValid => _stack != null;
-    public bool Empty => _totalValue.Match(t => t == 0, t1 => t1 == 0);
+    public bool Empty => _totalValue.IsZero;
+
     public bool? Full
     {
         get
         {
-            if (_maxCapacity == null) return null;
-            var maxCap = _maxCapacity;
-            return _totalValue.Match(
-                i => i >= maxCap.Value.AsT0,
-                f => f >= maxCap.Value.AsT1);
+            if (!_maxCapacity.IsZero) return null;
+            return _totalValue >= _maxCapacity.Value;
         }
     }
 
     //Stack Info
     public IEnumerable<TDef> Defs => _stack.Select(value => value.Def);
-    public IEnumerable<DefValue<TDef>> Values => _stack;
-        
-    public OneOf<int, float> TotalValue => _totalValue;
-    public int Length => _stack.Length;
+    public ICollection<DefValue<TDef, TValue>> Values => _stack;
 
-    public DefValue<TDef> this[int index] => _stack[index];
+    public DefValue<TDef, TValue> this[int index] => _stack[index];
 
-    public DefValue<TDef> this[TDef def]
+    public DefValue<TDef, TValue> this[TDef def]
     {
-        get => TryGetWithFallback(def, new DefValue<TDef>(def, 0));
+        get => TryGetWithFallback(def, new DefValue<TDef, TValue>(def, Numeric<TValue>.Zero));
         private set => TryAddOrSet(value);
     }
 
+    public static DefValueStack<TDef, TValue> Invalid => new()
+    {
+        _totalValue = Numeric<TValue>.NegativeOne
+    };
+    
     public DefValueStack()
     {
-        Default();
+        _stack = ImmutableArray<DefValue<TDef, TValue>>.Empty;
+        _totalValue = Numeric<TValue>.Zero;
     }
 
-    public DefValueStack(float? maxCapacity = null) : this()
+    public DefValueStack(TValue maxCapacity) : this()
     {
-        Default(maxCapacity);
+        _maxCapacity = maxCapacity;
     }
-        
-    public DefValueStack(IDictionary<TDef, OneOf<int, float>> source, float? maxCapacity = null) : this(maxCapacity)
+
+    public DefValueStack(DefValueStack<TDef, TValue> other, TValue maxCapacity) : this(maxCapacity)
+    {
+        if (!other.IsValid)
+        {
+            TLog.Warning($"[{GetType()}.ctor]Tried to create new FlowValueStack from invalid FlowValueStack.");
+            return;
+        }
+
+        _stack = other._stack;
+        _totalValue = other._totalValue;
+    }
+
+    public DefValueStack(DefValueStack<TDef,TValue> other) : this(other, Numeric<TValue>.Zero)
+    {
+    }
+    
+    /*public DefValueStack(IDictionary<TDef, TValue> source, TValue maxCapacity) : this(maxCapacity)
     {
         if (source.EnumerableNullOrEmpty())
         {
             Default(maxCapacity);
             return;
         }
-            
-        _stack = new DefValue<TDef>[source.Count];
+
+        _stack = new DefValue<TDef,TValue>[source.Count];
         var i = 0;
         foreach (var value in source)
         {
@@ -76,8 +95,8 @@ public struct DefValueStack<TDef> : IExposable
             i++;
         }
     }
-        
-    public DefValueStack(ICollection<TDef> defs, float? maxCapacity = null) : this(maxCapacity)
+
+    public DefValueStack(ICollection<TDef> defs, Numeric<TValue> maxCapacity) : this(maxCapacity)
     {
         if (!defs.Any())
         {
@@ -85,7 +104,7 @@ public struct DefValueStack<TDef> : IExposable
             Default(maxCapacity);
             return;
         }
-            
+
         _stack = new DefValue<TDef>[defs.Count];
         var i = 0;
         foreach (var def in defs)
@@ -94,8 +113,8 @@ public struct DefValueStack<TDef> : IExposable
             i++;
         }
     }
-        
-    public DefValueStack(DefValue<TDef>[] source, float? maxCapacity = null) : this(maxCapacity)
+
+    public DefValueStack(DefValue<TDef>[] source, Numeric<TValue> maxCapacity) : this(maxCapacity)
     {
         if (source.NullOrEmpty())
         {
@@ -103,7 +122,7 @@ public struct DefValueStack<TDef> : IExposable
             Default(maxCapacity);
             return;
         }
-            
+
         _stack = new DefValue<TDef>[source.Length];
         var i = 0;
         foreach (var value in source)
@@ -113,8 +132,8 @@ public struct DefValueStack<TDef> : IExposable
             i++;
         }
     }
-        
-    public DefValueStack(DefValueStack<TDef> other, float? maxCapacity = null) : this(maxCapacity)
+
+    public DefValueStack(DefValueStack<TDef, TValue> other, Numeric<TValue> maxCapacity) : this(maxCapacity)
     {
         if (!other.IsValid)
         {
@@ -122,15 +141,15 @@ public struct DefValueStack<TDef> : IExposable
             Default(maxCapacity);
             return;
         }
-            
+
         _stack = new DefValue<TDef>[other._stack.Length];
         for (var i = 0; i < _stack.Length; i++)
         {
             _stack[i] = other._stack[i];
         }
         _totalValue = other._totalValue;
-    }
-        
+    }*/
+
     public void ExposeData()
     {
         Scribe_Values.Look(ref _maxCapacity, "maxCapacity");
@@ -138,206 +157,273 @@ public struct DefValueStack<TDef> : IExposable
         Scribe_Arrays.Look(ref _stack, "stack");
     }
 
-    private void Default(float? maxCapacity = null)
-    {
-        _maxCapacity = maxCapacity;
-        _stack = Array.Empty<DefValue<TDef>>();
-        _totalValue = 0;
-    }
-        
     private int IndexOf(TDef def)
     {
         for (var i = 0; i < _stack.Length; i++)
-        {
-            if (_stack[i].Def == def) return i;
-        }
+            if (_stack[i].Def == def)
+                return i;
+
         return -1;
     }
-        
-    public DefValue<TDef> TryGetWithFallback(TDef key, DefValue<TDef> fallback)
+
+    public DefValue<TDef, TValue> TryGetWithFallback(TDef key, DefValue<TDef, TValue> fallback)
     {
         return TryGetValue(key, out _, out var value) ? value : fallback;
     }
 
-    public bool TryGetValue(TDef key, out int index, out DefValue<TDef> value)
+    public bool TryGetValue(TDef key, out int index, out DefValue<TDef, TValue> value)
     {
         index = -1;
-        value = new DefValue<TDef>(key, float.NaN);
+        var tmp = value = new DefValue<TDef, TValue>(key, Numeric<TValue>.Zero);
         for (var i = 0; i < _stack.Length; i++)
         {
-            value = _stack[i];
-            if (value.Def != key) continue;
+            tmp = _stack[i];
+            if (tmp.Def != key) continue;
+            value = tmp;
             index = i;
             return true;
         }
+
         return false;
     }
 
-    private void TryAddOrSet(DefValue<TDef> newValue)
+    private void TryAddOrSet(DefValue<TDef, TValue> newValue)
     {
-        //Add onto stack
         if (!TryGetValue(newValue.Def, out var index, out var previous))
         {
+            //Add onto stack
+            _stack = _stack.Add(newValue);
+            index = _stack.Length - 1;
+        }
+        else
+        {
             //Set new value
-            index = _stack.Length;
-            Array.Resize(ref _stack, _stack.Length + 1);
-            var oldArr = _stack;
-            for (int i = 0; i < index; i++)
-            {
-                _stack[i] = oldArr[i];
-            }
+            _stack = _stack.Replace(previous, newValue);
         }
 
-        _stack[index] = newValue;
-            
+        if (index < 0) return; //Failed to add
+
         //Get Delta
         var delta = _stack[index] - previous;
-        AdjustTotal(delta.Value);
+        _totalValue += delta.Value;
     }
 
-    private void AdjustTotal(OneOf<int, float> value, bool isAddition = true)
-    {
-        _totalValue =_totalValue.Match(
-            t0 => t0 + value.AsT0, 
-            t1 => t1 + value.AsT1);
-    }
-        
     public override string ToString()
     {
         if (_stack == null || Length == 0) return "Empty Stack";
-        StringBuilder sb = new StringBuilder();
+        var sb = new StringBuilder();
         sb.AppendLine($"[TOTAL: {TotalValue}]");
         for (var i = 0; i < Length; i++)
         {
             var value = _stack[i];
             sb.AppendLine($"[{i}] {value}");
         }
+
         return sb.ToString();
     }
 
-    public IEnumerator<DefValue<TDef>> GetEnumerator()
+    public IEnumerator<DefValue<TDef, TValue>> GetEnumerator()
     {
-        return _stack.Cast<DefValue<TDef>>().GetEnumerator(); //(IEnumerator<DefFloat<TDef>>)_stack.GetEnumerator();
+        return _stack.Cast<DefValue<TDef, TValue>>()
+            .GetEnumerator(); //(IEnumerator<DefFloat<TDef>>)_stack.GetEnumerator();
     }
 
     public void Reset()
     {
-        _totalValue = 0;
-        if (_stack == null || _stack.Length == 0) return;
-        for (var i = 0; i < _stack.Length; i++)
-        {
-            _stack[i].Value = 0;
-        }
-    }
-        
-    //
-    public static DefValueStack<TDef> Invalid => new()
-    {
-        _totalValue = -1,
-    };
-
-    //Math
-    #region DefValue Math
-
-    public static DefValueStack<TDef> operator +(DefValueStack<TDef> stack, DefValue<TDef> value)
-    {
-        stack = new DefValueStack<TDef>(stack);
-        stack[value.Def] += value;
-        return stack;
-    }
-
-    public static DefValueStack<TDef> operator -(DefValueStack<TDef> stack, DefValue<TDef> value)
-    {
-        stack = new DefValueStack<TDef>(stack);
-        stack[value.Def] -= value;
-        return stack;
+        _totalValue = Numeric<TValue>.Zero;
+        _stack = _stack.Clear();
     }
     
+    //Math
+
+    #region Math
+    
+    #region Value Math
+
+    public static DefValueStack<TDef, TValue> operator +(DefValueStack<TDef, TValue> a, TValue b)
+    {
+        foreach (var value in a._stack) 
+            a[value.Def] += value;
+        return a;
+    }
+
+    public static DefValueStack<TDef, TValue> operator -(DefValueStack<TDef, TValue> a, TValue b)
+    {
+        foreach (var value in a._stack) 
+            a[value.Def] -= value;
+        return a;
+    }
+
+    public static DefValueStack<TDef, TValue> operator *(DefValueStack<TDef, TValue> a, TValue b)
+    {
+        foreach (var value in a._stack) 
+            a[value.Def] *= value;
+        return a;
+    }
+
+    public static DefValueStack<TDef, TValue> operator /(DefValueStack<TDef, TValue> a, TValue b)
+    {
+        foreach (var value in a._stack) 
+            a[value.Def] /= value;
+        return a;
+    }
+
     #endregion
 
     #region Stack Math
 
-    public static DefValueStack<TDef> operator +(DefValueStack<TDef> stack , DefValueStack<TDef> other)
+    public static DefValueStack<TDef, TValue> operator +(DefValueStack<TDef, TValue> a, DefValueStack<TDef, TValue> b)
     {
-        stack = new DefValueStack<TDef>(stack);
-        foreach (var value in other._stack)
-        {
-            stack[value] += value;
-        }
+        foreach (var value in a._stack) 
+            a[value.Def] += value;
+        return a;
+    }
+
+    public static DefValueStack<TDef, TValue> operator -(DefValueStack<TDef, TValue> a, DefValueStack<TDef, TValue> b)
+    {
+        foreach (var value in a._stack) 
+            a[value.Def] -= value;
+        return a;
+    }
+
+    public static DefValueStack<TDef, TValue> operator *(DefValueStack<TDef, TValue> a, DefValueStack<TDef, TValue> b)
+    {
+        foreach (var value in a._stack) 
+            a[value.Def] *= value;
+        return a;
+    }
+
+    public static DefValueStack<TDef, TValue> operator /(DefValueStack<TDef, TValue> a, DefValueStack<TDef, TValue> b)
+    {
+        foreach (var value in a._stack) 
+            a[value.Def] /= value;
+        return a;
+    }
+
+    #endregion
+
+    #region DefValue Math
+
+    public static DefValueStack<TDef, TValue> operator +(DefValueStack<TDef, TValue> stack,
+        DefValue<TDef, TValue> value)
+    {
+        stack[value.Def] += value;
         return stack;
     }
 
-    public static DefValueStack<TDef> operator -(DefValueStack<TDef> stack , DefValueStack<TDef> other)
+    public static DefValueStack<TDef, TValue> operator -(DefValueStack<TDef, TValue> stack,
+        DefValue<TDef, TValue> value)
     {
-        stack = new DefValueStack<TDef>(stack);
-        foreach (var value in other._stack)
-        {
-            stack[value] -= other[value];
-        }
+        stack[value.Def] -= value;
         return stack;
     }
 
-    public static DefValueStack<TDef> operator /(DefValueStack<TDef> stack, OneOf<int, float> split)
+    public static DefValueStack<TDef, TValue> operator *(DefValueStack<TDef, TValue> stack,
+        DefValue<TDef, TValue> value)
     {
-        stack = new DefValueStack<TDef>(stack);
-        for (var i = 0; i < stack.Length; i++)
-        {
-            stack._stack[i] = stack[i] / split;
-        }
+        stack[value.Def] *= value;
         return stack;
     }
+
+    public static DefValueStack<TDef, TValue> operator /(DefValueStack<TDef, TValue> stack,
+        DefValue<TDef, TValue> value)
+    {
+        stack[value.Def] /= value;
+        return stack;
+    }
+
+    #endregion
 
     #endregion
 
     #region Comparision
 
-    public static bool operator <(DefValueStack<TDef> stack , OneOf<int, float> value)
+    #region Stack
+
+    public static bool operator >(DefValueStack<TDef, TValue> a, DefValueStack<TDef, TValue> b)
     {
-        return stack._totalValue.Match(
-            t0 => t0 < value.AsT0,
-            t1 => t1 < value.AsT1);
+        return a.TotalValue > b.TotalValue;
     }
 
-    public static bool operator >(DefValueStack<TDef> stack, OneOf<int, float> value)
+    public static bool operator <(DefValueStack<TDef, TValue> a, DefValueStack<TDef, TValue> b)
     {
-        return stack._totalValue.Match(
-            t0 => t0 > value.AsT0,
-            t1 => t1 > value.AsT1);
+        return a.TotalValue < b.TotalValue;
     }
 
-    public static bool operator ==(DefValueStack<TDef> stack, OneOf<int, float> value)
+
+    public static bool operator ==(DefValueStack<TDef, TValue> a, DefValueStack<TDef, TValue> b)
     {
-        return stack._totalValue.Match(
-            t0 => t0 == value.AsT0,
-            t1 => Math.Abs(t1 - value.AsT1) < Mathf.Epsilon);
+        return a.TotalValue == b.TotalValue;
     }
 
-    public static bool operator !=(DefValueStack<TDef> stack, OneOf<int, float> value)
+
+    public static bool operator !=(DefValueStack<TDef, TValue> a, DefValueStack<TDef, TValue> b)
     {
-        return !(stack == value);
-    }
-    
-    public static bool operator ==(DefValueStack<TDef> left, DefValueStack<TDef> right)
-    {
-        return left.Equals(right);
+        return a.TotalValue != b.TotalValue;
     }
 
-    public static bool operator !=(DefValueStack<TDef> left, DefValueStack<TDef> right)
+
+    public static bool operator >=(DefValueStack<TDef, TValue> a, DefValueStack<TDef, TValue> b)
     {
-        return !(left == right);
+        return a.TotalValue >= b.TotalValue;
     }
 
-    public bool Equals(DefValueStack<TDef> other)
+
+    public static bool operator <=(DefValueStack<TDef, TValue> a, DefValueStack<TDef, TValue> b)
     {
-        return Nullable.Equals(_maxCapacity, other._maxCapacity) &&
-               _stack.Equals(other._stack) &&
-               _totalValue.Match(t0 => t0 == other._totalValue.AsT0,
-                   t1 => t1 == other._totalValue.AsT1);
+        return a.TotalValue <= b.TotalValue;
+    }
+
+    #endregion
+
+    #region Value
+
+    public static bool operator >(DefValueStack<TDef, TValue> a, TValue b)
+    {
+        return a._totalValue > b;
+    }
+
+    public static bool operator <(DefValueStack<TDef, TValue> a, TValue b)
+    {
+        return a._totalValue < b;
+    }
+
+
+    public static bool operator ==(DefValueStack<TDef, TValue> a, TValue b)
+    {
+        return a._totalValue == b;
+    }
+
+
+    public static bool operator !=(DefValueStack<TDef, TValue> a, TValue b)
+    {
+        return a._totalValue != b;
+    }
+
+
+    public static bool operator >=(DefValueStack<TDef, TValue> a, TValue b)
+    {
+        return a._totalValue >= b;
+    }
+
+
+    public static bool operator <=(DefValueStack<TDef, TValue> a, TValue b)
+    {
+        return a._totalValue <= b;
+    }
+
+    #endregion
+
+    public bool Equals(DefValueStack<TDef, TValue> other)
+    {
+        return _stack.Equals(other._stack)
+               && _maxCapacity == other._maxCapacity
+               && _totalValue == other._totalValue;
     }
 
     public override bool Equals(object? obj)
     {
-        return obj is DefValueStack<TDef> other && Equals(other);
+        return obj is DefValueStack<TDef, TValue> other && Equals(other);
     }
 
     public override int GetHashCode()

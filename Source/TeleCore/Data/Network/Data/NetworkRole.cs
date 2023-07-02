@@ -3,7 +3,7 @@
 namespace TeleCore.Network.Data;
 
 [Flags]
-public enum NetworkRole : int
+public enum NetworkRole
 {
     Controller = 1,
     Transmitter = 2,
@@ -18,6 +18,7 @@ public enum NetworkRole : int
     All = 127,
 
     AllContainers = Producer | Consumer | Storage | Requester,
+
     AllFlag = Controller | Transmitter | Passthrough | Valve | AllContainers
     //All = 127
 }

@@ -1,27 +1,25 @@
-﻿using System;
-using UnityEngine;
+﻿using UnityEngine;
 using Verse;
 
-namespace TeleCore
+namespace TeleCore;
+
+[StaticConstructorOnStartup]
+public static class TFind
 {
-    [StaticConstructorOnStartup]
-    public static class TFind
+    internal static GameObject teleRootHolder;
+    internal static TeleRoot mainRoot;
+
+    static TFind()
     {
-        internal static GameObject teleRootHolder;
-        internal static TeleRoot mainRoot;
+        teleRootHolder = new GameObject("TeleCoreHolder");
+        Object.DontDestroyOnLoad(teleRootHolder);
+        teleRootHolder.AddComponent<TeleRoot>();
 
-        static TFind()
-        {
-            teleRootHolder = new GameObject("TeleCoreHolder");
-            UnityEngine.Object.DontDestroyOnLoad(teleRootHolder);
-            teleRootHolder.AddComponent<TeleRoot>();
-
-            mainRoot = teleRootHolder.GetComponent<TeleRoot>();
-            TLog.Message("TFind Ready!", TColor.Green);
-        }
-
-        public static TeleRoot TeleRoot => mainRoot;
-        public static TeleTickManager TickManager => TeleRoot.TickManager;
-        public static DiscoveryTable Discoveries => StaticData.TeleCoreWorldComp._discoveries;
+        mainRoot = teleRootHolder.GetComponent<TeleRoot>();
+        TLog.Message("TFind Ready!", TColor.Green);
     }
+
+    public static TeleRoot TeleRoot => mainRoot;
+    public static TeleTickManager TickManager => TeleRoot.TickManager;
+    public static DiscoveryTable Discoveries => StaticData.TeleCoreWorldComp._discoveries;
 }

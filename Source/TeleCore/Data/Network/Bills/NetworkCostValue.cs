@@ -5,8 +5,8 @@ namespace TeleCore.Network.Bills;
 
 public class NetworkCostValue
 {
-    public NetworkValueDef valueDef;
     public float value;
+    public NetworkValueDef valueDef;
 
     public bool HasValue => value > 0;
 
@@ -14,12 +14,12 @@ public class NetworkCostValue
     {
         if (xmlRoot.Name == "li")
         {
-            DirectXmlCrossRefLoader.RegisterObjectWantsCrossRef(this, "valueDef", xmlRoot.FirstChild.Value, null, null);
+            DirectXmlCrossRefLoader.RegisterObjectWantsCrossRef(this, "valueDef", xmlRoot.FirstChild.Value);
         }
         else
         {
-            DirectXmlCrossRefLoader.RegisterObjectWantsCrossRef(this, "valueDef", xmlRoot.Name, null, null);
-            value = (float)ParseHelper.FromString(xmlRoot.FirstChild.Value, typeof(float));
+            DirectXmlCrossRefLoader.RegisterObjectWantsCrossRef(this, "valueDef", xmlRoot.Name);
+            value = (float) ParseHelper.FromString(xmlRoot.FirstChild.Value, typeof(float));
         }
     }
 }

@@ -19,30 +19,22 @@ public class NetworkCost
 
     public bool CanPayWith(INetworkPart subPart)
     {
-        return useDirectStorage ? CanPayWith(subPart.FlowBox) : CanPayWith(subPart.Network);
+        return useDirectStorage ? CanPayWith(subPart.Volume) : CanPayWith(subPart.Network);
     }
 
-    private bool CanPayWith(Flow.FlowBox fb)
+    private bool CanPayWith(NetworkVolume fb)
     {
         if (fb.TotalValue < Cost.TotalCost) return false;
-        double totalNeeded = Cost.TotalCost;
-        
+        var totalNeeded = Cost.TotalCost;
+
         if (Cost.HasSpecifics)
-        {
             foreach (var specificCost in Cost.SpecificCosts)
-            {
                 if (fb.StoredValueOf(specificCost.valueDef) >= specificCost.value)
                     totalNeeded -= specificCost.value;
-            }
-        }
-        
+
         if (Cost.mainCost > 0)
-        {
             foreach (var type in Cost.AcceptedValueTypes)
-            {
                 totalNeeded -= fb.StoredValueOf(type);
-            }
-        }
         return totalNeeded == 0;
     }
 
@@ -53,23 +45,17 @@ public class NetworkCost
         if (totalNetworkValue < totalNeeded) return false;
         //Check For Specifics
         if (Cost.HasSpecifics)
-        {
             foreach (var typeCost in Cost.SpecificCosts)
             {
                 var specCost = typeCost.value;
                 if (wholeNetwork.FlowSystem.TotalValueFor(typeCost.valueDef) >= specCost)
                     totalNeeded -= specCost;
             }
-        }
 
         //Check For Generic Cost Value
         if (Cost.mainCost > 0)
-        {
             if (wholeNetwork.FlowSystem.TotalValue >= Cost.mainCost)
-            {
                 totalNeeded -= Cost.mainCost;
-            }
-        }
 
         return totalNeeded == 0;
     }
@@ -91,7 +77,7 @@ public class NetworkCost
         foreach (var typeCost in Cost.SpecificCosts)
         {
             var part = structure[typeCost.valueDef.NetworkDef];
-            if (part.Network.FlowSystem.TryConsume(part.FlowBox, typeCost.valueDef, typeCost.value))
+            if (part.Network.FlowSystem.TryConsume(part.Volume, typeCost.valueDef, typeCost.value))
                 totalCost -= typeCost.value;
         }
 
@@ -99,11 +85,9 @@ public class NetworkCost
         {
             var part = structure[type.NetworkDef];
 
-            var result = part.FlowBox.TryRemove(type, totalCost);
-            if (result)
-            {
-                totalCost -= result.ActualAmount;
-            }
+            var result = part.Volume.TryRemove(type, totalCost);
+            if (result) 
+                totalCost -= result.Actual.TotalValue;
         }
 
         if (totalCost > 0)
@@ -112,26 +96,24 @@ public class NetworkCost
             TLog.Warning($"Paying {this} with {structure.Thing} was too much: {totalCost}");
     }
 
+    //TODO: Make totalcost a stack
     private void DoPayWithNetwork(Comp_Network structure)
     {
         var totalCost = Cost.TotalCost;
         if (totalCost <= 0) return;
 
-        foreach (var storage in structure.NetworkParts.Select(s => s.Network).SelectMany(n => n.PartSet[NetworkRole.Storage]).TakeWhile(storage => !(totalCost <= 0)))
+        foreach (var storage in structure.NetworkParts.Select(s => s.Network)
+                     .SelectMany(n => n.PartSet[NetworkRole.Storage]).TakeWhile(storage => !(totalCost <= 0)))
         {
             foreach (var typeCost in Cost.SpecificCosts)
-            {
-                if (storage.FlowBox.TryConsume(typeCost.valueDef, typeCost.value))
+                if (storage.Volume.TryConsume(typeCost.valueDef, typeCost.value))
                     totalCost -= typeCost.value;
-            }
 
             foreach (var type in Cost.AcceptedValueTypes)
             {
-                var result = storage.FlowBox.TryRemove(type, totalCost);
-                if (result)
-                {
-                    totalCost -= result.ActualAmount;
-                }
+                var result = storage.Volume.TryRemove(type, totalCost);
+                if (result) 
+                    totalCost -= result.Actual.TotalValue;
             }
         }
 

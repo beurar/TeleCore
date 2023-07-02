@@ -7,14 +7,14 @@ public class PressureWorker_WaveEquation : PressureWorker
     public override double Friction => 0.001;
     public override double CSquared => 0.01;
 
-    public override double FlowFunction(FlowBox t0, FlowBox t1, double f) 
+    public override double FlowFunction(NetworkVolume t0, NetworkVolume t1, double f)
     {
-        f += (this.PressureFunction(t0) - this.PressureFunction(t1)) * CSquared;
+        f += (PressureFunction(t0) - PressureFunction(t1)) * CSquared;
         f *= 1 - Friction;
         return f;
     }
-    
-    public override double PressureFunction(FlowBox t) 
+
+    public override double PressureFunction(NetworkVolume t)
     {
         return t.TotalValue / t.MaxCapacity * 100;
     }

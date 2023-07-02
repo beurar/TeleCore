@@ -12,14 +12,14 @@ public class TeleThing : FXThing, IDiscoverable
     public TeleDefExtension Extension { get; private set; }
     public DiscoveryProperties Discovery => Extension?.discovery!;
 
+    public bool IsDiscoverable => Discovery != null;
+
     public DiscoveryDef DiscoveryDef => Discovery.discoveryDef;
     public string DiscoveredLabel => base.Label;
     public string UnknownLabel => Discovery.UnknownLabelCap;
     public string DiscoveredDescription => def.description;
     public string UnknownDescription => Discovery.unknownDescription;
     public string DescriptionExtra => Discovery.extraDescription;
-
-    public bool IsDiscoverable => Discovery != null;
     public bool Discovered => !IsDiscoverable || TFind.Discoveries[this];
 
     public override void SpawnSetup(Map map, bool respawningAfterLoad)
@@ -28,56 +28,42 @@ public class TeleThing : FXThing, IDiscoverable
         if (def.HasTeleExtension(out var textension))
         {
             Extension = textension;
-            if (Extension.addCustomTick)
-            {
-                TeleEventHandler.EntityTicked += TeleTick;
-            }
+            if (Extension.addCustomTick) TeleEventHandler.EntityTicked += TeleTick;
         }
     }
-    
+
     public override void DeSpawn(DestroyMode mode = DestroyMode.Vanish)
     {
         base.DeSpawn(mode);
         if (Extension != null)
-        {
             if (Extension.addCustomTick)
-            {
                 TeleEventHandler.EntityTicked -= TeleTick;
-            }
-        }
     }
 
     protected virtual void TeleTick()
     {
         foreach (var comp in AllComps)
-        {
             if (comp is TeleComp teleComp)
                 teleComp.TeleTick();
-        }
     }
 
     public override string GetInspectString()
     {
-        string str = (IsDiscoverable && !Discovered) ? "TELE.Discovery.NotDiscovered".Translate().ToString() + "\n" : "";
+        var str = IsDiscoverable && !Discovered ? "TELE.Discovery.NotDiscovered".Translate().ToString() + "\n" : "";
         str += base.GetInspectString();
         return str;
     }
 
     public override IEnumerable<Gizmo> GetGizmos()
     {
-        foreach (var g in base.GetGizmos())
-        {
-            yield return g;
-        }
+        foreach (var g in base.GetGizmos()) yield return g;
 
         if (!DebugSettings.godMode) yield break;
         if (IsDiscoverable && !Discovered)
-        {
-            yield return new Command_Action()
+            yield return new Command_Action
             {
                 defaultLabel = "Discover",
                 action = delegate { DiscoveryDef.Discover(); }
             };
-        }
     }
 }

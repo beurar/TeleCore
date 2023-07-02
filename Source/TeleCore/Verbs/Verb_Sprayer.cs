@@ -1,10 +1,9 @@
-﻿namespace TeleCore
+﻿namespace TeleCore;
+
+public class Verb_Sprayer : Verb_Tele
 {
-    public class Verb_Sprayer : Verb_Tele
+    public override void PostVerbTick()
     {
-        public override void PostVerbTick()
-        {
-            base.PostVerbTick();
-        }
+        base.PostVerbTick();
     }
 }

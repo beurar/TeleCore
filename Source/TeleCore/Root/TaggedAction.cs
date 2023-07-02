@@ -4,16 +4,15 @@ namespace TeleCore;
 
 public class TaggedAction
 {
-    private Action callback;
-    private string tag;
+    private readonly Action callback;
 
     public TaggedAction(Action callback, string tag)
     {
         this.callback = callback;
-        this.tag = tag;
+        Tag = tag;
     }
 
-    public string Tag => tag;
+    public string Tag { get; }
 
     public void DoAction()
     {

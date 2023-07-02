@@ -1,31 +1,33 @@
 ﻿using System.Collections.Generic;
-using TeleCore.Defs;
 using TeleCore.Generics.Container;
 using TeleCore.Network.Flow;
 using TeleCore.Static;
 using UnityEngine;
 using Verse;
-using DebugTools = TeleCore.Static.Utilities.DebugTools;
 
 namespace TeleCore.Network.Utility;
 
 public static class NetworkUI
 {
-    public static Vector2 GetValueContainerReadoutSize<TValue>(ValueContainerBase<TValue> container) where TValue : FlowValueDef
+    /*public static Vector2 GetValueContainerReadoutSize<TValue>(ValueContainerBase<TValue> container)
+        where TValue : FlowValueDef
     {
-        Vector2 size = new Vector2(10, 10);
+        var size = new Vector2(10, 10);
         foreach (var type in container.StoredDefs)
         {
-            Vector2 typeSize = Text.CalcSize($"{type.labelShort}: {container.StoredValueOf(type)} ({container.StoredPercentOf(type).ToStringPercent()})");
+            var typeSize =
+                Text.CalcSize(
+                    $"{type.labelShort}: {container.StoredValueOf(type)} ({container.StoredPercentOf(type).ToStringPercent()})");
             size.y += 10 + 2;
             var sizeX = typeSize.x + 20;
             if (size.x <= sizeX)
                 size.x += sizeX;
         }
-        return size;
-    }
 
-    public static Vector2 GetFlowBoxReadoutSize(Flow.FlowBox fb)
+        return size;
+    }*/
+
+    public static Vector2 GetFlowBoxReadoutSize(NetworkVolume fb)
     {
         var size = new Vector2(10, 10);
         var stack = fb.Stack;
@@ -33,16 +35,19 @@ public static class NetworkUI
         {
             var type = fv.Def;
             //TODO: better percent calc
-            Vector2 typeSize = Text.CalcSize($"{type.labelShort}: {fb.StoredValueOf(fv.Def)} ({fb.StoredPercentOf(type).ToStringPercent()})");
+            var typeSize =
+                Text.CalcSize(
+                    $"{type.labelShort}: {fb.StoredValueOf(fv.Def)} ({fb.StoredPercentOf(type).ToStringPercent()})");
             size.y += 10 + 2;
             var sizeX = typeSize.x + 20;
             if (size.x <= sizeX)
                 size.x += sizeX;
         }
+
         return size;
     }
-    
-    public static void DrawFlowBoxReadout(Rect rect, Flow.FlowBox fb)
+
+    public static void DrawFlowBoxReadout(Rect rect, NetworkVolume fb)
     {
         float height = 5;
         Widgets.DrawMenuSection(rect);
@@ -52,10 +57,10 @@ public static class NetworkUI
         foreach (var fv in fb.Stack.Values)
         {
             var type = fv.Def;
-            string label = $"{type.labelShort}: {fb.StoredValueOf(type)} ({fb.StoredPercentOf(type).ToStringPercent()})";
-            Rect typeRect = new Rect(5, height, 10, 10);
-            Vector2 typeSize = Text.CalcSize(label);
-            Rect typeLabelRect = new Rect(20, height - 2, typeSize.x, typeSize.y);
+            var label = $"{type.labelShort}: {fb.StoredValueOf(type)} ({fb.StoredPercentOf(type).ToStringPercent()})";
+            var typeRect = new Rect(5, height, 10, 10);
+            var typeSize = Text.CalcSize(label);
+            var typeLabelRect = new Rect(20, height - 2, typeSize.x, typeSize.y);
             Widgets.DrawBoxSolid(typeRect, type.valueColor);
             Widgets.Label(typeLabelRect, label);
             height += 10 + 2;
@@ -66,17 +71,15 @@ public static class NetworkUI
         Widgets.EndGroup();
 
         if (DebugSettings.godMode)
-        {
             if (TWidgets.MouseClickIn(rect, 1))
             {
-                FloatMenu menu = new FloatMenu(DebugFloatMenuOptions(fb), "", true);
+                var menu = new FloatMenu(DebugFloatMenuOptions(fb), "", true);
                 menu.vanishIfMouseDistant = true;
                 Find.WindowStack.Add(menu);
             }
-        }
     }
 
-    public static List<FloatMenuOption> DebugFloatMenuOptions(Flow.FlowBox fb)
+    public static List<FloatMenuOption> DebugFloatMenuOptions(NetworkVolume fb)
     {
         var tempList = StaticListHolder<FloatMenuOption>.RequestList($"FlowMenuOptions_{fb.GetHashCode()}");
         /*
@@ -125,6 +128,7 @@ public static class NetworkUI
     }
     */
 
+    /*
     public static void DrawValueContainerReadout<TValue>(Rect rect, ValueContainerBase<TValue> container)
         where TValue : FlowValueDef
     {
@@ -135,11 +139,11 @@ public static class NetworkUI
         Text.Anchor = TextAnchor.UpperLeft;
         foreach (var type in container.StoredDefs)
         {
-            string label =
+            var label =
                 $"{type.labelShort}: {container.StoredValueOf(type)} ({container.StoredPercentOf(type).ToStringPercent()})";
-            Rect typeRect = new Rect(5, height, 10, 10);
-            Vector2 typeSize = Text.CalcSize(label);
-            Rect typeLabelRect = new Rect(20, height - 2, typeSize.x, typeSize.y);
+            var typeRect = new Rect(5, height, 10, 10);
+            var typeSize = Text.CalcSize(label);
+            var typeLabelRect = new Rect(20, height - 2, typeSize.x, typeSize.y);
             Widgets.DrawBoxSolid(typeRect, type.valueColor);
             Widgets.Label(typeLabelRect, label);
             height += 10 + 2;
@@ -150,14 +154,12 @@ public static class NetworkUI
         Widgets.EndGroup();
 
         if (DebugSettings.godMode)
-        {
             if (TWidgets.MouseClickIn(rect, 1))
             {
-                FloatMenu menu = new FloatMenu(container.DebugFloatMenuOptions, "", true);
+                var menu = new FloatMenu(container.DebugFloatMenuOptions, "", true);
                 menu.vanishIfMouseDistant = true;
                 Find.WindowStack.Add(menu);
             }
-        }
     }
 
     public static void HoverContainerReadout<TValue>(Rect hoverArea, ValueContainerBase<TValue> container)
@@ -170,24 +172,25 @@ public static class NetworkUI
         {
             var mousePos = Event.current.mousePosition;
             var containerReadoutSize = GetValueContainerReadoutSize(container);
-            Rect rectAtMouse = new Rect(mousePos.x, mousePos.y - containerReadoutSize.y, containerReadoutSize.x,
+            var rectAtMouse = new Rect(mousePos.x, mousePos.y - containerReadoutSize.y, containerReadoutSize.x,
                 containerReadoutSize.y);
             DrawValueContainerReadout(rectAtMouse, container);
         }
     }
+    */
 
 
-    public static void HoverFlowBoxReadout(Rect hoverArea, Flow.FlowBox flowBox)
+    public static void HoverFlowBoxReadout(Rect hoverArea, NetworkVolume networkVolume)
     {
-        if (flowBox == null) return;
-        
-        if (flowBox.FillState != ContainerFillState.Empty && Mouse.IsOver(hoverArea))
+        if (networkVolume == null) return;
+
+        if (networkVolume.FillState != ContainerFillState.Empty && Mouse.IsOver(hoverArea))
         {
             var mousePos = Event.current.mousePosition;
-            var containerReadoutSize = GetFlowBoxReadoutSize(flowBox);
-            Rect rectAtMouse = new Rect(mousePos.x, mousePos.y - containerReadoutSize.y, containerReadoutSize.x,
+            var containerReadoutSize = GetFlowBoxReadoutSize(networkVolume);
+            var rectAtMouse = new Rect(mousePos.x, mousePos.y - containerReadoutSize.y, containerReadoutSize.x,
                 containerReadoutSize.y);
-            DrawFlowBoxReadout(rectAtMouse, flowBox);
+            DrawFlowBoxReadout(rectAtMouse, networkVolume);
         }
     }
 }

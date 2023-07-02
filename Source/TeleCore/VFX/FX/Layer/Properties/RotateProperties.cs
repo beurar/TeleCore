@@ -1,10 +1,9 @@
 ﻿using Verse;
 
-namespace TeleCore
+namespace TeleCore;
+
+public class RotateProperties
 {
-    public class RotateProperties
-    {
-        public int rotationSpeed;
-        public IntRange startRotation = IntRange.zero;
-    }
+    public int rotationSpeed;
+    public IntRange startRotation = IntRange.zero;
 }

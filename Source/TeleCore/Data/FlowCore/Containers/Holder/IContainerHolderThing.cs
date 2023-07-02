@@ -1,10 +1,9 @@
-﻿using TeleCore.Defs;
-using Verse;
+﻿using Verse;
 
 namespace TeleCore.Generics.Container.Holder;
 
 /// <summary>
-/// Container Implementation extension which allows you to expose a <see cref="Thing"/> reference
+///     Container Implementation extension which allows you to expose a <see cref="Thing" /> reference
 /// </summary>
 public interface IContainerHolderThing<TValue> : IContainerHolderBase<TValue> where TValue : FlowValueDef
 {

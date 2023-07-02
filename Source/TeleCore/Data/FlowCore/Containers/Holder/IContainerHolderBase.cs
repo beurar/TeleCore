@@ -1,5 +1,4 @@
-﻿using TeleCore.Defs;
-using TeleCore.Network;
+﻿using TeleCore.Network;
 
 namespace TeleCore.Generics.Container.Holder;
 

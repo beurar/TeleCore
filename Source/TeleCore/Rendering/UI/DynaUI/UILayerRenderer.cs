@@ -9,12 +9,10 @@ public static class UILayerRenderer
     //Todo: Layered rendering of additional popups within DynaUI
     public static void BeginLayeredView()
     {
-        
     }
 
     public static void DrawLayeredViews()
     {
-        
     }
 
     //

@@ -1,10 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using TeleCore.Defs;
 using TeleCore.Network.Flow;
-using TeleCore.Network.Graph;
 using TeleCore.Network.IO;
-using TeleCore.Primitive;
 using Verse;
 
 namespace TeleCore.Network.Data;
@@ -16,11 +13,12 @@ public interface INetworkPart
     public INetworkStructure Parent { get; }
     public Thing Thing { get; }
     public PipeNetwork Network { get; internal set; }
-    public NetworkIO NetworkIO { get; }
+    public NetworkIO PartIO { get; }
     public NetworkPartSet AdjacentSet { get; }
-    public Flow.FlowBox FlowBox { get; }
+
+    public NetworkVolume Volume { get; }
     //public NetworkPartSet DirectPartSet { get; }
-    
+
     //States
     public bool IsController { get; }
     public bool IsNode { get; }
@@ -28,8 +26,9 @@ public interface INetworkPart
     public bool IsJunction { get; }
 
     public bool IsWorking { get; }
-    
-    [Obsolete("This has been basically replaced by the FlowSystem, if prevflow has a value it means there was value transfer")]
+
+    [Obsolete(
+        "This has been basically replaced by the FlowSystem, if prevflow has a value it means there was value transfer")]
     public bool IsReceiving { get; }
 
     public bool HasContainer { get; }
@@ -37,9 +36,9 @@ public interface INetworkPart
     public bool IsLeaking { get; }
 
     public void PostDestroy(DestroyMode mode, Map map);
-    
+
     void Tick();
-    
+
     IOConnectionResult HasIOConnectionTo(INetworkPart otherPart);
 
     public void Draw();

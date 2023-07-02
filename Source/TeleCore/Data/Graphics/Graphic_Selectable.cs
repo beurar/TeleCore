@@ -19,7 +19,7 @@ public class Graphic_Selectable : Graphic_Collection
 
     public Graphic SubGraphicFor(Thing thing)
     {
-        if (thing == null) 
+        if (thing == null)
             return subGraphics[0];
         var num = thing.overrideGraphicIndex ?? thing.thingIDNumber;
         return subGraphics[num % subGraphics.Length];
@@ -29,13 +29,9 @@ public class Graphic_Selectable : Graphic_Collection
     {
         Graphic graphic;
         if (thing != null)
-        {
             graphic = SubGraphicFor(thing);
-        }
         else
-        {
             graphic = subGraphics[0];
-        }
         graphic.DrawWorker(loc, rot, thingDef, thing, extraRotation);
         if (ShadowGraphic != null) ShadowGraphic.DrawWorker(loc, rot, thingDef, thing, extraRotation);
     }
@@ -44,23 +40,16 @@ public class Graphic_Selectable : Graphic_Collection
     {
         Graphic graphic;
         if (thing != null)
-        {
             graphic = SubGraphicFor(thing);
-        }
         else
-        {
             graphic = subGraphics[0];
-        }
         graphic.Print(layer, thing, extraRotation);
         if (ShadowGraphic != null && thing != null) ShadowGraphic.Print(layer, thing, extraRotation);
     }
 
     public Graphic AtIndex(int index)
     {
-        if (index >= subGraphics.Length || index <= 0)
-        {
-            return BaseContent.BadGraphic;
-        }
+        if (index >= subGraphics.Length || index <= 0) return BaseContent.BadGraphic;
         return subGraphics[index];
     }
 }

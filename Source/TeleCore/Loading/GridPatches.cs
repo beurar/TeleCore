@@ -1,6 +1,5 @@
 ﻿using HarmonyLib;
 using TeleCore.Data.Events;
-using TeleCore.Static;
 using Verse;
 
 namespace TeleCore.Loading;
@@ -16,7 +15,7 @@ internal static class GridPatches
             GlobalEventHandler.OnTerrainChanged(new TerrainChangedEventArgs(c, false, previous, newTerr));
         }
     }
-    
+
     [HarmonyPatch(typeof(TerrainGrid), nameof(TerrainGrid.SetUnderTerrain))]
     private static class TerrainGridSetUnderTerrainPatch
     {

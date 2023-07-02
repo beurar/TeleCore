@@ -4,143 +4,124 @@ using UnityEngine;
 using Verse;
 using Verse.Sound;
 
-namespace TeleCore
+namespace TeleCore;
+
+public class TurretGunTop
 {
-    public class TurretGunTop
+    //Barrels
+    private readonly TurretGun parent;
+    private bool rotateClockwise = true;
+
+    //
+    private float rotation;
+    private float rotationSpeed;
+    private bool targetAcquired;
+    private float targetRot = 20;
+
+    private int ticksUntilTurn;
+    private int turnTicks;
+
+    public TurretGunTop(TurretGun parent, TurretTopProperties topProps)
     {
-        private readonly TurretGun parent;
-        private readonly TurretTopProperties props;
-        //Barrels
-        private readonly List<TurretBarrel> barrels;
-        
-        //
-        private float rotation;
-        private float targetRot = 20;
-        private float rotationSpeed;
-        private bool rotateClockwise = true;
-
-        private int ticksUntilTurn;
-        private int turnTicks;
-        private bool targetAcquired = false;
-
-        public TurretTopProperties Props => props;
-        public List<TurretBarrel> Barrels => barrels;
-
-        public Vector3 DrawPos => new Vector3(parent.DrawPos.x, AltitudeLayer.BuildingOnTop.AltitudeFor(), parent.DrawPos.z);
-
-        public bool HasBarrels => props.barrels != null;
-
-        public bool OnTarget
+        this.parent = parent;
+        Props = topProps;
+        if (HasBarrels)
         {
-            get
-            {
-                if (parent.CurrentTarget.IsValid)
-                {
-                    targetRot = (parent.CurrentTarget.CenterVector3 - parent.DrawPos).AngleFlat();
-                    return Quaternion.Angle(rotation.ToQuat(), targetRot.ToQuat()) < 1.5f;
-                }
-                return false;
-            }
+            Barrels = new List<TurretBarrel>(Props.barrels.Count);
+            foreach (var barrel in Props.barrels) Barrels.Add(new TurretBarrel(this, barrel));
         }
+    }
 
-        public float CurRotation
-        {
-            get => rotation;
-            set
-            {
-                if (value > 360)
-                {
-                    rotation = value - 360;
-                }
-                if (value < 0)
-                {
-                    rotation = value + 360;
-                }
-                rotation = value;
-            }
-        }
+    public TurretTopProperties Props { get; }
 
-        public TurretGunTop(TurretGun parent, TurretTopProperties topProps)
-        {
-            this.parent = parent;
-            props = topProps;
-            if (HasBarrels)
-            {
-                barrels = new List<TurretBarrel>(props.barrels.Count);
-                foreach (var barrel in props.barrels)
-                {
-                    barrels.Add(new TurretBarrel(this, barrel));
-                }
-            }
-        }
+    public List<TurretBarrel> Barrels { get; }
 
-        //
-        public void Notify_TurretShot(int index)
-        {
-            if (HasBarrels && barrels.Count > index)
-            {
-                barrels[index].Notify_TurretShot();
-            }
-        }
-        
-        public void Notify_AimAngleChanged(float? angle)
-        {
-            if(angle.HasValue)
-                rotation = angle.Value;
-        }
-        
-        //
-        public void TurretTopTick()
-        {
-            //Tick Barrels
-            if (HasBarrels)
-            {
-                barrels.ForEach(b => b.BarrelTick());
-            }
+    public Vector3 DrawPos => new(parent.DrawPos.x, AltitudeLayer.BuildingOnTop.AltitudeFor(), parent.DrawPos.z);
 
-            //Rotate Turret To Target Or Idle
-            LocalTargetInfo currentTarget = this.parent.CurrentTarget;
-            if (!currentTarget.IsValid)
-            {
-                if (targetAcquired)
-                    targetAcquired = false;
-            }
-            if (currentTarget.IsValid)
+    public bool HasBarrels => Props.barrels != null;
+
+    public bool OnTarget
+    {
+        get
+        {
+            if (parent.CurrentTarget.IsValid)
             {
                 targetRot = (parent.CurrentTarget.CenterVector3 - parent.DrawPos).AngleFlat();
-                turnTicks = 0;
+                return Quaternion.Angle(rotation.ToQuat(), targetRot.ToQuat()) < 1.5f;
             }
-            else if (ticksUntilTurn > 0)
+
+            return false;
+        }
+    }
+
+    public float CurRotation
+    {
+        get => rotation;
+        set
+        {
+            if (value > 360) rotation = value - 360;
+            if (value < 0) rotation = value + 360;
+            rotation = value;
+        }
+    }
+
+    //
+    public void Notify_TurretShot(int index)
+    {
+        if (HasBarrels && Barrels.Count > index) Barrels[index].Notify_TurretShot();
+    }
+
+    public void Notify_AimAngleChanged(float? angle)
+    {
+        if (angle.HasValue)
+            rotation = angle.Value;
+    }
+
+    //
+    public void TurretTopTick()
+    {
+        //Tick Barrels
+        if (HasBarrels) Barrels.ForEach(b => b.BarrelTick());
+
+        //Rotate Turret To Target Or Idle
+        var currentTarget = parent.CurrentTarget;
+        if (!currentTarget.IsValid)
+            if (targetAcquired)
+                targetAcquired = false;
+        if (currentTarget.IsValid)
+        {
+            targetRot = (parent.CurrentTarget.CenterVector3 - parent.DrawPos).AngleFlat();
+            turnTicks = 0;
+        }
+        else if (ticksUntilTurn > 0)
+        {
+            ticksUntilTurn--;
+            if (ticksUntilTurn == 0)
             {
-                ticksUntilTurn--;
-                if (ticksUntilTurn == 0)
-                {
-                    rotateClockwise = !(Rand.Value > 0.5);
-                    turnTicks = props.idleDuration.RandomInRange;
-                }
+                rotateClockwise = !(Rand.Value > 0.5);
+                turnTicks = Props.idleDuration.RandomInRange;
             }
-            else
-            {
-                targetRot += rotateClockwise ? 0.26f : -0.26f;
-                turnTicks--;
-                if (turnTicks <= 0)
-                    ticksUntilTurn = props.idleInterval.RandomInRange;
-            }
-            rotation = Mathf.SmoothDampAngle(rotation, targetRot, ref rotationSpeed, 0.01f, props.aimSpeed, 0.01666f);
-            if (OnTarget && !targetAcquired)
-            {
-                targetAcquired = true;
-                SoundDefOf.TurretAcquireTarget.PlayOneShot(new TargetInfo(parent.ParentThing.Position, parent.ParentThing.Map, false));
-            }
+        }
+        else
+        {
+            targetRot += rotateClockwise ? 0.26f : -0.26f;
+            turnTicks--;
+            if (turnTicks <= 0)
+                ticksUntilTurn = Props.idleInterval.RandomInRange;
         }
 
-        public void DrawTurret()
+        rotation = Mathf.SmoothDampAngle(rotation, targetRot, ref rotationSpeed, 0.01f, Props.aimSpeed, 0.01666f);
+        if (OnTarget && !targetAcquired)
         {
-            TDrawing.Draw(parent.TurretGraphic, DrawPos, Rot4.North, CurRotation, null, null);
-            if (HasBarrels)
-            {
-                barrels.ForEach(b => b.Draw());
-            }
+            targetAcquired = true;
+            SoundDefOf.TurretAcquireTarget.PlayOneShot(new TargetInfo(parent.ParentThing.Position,
+                parent.ParentThing.Map));
         }
+    }
+
+    public void DrawTurret()
+    {
+        TDrawing.Draw(parent.TurretGraphic, DrawPos, Rot4.North, CurRotation, null);
+        if (HasBarrels) Barrels.ForEach(b => b.Draw());
     }
 }

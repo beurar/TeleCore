@@ -8,28 +8,33 @@ namespace TeleCore;
 
 public class TeleTickManager
 {
-    private Stopwatch clock = new Stopwatch();
+    private const float _FPSLimiter = 45.4545441f;
+    private readonly Stopwatch clock = new();
+    private Action GameTickers;
+    private Action GameUITickers;
 
     private float realTimeToTickThrough;
-    private bool isPaused = false;
 
-    private const float _FPSLimiter = 45.4545441f;
-        
+    private int ticksThisFrame;
+
+    private int ticksThisFrameNormal;
+
     private Action UITickers;
-    private Action GameUITickers;
-    private Action GameTickers;
 
-    private int internalTicks;
-    private int internalMapTicks;
+    public TeleTickManager()
+    {
+        TLog.Message("Starting TeleTickManager!");
+    }
 
-    public bool Paused => isPaused;
+    public bool Paused { get; private set; }
 
     public static bool GameActive => Current.Game != null && Current.ProgramState == ProgramState.Playing;
     public bool GamePaused => !GameActive || Find.TickManager.Paused;
 
-    public int CurrentTick => internalTicks;
-    public int CurrentMapTick => internalMapTicks;
-        
+    public int CurrentTick { get; private set; }
+
+    public int CurrentMapTick { get; private set; }
+
     private float ReusedTickRateMultiplier
     {
         get
@@ -41,15 +46,10 @@ public class TeleTickManager
 
     private float CurTimePerTick => 0.016666668F;
 
-    public TeleTickManager()
-    {
-        TLog.Message("Starting TeleTickManager!");
-    }
-        
     public void Update()
     {
         UpdateTick();
-            
+
         //
         if (!GameActive) return;
         for (var i = 0; i < Current.Game.maps.Count; i++)
@@ -60,8 +60,6 @@ public class TeleTickManager
         }
     }
 
-    private int ticksThisFrame = 0;
-        
     //TODO: Check why it ticks 4 times
     private void UpdateMapTick(MapComponent_TeleCore map)
     {
@@ -82,7 +80,7 @@ public class TeleTickManager
                 TeleEventHandler.OnEntityTicked();
                 realTimeToTickThrough -= curTimePerTick;
                 ticksThisFrame++;
-                internalMapTicks++;
+                CurrentMapTick++;
                 if (Paused || clock.ElapsedMilliseconds > 45.454544f) break;
             }
 
@@ -103,7 +101,7 @@ public class TeleTickManager
         while (realTimeToTickThrough > 0f && ticksThisFrame < tickRate * 2f)
         {
             map.TeleMapSingleTick();
-            
+
             //
             realTimeToTickThrough -= timePerMapTick;
             ticksThisFrame++;
@@ -113,50 +111,39 @@ public class TeleTickManager
                 break;
             }
         }
-        
+
         //
         realTimeToTickThrough = 0;
         */
     }
-        
-    private int ticksThisFrameNormal = 0;
+
     private void UpdateTick()
     {
         if (Paused) return;
-            
+
         //
-        float curTimePerTick = CurTimePerTick;
+        var curTimePerTick = CurTimePerTick;
         if (Mathf.Abs(Time.deltaTime - curTimePerTick) < curTimePerTick * 0.1f)
-        {
             realTimeToTickThrough += curTimePerTick;
-        }
         else
-        {
             realTimeToTickThrough += Time.deltaTime;
-        }
 
         ticksThisFrameNormal = 0;
         clock.Reset();
         clock.Start();
         while (realTimeToTickThrough > 0f && ticksThisFrameNormal < 2)
         {
-            if (!GamePaused)
-            {
-                GameTickers?.Invoke();
-            }
-                
+            if (!GamePaused) GameTickers?.Invoke();
+
             UITickers?.Invoke();
             GameUITickers?.Invoke();
 
             //
             realTimeToTickThrough -= curTimePerTick;
             ticksThisFrameNormal++;
-            internalTicks++;
-                
-            if (Paused || clock.ElapsedMilliseconds > _FPSLimiter)
-            {
-                break;
-            }
+            CurrentTick++;
+
+            if (Paused || clock.ElapsedMilliseconds > _FPSLimiter) break;
         }
 
         //
@@ -176,7 +163,7 @@ public class TeleTickManager
 
     public void TogglePlay()
     {
-        isPaused = !isPaused;
+        Paused = !Paused;
     }
 
     //TODO: Switch to using events

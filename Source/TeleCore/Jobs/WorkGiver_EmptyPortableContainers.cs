@@ -1,7 +1,5 @@
 ﻿using System.Collections.Generic;
 using RimWorld;
-using TeleCore.Network;
-using TeleCore.Network.Data;
 using TeleCore.Static;
 using Verse;
 using Verse.AI;
@@ -21,21 +19,20 @@ public class WorkGiver_EmptyPortableContainers : WorkGiver_Scanner
     {
         return base.ShouldSkip(pawn, forced);
     }
+
     public override bool HasJobOnThing(Pawn pawn, Thing t, bool forced = false)
     {
         if (!HaulAIUtility.PawnCanAutomaticallyHaulFast(pawn, t, forced)) return false;
-        if (t is PortableNetworkContainer container)
-        {
-            return container.HasValidTarget;
-        }
-        JobFailReason.Is($"\n{"TELE.PortableContainer.CannotStartEmptyJob".Translate()}", null);
+        if (t is PortableNetworkContainer container) return container.HasValidTarget;
+        JobFailReason.Is($"\n{"TELE.PortableContainer.CannotStartEmptyJob".Translate()}");
         return false;
     }
 
     public override Job JobOnThing(Pawn pawn, Thing t, bool forced = false)
     {
-        PortableNetworkContainer networkContainer = t as PortableNetworkContainer;
-        var job = new Job(TeleDefOf.EmptyPortableContainer, networkContainer, networkContainer.TargetToEmptyAt, networkContainer.TargetToEmptyAt.Cell);
+        var networkContainer = t as PortableNetworkContainer;
+        var job = new Job(TeleDefOf.EmptyPortableContainer, networkContainer, networkContainer.TargetToEmptyAt,
+            networkContainer.TargetToEmptyAt.Cell);
         job.haulMode = HaulMode.Undefined;
         return job;
     }

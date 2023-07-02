@@ -4,5 +4,5 @@ public enum ValueFlowDirection
 {
     None,
     Positive,
-    Negative,
+    Negative
 }

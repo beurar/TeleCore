@@ -5,7 +5,7 @@ namespace TeleCore.Network.Data;
 internal enum DelayedNetworkActionType
 {
     Register,
-    Deregister,
+    Deregister
 }
 
 internal struct DelayedNetworkAction
@@ -17,7 +17,7 @@ internal struct DelayedNetworkAction
     public DelayedNetworkAction(DelayedNetworkActionType type, INetworkPart part, IntVec3 pos)
     {
         this.type = type;
-        this.Part = part;
+        Part = part;
         this.pos = pos;
     }
 }

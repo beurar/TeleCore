@@ -1,130 +1,125 @@
-﻿using OneOf;
-using Verse;
+﻿using Verse;
 
 namespace TeleCore.Primitive;
 
 /// <summary>
-/// Wraps any <see cref="Def"/> Type into a struct, attaching a numeric value
+///     Wraps any <see cref="Def" /> Type into a struct, attaching a numeric value
 /// </summary>
-/// <typeparam name="TDef">The <see cref="Def"/> Type of the value.</typeparam>
-public struct DefValue<TDef> where TDef : Def
+/// <typeparam name="TDef">The <see cref="Def" /> Type of the value.</typeparam>
+/// <typeparam name="TValue">The numeric Type of the value.</typeparam>
+public struct DefValue<TDef, TValue>
+    where TDef : Def
+    where TValue : struct
 {
-    public TDef Def { get; private set; }
-    public OneOf<int, float> Value { get; set; }
+    public TDef Def { get; }
+    public Numeric<TValue> Value { get; set; }
 
-    public int ValueInt => Value.AsT0; 
-    public float ValueFloat => Value.AsT1; 
-        
-    public static implicit operator DefValue<TDef>((TDef Def, OneOf<int, float >Value) value) => new (value.Def, value.Value);
-    public static implicit operator TDef(DefValue<TDef> defInt) => defInt.Def;
-    public static explicit operator OneOf<int, float>(DefValue<TDef> defInt) => defInt.Value;
+    public static implicit operator DefValue<TDef, TValue>((TDef Def, Numeric<TValue> Value) value) => new(value.Def, value.Value);
+    public static implicit operator TDef(DefValue<TDef, TValue> def) => def.Def;
+    public static explicit operator Numeric<TValue>(DefValue<TDef, TValue> def) => def.Value;
 
-    public DefValue(DefValueLoadable<TDef, int> defValue)
+
+    public static DefValue<TDef, TValue> Invalid => new(null, Numeric<TValue>.Zero);
+
+    public DefValue(DefValueLoadable<TDef, TValue> defValue)
     {
         Def = defValue.Def;
         Value = defValue.Value;
     }
 
-    public DefValue(TDef def, OneOf<int, float> value)
+    public DefValue(TDef def, TValue value)
     {
         Def = def;
         Value = value;
     }
 
-    public static DefValue<TDef> operator +(DefValue<TDef> a, int b)
+    #region Math
+
+    public static DefValue<TDef, TValue> operator +(DefValue<TDef, TValue> a, TValue b)
     {
-        var value = b + a.Value.AsT0;
-        return new DefValue<TDef>(a.Def, value);
-    }
-        
-    public static DefValue<TDef> operator +(DefValue<TDef> a, float b)
-    {
-        var value = b + a.Value.AsT1;
-        return new DefValue<TDef>(a.Def, value);
+        return new DefValue<TDef, TValue>(a.Def, a.Value + b);
     }
 
-    public static DefValue<TDef> operator +(DefValue<TDef> a, DefValue<TDef> b)
+    public static DefValue<TDef, TValue> operator -(DefValue<TDef, TValue> a, TValue b)
     {
-        OneOf<int, float> value = 0;
-        if (b.Value.IsT0)
-            value = a.Value.AsT0 + b.Value.AsT0;
-        if (b.Value.IsT1)
-            value = a.Value.AsT1 + b.Value.AsT1;
-        return new DefValue<TDef>(a.Def, value);
+        return new DefValue<TDef, TValue>(a.Def, a.Value - b);
     }
 
-    public static DefValue<TDef> operator -(DefValue<TDef> a, int b)
+    public static DefValue<TDef, TValue> operator *(DefValue<TDef, TValue> a, TValue b)
     {
-        var value = b - a.Value.AsT0;
-        return new DefValue<TDef>(a.Def, value);
-    }
-        
-    public static DefValue<TDef> operator -(DefValue<TDef> a, float b)
-    {
-        var value = b - a.Value.AsT1;
-        return new DefValue<TDef>(a.Def, value);
-    }
-    
-    public static DefValue<TDef> operator -(DefValue<TDef> a, DefValue<TDef> b)
-    {
-        OneOf<int, float> value = 0;
-
-        if (b.Value.IsT0)
-            value = a.Value.AsT0 - b.Value.AsT0;
-        if (b.Value.IsT1)
-            value = a.Value.AsT1 - b.Value.AsT1;
-        return new DefValue<TDef>(a.Def, value);
-    }
-    
-    public static DefValue<TDef> operator *(DefValue<TDef> a, int b)
-    {
-        var value = b * a.Value.AsT0;
-        return new DefValue<TDef>(a.Def, value);
-    }
-        
-    public static DefValue<TDef> operator *(DefValue<TDef> a, float b)
-    {
-        var value = b * a.Value.AsT1;
-        return new DefValue<TDef>(a.Def, value);
-    }
-    
-    public static DefValue<TDef> operator *(DefValue<TDef> a, DefValue<TDef> b)
-    {
-        OneOf<int, float> value = 0;
-        if (b.Value.IsT0)
-            value = a.Value.AsT0 * b.Value.AsT0;
-        if (b.Value.IsT1)
-            value = a.Value.AsT1 * b.Value.AsT1;
-        return new DefValue<TDef>(a.Def, value);
-    }
-    
-    public static DefValue<TDef> operator /(DefValue<TDef> a, int b)
-    {
-        var value = b / a.Value.AsT0;
-        return new DefValue<TDef>(a.Def, value);
-    }
-        
-    public static DefValue<TDef> operator /(DefValue<TDef> a, float b)
-    {
-        var value = b / a.Value.AsT1;
-        return new DefValue<TDef>(a.Def, value);
+        return new DefValue<TDef, TValue>(a.Def, a.Value * b);
     }
 
-    public static DefValue<TDef> operator /(DefValue<TDef> a, DefValue<TDef> b)
+    public static DefValue<TDef, TValue> operator /(DefValue<TDef, TValue> a, TValue b)
     {
-        return a / b.Value;
+        return new DefValue<TDef, TValue>(a.Def, a.Value / b);
     }
-    
-    public static DefValue<TDef> operator /(DefValue<TDef> a, OneOf<int, float> b)
+
+
+    public static DefValue<TDef, TValue> operator +(DefValue<TDef, TValue> a, DefValue<TDef, TValue> b)
     {
-        OneOf<int, float> value = 0;
-        if (b.IsT0)
-            value = a.Value.AsT0 / b.AsT0;
-        if (b.IsT1)
-            value = a.Value.AsT1 / b.AsT1;
-        return new DefValue<TDef>(a.Def, value);
+        if (a.Def != b.Def) return Invalid;
+        return new DefValue<TDef, TValue>(a.Def, a.Value + b.Value);
     }
-    
+
+    public static DefValue<TDef, TValue> operator -(DefValue<TDef, TValue> a, DefValue<TDef, TValue> b)
+    {
+        if (a.Def != b.Def) return Invalid;
+        return new DefValue<TDef, TValue>(a.Def, a.Value - b.Value);
+    }
+
+    public static DefValue<TDef, TValue> operator *(DefValue<TDef, TValue> a, DefValue<TDef, TValue> b)
+    {
+        if (a.Def != b.Def) return Invalid;
+        return new DefValue<TDef, TValue>(a.Def, a.Value * b.Value);
+    }
+
+    public static DefValue<TDef, TValue> operator /(DefValue<TDef, TValue> a, DefValue<TDef, TValue> b)
+    {
+        if (a.Def != b.Def) return Invalid;
+        return new DefValue<TDef, TValue>(a.Def, a.Value / b.Value);
+    }
+
+    #endregion
+
+    #region Comparision
+
+    public static bool operator >(DefValue<TDef, TValue> a, TValue b)
+    {
+        return a.Value > b;
+    }
+
+    public static bool operator <(DefValue<TDef, TValue> a, TValue b)
+    {
+        return a.Value < b;
+    }
+
+
+    public static bool operator ==(DefValue<TDef, TValue> a, TValue b)
+    {
+        return a.Value == b;
+    }
+
+
+    public static bool operator !=(DefValue<TDef, TValue> a, TValue b)
+    {
+        return a.Value == b;
+    }
+
+
+    public static bool operator >=(DefValue<TDef, TValue> a, TValue b)
+    {
+        return a.Value >= b;
+    }
+
+
+    public static bool operator <=(DefValue<TDef, TValue> a, TValue b)
+    {
+        return a.Value <= b;
+    }
+
+    #endregion
+
     public override string ToString()
     {
         return $"(({Def.GetType()}):{Def}, {Value})";

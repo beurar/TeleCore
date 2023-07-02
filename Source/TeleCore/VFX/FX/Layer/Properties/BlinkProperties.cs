@@ -1,8 +1,7 @@
-﻿namespace TeleCore
+﻿namespace TeleCore;
+
+public class BlinkProperties
 {
-    public class BlinkProperties
-    {
-        public int interval = 250;
-        public int duration = 20;
-    }
+    public int duration = 20;
+    public int interval = 250;
 }

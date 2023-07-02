@@ -1,8 +1,4 @@
-﻿using System.Collections.Generic;
-using HarmonyLib;
-using Verse;
-
-namespace TeleCore.Loading;
+﻿namespace TeleCore.Loading;
 
 public static class XMLPatches
 {
@@ -16,7 +12,7 @@ public static class XMLPatches
             var type = AccessTools.TypeByName("MonoMethod");
             return AccessTools.Method(type, "MakeGenericMethod", new[] {typeof(Type[])});
         }
-        
+
         [HarmonyPostfix]
         public static void Postfix(Type[] methodInstantiation, ref MethodInfo __result)
         {
@@ -29,12 +25,12 @@ public static class XMLPatches
                     MethodInfo method = typeof(MonoMethod_MakeGenericMethod).GetMethod("ListRootChanger", BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
                     Type[] genericArguments = genericType.GetGenericArguments();
                     //method.MakeGenericMethod(genericArguments)
-                    TeleCoreMod.TeleCore.Patch(func.Method, null, new HarmonyMethod(method.MakeGenericMethod(genericArguments)));   
-                    //TeleCoreMod.TeleCore.Patch(func.Method, null, new HarmonyMethod(typeof(MonoMethod_MakeGenericMethod), nameof(ListRootChanger), new Type[]{typeof(XmlNode)}));   
+                    TeleCoreMod.TeleCore.Patch(func.Method, null, new HarmonyMethod(method.MakeGenericMethod(genericArguments)));
+                    //TeleCoreMod.TeleCore.Patch(func.Method, null, new HarmonyMethod(typeof(MonoMethod_MakeGenericMethod), nameof(ListRootChanger), new Type[]{typeof(XmlNode)}));
                 }
             }
         }
-        
+
         public static void ListRootChanger<T>(XmlNode listRootNode)
         {
             TLog.Debug("Postfixing list node");

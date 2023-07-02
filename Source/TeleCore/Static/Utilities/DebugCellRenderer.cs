@@ -24,26 +24,24 @@ public static class DebugCellRenderer
     private static Material[] GetSpectrumFor(Color minColor, Color maxColor)
     {
         //
-        if (SpectrumByRange.TryGetValue((minColor, maxColor), out var spectrum))
-        {
-            return spectrum;
-        }
+        if (SpectrumByRange.TryGetValue((minColor, maxColor), out var spectrum)) return spectrum;
 
         //
         SetupSpectrumFor(minColor, maxColor);
         return GetSpectrumFor(minColor, maxColor);
     }
-    
+
     private static void SetupSpectrumFor(Color minColor, Color maxColor)
     {
         var key = (minColor, maxColor);
         SpectrumByRange[key] = new Material[100];
-        
-        for (int i = 0; i < 100; i++)
+
+        for (var i = 0; i < 100; i++)
         {
             var color = Color.Lerp(minColor, maxColor, i / 100f);
             color.a = 0.25f;
-            SpectrumByRange[key][i] = SolidColorMaterials.NewSolidColorMaterial(color, ShaderDatabase.MetaOverlay);;
+            SpectrumByRange[key][i] = SolidColorMaterials.NewSolidColorMaterial(color, ShaderDatabase.MetaOverlay);
+            ;
         }
     }
 }

@@ -1,86 +1,84 @@
 ﻿using UnityEngine;
 using Verse.Noise;
 
-namespace TeleCore
+namespace TeleCore;
+
+public abstract class ModuleNode
 {
-    public abstract class ModuleNode
+    //Data
+
+    protected ModuleNode(Vector2 position)
     {
-        //Data
-        private ModuleData moduleData;
-        private NodeRenderData renderData;
-        private NodeIOData IOData;
+        var module = CreateModule();
+        if (module != null)
+            ModuleData = new ModuleData(module, this);
+        Renderer = new NodeRenderData(this, position, NodeSize);
+        IOAnchors = new NodeIOData(this, Inputs, Outputs);
+    }
 
-        public ModuleData ModuleData => moduleData;
-        public NodeRenderData Renderer => renderData;
-        public NodeIOData IOAnchors => IOData;
+    public ModuleData ModuleData { get; }
 
-        protected abstract int Inputs { get; }
-        protected abstract int Outputs { get; }
+    public NodeRenderData Renderer { get; }
 
-        //Graphical
-        public virtual Vector2 NodeSize => new Vector2(125, 200);
-        public Vector2 Position => renderData.Position;
+    public NodeIOData IOAnchors { get; }
 
-        //
-        public abstract string ModuleName { get; }
+    protected abstract int Inputs { get; }
+    protected abstract int Outputs { get; }
 
-        protected ModuleNode(Vector2 position)
-        {
-            ModuleBase module = CreateModule();
-            if(module != null)
-                moduleData = new ModuleData(module, this);
-            renderData = new NodeRenderData(this, position, NodeSize);
-            IOData = new NodeIOData(this, Inputs, Outputs);
-        }
+    //Graphical
+    public virtual Vector2 NodeSize => new(125, 200);
+    public Vector2 Position => Renderer.Position;
 
-        protected abstract ModuleBase CreateModule();
+    //
+    public abstract string ModuleName { get; }
 
-        public double GetValue(double x, double y, double z)
-        {
-            return moduleData.Module.GetValue(x, y, z);
-        }
+    protected abstract ModuleBase CreateModule();
 
-        public void Notify_DataChanged()
-        {
-            if(IOData.ConnectsTo(Window_ModuleVisualizer.Vis.FinalOutput))
-                Window_ModuleVisualizer.Vis.Notify_DataChanged();
-        }
+    public double GetValue(double x, double y, double z)
+    {
+        return ModuleData.Module.GetValue(x, y, z);
+    }
 
-        public void Notify_TryConnectAt(NodeAnchor fromAnchor, Vector2 lineEnd)
-        {
-            Window_ModuleVisualizer.Vis.TryConnectModuleToOther(this, fromAnchor, lineEnd);
-        }
+    public void Notify_DataChanged()
+    {
+        if (IOAnchors.ConnectsTo(Window_ModuleVisualizer.Vis.FinalOutput))
+            Window_ModuleVisualizer.Vis.Notify_DataChanged();
+    }
 
-        public void Notify_MouseInputAt(Event mouseEvent)
-        {
-            renderData.DoMouseEvents(mouseEvent);
-        }
+    public void Notify_TryConnectAt(NodeAnchor fromAnchor, Vector2 lineEnd)
+    {
+        Window_ModuleVisualizer.Vis.TryConnectModuleToOther(this, fromAnchor, lineEnd);
+    }
 
-        //
-        public bool Contains(Vector2 pos)
-        {
-            return Renderer.Rect.Contains(pos);
-        }
+    public void Notify_MouseInputAt(Event mouseEvent)
+    {
+        Renderer.DoMouseEvents(mouseEvent);
+    }
 
-        public void Draw(float scale)
-        {
-            renderData.DrawNode(scale);
-        }
+    //
+    public bool Contains(Vector2 pos)
+    {
+        return Renderer.Rect.Contains(pos);
+    }
 
-        internal bool HasInputAt(Vector2 toPos, out NodeAnchor inputAnchor)
-        {
-            return IOData.HasInputAt(toPos, out inputAnchor);
-        }
+    public void Draw(float scale)
+    {
+        Renderer.DrawNode(scale);
+    }
 
-        public void Notify_NewConnection(NodeAnchor fromAnchor, NodeAnchor toAnchor)
-        {
-            fromAnchor.ConnectTo(toAnchor);
-            toAnchor.ConnectTo(fromAnchor);
-        }
+    internal bool HasInputAt(Vector2 toPos, out NodeAnchor inputAnchor)
+    {
+        return IOAnchors.HasInputAt(toPos, out inputAnchor);
+    }
 
-        public void Notify_NewInput(int index, ModuleNode targetAnchorParentNode)
-        {
-            ModuleData?.Notify_SetNewInput(index, targetAnchorParentNode);
-        }
+    public void Notify_NewConnection(NodeAnchor fromAnchor, NodeAnchor toAnchor)
+    {
+        fromAnchor.ConnectTo(toAnchor);
+        toAnchor.ConnectTo(fromAnchor);
+    }
+
+    public void Notify_NewInput(int index, ModuleNode targetAnchorParentNode)
+    {
+        ModuleData?.Notify_SetNewInput(index, targetAnchorParentNode);
     }
 }

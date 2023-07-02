@@ -1,5 +1,4 @@
 ﻿using RimWorld;
-using TeleCore.Network;
 using TeleCore.Network.Flow;
 using TeleCore.Network.Graph;
 using UnityEngine;
@@ -10,9 +9,12 @@ namespace TeleCore.Static.Utilities;
 [StaticConstructorOnStartup]
 internal static class DebugTools
 {
-    private static readonly Material FilledMat = SolidColorMaterials.NewSolidColorMaterial(Color.green, ShaderDatabase.MetaOverlay);
-    private static readonly Material UnFilledMat = SolidColorMaterials.NewSolidColorMaterial(TColor.LightBlack, ShaderDatabase.MetaOverlay);
-    
+    private static readonly Material FilledMat =
+        SolidColorMaterials.NewSolidColorMaterial(Color.green, ShaderDatabase.MetaOverlay);
+
+    private static readonly Material UnFilledMat =
+        SolidColorMaterials.NewSolidColorMaterial(TColor.LightBlack, ShaderDatabase.MetaOverlay);
+
     #region Graph
 
     internal static void Debug_DrawGraphOnUI(NetGraph graph)
@@ -34,10 +36,8 @@ internal static class DebugTools
                 TWidgets.DrawHalfArrow(netEdge.Value.From.Parent.Thing.TrueCenter().ToScreenPos(),
                     netEdge.Value.To.Parent.Thing.TrueCenter().ToScreenPos(), Color.red, size);
                 if (netEdge.Value.BiDirectional)
-                {
                     TWidgets.DrawHalfArrow(netEdge.Value.To.Parent.Thing.TrueCenter().ToScreenPos(),
                         netEdge.Value.From.Parent.Thing.TrueCenter().ToScreenPos(), Color.blue, size);
-                }
             }
 
             TWidgets.DrawBoxOnThing(thingA);
@@ -49,10 +49,10 @@ internal static class DebugTools
     {
         foreach (var (part, fb) in flowSys.Relations)
         {
-            GenDraw.FillableBarRequest r = default(GenDraw.FillableBarRequest);
+            var r = default(GenDraw.FillableBarRequest);
             r.center = part.Parent.Thing.Position.ToVector3() + new Vector3(0.25f, 0, 0.75f);
             r.size = new Vector2(1.5f, 0.5f);
-            r.fillPercent = (float)fb.FillPercent;
+            r.fillPercent = (float) fb.FillPercent;
             r.filledMat = FilledMat;
             r.unfilledMat = UnFilledMat;
             r.margin = 0f;

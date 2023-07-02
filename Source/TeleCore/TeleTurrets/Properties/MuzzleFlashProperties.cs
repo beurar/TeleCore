@@ -1,19 +1,17 @@
 ﻿using Verse;
 
-namespace TeleCore
+namespace TeleCore;
+
+public class MuzzleFlashProperties
 {
-    public class MuzzleFlashProperties
-    {
-        private Graphic graphicInt;
+    public float fadeInTime = 0f;
+    public float fadeOutTime = 0f;
 
-        public GraphicData flashGraphicData;
+    public GraphicData flashGraphicData;
+    private Graphic graphicInt;
 
-        public float scale = 1;
+    public float scale = 1;
+    public float solidTime = 0.25f;
 
-        public float fadeInTime = 0f;
-        public float solidTime = 0.25f;
-        public float fadeOutTime = 0f;
-
-        public Graphic Graphic => graphicInt ??= flashGraphicData.Graphic;
-    }
+    public Graphic Graphic => graphicInt ??= flashGraphicData.Graphic;
 }

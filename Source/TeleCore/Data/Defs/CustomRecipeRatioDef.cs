@@ -1,16 +1,15 @@
 ﻿using System.Collections.Generic;
-using TeleCore.Defs;
 using Verse;
 
 namespace TeleCore;
 
 public class CustomRecipeRatioDef : Def
 {
-    public bool hidden = false;
-    public List<string> tags;
-    public List<DefFloatRef<NetworkValueDef>> inputRatio;
     public List<DefFloatRef<NetworkValueDef>> byProducts;
+    public bool hidden = false;
+    public List<DefFloatRef<NetworkValueDef>> inputRatio;
     public ThingDef result;
+    public List<string> tags;
 
     public override void ResolveReferences()
     {

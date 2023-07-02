@@ -10,7 +10,6 @@ public class DataGrid
 
     public DataGrid(Vector2 pos, float maxWidth)
     {
-        
     }
 
     public void DoColumnHeaders(params string[] columns)
@@ -25,6 +24,5 @@ public class DataGrid
 
     public void AddRow(Action renderAction)
     {
-        
     }
 }

@@ -8,18 +8,31 @@ namespace TeleCore.Network.Bills;
 public class Bill_Production_Network : Bill_Production
 {
     public RecipeDef_Network def;
-    public bool isBeingDone = false;
+    public bool isBeingDone;
 
-    public Bill_Production_Network(RecipeDef_Network def) : base(def as RecipeDef)
+    public Bill_Production_Network(RecipeDef_Network def) : base(def)
     {
         this.def = def;
     }
 
-    public Bill_Production_Network() : base()
+    public Bill_Production_Network()
     {
     }
 
-    public Comp_NetworkBillsCrafter CompTNW => ((Building)billStack.billGiver).GetComp<Comp_NetworkBillsCrafter>();
+    public Comp_NetworkBillsCrafter CompTNW => ((Building) billStack.billGiver).GetComp<Comp_NetworkBillsCrafter>();
+
+    public bool BaseShouldDo => base.ShouldDoNow();
+
+    public Color BillColor
+    {
+        get
+        {
+            var color = Color.white;
+            foreach (var valueDef in def.networkCost.Cost.AcceptedValueTypes) color *= valueDef.valueColor;
+
+            return color;
+        }
+    }
     //public NetworkComponent ParentTibComp => CompTNW[TiberiumDefOf.TiberiumNetwork];
     //private Network Network => ParentTibComp.Network;
 
@@ -42,19 +55,12 @@ public class Bill_Production_Network : Bill_Production
         base.Notify_PawnDidWork(p);
     }
 
-    public bool BaseShouldDo => base.ShouldDoNow();
-
     public override bool ShouldDoNow()
     {
         if (base.ShouldDoNow())
-        {
-            if (CompTNW is { IsPowered: true })
-            {
+            if (CompTNW is {IsPowered: true})
                 return def.networkCost.CanPayWith(CompTNW);
-                //if (Network != null && Network.IsWorking)
-            }
-        }
-
+        //if (Network != null && Network.IsWorking)
         return false;
     }
 
@@ -65,20 +71,6 @@ public class Bill_Production_Network : Bill_Production
             def.networkCost.DoPayWith(CompTNW);
             isBeingDone = false;
             base.Notify_IterationCompleted(billDoer, ingredients);
-        }
-    }
-
-    public Color BillColor
-    {
-        get
-        {
-            Color color = Color.white;
-            foreach (NetworkValueDef valueDef in def.networkCost.Cost.AcceptedValueTypes)
-            {
-                color *= valueDef.valueColor;
-            }
-
-            return color;
         }
     }
 

@@ -46,7 +46,7 @@ internal static class RoomUpdateNotifiers
             worker.Notify_CacheDirtyCell(cell, reg);
         }
     }
-    
+
     public static void Notify_RoomUpdateResetDirtyCell(IntVec3 cell, Map map)
     {
         if (CurrentWorker != null)

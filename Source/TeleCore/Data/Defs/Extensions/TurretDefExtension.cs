@@ -1,11 +1,10 @@
 ﻿using System.Collections.Generic;
 using Verse;
 
-namespace TeleCore
+namespace TeleCore;
+
+public class TurretDefExtension : DefModExtension
 {
-    public class TurretDefExtension : DefModExtension
-    {
-        public TurretHubProperties hub;
-        public List<TurretProperties> turrets;
-    }
+    public TurretHubProperties hub;
+    public List<TurretProperties> turrets;
 }

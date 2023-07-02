@@ -1,6 +1,5 @@
 ﻿using HarmonyLib;
 using TeleCore.Data.Events;
-using TeleCore.Static;
 using Verse;
 
 namespace TeleCore.Loading;

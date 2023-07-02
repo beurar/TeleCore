@@ -2,23 +2,22 @@
 using UnityEngine;
 using Verse;
 
-namespace TeleCore
+namespace TeleCore;
+
+public class TurretProperties
 {
-    public class TurretProperties
-    {
-        public Type turretGunClass = typeof(TurretGun);
-        public string label = "Turret Gun";
-        public TurretTopProperties turretTop;
-        public ThingDef turretGunDef;
-        public Vector3 turretOffset;
+    public bool canForceTarget = false;
 
-        public float turretBurstWarmupTime;
-        public float turretBurstCooldownTime = -1f;
-        public float turretInitialCooldownTime;
+    public bool continuous = false;
+    public string label = "Turret Gun";
+    public float turretBurstCooldownTime = -1f;
 
-        public bool continuous = false;
-        public bool canForceTarget = false;
+    public float turretBurstWarmupTime;
+    public Type turretGunClass = typeof(TurretGun);
+    public ThingDef turretGunDef;
+    public float turretInitialCooldownTime;
+    public Vector3 turretOffset;
+    public TurretTopProperties turretTop;
 
-        //public TurretBurstMode burstMode = TurretBurstMode.Normal;
-    }
+    //public TurretBurstMode burstMode = TurretBurstMode.Normal;
 }

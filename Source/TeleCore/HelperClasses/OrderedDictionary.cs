@@ -12,16 +12,16 @@ public class OrderedDictionary<TKey, TValue> : OrderedDictionary
 
     public new TValue this[int index]
     {
-        get => (TValue)base[index];
+        get => (TValue) base[index];
         set => base[index] = value;
     }
-    
+
     public TValue this[TKey key]
     {
-        get => base.Contains(key) ? (TValue)base[key] : default;
+        get => Contains(key) ? (TValue) base[key] : default;
         set => base[key] = value;
     }
-        
+
     public void Add(TKey key, TValue value)
     {
         base.Add(key, value);

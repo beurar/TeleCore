@@ -5,12 +5,11 @@ using Verse;
 namespace TeleCore;
 
 /// <summary>
-/// 
 /// </summary>
 public class ThingTrackerMapInfo : MapInformation
 {
     private readonly ThingTrackerComp[] trackerComps;
-    
+
     public ThingTrackerMapInfo(Map map) : base(map)
     {
         var compTypes = typeof(ThingTrackerComp).AllSubclassesNonAbstract();
@@ -31,7 +30,8 @@ public class ThingTrackerMapInfo : MapInformation
 }
 
 /// <summary>
-/// Provides an abstract base for custom Thing-tracking worker classes which process Thing-Data on Spawn/Despawn/State change events
+///     Provides an abstract base for custom Thing-tracking worker classes which process Thing-Data on Spawn/Despawn/State
+///     change events
 /// </summary>
 public abstract class ThingTrackerComp
 {

@@ -5,16 +5,17 @@ namespace TeleCore.Network.Bills;
 
 public class NetworkCostSet
 {
-    //Cache
-    private double? totalCost;
-    private double? totalSpecificCost;
-
     private List<NetworkValueDef> acceptedTypes;
-    private List<NetworkCostValue> specificCostsWithValues;
 
     //
     public float mainCost;
     public List<NetworkCostValue> specificCosts;
+
+    private List<NetworkCostValue> specificCostsWithValues;
+
+    //Cache
+    private double? totalCost;
+    private double? totalSpecificCost;
 
     public bool HasSpecifics => SpecificCosts.Any();
 

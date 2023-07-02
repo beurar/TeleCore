@@ -20,10 +20,7 @@ public class WorldComp_TeleCore : WorldComponent
         StaticData.ExposeStaticData();
         Scribe_Deep.Look(ref _discoveries, "DiscoveryTable");
 
-        if (Scribe.mode == LoadSaveMode.PostLoadInit)
-        {
-            GenerateInfos();
-        }
+        if (Scribe.mode == LoadSaveMode.PostLoadInit) GenerateInfos();
     }
 
 
@@ -32,4 +29,3 @@ public class WorldComp_TeleCore : WorldComponent
         _discoveries ??= new DiscoveryTable();
     }
 }
-

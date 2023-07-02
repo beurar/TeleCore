@@ -1,9 +1,7 @@
 ﻿using Verse;
 
-namespace TeleCore
+namespace TeleCore;
+
+public class TeleEffecterDef : Def
 {
-    public class TeleEffecterDef : Def
-    {
-        
-    }
 }

@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using TeleCore.Defs;
 using TeleCore.Network.Data;
 using TeleCore.Network.Utility;
 using TeleCore.Primitive;
@@ -15,26 +14,36 @@ public class NetworkBillStack : IExposable
     public static readonly float MarketPriceFactor = 2.4f;
     public static readonly float WorkAmountFactor = 10;
 
-    //Details
-    private CustomNetworkBill detailsRequester;
-
-    //
-    private Comp_NetworkBillsCrafter billStackOwner;
-    private List<CustomNetworkBill> bills = new();
-
     //Temp Custom Bill
     public int billID = 1;
     public string billName = "";
+    private List<CustomNetworkBill> bills = new();
+
+    //
+
+    //Details
+    private CustomNetworkBill detailsRequester;
     public Dictionary<CustomRecipeRatioDef, int> RequestedAmount = new();
     public string[] textBuffers;
 
-    public DefValueStack<NetworkValueDef> TotalCost { get; set; }
-    public DefValueStack<NetworkValueDef> ByProducts { get; set; }
-    public int TotalWorkAmount => TotalCost.Empty ? 0 : TotalCost.Values.Sum(m => (int)(m.Value.AsT1 * WorkAmountFactor));
+    public NetworkBillStack(Comp_NetworkBillsCrafter parent)
+    {
+        ParentComp = parent;
+        textBuffers = new string[Ratios.Count];
+        foreach (var recipe in Ratios) RequestedAmount.Add(recipe, 0);
+
+        ResetBillData();
+    }
+
+    public DefValueStack<NetworkValueDef, double> TotalCost { get; set; }
+    public DefValueStack<NetworkValueDef,double> ByProducts { get; set; }
+
+    public int TotalWorkAmount => TotalCost.Empty ? 0 : TotalCost.Values.Sum(m => (int) (m.Value * WorkAmountFactor));
 
     //
-    public Building ParentBuilding => billStackOwner.parent;
-    public Comp_NetworkBillsCrafter ParentComp => billStackOwner;
+    public Building ParentBuilding => ParentComp.parent;
+    public Comp_NetworkBillsCrafter ParentComp { get; }
+
     public IEnumerable<INetworkPart> ParentNetParts => UsedNetworks?.Select(n => ParentComp[n]) ?? null;
 
     public IEnumerable<NetworkDef> UsedNetworks =>
@@ -48,18 +57,6 @@ public class NetworkBillStack : IExposable
 
     public CustomNetworkBill this[int index] => bills[index];
 
-    public NetworkBillStack(Comp_NetworkBillsCrafter parent)
-    {
-        billStackOwner = parent;
-        textBuffers = new string[Ratios.Count];
-        foreach (var recipe in Ratios)
-        {
-            RequestedAmount.Add(recipe, 0);
-        }
-
-        ResetBillData();
-    }
-
     public void ExposeData()
     {
         Scribe_Values.Look(ref billID, "billID");
@@ -68,18 +65,14 @@ public class NetworkBillStack : IExposable
         Scribe_Collections.Look(ref bills, "bills", LookMode.Deep, this);
 
         if (Scribe.mode == LoadSaveMode.PostLoadInit)
-        {
-            for (int i = 0; i < RequestedAmount.Count; i++)
-            {
+            for (var i = 0; i < RequestedAmount.Count; i++)
                 textBuffers[i] = RequestedAmount.ElementAt(i).Value.ToString();
-            }
-        }
     }
 
     public void CreateBillFromDef(CustomRecipePresetDef presetDefDef)
     {
-        var totalCost = presetDefDef.desiredResources.Sum(t => (int)(t.Value * WorkAmountFactor));
-        CustomNetworkBill customBill = new CustomNetworkBill(totalCost);
+        var totalCost = presetDefDef.desiredResources.Sum(t => (int) (t.Value * WorkAmountFactor));
+        var customBill = new CustomNetworkBill(totalCost);
         customBill.billName = presetDefDef.defName;
         customBill.networkCost = NetworkBillUtility.ConstructCustomCostStack(presetDefDef.desiredResources);
         if (presetDefDef.HasByProducts)
@@ -93,12 +86,12 @@ public class NetworkBillStack : IExposable
     {
         if (TotalCost.Empty) return;
 
-        CustomNetworkBill customBill = new CustomNetworkBill(TotalWorkAmount);
+        var customBill = new CustomNetworkBill(TotalWorkAmount);
         customBill.billName = billName;
-        customBill.networkCost = new DefValueStack<NetworkValueDef>(TotalCost);
+        customBill.networkCost = new DefValueStack<NetworkValueDef, double>(TotalCost);
 
         if (!ByProducts.Empty)
-            customBill.byProducts = new DefValueStack<NetworkValueDef>(ByProducts);
+            customBill.byProducts = new DefValueStack<NetworkValueDef, double>(ByProducts);
 
         customBill.billStack = this;
         customBill.results = RequestedAmount.Where(m => m.Value > 0)
@@ -125,12 +118,12 @@ public class NetworkBillStack : IExposable
     private void ResetBillData()
     {
         billName = $"Custom Bill #{billID}";
-        for (int i = 0; i < Ratios.Count(); i++)
+        for (var i = 0; i < Ratios.Count(); i++)
         {
             textBuffers[i] = "0";
             RequestedAmount[Ratios[i]] = 0;
-            TotalCost = new DefValueStack<NetworkValueDef>();
-            ByProducts = new DefValueStack<NetworkValueDef>();
+            TotalCost = new DefValueStack<NetworkValueDef, double>();
+            ByProducts = new DefValueStack<NetworkValueDef, double>();
         }
     }
 
@@ -138,7 +131,7 @@ public class NetworkBillStack : IExposable
     public void TryDrawBillDetails(Rect detailRect)
     {
         if (detailsRequester == null) return;
-        Find.WindowStack.ImmediateWindow(this.GetHashCode(), detailRect, WindowLayer.Dialog, () =>
+        Find.WindowStack.ImmediateWindow(GetHashCode(), detailRect, WindowLayer.Dialog, () =>
         {
             detailRect = detailRect.AtZero();
             TWidgets.DrawColoredBox(detailRect, TColor.BGDarker, TColor.WindowBGBorderColor, 1);

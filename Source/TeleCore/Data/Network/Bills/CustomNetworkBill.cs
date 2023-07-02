@@ -12,39 +12,45 @@ namespace TeleCore.Network.Bills;
 
 public class CustomNetworkBill : IExposable
 {
-    private static NetworkRole NetworkFlags => NetworkRole.Storage | NetworkRole.Producer;
-
-    //General
-    public NetworkBillStack billStack;
+    private static readonly float borderWidth = 5;
+    private static float contentHeight;
 
     //Custom
     public string billName;
-    public float workAmountTotal;
-    public DefValueStack<NetworkValueDef> networkCost;
-    public DefValueStack<NetworkValueDef> byProducts;
-    public List<ThingDefCount> results = new List<ThingDefCount>();
 
-    private BillRepeatModeDef repeatMode = BillRepeatModeDefOf.Forever;
-    private BillStoreModeDef storeMode = BillStoreModeDefOf.BestStockpile;
-    private Zone_Stockpile storeZone;
+    //General
+    public NetworkBillStack billStack;
+    public DefValueStack<NetworkValueDef, double> byProducts;
+    private bool hasBeenPaid;
     public Zone_Stockpile includeFromZone;
+    public DefValueStack<NetworkValueDef, double> networkCost;
+    public int repeatCount = -1;
+
+    public List<ThingDefCount> results = new();
 
     public int targetCount = 1;
-    public int repeatCount = -1;
     private float workAmountLeft;
-    private bool hasBeenPaid = false;
+    public float workAmountTotal;
 
+    public CustomNetworkBill(NetworkBillStack stack)
+    {
+        billStack = stack;
+    }
 
-    private static float borderWidth = 5;
-    private static float contentHeight = 0;
+    public CustomNetworkBill(float workAmount)
+    {
+        workAmountTotal = workAmountLeft = workAmount;
+    }
+
+    private static NetworkRole NetworkFlags => NetworkRole.Storage | NetworkRole.Producer;
 
     public Map Map => billStack.ParentBuilding.Map;
     public float WorkLeft => workAmountLeft;
 
     private bool HasBeenPaid => hasBeenPaid;
-    private bool CanBeWorkedOn => hasBeenPaid || (CanPay());
+    private bool CanBeWorkedOn => hasBeenPaid || CanPay();
 
-    private string WorkLabel => "TELE.NetworkBill.WorkLabel".Translate((int)workAmountLeft);
+    private string WorkLabel => "TELE.NetworkBill.WorkLabel".Translate((int) workAmountLeft);
     private string CostLabel => "TELE.NetworkBill.CostLabel".Translate(NetworkBillUtility.CostLabel(networkCost));
 
     public int CurrentCount => CustomNetworkBillUtility.CountProducts(this);
@@ -53,21 +59,22 @@ public class CustomNetworkBill : IExposable
     {
         get
         {
-            if(repeatMode == BillRepeatModeDefOf.Forever)
+            if (RepeatMode == BillRepeatModeDefOf.Forever)
                 return "Forever.";
-            if (repeatMode == BillRepeatModeDefOf.RepeatCount)
+            if (RepeatMode == BillRepeatModeDefOf.RepeatCount)
                 return $"{repeatCount}x";
-            if (repeatMode == BillRepeatModeDefOf.TargetCount)
+            if (RepeatMode == BillRepeatModeDefOf.TargetCount)
                 return $"{CurrentCount}/{targetCount}x";
             return "Something is broken :(";
         }
     }
 
-    public BillRepeatModeDef RepeatMode => repeatMode;
-    public BillStoreModeDef StoreMode => storeMode;
+    public BillRepeatModeDef RepeatMode { get; private set; } = BillRepeatModeDefOf.Forever;
+
+    public BillStoreModeDef StoreMode { get; private set; } = BillStoreModeDefOf.BestStockpile;
 
     //
-    public Zone_Stockpile StoreZone => storeZone;
+    public Zone_Stockpile StoreZone { get; private set; }
 
     public float DrawHeight
     {
@@ -77,10 +84,10 @@ public class CustomNetworkBill : IExposable
             var labelSize = Text.CalcSize(billName);
             height += labelSize.y;
 
-            float resultListHeight = ((24 + 5) * results.Count);
-            float labelHeight = labelSize.y * 2;
-            height += (contentHeight = (labelHeight > resultListHeight ? labelHeight : resultListHeight));
-            height += (borderWidth * 2) + 30;
+            float resultListHeight = (24 + 5) * results.Count;
+            var labelHeight = labelSize.y * 2;
+            height += contentHeight = labelHeight > resultListHeight ? labelHeight : resultListHeight;
+            height += borderWidth * 2 + 30;
             return height;
         }
     }
@@ -98,21 +105,11 @@ public class CustomNetworkBill : IExposable
         Scribe_Deep.Look(ref byProducts, "byProducts");
     }
 
-    public CustomNetworkBill(NetworkBillStack stack)
-    {
-        this.billStack = stack;
-    }
-
-    public CustomNetworkBill(float workAmount)
-    {
-        workAmountTotal = workAmountLeft = workAmount;
-    }
-
     public bool ShouldDoNow()
     {
         if (!CanBeWorkedOn) return false;
-        if (repeatMode == BillRepeatModeDefOf.RepeatCount && repeatCount == 0) return false;
-        if (repeatMode == BillRepeatModeDefOf.TargetCount && CurrentCount >= targetCount) return false;
+        if (RepeatMode == BillRepeatModeDefOf.RepeatCount && repeatCount == 0) return false;
+        if (RepeatMode == BillRepeatModeDefOf.TargetCount && CurrentCount >= targetCount) return false;
         return true;
     }
 
@@ -120,11 +117,12 @@ public class CustomNetworkBill : IExposable
     {
         if (networkCost.Empty)
         {
-            TLog.Error($"Trying to pay for {billName} with empty networkCost! | Paid: {HasBeenPaid} WorkLeft: {WorkLeft}");
+            TLog.Error(
+                $"Trying to pay for {billName} with empty networkCost! | Paid: {HasBeenPaid} WorkLeft: {WorkLeft}");
             return false;
         }
 
-        float totalNeeded = networkCost.TotalValue.AsT0;
+        double totalNeeded = networkCost.TotalValue;
         foreach (var value in networkCost)
         {
             var network = billStack.ParentComp[value.Def.NetworkDef].Network;
@@ -134,6 +132,7 @@ public class CustomNetworkBill : IExposable
             //     totalNeeded -= value.Value;
             // }
         }
+
         return totalNeeded == 0f;
     }
 
@@ -145,15 +144,16 @@ public class CustomNetworkBill : IExposable
         products = new List<Thing>();
         foreach (var defCount in results)
         {
-            int desiredAmount = defCount.Count;
+            var desiredAmount = defCount.Count;
             while (desiredAmount > 0)
             {
-                int possibleAmount = Mathf.Clamp(desiredAmount, 0, defCount.ThingDef.stackLimit);
-                Thing thing = ThingMaker.MakeThing(defCount.ThingDef);
+                var possibleAmount = Mathf.Clamp(desiredAmount, 0, defCount.ThingDef.stackLimit);
+                var thing = ThingMaker.MakeThing(defCount.ThingDef);
                 products.Add(thing);
 
                 thing.stackCount = possibleAmount;
-                GenPlace.TryPlaceThing(thing, billStack.ParentBuilding.InteractionCell, billStack.ParentBuilding.Map, ThingPlaceMode.Near);
+                GenPlace.TryPlaceThing(thing, billStack.ParentBuilding.InteractionCell, billStack.ParentBuilding.Map,
+                    ThingPlaceMode.Near);
                 desiredAmount -= possibleAmount;
             }
 
@@ -168,17 +168,14 @@ public class CustomNetworkBill : IExposable
         }
 
         if (!byProducts.Empty)
-        {
             foreach (var byProduct in byProducts)
             {
                 var network = billStack.ParentComp[byProduct.Def.NetworkDef];
                 if (network == null)
-                {
-                    TLog.Warning($"Tried to add byproduct to non-existent network: {byProduct.Def.NetworkDef} | {byProduct.Def}");
-                }
-                network?.FlowBox.TryAdd(byProduct.Def, byProduct.Value.AsT1);
+                    TLog.Warning(
+                        $"Tried to add byproduct to non-existent network: {byProduct.Def.NetworkDef} | {byProduct.Def}");
+                network?.Volume.TryAdd(byProduct.Def, byProduct.Value);
             }
-        }
 
         return true;
     }
@@ -193,17 +190,11 @@ public class CustomNetworkBill : IExposable
     public void DoWork(Pawn pawn)
     {
         StartWorkAndPay();
-        float num = pawn.GetStatValue(StatDefOf.GeneralLaborSpeed, true);
-        Building billBuilding = billStack.ParentBuilding;
-        if (billBuilding != null)
-        {
-            num *= billBuilding.GetStatValue(StatDefOf.WorkSpeedGlobal, true);
-        }
+        var num = pawn.GetStatValue(StatDefOf.GeneralLaborSpeed);
+        var billBuilding = billStack.ParentBuilding;
+        if (billBuilding != null) num *= billBuilding.GetStatValue(StatDefOf.WorkSpeedGlobal);
 
-        if (DebugSettings.fastCrafting)
-        {
-            num *= 30f;
-        }
+        if (DebugSettings.fastCrafting) num *= 30f;
         workAmountLeft = Mathf.Clamp(workAmountLeft - num, 0, float.MaxValue);
     }
 
@@ -256,10 +247,10 @@ public class CustomNetworkBill : IExposable
             Refund();
     }
 
-    private DefValueStack<NetworkValueDef> StackFor(INetworkPart comp)
+    private DefValueStack<NetworkValueDef, double> StackFor(INetworkPart comp)
     {
-        return DefValueStack<NetworkValueDef>.Invalid;
-        
+        return DefValueStack<NetworkValueDef,double>.Invalid;
+
         /*var storages = comp.ContainerSet[NetworkFlags];
         DefValueStack<NetworkValueDef> stack = new DefValueStack<NetworkValueDef>();
         foreach (var value in networkCost)
@@ -289,31 +280,21 @@ public class CustomNetworkBill : IExposable
             var portableDef = netComp.Config.networkDef.portableContainerDefFallback;
             if (portableDef == null) continue;
             var newStack = StackFor(netComp);
-            if (newStack.TotalValue.AsT1 > 0)
-            {
+            if (newStack.TotalValue > 0)
                 TLog.Warning($"Stack not empty ({newStack.TotalValue}) after refunding... dropping container.");
-                //TODO: Refund portable container
-                //GenPlace.TryPlaceThing(PortableNetworkContainer.CreateFromStack(portableDef, newStack), billStack.ParentBuilding.Position, billStack.ParentBuilding.Map, ThingPlaceMode.Near);
-            }
+            //TODO: Refund portable container
+            //GenPlace.TryPlaceThing(PortableNetworkContainer.CreateFromStack(portableDef, newStack), billStack.ParentBuilding.Position, billStack.ParentBuilding.Map, ThingPlaceMode.Near);
         }
     }
 
     public void DrawBill(Rect rect, int index)
     {
         if (RepeatMode == BillRepeatModeDefOf.TargetCount && CurrentCount > targetCount)
-        {
             TWidgets.DrawHighlightColor(rect, TColor.Orange);
-        }
 
-        if (!CanBeWorkedOn)
-        {
-            TWidgets.DrawHighlightColor(rect, Color.red);
-        }
+        if (!CanBeWorkedOn) TWidgets.DrawHighlightColor(rect, Color.red);
 
-        if (HasBeenPaid)
-        {
-            TWidgets.DrawHighlightColor(rect, Color.green);
-        }
+        if (HasBeenPaid) TWidgets.DrawHighlightColor(rect, Color.green);
 
         if (index % 2 == 0)
             Widgets.DrawAltRect(rect);
@@ -324,21 +305,19 @@ public class CustomNetworkBill : IExposable
             rect = rect.AtZero();
 
             //Name
-            Vector2 labelSize = Text.CalcSize(billName);
-            Rect labelRect = new Rect(new Vector2(0, 0), labelSize);
+            var labelSize = Text.CalcSize(billName);
+            var labelRect = new Rect(new Vector2(0, 0), labelSize);
             Widgets.Label(labelRect, billName);
 
             //Controls
-            Rect removeRect = new Rect(rect.width - 20f, 0f, 22f, 22f);
-            Rect copyRect = new Rect(removeRect.x - 20, 0f, 22f, 22f);
-            if (Widgets.ButtonImage(removeRect, TexButton.DeleteX, Color.white, Color.white * GenUI.SubtleMouseoverColor, true))
-            {
-                billStack.Delete(this);
-            }
+            var removeRect = new Rect(rect.width - 20f, 0f, 22f, 22f);
+            var copyRect = new Rect(removeRect.x - 20, 0f, 22f, 22f);
+            if (Widgets.ButtonImage(removeRect, TexButton.DeleteX, Color.white,
+                    Color.white * GenUI.SubtleMouseoverColor)) billStack.Delete(this);
             if (Widgets.ButtonImageFitted(copyRect, TeleContent.Copy, Color.white))
             {
                 ClipBoardUtility.TrySetClipBoard(StringCache.NetworkBillClipBoard, Clone());
-                SoundDefOf.Tick_High.PlayOneShotOnCamera(null);
+                SoundDefOf.Tick_High.PlayOneShotOnCamera();
             }
 
             var newRect = new Rect(0, labelRect.height, rect.width, contentHeight);
@@ -352,7 +331,7 @@ public class CustomNetworkBill : IExposable
                 float curY = 0;
                 foreach (var result in results)
                 {
-                    WidgetRow row = new WidgetRow(0, curY, UIDirection.RightThenDown);
+                    var row = new WidgetRow(0, curY, UIDirection.RightThenDown);
                     row.Icon(result.ThingDef.uiIcon, result.ThingDef.description);
                     row.Label($"×{result.Count}");
                     curY += 24 + 5;
@@ -363,67 +342,52 @@ public class CustomNetworkBill : IExposable
             //RIGHT
             Widgets.BeginGroup(rightRect);
             {
-                Rect workBarRect = new Rect(rightRect.width - 75, rightRect.height - (24 + 5), 100, 24);
-                Widgets.FillableBar(workBarRect, Mathf.InverseLerp(0, workAmountTotal, workAmountTotal - workAmountLeft));
+                var workBarRect = new Rect(rightRect.width - 75, rightRect.height - (24 + 5), 100, 24);
+                Widgets.FillableBar(workBarRect,
+                    Mathf.InverseLerp(0, workAmountTotal, workAmountTotal - workAmountLeft));
             }
             Widgets.EndGroup();
 
-            Rect bottomRect = new Rect(0, newRect.yMax, rect.width, 24);
+            var bottomRect = new Rect(0, newRect.yMax, rect.width, 24);
             Widgets.BeginGroup(bottomRect);
             {
                 bottomRect = bottomRect.AtZero();
 
-                Vector2 countLabelSize = Text.CalcSize(CountLabel);
-                Rect countLabelRect = new Rect(0, 0, countLabelSize.x, countLabelSize.y);
+                var countLabelSize = Text.CalcSize(CountLabel);
+                var countLabelRect = new Rect(0, 0, countLabelSize.x, countLabelSize.y);
                 Widgets.Label(countLabelRect, CountLabel);
 
-                WidgetRow controlRow = new WidgetRow();
+                var controlRow = new WidgetRow();
                 controlRow.Init(bottomRect.xMax, 0, UIDirection.LeftThenUp);
-                if (controlRow.ButtonText("Details".Translate() + "..."))
-                {
-                    billStack.RequestDetails(this);
-                }
-                if (controlRow.ButtonText(repeatMode.LabelCap))
-                {
-                    DoRepeatModeConfig();
-                }
+                if (controlRow.ButtonText("Details".Translate() + "...")) billStack.RequestDetails(this);
+                if (controlRow.ButtonText(RepeatMode.LabelCap)) DoRepeatModeConfig();
 
-                if (repeatMode == BillRepeatModeDefOf.RepeatCount)
+                if (RepeatMode == BillRepeatModeDefOf.RepeatCount)
                 {
-                    int incrementor = 1;
+                    var incrementor = 1;
                     if (Input.GetKey(KeyCode.LeftShift))
                         incrementor = 10;
                     if (Input.GetKey(KeyCode.LeftControl))
                         incrementor = 100;
 
                     //
-                    if (controlRow.ButtonIcon(TeleContent.Plus))
-                    {
-                        repeatCount += incrementor;
-                    }
+                    if (controlRow.ButtonIcon(TeleContent.Plus)) repeatCount += incrementor;
                     if (controlRow.ButtonIcon(TeleContent.Minus))
-                    {
                         repeatCount = Mathf.Clamp(repeatCount - incrementor, 0, int.MaxValue);
-                    }
                 }
 
-                if (repeatMode == BillRepeatModeDefOf.TargetCount)
+                if (RepeatMode == BillRepeatModeDefOf.TargetCount)
                 {
-                    int incrementor = 1;
+                    var incrementor = 1;
                     if (Input.GetKey(KeyCode.LeftShift))
                         incrementor = 10;
                     if (Input.GetKey(KeyCode.LeftControl))
                         incrementor = 100;
 
                     //
-                    if (controlRow.ButtonIcon(TeleContent.Plus))
-                    {
-                        targetCount += incrementor;
-                    }
+                    if (controlRow.ButtonIcon(TeleContent.Plus)) targetCount += incrementor;
                     if (controlRow.ButtonIcon(TeleContent.Minus))
-                    {
                         targetCount = Mathf.Clamp(targetCount - incrementor, 0, int.MaxValue);
-                    }
                 }
             }
             Widgets.EndGroup();
@@ -433,12 +397,12 @@ public class CustomNetworkBill : IExposable
 
     public CustomNetworkBill Clone()
     {
-        CustomNetworkBill bill = new CustomNetworkBill(workAmountTotal);
+        var bill = new CustomNetworkBill(workAmountTotal);
         bill.repeatCount = repeatCount;
         bill.billName = billName + "_Copy";
-        bill.repeatMode = repeatMode;
-        bill.networkCost = new DefValueStack<NetworkValueDef>(networkCost);
-        bill.byProducts = new DefValueStack<NetworkValueDef>(byProducts);
+        bill.RepeatMode = RepeatMode;
+        bill.networkCost = new DefValueStack<NetworkValueDef, double>(networkCost);
+        bill.byProducts = new DefValueStack<NetworkValueDef, double>(byProducts);
         bill.results = new List<ThingDefCount>(results);
         return bill;
     }
@@ -446,7 +410,8 @@ public class CustomNetworkBill : IExposable
     public void DoRepeatModeConfig()
     {
         var list = new List<FloatMenuOption>();
-        list.Add(new FloatMenuOption(BillRepeatModeDefOf.RepeatCount.LabelCap, delegate { repeatMode = BillRepeatModeDefOf.RepeatCount; }));
+        list.Add(new FloatMenuOption(BillRepeatModeDefOf.RepeatCount.LabelCap,
+            delegate { RepeatMode = BillRepeatModeDefOf.RepeatCount; }));
         list.Add(new FloatMenuOption(BillRepeatModeDefOf.TargetCount.LabelCap, delegate
         {
             /*
@@ -456,61 +421,59 @@ public class CustomNetworkBill : IExposable
                 return;
             }
             */
-            repeatMode = BillRepeatModeDefOf.TargetCount;
+            RepeatMode = BillRepeatModeDefOf.TargetCount;
         }));
-        list.Add(new FloatMenuOption(BillRepeatModeDefOf.Forever.LabelCap, delegate { repeatMode = BillRepeatModeDefOf.Forever; }));
+        list.Add(new FloatMenuOption(BillRepeatModeDefOf.Forever.LabelCap,
+            delegate { RepeatMode = BillRepeatModeDefOf.Forever; }));
         Find.WindowStack.Add(new FloatMenu(list));
     }
 
     public void DoStoreModeConfig()
     {
         Text.Font = GameFont.Small;
-        List<FloatMenuOption> list = new List<FloatMenuOption>();
-        foreach (BillStoreModeDef billStoreModeDef in from bsm in DefDatabase<BillStoreModeDef>.AllDefs orderby bsm.listOrder select bsm)
-        {
+        var list = new List<FloatMenuOption>();
+        foreach (var billStoreModeDef in from bsm in DefDatabase<BillStoreModeDef>.AllDefs
+                 orderby bsm.listOrder
+                 select bsm)
             if (billStoreModeDef == BillStoreModeDefOf.SpecificStockpile)
             {
-                List<SlotGroup> allGroupsListInPriorityOrder = billStack.ParentBuilding.Map.haulDestinationManager.AllGroupsListInPriorityOrder;
-                int count = allGroupsListInPriorityOrder.Count;
-                for (int i = 0; i < count; i++)
+                List<SlotGroup> allGroupsListInPriorityOrder =
+                    billStack.ParentBuilding.Map.haulDestinationManager.AllGroupsListInPriorityOrder;
+                var count = allGroupsListInPriorityOrder.Count;
+                for (var i = 0; i < count; i++)
                 {
-                    SlotGroup group = allGroupsListInPriorityOrder[i];
+                    var group = allGroupsListInPriorityOrder[i];
                     if (group.parent is Zone_Stockpile stockpile)
                     {
                         //!bill.recipe.WorkerCounter.CanPossiblyStoreInStockpile(this.bill, stockpile)
                         if (!CanPossiblyStoreInStockpile(stockpile))
-                        {
-                            list.Add(new FloatMenuOption($"{string.Format(billStoreModeDef.LabelCap, @group.parent.SlotYielderLabel())} ({"IncompatibleLower".Translate()})", null));
-                        }
+                            list.Add(new FloatMenuOption(
+                                $"{string.Format(billStoreModeDef.LabelCap, group.parent.SlotYielderLabel())} ({"IncompatibleLower".Translate()})",
+                                null));
                         else
-                        {
-                            list.Add(new FloatMenuOption(string.Format(billStoreModeDef.LabelCap, group.parent.SlotYielderLabel()), delegate ()
-                            {
-                                SetStoreMode(BillStoreModeDefOf.SpecificStockpile, (Zone_Stockpile)group.parent);
-                            }));
-                        }
+                            list.Add(new FloatMenuOption(
+                                string.Format(billStoreModeDef.LabelCap, group.parent.SlotYielderLabel()),
+                                delegate
+                                {
+                                    SetStoreMode(BillStoreModeDefOf.SpecificStockpile, (Zone_Stockpile) group.parent);
+                                }));
                     }
                 }
             }
             else
             {
-                list.Add(new FloatMenuOption(billStoreModeDef.LabelCap, delegate ()
-                {
-                    SetStoreMode(billStoreModeDef, null);
-                }));
+                list.Add(new FloatMenuOption(billStoreModeDef.LabelCap, delegate { SetStoreMode(billStoreModeDef); }));
             }
-        }
+
         Find.WindowStack.Add(new FloatMenu(list));
     }
 
     public void SetStoreMode(BillStoreModeDef mode, Zone_Stockpile zone = null)
     {
-        this.storeMode = mode;
-        this.storeZone = zone;
-        if (this.storeMode == BillStoreModeDefOf.SpecificStockpile != (this.storeZone != null))
-        {
+        StoreMode = mode;
+        StoreZone = zone;
+        if (StoreMode == BillStoreModeDefOf.SpecificStockpile != (StoreZone != null))
             Log.ErrorOnce("Inconsistent bill StoreMode data set", 75645354);
-        }
     }
 
     public bool CanPossiblyStoreInStockpile(Zone_Stockpile stockpile)

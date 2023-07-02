@@ -3,38 +3,40 @@
 namespace TeleCore.Primitive;
 
 /// <summary>
-/// An IntVec3 with a relative direction attached.
+///     An IntVec3 with a relative direction attached.
 /// </summary>
 public readonly struct IntVec3Rot
 {
-    private readonly Rot4 _dir;
-    private readonly IntVec3 _pos;
+    public static implicit operator IntVec3(IntVec3Rot vec)
+    {
+        return vec.Pos;
+    }
 
-    public static implicit operator IntVec3(IntVec3Rot vec) => vec._pos;
-    public static implicit operator IntVec3Rot(IntVec3 vec) => new (vec, Rot4.Invalid);
+    public static implicit operator IntVec3Rot(IntVec3 vec)
+    {
+        return new IntVec3Rot(vec, Rot4.Invalid);
+    }
 
-    public Rot4 Dir => _dir;
-    public IntVec3 Pos => _pos;
+    public Rot4 Dir { get; }
 
-    public IntVec3Rot Reverse => new IntVec3Rot(_pos + _dir.Opposite.FacingCell, _dir.Opposite);
-    
+    public IntVec3 Pos { get; }
+
+    public IntVec3Rot Reverse => new(Pos + Dir.Opposite.FacingCell, Dir.Opposite);
+
     public IntVec3Rot(IntVec3 pos, Rot4 dir)
     {
-        this._dir = dir;
-        this._pos = pos;
+        Dir = dir;
+        Pos = pos;
     }
 
     public override string ToString()
     {
-        return $"{_pos}[{_dir}]";
+        return $"{Pos}[{Dir}]";
     }
 
     public override bool Equals(object obj)
     {
-        if (obj is IntVec3 otherVec)
-        {
-            return _pos.Equals(otherVec);
-        }
+        if (obj is IntVec3 otherVec) return Pos.Equals(otherVec);
         return false;
     }
 }

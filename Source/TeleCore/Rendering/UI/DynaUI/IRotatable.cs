@@ -1,6 +1,5 @@
-﻿namespace TeleCore
+﻿namespace TeleCore;
+
+internal interface IRotatable
 {
-    interface IRotatable
-    {
-    }
 }

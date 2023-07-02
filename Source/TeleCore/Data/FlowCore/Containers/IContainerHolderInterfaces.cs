@@ -1,7 +1,4 @@
 ﻿using System;
-using TeleCore;
-using TeleCore.Defs;
-using TeleCore.Primitive;
 
 namespace TeleCore.Network;
 
@@ -21,11 +18,8 @@ public enum NotifyContainerChangedAction
 }
 
 public class NotifyContainerChangedArgs<TValue> : EventArgs
-where TValue : FlowValueDef
+    where TValue : FlowValueDef
 {
-    public NotifyContainerChangedAction Action { get; }
-    public DefValueStack<TValue> ValueDelta { get; }
-
     public NotifyContainerChangedArgs(DefValueStack<TValue> delta, DefValueStack<TValue> final)
     {
         ValueDelta = delta;
@@ -38,20 +32,23 @@ where TValue : FlowValueDef
             Action = NotifyContainerChangedAction.Filled;
     }
 
+    public NotifyContainerChangedAction Action { get; }
+    public DefValueStack<TValue> ValueDelta { get; }
+
     public override string ToString()
     {
         return $"Action: {Action}:\n{ValueDelta}";
     }
 }
 
-/*public class ClassA<TInterface, TClass> 
+/*public class ClassA<TInterface, TClass>
     where TInterface : IInterfaceA<TInterface, TClass>
     where TClass : ClassA<TInterface, TClass>
 {
     public TInterface Interface { get; }
 }
 
-public interface IInterfaceA<TInterface, TClass> 
+public interface IInterfaceA<TInterface, TClass>
     where TInterface : IInterfaceA<TInterface, TClass>
     where TClass : ClassA<TInterface, TClass>
 {

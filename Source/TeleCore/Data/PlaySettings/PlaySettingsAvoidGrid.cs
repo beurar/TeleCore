@@ -5,8 +5,8 @@ namespace TeleCore;
 
 public class PlaySettingsAvoidGrid : PlaySettingsWorker
 {
-    public static bool DrawAvoidGridsAroundMouse = false;
-    
+    public static bool DrawAvoidGridsAroundMouse;
+
     public override bool Visible => DebugSettings.godMode;
     public override Texture2D Icon => BaseContent.BadTex;
     public override string Description => "Toggle AvoidGrid View";

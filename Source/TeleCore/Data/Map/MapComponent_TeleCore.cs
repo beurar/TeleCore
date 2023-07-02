@@ -7,18 +7,18 @@ namespace TeleCore;
 
 public class MapComponent_TeleCore : MapComponent
 {
-    private List<MapInformation> allMapInfos = new();
     private readonly Dictionary<Type, MapInformation> mapInfoByType = new();
-
-    public PipeNetworkMapInfo NetworkInfo { get; private set; }
-    public ThingGroupCacheInfo ThingGroupCacheInfo { get; private set; }
-    public ThingTrackerMapInfo ThingTrackerMapInfo { get; private set; }
+    private List<MapInformation> allMapInfos = new();
 
     public MapComponent_TeleCore(Map map) : base(map)
     {
         StaticData.Notify_NewTeleMapComp(this);
         FillMapInformations();
     }
+
+    public PipeNetworkMapInfo NetworkInfo { get; private set; }
+    public ThingGroupCacheInfo ThingGroupCacheInfo { get; private set; }
+    public ThingTrackerMapInfo ThingTrackerMapInfo { get; private set; }
 
     public T GetMapInfo<T>() where T : MapInformation
     {
@@ -36,13 +36,13 @@ public class MapComponent_TeleCore : MapComponent
     private void FillMapInformations()
     {
         allMapInfos.RemoveAll(m => m == null);
-        foreach (Type type in typeof(MapInformation).AllSubclassesNonAbstract())
+        foreach (var type in typeof(MapInformation).AllSubclassesNonAbstract())
         {
             if (allMapInfos.Any(m => m.GetType() == type)) continue;
 
             try
             {
-                MapInformation item = (MapInformation) Activator.CreateInstance(type, map);
+                var item = (MapInformation) Activator.CreateInstance(type, map);
                 allMapInfos.Add(item);
             }
             catch (Exception ex)
@@ -53,10 +53,7 @@ public class MapComponent_TeleCore : MapComponent
 
         //
         mapInfoByType.Clear();
-        foreach (var mapInfo in allMapInfos)
-        {
-            mapInfoByType.Add(mapInfo.GetType(), mapInfo);
-        }
+        foreach (var mapInfo in allMapInfos) mapInfoByType.Add(mapInfo.GetType(), mapInfo);
 
         //
         NetworkInfo = (PipeNetworkMapInfo) mapInfoByType[typeof(PipeNetworkMapInfo)];
@@ -125,19 +122,12 @@ public class MapComponent_TeleCore : MapComponent
 
     internal void TeleMapSingleTick()
     {
-        for (var i = 0; i < allMapInfos.Count; i++)
-        {
-            allMapInfos[i].TeleTick();
-        }
+        for (var i = 0; i < allMapInfos.Count; i++) allMapInfos[i].TeleTick();
     }
 
 
     internal void TeleMapUpdate()
     {
-        for (var i = 0; i < allMapInfos.Count; i++)
-        {
-            allMapInfos[i].TeleUpdate();
-        }
+        for (var i = 0; i < allMapInfos.Count; i++) allMapInfos[i].TeleUpdate();
     }
 }
-

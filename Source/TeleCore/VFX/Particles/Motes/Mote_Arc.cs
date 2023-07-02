@@ -1,52 +1,46 @@
 ﻿using UnityEngine;
 using Verse;
 
-namespace TeleCore
+namespace TeleCore;
+
+public class Mote_Arc : TeleMote
 {
-    public class Mote_Arc : TeleMote
+    private Material drawMat;
+    private Vector3 end;
+    private Vector3 start;
+
+    public void SetConnections(Vector3 start, Vector3 end, Material mat, Color color)
     {
-        private Vector3 start;
-        private Vector3 end;
-        private Material drawMat;
+        this.start = start;
+        this.end = end;
+        drawMat = mat;
+        instanceColor = color;
+    }
 
-        public void SetConnections(Vector3 start, Vector3 end, Material mat, Color color)
-        {
-            this.start = start;
-            this.end = end;
-            this.drawMat = mat;
-            this.instanceColor = color;
-        }
+    public override void Tick()
+    {
+        base.Tick();
+    }
 
-        public override void Tick()
-        {
-            base.Tick();
-        }
+    public override void Draw()
+    {
+        if (drawMat == null) return;
+        var alpha = Alpha;
 
-        public override void Draw()
-        {
-            if (drawMat == null)
-            {
-                return;
-            }
-            float alpha = Alpha;
-
-            Vector3 diff = end - start;
-            if (alpha <= 0f) return;
-            Color color = instanceColor;
-            color.a *= alpha;
-            if (color != drawMat.color)
-            {
-                drawMat = MaterialPool.MatFrom((Texture2D)drawMat.mainTexture, ShaderDatabase.MoteGlow, color);
-            }
-            float z = (diff).MagnitudeHorizontal();
-            float x = (diff).MagnitudeHorizontal();
-            Vector3 pos = (start + end) / 2f;
-            pos.y = AltitudeLayer.MoteOverhead.AltitudeFor();
-            Vector3 scale = new Vector3(z / 2, 1f, z);
-            Quaternion quat = Quaternion.LookRotation(diff);
-            Matrix4x4 matrix = default;
-            matrix.SetTRS(pos, quat, scale);
-            Graphics.DrawMesh(MeshPool.plane10, matrix, drawMat, 0);
-        }
+        var diff = end - start;
+        if (alpha <= 0f) return;
+        var color = instanceColor;
+        color.a *= alpha;
+        if (color != drawMat.color)
+            drawMat = MaterialPool.MatFrom((Texture2D) drawMat.mainTexture, ShaderDatabase.MoteGlow, color);
+        var z = diff.MagnitudeHorizontal();
+        var x = diff.MagnitudeHorizontal();
+        var pos = (start + end) / 2f;
+        pos.y = AltitudeLayer.MoteOverhead.AltitudeFor();
+        var scale = new Vector3(z / 2, 1f, z);
+        var quat = Quaternion.LookRotation(diff);
+        Matrix4x4 matrix = default;
+        matrix.SetTRS(pos, quat, scale);
+        Graphics.DrawMesh(MeshPool.plane10, matrix, drawMat, 0);
     }
 }

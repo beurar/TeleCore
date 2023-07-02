@@ -18,7 +18,7 @@ public static class IOUtils
     //  \\#++#\\
     //  \\\XX\\\
     //  \\\\\\\\
-    
+
     internal const char Input = 'I';
     internal const char Output = 'O';
     internal const char TwoWay = 'X';
@@ -71,28 +71,28 @@ public static class IOUtils
         if (pos.x > right) //East
             return Rot4.East;
 
-        throw new ArgumentException("The position cannot be inside the bounding box.");
-
+        //throw new ArgumentException("The position cannot be inside the bounding box.");
+        return Rot4.Invalid;
     }
 
     public static bool Matches(this NetworkIOMode innerMode, NetworkIOMode outerMode)
     {
-        var innerInput = (innerMode | NetworkIOMode.Input) == NetworkIOMode.Input;
-        var outerInput = (outerMode | NetworkIOMode.Input) == NetworkIOMode.Input;
+        var innerInput = (innerMode & NetworkIOMode.Input) == NetworkIOMode.Input;
+        var outerInput = (outerMode & NetworkIOMode.Input) == NetworkIOMode.Input;
 
-        var innerOutput = (innerMode | NetworkIOMode.Output) == NetworkIOMode.Output;
-        var outerOutput = (outerMode | NetworkIOMode.Output) == NetworkIOMode.Output;
+        var innerOutput = (innerMode & NetworkIOMode.Output) == NetworkIOMode.Output;
+        var outerOutput = (outerMode & NetworkIOMode.Output) == NetworkIOMode.Output;
 
         return (innerInput && outerOutput) || (outerInput && innerOutput);
     }
 
-    public static List<IOCellPrototype> GenerateFromPattern(string ioPattern, ThingDef thing)
+    public static List<IOCellPrototype> GenerateFromPattern(string ioPattern, IntVec2 thingSize)
     {
-        var size = thing.size;
+        var size = thingSize;
         var width = size.x;
         var height = size.z;
 
-        var rect = new CellRect(0 - (size.x - 1) / 2, 0 - (size.z - 1) / 2, size.x, size.z);
+        var rect = new CellRect(0 - (width - 1) / 2, 0 - (height - 1) / 2, width, height);
         var rectList = rect.ToArray();
 
         ioPattern = DefaultFallbackIfNecessary(ioPattern, size);
@@ -100,10 +100,10 @@ public static class IOUtils
 
         var result = new List<IOCellPrototype>();
 
-        for (var y = 0; y < height; y++)
-        for (var x = 0; x < width; x++)
+        for (var y = 0; y < rect.Height; y++)
+        for (var x = 0; x < rect.Width; x++)
         {
-            var actualIndex = y * width + x;
+            var actualIndex = y * rect.Width + x;
             var ioMode = modeGrid[actualIndex];
             var cell = rectList[actualIndex];
 
@@ -118,26 +118,17 @@ public static class IOUtils
 
         return result;
     }
-    
+
     /// <summary>
-    /// Rotates the pattern array to match the rotation of the thing.
+    ///     Rotates the pattern array to match the rotation of the thing.
     /// </summary>
     internal static IOCell[] RotateIOCells(IOCell[] arr, Rot4 rotation, IntVec2 size)
     {
-        int xWidth = size.x;
-        int yHeight = size.z;
-        if (rotation == Rot4.East)
-        {
-            arr = arr.RotateLeft(xWidth, yHeight);
-        }
-        if (rotation == Rot4.South)
-        {
-            arr = arr.FLipHorizontal(xWidth, yHeight);
-        }
-        if (rotation == Rot4.West)
-        {
-            arr = arr.RotateRight(xWidth, yHeight);
-        }
+        var xWidth = size.x;
+        var yHeight = size.z;
+        if (rotation == Rot4.East) arr = arr.RotateLeft(xWidth, yHeight);
+        if (rotation == Rot4.South) arr = arr.FLipHorizontal(xWidth, yHeight);
+        if (rotation == Rot4.West) arr = arr.RotateRight(xWidth, yHeight);
 
         return arr;
     }
@@ -153,6 +144,7 @@ public static class IOUtils
             if (match.Value.Length == 1)
                 modeGrid[i] = ParseIOMode(match.Value[0]);
         }
+
         return modeGrid;
     }
 

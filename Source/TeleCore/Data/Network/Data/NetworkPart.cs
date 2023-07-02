@@ -1,7 +1,6 @@
-﻿using System.Collections.Generic;
-using TeleCore.Defs;
+﻿using System;
+using System.Collections.Generic;
 using TeleCore.Network.Flow;
-using TeleCore.Network.Graph;
 using TeleCore.Network.IO;
 using Verse;
 
@@ -13,27 +12,43 @@ public class NetworkPart : INetworkPart
     private INetworkStructure _parent;
     private PipeNetwork _network;
     private NetworkIO _networkIO;
-    private NetworkPartSet _adjSet;
-
-    public NetworkPartConfig Config => _config;
-    public INetworkStructure Parent => _parent;
-    public Thing Thing => _parent.Thing;
+    private NetworkPartSet _adjacentSet;
     
-    public PipeNetwork Network
+    public NetworkPartConfig Config
     {
-        get => _network;
-        set => _network = value;
+        get => _config;
+        set => _config = value;
     }
 
-    public NetworkIO NetworkIO => _networkIO;
-    public NetworkPartSet AdjacentSet => _adjSet;
-    public Flow.FlowBox FlowBox => _network.FlowSystem.Relations[this];
+    public INetworkStructure Parent
+    {
+        get => _parent;
+        set => _parent = value;
+    }
 
-    public bool IsController => (_config.role | NetworkRole.Controller) == NetworkRole.Controller;
+    public Thing Thing => Parent.Thing;
     
-    public bool IsEdge => _config.role == NetworkRole.Transmitter;
+    public PipeNetwork Network 
+    { 
+        get => _network;
+        set => _network = value; 
+    }
+    
+    public NetworkIO PartIO
+    {
+        get => _networkIO ?? Parent.GeneralIO;
+        set => _networkIO = value;
+    }
+
+    public NetworkPartSet AdjacentSet => _adjacentSet;
+    
+    public NetworkVolume Volume => Network.FlowSystem.Relations[this];
+
+    public bool IsController => (Config.roles | NetworkRole.Controller) == NetworkRole.Controller;
+
+    public bool IsEdge => Config.roles == NetworkRole.Transmitter;
     public bool IsNode => !IsEdge;
-    
+
     public bool IsJunction { get; }
     public bool IsWorking { get; }
     public bool IsReceiving { get; }
@@ -41,56 +56,31 @@ public class NetworkPart : INetworkPart
     public bool HasConnection { get; }
     public bool IsLeaking { get; }
 
-    #region Constructors
-
-    public NetworkPart(){}
-        
-    public NetworkPart(INetworkStructure parent)
-    {
-        _parent = parent;
-    }
-        
-    public NetworkPart(INetworkStructure parent, NetworkPartConfig config) : this(parent)
-    {
-        _config = config;
-
-        if(config.netIOConfig != null)
-            _networkIO = new NetworkIO(config.netIOConfig, parent.Thing.Position, parent.Thing.Rotation);
-    }
-
-    #endregion
-    
-    public void PartSetup(bool respawningAfterLoad)
-    {
-        
-    }
-    
     public void PostDestroy(DestroyMode mode, Map map)
     {
-        
     }
 
     public void Tick()
     {
-        
     }
 
     public IOConnectionResult HasIOConnectionTo(INetworkPart other)
     {
         if (other == this) return IOConnectionResult.Invalid;
-        if (!_config.networkDef.Equals(other.Config.networkDef)) return IOConnectionResult.Invalid;
+        if (!Config.networkDef.Equals(other.Config.networkDef)) return IOConnectionResult.Invalid;
         if (!Parent.CanConnectToOther(other.Parent)) return IOConnectionResult.Invalid;
-        return _networkIO.ConnectsTo(other.NetworkIO);
+        return PartIO.ConnectsTo(other.PartIO);
     }
 
     public void Draw()
     {
-        throw new System.NotImplementedException();
+        //TODO: Draw stuff
     }
 
     public string InspectString()
     {
-        throw new System.NotImplementedException();
+        //TODO: re-add inspection
+        return "";
     }
 
     public virtual IEnumerable<Gizmo> GetPartGizmos()
@@ -110,7 +100,7 @@ public class NetworkPart : INetworkPart
             }
 
             if (Network == null) yield break;
-                
+
             yield return new Command_Action
             {
                 defaultLabel = $"Draw Graph",
@@ -122,8 +112,8 @@ public class NetworkPart : INetworkPart
                 defaultLabel = $"Draw AdjacencyList",
                 action = delegate { Network.DrawAdjacencyList = !Network.DrawAdjacencyList; }
             };
-                
-                
+
+
             yield return new Command_Action
             {
                 defaultLabel = $"Draw FlowDirections",
@@ -131,9 +121,32 @@ public class NetworkPart : INetworkPart
             };*/
         }
 
-        foreach (var g in _network.GetGizmos())
-        {
-            yield return g;
-        }
+        foreach (var g in Network.GetGizmos()) yield return g;
     }
+
+    public void PartSetup(bool respawningAfterLoad)
+    {
+    }
+
+    #region Constructors
+
+    public NetworkPart()
+    {
+    }
+
+    public NetworkPart(INetworkStructure parent)
+    {
+        Parent = parent;
+    }
+
+    //Main creation in Comp_Network with Activator.
+    public NetworkPart(INetworkStructure parent, NetworkPartConfig config) : this(parent)
+    {
+        Config = config;
+        _adjacentSet = new NetworkPartSet(config.networkDef);
+        if (config.netIOConfig != null)
+            PartIO = new NetworkIO(config.netIOConfig, parent.Thing.Position, parent.Thing.Rotation);
+    }
+
+    #endregion
 }

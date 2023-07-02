@@ -1,8 +1,7 @@
-﻿namespace TeleCore
+﻿namespace TeleCore;
+
+public enum UIContainerMode
 {
-    public enum UIContainerMode
-    {
-        InOrder,
-        Reverse,
-    }
+    InOrder,
+    Reverse
 }

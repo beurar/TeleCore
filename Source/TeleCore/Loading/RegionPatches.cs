@@ -5,42 +5,21 @@ using Verse;
 namespace TeleCore;
 
 /// <summary>
-/// Main handling of changes in regions and rooms of RimWorld
+///     Main handling of changes in regions and rooms of RimWorld
 /// </summary>
 internal static class RegionPatches
 {
-    //Hijack Roomtemperature update for cell-based caching
-    #region MyRegion
+    public static Room GetParentRoom(Thing thing, Map map)
+    {
+        var position = thing.Position;
+        if (!position.InBounds(map)) return null;
 
-    [HarmonyPatch(typeof(TemperatureCache), nameof(TemperatureCache.TryCacheRegionTempInfo))]
-    public static class TryCacheRegionTempInfoPatch
-    {
-        public static void Postfix(IntVec3 c, Region reg, Map ___map)
-        {
-            RoomUpdateNotifiers.Notify_RoomUpdateSetDirtyCell(c, reg, ___map);
-        }
-    }
-    
-        
-    [HarmonyPatch(typeof(TemperatureCache), nameof(TemperatureCache.ResetCachedCellInfo))]
-    public static class ResetCachedCellInfoPatch
-    {
-        public static void Postfix(IntVec3 c, Map ___map)
-        {
-            RoomUpdateNotifiers.Notify_RoomUpdateResetDirtyCell(c, ___map);
-        }
+        var validRegion = map.regionGrid.GetValidRegionAt_NoRebuild(position);
+        if (validRegion != null && validRegion.type.Passable()) return validRegion.Room;
+
+        return null;
     }
 
-    [HarmonyPatch(typeof(TemperatureCache), nameof(TemperatureCache.TryGetAverageCachedRoomTemp))]
-    public static class TryGetAverageCachedRoomTempPatch
-    {
-        public static void Postfix(Room r)
-        {
-        }
-    }
-
-    #endregion
-    
     [HarmonyPatch(typeof(RegionAndRoomUpdater))]
     [HarmonyPatch("CreateOrUpdateRooms")]
     public static class CreateOrUpdateRoomsPatch
@@ -57,12 +36,9 @@ internal static class RegionPatches
             for (var i = ___map.regionGrid.allRooms.Count - 1; i >= 0; i--)
             {
                 var room = ___map.regionGrid.allRooms[i];
-                if (room.Dereferenced)
-                {
-                    ___map.regionGrid.allRooms.RemoveAt(i);
-                }
+                if (room.Dereferenced) ___map.regionGrid.allRooms.RemoveAt(i);
             }
-            
+
             //
             RoomUpdateNotifiers.Notify_RoomUpdatePostfix(___map);
         }
@@ -114,20 +90,38 @@ internal static class RegionPatches
         }
     }
 
-    public static Room GetParentRoom(Thing thing, Map map)
+    //Hijack Roomtemperature update for cell-based caching
+
+    #region MyRegion
+
+    [HarmonyPatch(typeof(TemperatureCache), nameof(TemperatureCache.TryCacheRegionTempInfo))]
+    public static class TryCacheRegionTempInfoPatch
     {
-        IntVec3 position = thing.Position;
-        if (!position.InBounds(map)) return null;
-
-        Region validRegion = map.regionGrid.GetValidRegionAt_NoRebuild(position);
-        if (validRegion != null && validRegion.type.Passable())
+        public static void Postfix(IntVec3 c, Region reg, Map ___map)
         {
-            return validRegion.Room;
-
+            RoomUpdateNotifiers.Notify_RoomUpdateSetDirtyCell(c, reg, ___map);
         }
-
-        return null;
     }
+
+
+    [HarmonyPatch(typeof(TemperatureCache), nameof(TemperatureCache.ResetCachedCellInfo))]
+    public static class ResetCachedCellInfoPatch
+    {
+        public static void Postfix(IntVec3 c, Map ___map)
+        {
+            RoomUpdateNotifiers.Notify_RoomUpdateResetDirtyCell(c, ___map);
+        }
+    }
+
+    [HarmonyPatch(typeof(TemperatureCache), nameof(TemperatureCache.TryGetAverageCachedRoomTemp))]
+    public static class TryGetAverageCachedRoomTempPatch
+    {
+        public static void Postfix(Room r)
+        {
+        }
+    }
+
+    #endregion
 
 
     #region OldStuff
@@ -137,7 +131,7 @@ internal static class RegionPatches
     [HarmonyPatch("RegenerateNewRegionsFromDirtyCells")]
     public static class RegionPatch
     {
-        private static readonly List<Region> oldRegions = new List<Region>(); 
+        private static readonly List<Region> oldRegions = new List<Region>();
         private static readonly List<Region> newRegions = new List<Region>();
 
         public static bool Prefix(RegionAndRoomUpdater __instance)

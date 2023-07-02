@@ -8,18 +8,24 @@ namespace TeleCore;
 
 public class Comp_NetworkBillsCrafter : Comp_Network
 {
-    public new Building_WorkTable parent;
     public NetworkBillStack billStack;
+    public new Building_WorkTable parent;
 
     //CompFX
     public Color CurColor => Color.clear;
+
+    //Crafter Code
+    public new CompProperties_NetworkBillsCrafter Props => (CompProperties_NetworkBillsCrafter) base.Props;
+
+    public bool IsWorkedOn => BillStack.CurrentBill != null;
+    public NetworkBillStack BillStack => billStack;
 
     public override bool? FX_ShouldDraw(FXLayerArgs args)
     {
         return args.index switch
         {
             0 => IsWorkedOn,
-            _ => base.FX_ShouldDraw(args),
+            _ => base.FX_ShouldDraw(args)
         };
     }
 
@@ -28,7 +34,7 @@ public class Comp_NetworkBillsCrafter : Comp_Network
         return args.index switch
         {
             0 => CurColor,
-            _ => base.FX_GetColor(args),
+            _ => base.FX_GetColor(args)
         };
     }
 
@@ -36,12 +42,6 @@ public class Comp_NetworkBillsCrafter : Comp_Network
     {
         return IsWorkedOn;
     }
-
-    //Crafter Code
-    public new CompProperties_NetworkBillsCrafter Props => (CompProperties_NetworkBillsCrafter)base.Props;
-
-    public bool IsWorkedOn => BillStack.CurrentBill != null;
-    public NetworkBillStack BillStack => billStack;
 
     public override void PostSpawnSetup(bool respawningAfterLoad)
     {

@@ -10,50 +10,42 @@ internal static class CustomNetworkRecipeReferences
 
     public static List<CustomRecipeRatioDef> TryGetRatiosOfTag(string tag)
     {
-        if (_ratiosByTag.TryGetValue(tag, out var values))
-        {
-            return values;
-        }
+        if (_ratiosByTag.TryGetValue(tag, out var values)) return values;
         TLog.Warning($"No {nameof(CustomRecipeRatioDef)} exists with tag '{tag}'");
         return null;
     }
 
     public static List<CustomRecipePresetDef> TryGetPresetsOfTag(string tag)
     {
-        if (_presetsByTag.TryGetValue(tag, out var values))
-        {
-            return values;
-        }
+        if (_presetsByTag.TryGetValue(tag, out var values)) return values;
         TLog.Warning($"No {nameof(CustomRecipePresetDef)} exists with tag '{tag}'");
         return null;
     }
 
     public static void TryRegister(Def def)
     {
-        if (def is CustomRecipeRatioDef {tags: { }} ratioDef)
-        {
+        if (def is CustomRecipeRatioDef {tags: not null} ratioDef)
             foreach (var ratioDefTag in ratioDef.tags)
             {
                 if (!_ratiosByTag.ContainsKey(ratioDefTag))
                 {
-                    _ratiosByTag.Add(ratioDefTag, new List<CustomRecipeRatioDef>() { ratioDef });
+                    _ratiosByTag.Add(ratioDefTag, new List<CustomRecipeRatioDef> {ratioDef});
                     return;
                 }
+
                 _ratiosByTag[ratioDefTag].Add(ratioDef);
             }
-        }
 
-        if (def is CustomRecipePresetDef {tags: { }} presetDef)
-        {
+        if (def is CustomRecipePresetDef {tags: not null} presetDef)
             foreach (var presetDefTag in presetDef.tags)
             {
                 if (!_presetsByTag.ContainsKey(presetDefTag))
                 {
-                    _presetsByTag.Add(presetDefTag, new List<CustomRecipePresetDef>() { presetDef });
+                    _presetsByTag.Add(presetDefTag, new List<CustomRecipePresetDef> {presetDef});
                     return;
                 }
+
                 _presetsByTag[presetDefTag].Add(presetDef);
             }
-        }
     }
 }

@@ -6,8 +6,8 @@ namespace TeleCore;
 //TODO: Assign docks and manage size/pos of docked elements during docking
 public class UIElementDocker : UIElement
 {
-    private UIElement[] _dockedElements = new UIElement[4];
-    
+    private readonly UIElement[] _dockedElements = new UIElement[4];
+
     public UIElementDocker(UIElementMode mode) : base(mode)
     {
     }

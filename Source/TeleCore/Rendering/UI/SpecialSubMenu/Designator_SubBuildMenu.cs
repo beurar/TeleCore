@@ -5,16 +5,16 @@ namespace TeleCore;
 
 public class Designator_SubBuildMenu : Designator
 {
-    private SubBuildMenuDef subMenuDef;
-
-    public override string Label => "Reset";
-    public override string Desc => "Reset window position.";
+    private readonly SubBuildMenuDef subMenuDef;
 
     public Designator_SubBuildMenu(SubBuildMenuDef menuDef)
     {
         order = -1;
         subMenuDef = menuDef;
     }
+
+    public override string Label => "Reset";
+    public override string Desc => "Reset window position.";
 
     public void Toggle_Menu(bool opening)
     {

@@ -3,98 +3,98 @@ using UnityEngine;
 using Verse;
 using Verse.Noise;
 
-namespace TeleCore
+namespace TeleCore;
+
+public class SimpleWorldView
 {
-    public class SimpleWorldView
+    private SimpleWorldCameraDriver cameraDriver;
+
+    private readonly RenderTexture cameraViewTexture;
+
+    //Data
+
+    //Rendering
+    private readonly SimpleWorldLayer_ModuleResult layer;
+    private readonly Camera simpleWorldCamera;
+
+    public SimpleWorldView()
     {
         //Data
-        private SimpleWorldGrid grid;
+        Self = this;
+        WorldGrid = new SimpleWorldGrid();
+        layer = new SimpleWorldLayer_ModuleResult(this);
+        TLog.Message($"Grid: {WorldGrid.TilesCount}");
 
         //Rendering
-        private SimpleWorldLayer_ModuleResult layer;
-        private Camera simpleWorldCamera;
-        private SimpleWorldCameraDriver cameraDriver;
-        private RenderTexture cameraViewTexture;
+        cameraViewTexture = new RenderTexture(512, 512, 16, RenderTextureFormat.ARGB32);
+        cameraViewTexture.Create();
 
-        public SimpleWorldGrid WorldGrid => grid;
-        public ModuleBase ModuleResult { get; private set; }
-        public int Seed { get; private set; } = GenText.StableStringHash("TestWorldSeed");
+        simpleWorldCamera = MakeCamera();
+        simpleWorldCamera.targetTexture = cameraViewTexture;
+    }
 
-        public static SimpleWorldView Self { get; set; }
+    public SimpleWorldGrid WorldGrid { get; }
 
-        public SimpleWorldView()
-        {
-            //Data
-            Self = this;
-            grid = new SimpleWorldGrid();
-            layer = new SimpleWorldLayer_ModuleResult(this);
-            TLog.Message($"Grid: {WorldGrid.TilesCount}");
+    public ModuleBase ModuleResult { get; private set; }
+    public int Seed { get; private set; } = GenText.StableStringHash("TestWorldSeed");
 
-            //Rendering
-            cameraViewTexture = new RenderTexture(512, 512, 16, RenderTextureFormat.ARGB32);
-            cameraViewTexture.Create();
+    public static SimpleWorldView Self { get; set; }
 
-            simpleWorldCamera = MakeCamera();
-            simpleWorldCamera.targetTexture = cameraViewTexture;
-        }
+    private Camera MakeCamera()
+    {
+        var gameObject = new GameObject("SimpleWorldCamera", typeof(Camera));
+        gameObject.SetActive(true);
+        gameObject.AddComponent<SimpleWorldCameraDriver>();
 
-        private Camera MakeCamera()
-        {
-            GameObject gameObject = new GameObject("SimpleWorldCamera", typeof(Camera));
-            gameObject.SetActive(true);
-            gameObject.AddComponent<SimpleWorldCameraDriver>();
+        cameraDriver = gameObject.GetComponent<SimpleWorldCameraDriver>();
+        cameraDriver.WorldGrid = WorldGrid;
 
-            cameraDriver = gameObject.GetComponent<SimpleWorldCameraDriver>();
-            cameraDriver.WorldGrid = grid;
+        Object.DontDestroyOnLoad(gameObject);
+        var component = gameObject.GetComponent<Camera>();
+        component.orthographic = false;
+        component.cullingMask = 1 << 7;
+        component.backgroundColor = WorldCameraManager.SkyColor;
+        component.clearFlags = CameraClearFlags.Color;
+        component.useOcclusionCulling = true;
+        component.renderingPath = RenderingPath.Forward;
+        component.nearClipPlane = 2f;
+        component.farClipPlane = 1200f;
+        component.fieldOfView = 20f;
+        component.depth = 2f;
 
-            UnityEngine.Object.DontDestroyOnLoad(gameObject);
-            Camera component = gameObject.GetComponent<Camera>();
-            component.orthographic = false;
-            component.cullingMask = 1 << 7;
-            component.backgroundColor = WorldCameraManager.SkyColor;
-            component.clearFlags = CameraClearFlags.Color;
-            component.useOcclusionCulling = true;
-            component.renderingPath = RenderingPath.Forward;
-            component.nearClipPlane = 2f;
-            component.farClipPlane = 1200f;
-            component.fieldOfView = 20f;
-            component.depth = 2f;
+        return component;
+    }
 
-            return component;
-        }
+    public void Update()
+    {
+        if (ModuleResult != null)
+            layer.Render();
+    }
 
-        public void Update()
-        {
-            if(ModuleResult != null)
-                layer.Render();
-        }
+    public void SetResult(ModuleBase result)
+    {
+        ModuleResult = result;
+    }
 
-        public void SetResult(ModuleBase result)
-        {
-            ModuleResult = result;
-        }
+    public void SetSeed(string seed)
+    {
+    }
 
-        public void SetSeed(string seed)
-        {
+    public void ChangedResult()
+    {
+        layer.SetDirty();
+    }
 
-        }
+    public void DrawInRect(Rect rect)
+    {
+        Widgets.BeginGroup(rect);
+        rect = rect.AtZero();
 
-        public void ChangedResult()
-        {
-            layer.SetDirty();
-        }
+        Widgets.DrawTextureFitted(rect, cameraViewTexture, 1);
 
-        public void DrawInRect(Rect rect)
-        {
-            Widgets.BeginGroup(rect);
-            rect = rect.AtZero();
+        if (Mouse.IsOver(rect))
+            cameraDriver.DriverOnGUI();
 
-            Widgets.DrawTextureFitted(rect, cameraViewTexture, 1);
-
-            if(Mouse.IsOver(rect))
-                cameraDriver.DriverOnGUI();
-
-            Widgets.EndGroup();
-        }
+        Widgets.EndGroup();
     }
 }

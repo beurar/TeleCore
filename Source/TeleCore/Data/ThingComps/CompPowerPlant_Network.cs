@@ -1,7 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Text;
 using RimWorld;
-using TeleCore.Defs;
 using TeleCore.Generics.Container;
 using TeleCore.Network.Data;
 using UnityEngine;
@@ -11,17 +10,18 @@ namespace TeleCore;
 
 public class CompPowerPlant_Network : CompPowerPlant
 {
-    private int powerTicksRemaining;
-    private float internalPowerOutput = 0f;
-
     private Comp_Network _comp;
     private INetworkPart _netPart;
+    private float internalPowerOutput;
+    private int powerTicksRemaining;
 
     public new CompProperties_NetworkPowerPlant Props => (CompProperties_NetworkPowerPlant) base.Props;
 
     public bool GeneratesPowerNow => powerTicksRemaining > 0;
     public override float DesiredPowerOutput => internalPowerOutput;
     public bool IsAtCapacity => powerTicksRemaining >= Props.maxWorkTime.TotalTicks;
+
+    public bool CanConsume => !IsAtCapacity; //TODO: && !_netPart.RequestWorker.RequestingNow;
 
     public override void PostExposeData()
     {
@@ -42,8 +42,6 @@ public class CompPowerPlant_Network : CompPowerPlant
         PowerTick();
     }
 
-    public bool CanConsume => !IsAtCapacity; //TODO: && !_netPart.RequestWorker.RequestingNow;
-    
     private void PowerTick()
     {
         base.CompTick();
@@ -53,19 +51,15 @@ public class CompPowerPlant_Network : CompPowerPlant
             internalPowerOutput = 0f;
             return;
         }
-        
+
         //If no value
-        if (CanConsume && _netPart.FlowBox.FillState != ContainerFillState.Empty)
-        {
+        if (CanConsume && _netPart.Volume.FillState != ContainerFillState.Empty)
             foreach (var conversion in Props.valueToTickRules)
             {
-                if (_netPart.FlowBox.StoredValueOf(conversion.valueDef) <= 0) continue;
-                if (_netPart.FlowBox.TryConsume(conversion.valueDef, conversion.cost))
-                {
+                if (_netPart.Volume.StoredValueOf(conversion.valueDef) <= 0) continue;
+                if (_netPart.Volume.TryConsume(conversion.valueDef, conversion.cost))
                     powerTicksRemaining += Mathf.RoundToInt(conversion.seconds.SecondsToTicks());
-                }
             }
-        }
 
         if (powerTicksRemaining > 0)
         {
@@ -76,22 +70,19 @@ public class CompPowerPlant_Network : CompPowerPlant
 
     public override IEnumerable<Gizmo> CompGetGizmosExtra()
     {
-        foreach (var gizmo in base.CompGetGizmosExtra())
-        {
-            yield return gizmo;
-        }
+        foreach (var gizmo in base.CompGetGizmosExtra()) yield return gizmo;
 
-        yield return new Command_Action()
+        yield return new Command_Action
         {
             defaultLabel = "Clear Power",
             defaultDesc = "Clears the power buffer",
-            action = () => powerTicksRemaining = 0,
+            action = () => powerTicksRemaining = 0
         };
     }
 
     public override string CompInspectStringExtra()
     {
-        StringBuilder sb = new StringBuilder();
+        var sb = new StringBuilder();
         sb.AppendLine(base.CompInspectStringExtra());
         if (GeneratesPowerNow)
             sb.AppendLine("TR_PowerLeft".Translate(powerTicksRemaining.ToStringTicksToPeriod()));
@@ -102,14 +93,13 @@ public class CompPowerPlant_Network : CompPowerPlant
 public class CompProperties_NetworkPowerPlant : CompProperties_Power
 {
     public NetworkDef fromNetwork;
+    public TickTime maxWorkTime = new(GenDate.TicksPerDay);
     public List<ValueConversion> valueToTickRules;
-    public TickTime maxWorkTime = new TickTime(GenDate.TicksPerDay);
 }
 
 public class ValueConversion
 {
-    public NetworkValueDef valueDef;
     public float cost;
     public float seconds;
+    public NetworkValueDef valueDef;
 }
-

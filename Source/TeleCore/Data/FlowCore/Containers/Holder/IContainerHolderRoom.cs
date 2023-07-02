@@ -1,10 +1,9 @@
-﻿using TeleCore.Defs;
-using Verse;
+﻿using Verse;
 
 namespace TeleCore.Generics.Container.Holder;
 
 /// <summary>
-/// Implements a container for a <see cref="Room"/>
+///     Implements a container for a <see cref="Room" />
 /// </summary>
 public interface IContainerHolderRoom<TValue> : IContainerHolderBase<TValue> where TValue : FlowValueDef
 {

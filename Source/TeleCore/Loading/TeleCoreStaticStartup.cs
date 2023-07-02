@@ -10,13 +10,12 @@ namespace TeleCore;
 internal static class TeleCoreStaticStartup
 {
     static TeleCoreStaticStartup()
-    { 
+    {
         TLog.Message("Startup Init...");
-            
+
         //MP Hook
         TLog.Message($"Multiplayer: {(MP.enabled ? "Enabled - Adding MP hooks..." : "Disabled")}");
         if (MP.enabled)
-        {
             try
             {
                 MP.RegisterAll();
@@ -25,10 +24,10 @@ internal static class TeleCoreStaticStartup
             {
                 TLog.Error($"Failed to register MP hooks: {ex.Message}");
             }
-        }
+
         //Process Defs after load
         ApplyDefChangesPostLoad();
-            
+
         TLog.Message("Startup Finished!", TColor.Green);
     }
 
@@ -36,7 +35,7 @@ internal static class TeleCoreStaticStartup
     {
         var allDefs = LoadedModManager.RunningModsListForReading.SelectMany(pack => pack.AllDefs);
         //Runs ID check
-        bool failed = false;
+        var failed = false;
         foreach (var def in allDefs)
         {
             var toID = def.ToID();
@@ -48,10 +47,7 @@ internal static class TeleCoreStaticStartup
             }
         }
 
-        if (failed)
-        {
-            TLog.Warning("Def ID check failed!");
-        }
+        if (failed) TLog.Warning("Def ID check failed!");
     }
 
     private static void ApplyDefChangesPostLoad()
@@ -60,44 +56,35 @@ internal static class TeleCoreStaticStartup
         //LoadStaticTranslationLibraries();
 
         DefIDCheck();
-            
+
         //
         var allInjectors = DefInjectors()?.ToArray();
         TLog.Debug($"Injectors: {allInjectors.ToStringSafeEnumerable()}");
-        var skipInjectors = allInjectors is not { Length: > 0 };
-            
+        var skipInjectors = allInjectors is not {Length: > 0};
+
         var defs = LoadedModManager.RunningMods.SelectMany(s => s.AllDefs).ToArray();
-        TLog.Message($"Def ID Database check - Loaded IDs: {DefIDStack._MasterID} == {defs.Length}: {defs.Length - 1 == DefIDStack._MasterID}");
+        TLog.Message(
+            $"Def ID Database check - Loaded IDs: {DefIDStack._MasterID} == {defs.Length}: {defs.Length - 1 == DefIDStack._MasterID}");
         foreach (var def in defs)
         {
             var bDef = def as BuildableDef;
             var tDef = def as ThingDef;
             var isBuildable = bDef != null;
             var isThing = tDef != null;
- 
+
             //
             DefExtensionCache.TryRegister(def);
 
             if (isBuildable)
-            {
                 if (bDef.HasSubMenuExtension(out var extension))
-                {
                     SubMenuThingDefList.Add(bDef, extension);
-                }
-            }
 
             if (skipInjectors) continue;
             foreach (var injector in allInjectors)
             {
-                if (injector.AcceptsSpecial(def))
-                {
-                    injector.OnDefSpecialInjected(def);
-                }
+                if (injector.AcceptsSpecial(def)) injector.OnDefSpecialInjected(def);
 
-                if (isBuildable)
-                {
-                    injector.OnBuildableDefInject(bDef);
-                }
+                if (isBuildable) injector.OnBuildableDefInject(bDef);
 
                 if (isThing)
                 {
@@ -105,7 +92,8 @@ internal static class TeleCoreStaticStartup
                     injector.OnThingDefInject(tDef);
 
                     //Pawn Check
-                    if (tDef?.thingClass != null && (tDef.thingClass == typeof(Pawn) || tDef.thingClass.IsSubclassOf(typeof(Pawn))))
+                    if (tDef?.thingClass != null &&
+                        (tDef.thingClass == typeof(Pawn) || tDef.thingClass.IsSubclassOf(typeof(Pawn))))
                     {
                         tDef.comps ??= new List<CompProperties>();
                         injector.OnPawnInject(tDef);
@@ -113,18 +101,16 @@ internal static class TeleCoreStaticStartup
                 }
             }
         }
-            
+
         if (skipInjectors) return;
-        foreach (var injector in allInjectors)
-        {
-            injector.Dispose();
-        }
+        foreach (var injector in allInjectors) injector.Dispose();
     }
 
     //
     private static IEnumerable<DefInjectBase> DefInjectors()
     {
-        return typeof(DefInjectBase).AllSubclassesNonAbstract().Select(type => (DefInjectBase)Activator.CreateInstance(type));
+        return typeof(DefInjectBase).AllSubclassesNonAbstract()
+            .Select(type => (DefInjectBase) Activator.CreateInstance(type));
     }
 
     /*

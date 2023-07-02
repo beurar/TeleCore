@@ -1,6 +1,6 @@
-﻿using RimWorld;
-using System;
+﻿using System;
 using System.Collections.Generic;
+using RimWorld;
 using TeleCore.Data.Events;
 using UnityEngine;
 using Verse;
@@ -28,12 +28,9 @@ public struct FXParentInfo
 
 public class CompFX : TeleComp
 {
-    private bool _hasFXLayers;
     private bool _hasEffecters;
-    private bool spawnedOnce = false;
+    private bool _hasFXLayers;
     private List<IFXLayerProvider> allHeldFXComps;
-    
-    private IFXLayerProvider[] LayerProviderByLayerIndex;
     private IFXEffecterProvider[] EffecterProviderByLayerIndex;
 
     //Events
@@ -50,6 +47,9 @@ public class CompFX : TeleComp
     */
 
     private OnEffectSpawnedEvent EffectSpawned;
+
+    private IFXLayerProvider[] LayerProviderByLayerIndex;
+    private bool spawnedOnce;
 
     //Debug
 
@@ -84,11 +84,9 @@ public class CompFX : TeleComp
                 var spawnTick = Find.TickManager.TicksGame;
                 var tickOffset = Props.tickOffset.RandomInRange;
 
-                for (int i = 0; i < Props.fxLayers.Count; i++)
-                {
+                for (var i = 0; i < Props.fxLayers.Count; i++)
                     FXLayers.Add(new FXLayer(this, Props.fxLayers[i],
                         new FXParentInfo(tickOffset, spawnTick, GraphicExtension, parent), i));
-                }
 
                 //Resolve priority
                 FXLayers.Sort((a, b) => a.RenderPriority < b.RenderPriority ? 1 : 0);
@@ -99,10 +97,8 @@ public class CompFX : TeleComp
             if (!Props.effectLayers.NullOrEmpty())
             {
                 EffectLayers = new List<EffecterLayer>();
-                for (int i = 0; i < Props.effectLayers.Count; i++)
-                {
+                for (var i = 0; i < Props.effectLayers.Count; i++)
                     EffectLayers.Add(new EffecterLayer(this, Props.effectLayers[i], i));
-                }
 
                 //
                 _hasEffecters = EffectLayers?.Count > 0;
@@ -131,17 +127,15 @@ public class CompFX : TeleComp
 
         //Populate Events
         foreach (var comp in parent.AllComps)
-        {
             if (comp is IFXLayerProvider compFX)
             {
                 allHeldFXComps.Add(compFX);
                 PopulateEvents(compFX);
             }
-        }
 
         //Resolve
         LayerProviderByLayerIndex = new IFXLayerProvider[Props.fxLayers.Count];
-        for (int i = 0; i < Props.fxLayers.Count; i++)
+        for (var i = 0; i < Props.fxLayers.Count; i++)
         {
             var layerData = Props.fxLayers[i];
             if (allHeldFXComps.NullOrEmpty())
@@ -152,13 +146,13 @@ public class CompFX : TeleComp
 
             LayerProviderByLayerIndex[i] = allHeldFXComps.FirstOrFallback(fx =>
             {
-                return (bool) fx?.FX_ProvidesForLayer(new FXArgs()
+                return (bool) fx?.FX_ProvidesForLayer(new FXArgs
                 {
                     index = i,
                     layerTag = layerData.layerTag,
                     categoryTag = layerData.categoryTag
                 });
-            }, null)!;
+            })!;
         }
     }
 
@@ -175,17 +169,15 @@ public class CompFX : TeleComp
 
         //Populate Events
         foreach (var comp in parent.AllComps)
-        {
             if (comp is IFXEffecterProvider compFX)
             {
                 effectProviders.Add(compFX);
                 PopulateEvents(compFX);
             }
-        }
 
         //Resolve
         EffecterProviderByLayerIndex = new IFXEffecterProvider[Props.fxLayers.Count];
-        for (int i = 0; i < Props.effectLayers.Count; i++)
+        for (var i = 0; i < Props.effectLayers.Count; i++)
         {
             var effectData = Props.effectLayers[i];
             if (allHeldFXComps.NullOrEmpty())
@@ -195,11 +187,11 @@ public class CompFX : TeleComp
             }
 
             LayerProviderByLayerIndex[i] = allHeldFXComps.FirstOrFallback(fx => (bool) fx?.FX_ProvidesForLayer(
-                new FXEffecterArgs()
+                new FXEffecterArgs
                 {
                     index = i,
-                    layerTag = effectData.layerTag,
-                }), null)!;
+                    layerTag = effectData.layerTag
+                }))!;
         }
     }
 
@@ -217,10 +209,8 @@ public class CompFX : TeleComp
         // GetShouldThrowEffects += fxHolder.FX_ShouldThrowEffects;
 
         if (fxProvider is IFXEffecterProvider effectProvider)
-        {
             //
             EffectSpawned += effectProvider.FX_OnEffectSpawned;
-        }
     }
 
     //Notification
@@ -229,9 +219,7 @@ public class CompFX : TeleComp
         if (!parent.Spawned) return;
         if (signal is "PowerTurnedOn" or "PowerTurnedOff" or "FlickedOn" or "FlickedOff" or "Refueled" or "RanOutOfFuel"
             or "ScheduledOn" or "ScheduledOff")
-        {
             parent.Map.mapDrawer.MapMeshDirty(parent.Position, MapMeshFlag.Things);
-        }
     }
 
     public override void CompTick()
@@ -241,29 +229,18 @@ public class CompFX : TeleComp
 
     public override void CompTickRare()
     {
-        for (int i = 0; i < GenTicks.TickRareInterval; i++)
-        {
-            FXTick(GenTicks.TickRareInterval);
-        }
+        for (var i = 0; i < GenTicks.TickRareInterval; i++) FXTick(GenTicks.TickRareInterval);
     }
 
     private void FXTick(int tickInterval)
     {
         if (_hasFXLayers)
-        {
             foreach (var g in FXLayers)
-            {
                 g.TickLayer(tickInterval);
-            }
-        }
 
         if (_hasEffecters)
-        {
             foreach (var effectLayer in EffectLayers)
-            {
                 effectLayer.Tick();
-            }
-        }
     }
 
     //Drawing
@@ -304,6 +281,39 @@ public class CompFX : TeleComp
     }
 
     #endregion
+
+    //
+    public void DrawCarried(Vector3 loc)
+    {
+        foreach (var layer in FXLayers)
+            if (layer.data.fxMode != FXMode.Static && CanDraw(layer.Args))
+            {
+                var drawPos = GetDrawPositionOverride(layer.Args);
+                var diff = drawPos - parent.DrawPos;
+                layer.Draw(loc + diff);
+            }
+    }
+
+    public override void PostDraw()
+    {
+        base.PostDraw();
+        foreach (var layer in FXLayers)
+            if (layer.data.fxMode != FXMode.Static && CanDraw(layer.Args))
+                layer.Draw();
+    }
+
+    public override void PostPrintOnto(SectionLayer layer)
+    {
+        base.PostPrintOnto(layer);
+        foreach (var fxLayer in FXLayers)
+            if (fxLayer.data.fxMode == FXMode.Static && CanDraw(fxLayer.Args))
+                fxLayer.Print(layer);
+    }
+
+    public override IEnumerable<Gizmo> CompGetGizmosExtra()
+    {
+        yield break;
+    }
 
     #region Effecter Properties
 
@@ -383,47 +393,4 @@ public class CompFX : TeleComp
     }
 
     #endregion
-
-    //
-    public void DrawCarried(Vector3 loc)
-    {
-        foreach (var layer in FXLayers)
-        {
-            if (layer.data.fxMode != FXMode.Static && CanDraw(layer.Args))
-            {
-                var drawPos = GetDrawPositionOverride(layer.Args);
-                var diff = drawPos - parent.DrawPos;
-                layer.Draw(loc + diff);
-            }
-        }
-    }
-
-    public override void PostDraw()
-    {
-        base.PostDraw();
-        foreach (var layer in FXLayers)
-        {
-            if (layer.data.fxMode != FXMode.Static && CanDraw(layer.Args))
-            {
-                layer.Draw();
-            }
-        }
-    }
-
-    public override void PostPrintOnto(SectionLayer layer)
-    {
-        base.PostPrintOnto(layer);
-        foreach (var fxLayer in FXLayers)
-        {
-            if (fxLayer.data.fxMode == FXMode.Static && CanDraw(fxLayer.Args))
-            {
-                fxLayer.Print(layer);
-            }
-        }
-    }
-
-    public override IEnumerable<Gizmo> CompGetGizmosExtra()
-    {
-        yield break;
-    }
 }

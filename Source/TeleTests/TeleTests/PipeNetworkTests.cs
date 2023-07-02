@@ -1,9 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 using NUnit.Framework;
-using TeleCore.Data.Logging;
-using TeleCore.Defs;
-using TeleCore.Network;
+using TeleCore;
 using TeleCore.Network.Data;
 using Verse;
 

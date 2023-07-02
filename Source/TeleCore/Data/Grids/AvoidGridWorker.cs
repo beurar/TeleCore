@@ -5,12 +5,10 @@ namespace TeleCore;
 
 public class AvoidGridWorker
 {
-    protected Map map;
     protected AvoidGridDef def;
     protected byte[] grid;
+    protected Map map;
 
-    public byte[] Grid => grid;
-    
     public AvoidGridWorker(Map map, AvoidGridDef def)
     {
         this.map = map;
@@ -18,14 +16,15 @@ public class AvoidGridWorker
         grid = new byte[map.cellIndices.NumGridCells];
     }
 
+    public byte[] Grid => grid;
+
     public virtual bool AffectsThing(Thing thing)
     {
         return true;
     }
-    
+
     public virtual void Notify_CellChanged(CellChangedEventArgs args)
     {
-        
     }
 
     protected void SetAvoidValue(int index, byte value)

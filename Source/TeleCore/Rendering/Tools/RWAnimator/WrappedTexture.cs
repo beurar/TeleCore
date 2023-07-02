@@ -1,28 +1,25 @@
 ﻿using UnityEngine;
 
-namespace TeleCore
+namespace TeleCore;
+
+public struct WrappedTexture
 {
-    public struct WrappedTexture
+    public string Path { get; private set; }
+
+    public Texture Texture { get; private set; }
+
+    //
+    public bool IsValid => Path != null && Texture != null;
+
+    public WrappedTexture(string path, Texture texture)
     {
-        private string path;
-        private Texture texture;
+        this.Path = path;
+        this.Texture = texture;
+    }
 
-        public string Path => path;
-        public Texture Texture => texture;
-
-        //
-        public bool IsValid => path != null && texture != null;
-
-        public WrappedTexture(string path, Texture texture)
-        {
-            this.path = path;
-            this.texture = texture;
-        }
-
-        public void Clear()
-        {
-            path = null;
-            texture = null;
-        }
+    public void Clear()
+    {
+        Path = null;
+        Texture = null;
     }
 }

@@ -1,31 +1,30 @@
 ﻿using RimWorld;
 using Verse;
 
-namespace TeleCore.Static
+namespace TeleCore.Static;
+
+[DefOf]
+public static class TeleDefOf
 {
-    [DefOf]
-    public static class TeleDefOf
-    {
-        //JobDefs
-        public static JobDef DoNetworkBill;
-        public static JobDef EmptyPortableContainer;
+    //JobDefs
+    public static JobDef DoNetworkBill;
+    public static JobDef EmptyPortableContainer;
 
-        //Motes Special
-        public static ThingDef Mote_Beam;
-        public static ThingDef Mote_MuzzleFlash;
-        public static ThingDef Mote_Arc;
-        
-        //
-        public static ThingGroupDef NetworkPortableContainers;
+    //Motes Special
+    public static ThingDef Mote_Beam;
+    public static ThingDef Mote_MuzzleFlash;
+    public static ThingDef Mote_Arc;
 
-        //
-        public static ThingDef PortableContainer;
+    //
+    public static ThingGroupDef NetworkPortableContainers;
 
-        //
-        public static TerrainDef ChromaKeyGreen;
-        public static TerrainDef ChromaKeyBlue;
-        
-        //Research
-        public static LetterDef DiscoveryLetter;
-    }
+    //
+    public static ThingDef PortableContainer;
+
+    //
+    public static TerrainDef ChromaKeyGreen;
+    public static TerrainDef ChromaKeyBlue;
+
+    //Research
+    public static LetterDef DiscoveryLetter;
 }

@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using NUnit.Framework;
+using RimWorld;
 using TeleCore.Network.IO;
 using TeleCore.Primitive;
 using Verse;
@@ -11,6 +12,43 @@ namespace TeleTests;
 public class IOTests
 {
     [Test]
+    public void PatternTest()
+    {
+        var config = new NetIOConfig()
+        {
+            patternSize = new IntVec2(1,1),
+            pattern = "X",
+        };
+
+        var config2 = new NetIOConfig()
+        {
+            patternSize = new IntVec2(1,1),
+            pattern =
+                "#X#" +
+                "X#X" +
+                "#X#",
+        };
+        
+        
+        Assert.Catch(delegate
+        {
+            config.PostLoad();
+        });
+        Assert.Catch(delegate
+        {
+            var io1 = new NetworkIO(config, new IntVec3(5, 0, 5), Rot4.North);
+        });
+        
+        config2.PostLoad();
+        
+        var io2 = new NetworkIO(config2, new IntVec3(5, 0, 5), Rot4.North);
+        Assert.IsTrue(io2.IOModeAt(new IntVec3(5,0,6)) == NetworkIOMode.TwoWay);
+        Assert.IsTrue(io2.IOModeAt(new IntVec3(4,0,5)) == NetworkIOMode.TwoWay);
+        Assert.IsTrue(io2.IOModeAt(new IntVec3(6,0,5)) == NetworkIOMode.TwoWay);
+        Assert.IsTrue(io2.IOModeAt(new IntVec3(5,0,4)) == NetworkIOMode.TwoWay);
+    }
+
+    [Test]
     public void ConnectionTest()
     {
         var config = new NetIOConfig()
@@ -20,13 +58,13 @@ public class IOTests
                 new ()
                 {
                     direction = Rot4.North,
-                    mode = NetworkIOMode.Input,
+                    mode = NetworkIOMode.TwoWay,
                     offset = Rot4.North.FacingCell,
                 },
                 new ()
                 {
                     direction = Rot4.South,
-                    mode = NetworkIOMode.Output,
+                    mode = NetworkIOMode.TwoWay,
                     offset = Rot4.South.FacingCell,
                 },
                 new ()
@@ -44,7 +82,7 @@ public class IOTests
             }
         };
         
-        config.PostLoad(null);
+        config.PostLoad();
         
         //5
         //#  +

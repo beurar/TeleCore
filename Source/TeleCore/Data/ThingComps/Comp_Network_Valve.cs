@@ -1,5 +1,4 @@
-﻿using System;
-using RimWorld;
+﻿using RimWorld;
 using TeleCore.Data.Events;
 using UnityEngine;
 using Verse;
@@ -11,27 +10,21 @@ public class Comp_Network_Valve : Comp_Network
     private const float _valveOpenState = 0;
     private const float _valveClosedState = 66;
     private const int _ticksToTurn = 120;
-    private const float radsPerTick = (_valveClosedState/_ticksToTurn);
+    private const float radsPerTick = _valveClosedState / _ticksToTurn;
     private float _curState;
-    
+
     private CompFlickable Flick { get; set; }
     protected override bool IsWorkingOverride => Flick.SwitchIsOn;
 
     public override Color? FX_GetColor(FXLayerArgs args)
     {
-        if (args.layerTag == "Valve")
-        {
-            return Color.white;
-        }
+        if (args.layerTag == "Valve") return Color.white;
         return base.FX_GetColor(args);
     }
 
     public override float? FX_GetRotation(FXLayerArgs args)
     {
-        if (args.layerTag == "Valve")
-        {
-            return _curState;
-        }
+        if (args.layerTag == "Valve") return _curState;
         return null;
     }
 
@@ -45,15 +38,12 @@ public class Comp_Network_Valve : Comp_Network
     {
         if (Flick.SwitchIsOn)
         {
-            if(_curState > _valveOpenState)
+            if (_curState > _valveOpenState)
                 _curState -= radsPerTick;
         }
         else
         {
-            if (_curState < _valveClosedState)
-            {
-                _curState += radsPerTick;
-            }
+            if (_curState < _valveClosedState) _curState += radsPerTick;
         }
     }
 }

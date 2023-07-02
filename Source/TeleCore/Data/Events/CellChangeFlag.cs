@@ -2,7 +2,6 @@
 
 public enum CellChangeFlag
 {
-    
     ThingChanged,
-    TerrainChanged,
+    TerrainChanged
 }

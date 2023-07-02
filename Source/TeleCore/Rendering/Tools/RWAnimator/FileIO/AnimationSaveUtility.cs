@@ -14,7 +14,7 @@ internal static class AnimationSaveUtility
     public static string SavedWorkingFilesFolderPath => GenFilePaths.FolderUnderSaveData("Animations");
     public static string SavedAnimationDefsFolderPath => TeleCoreMod.Settings.SaveAnimationDefLocation;
 
-        
+
     public static string PathForAnimationFile(string animationName)
     {
         return Path.Combine(SavedWorkingFilesFolderPath, animationName + NewFileSuffix);
@@ -22,7 +22,7 @@ internal static class AnimationSaveUtility
 
 
     /// <summary>
-    /// Saves the custom .anim file for working on the animation.
+    ///     Saves the custom .anim file for working on the animation.
     /// </summary>
     public static void SaveWorkFile(string fileName, string documentElementName, Action saveAction)
     {
@@ -30,17 +30,13 @@ internal static class AnimationSaveUtility
         try
         {
             if (!File.Exists(path))
-            {
                 FileSaveUtility.ProcessSavingAction(path, documentElementName, saveAction);
-            }
             else
-            {
                 Find.WindowStack.Add(Dialog_MessageBox.CreateConfirmation($"Override {fileName}?", delegate
                 {
                     FileSaveUtility.RemoveFileIfExists(path, false);
                     FileSaveUtility.ProcessSavingAction(path, documentElementName, saveAction);
                 }, true, null, WindowLayer.Super));
-            }
         }
         catch (Exception ex4)
         {
@@ -50,23 +46,18 @@ internal static class AnimationSaveUtility
     }
 
     /// <summary>
-    /// Creates a new AnimationDef file.
+    ///     Creates a new AnimationDef file.
     /// </summary>
     public static void CreateAnimationDef(string fileName, string documentElementName, Action saveAction)
     {
         var path = Path.GetFullPath($"{Path.Combine(SavedAnimationDefsFolderPath, fileName)}{NewDefSuffix}");
         if (!File.Exists(path))
-        {
             FileSaveUtility.ProcessSavingAction(path, documentElementName, saveAction);
-        }
         else
-        {
             Find.WindowStack.Add(Dialog_MessageBox.CreateConfirmation($"Override {fileName}?", delegate
             {
                 FileSaveUtility.RemoveFileIfExists(path, false);
                 FileSaveUtility.ProcessSavingAction(path, documentElementName, saveAction);
             }, true, null, WindowLayer.Super));
-        }
     }
-
 }

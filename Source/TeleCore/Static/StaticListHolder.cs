@@ -4,10 +4,10 @@ namespace TeleCore.Static;
 
 public static class StaticListHolder<T>
 {
-    internal static Dictionary<string, List<T>> NamedWorkerLists = new Dictionary<string, List<T>>();
-    internal static Dictionary<string, HashSet<T>> NamedWorkerSets = new Dictionary<string, HashSet<T>>();
+    internal static Dictionary<string, List<T>> NamedWorkerLists = new();
+    internal static Dictionary<string, HashSet<T>> NamedWorkerSets = new();
 
-    
+
     public static List<T> RequestList(string uniqueID)
     {
         if (!NamedWorkerLists.TryGetValue(uniqueID, out var list))
@@ -15,9 +15,10 @@ public static class StaticListHolder<T>
             list = new List<T>();
             NamedWorkerLists.Add(uniqueID, list);
         }
+
         return list;
     }
-    
+
     public static HashSet<T> RequestSet(string uniqueID)
     {
         if (!NamedWorkerSets.TryGetValue(uniqueID, out var list))
@@ -25,7 +26,7 @@ public static class StaticListHolder<T>
             list = new HashSet<T>();
             NamedWorkerSets.Add(uniqueID, list);
         }
+
         return list;
     }
-    
 }

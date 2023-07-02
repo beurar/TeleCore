@@ -1,45 +1,38 @@
 ﻿using System.Collections.Generic;
 
-namespace TeleCore
+namespace TeleCore;
+
+/// <summary>
+///     Dynamic Clipboard utility, allows you to save any type via a string tag, and retrieve it the same way.
+/// </summary>
+public static class ClipBoardUtility
 {
-    /// <summary>
-    /// Dynamic Clipboard utility, allows you to save any type via a string tag, and retrieve it the same way.
-    /// </summary>
-    public static class ClipBoardUtility
+    private static readonly Dictionary<string, object> Clipboard;
+
+    static ClipBoardUtility()
     {
-        private static readonly Dictionary<string, object> Clipboard;
+        Clipboard = new Dictionary<string, object>();
+    }
 
-        static ClipBoardUtility()
-        {
-            Clipboard = new Dictionary<string, object>();
-        }
+    internal static void Notify_ClearData()
+    {
+        Clipboard.Clear();
+    }
 
-        internal static void Notify_ClearData()
-        {
-            Clipboard.Clear();
-        }
-        
-        public static bool IsActive(string clipBoardKey)
-        {
-            return Clipboard.ContainsKey(clipBoardKey);
-        }
+    public static bool IsActive(string clipBoardKey)
+    {
+        return Clipboard.ContainsKey(clipBoardKey);
+    }
 
-        public static T TryGetClipBoard<T>(string tag)
-        {
-            TLog.Debug($"Getting from clip-board for {tag}");
-            if (Clipboard.TryGetValue(tag, out var value))
-            {
-                return (T)value;
-            }
-            return (T)(object)null;
-        }
+    public static T TryGetClipBoard<T>(string tag)
+    {
+        TLog.Debug($"Getting from clip-board for {tag}");
+        if (Clipboard.TryGetValue(tag, out var value)) return (T) value;
+        return (T) (object) null;
+    }
 
-        public static void TrySetClipBoard<T>(string tag, T value)
-        {
-            if (Clipboard.TryAdd(tag, value))
-            {
-                TLog.Debug($"Copied to clip-board for {tag}");
-            }
-        }
+    public static void TrySetClipBoard<T>(string tag, T value)
+    {
+        if (Clipboard.TryAdd(tag, value)) TLog.Debug($"Copied to clip-board for {tag}");
     }
 }

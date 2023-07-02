@@ -1,160 +1,172 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <Authors>Telefonmast (aka Maxim)</Authors>
-    <Company>Telefonmast</Company>
-    <Description>A collection of tools and functionalities for RimWorld modding.</Description>
-    <RootNamespace>TeleCore</RootNamespace>
-    <AssemblyName>TeleCore</AssemblyName>
-    <TargetFramework>net472</TargetFramework>
-    <LangVersion>preview</LangVersion>
-    <OutputPath>..\..\Assemblies</OutputPath>
-    <DocumentationFile>..\..\Assemblies\TeleCore.xml</DocumentationFile>
-    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
-    <PackageTags>RimWorld;Mod;Telefonmast;Framework;Library;</PackageTags>
-    <RepositoryUrl>https://github.com/RealTelefonmast/TeleCore</RepositoryUrl>
-    <PackageProjectUrl>https://github.com/RealTelefonmast/TeleCore</PackageProjectUrl>
-    <PackageIcon>TeleCore.jpg</PackageIcon>
-    <!---->
-    <Optimize>true</Optimize>
-    <PlatformTarget>AnyCPU</PlatformTarget>
-    <!--
-    <Optimize>true</Optimize>
-    <DebugType>none</DebugType>
-    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
-    -->
-    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
-    <Version>1.2.5</Version>
-    <SignAssembly>False</SignAssembly>
-    <PackageVersion>1.8.4.1</PackageVersion>
-    <Nullable>enable</Nullable>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
-    <DefineConstants>TRACE;DEBUG</DefineConstants>
-    <WarningLevel>4</WarningLevel>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-    <DebugType>full</DebugType>
-    <NoWarn>1701;1702;IL2121;1591;</NoWarn>
-    <CheckForOverflowUnderflow>true</CheckForOverflowUnderflow>
-    <DebugSymbols>true</DebugSymbols>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <DebugType>full</DebugType>
-    <NoWarn>1701;1702;IL2121;1591;</NoWarn>
-  </PropertyGroup>
-
-	<PropertyGroup>
-		<PackageReadmeFile>README.md</PackageReadmeFile>
-		<PackageLicenseFile>LICENSE.md</PackageLicenseFile>
-	</PropertyGroup>
-
-	<ItemGroup>
-		<None Include="LICENSE.md" Pack="true" PackagePath="" />
-		<None Include="..\..\README.md" Pack="true" PackagePath="" />
-		<None Remove="NodeEditorFramework\**" />
-	</ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Include="Krafs.Rimworld.Ref" Version="1.4.3704" GeneratePathProperty="true">
-      <PrivateAssets>all</PrivateAssets>
-    </PackageReference>
-    
-    <PackageReference Include="Lib.Harmony" Version="2.2.2" ExcludeAssets="runtime">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>compile; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
-    
-    <PackageReference Include="OneOf" Version="3.0.243" />
-    
-    <PackageReference Include="System.Collections.Immutable" Version="7.0.0" />
-
-    <PackageReference Include="TaskPubliciser" Version="1.0.3">
-      <PrivateAssets>all</PrivateAssets>
-    </PackageReference>
-    <!--
-    <PackageReference Include="Microsoft.NETCore.Platforms" Version="*" />
-    -->
-    <PackageReference Include="UnlimitedHugs.Rimworld.HugsLib" Version="10.0.1" ExcludeAssets="runtime">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>compile; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
-    <PackageReference Include="RimWorld.MultiplayerAPI" Version="0.4.0" ExcludeAssets="runtime">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>compile; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Update="TeleCore.jpg">
-      <Pack>True</Pack>
-      <PackagePath>\</PackagePath>
-    </None>
-  </ItemGroup>
-
-  <ItemGroup>
-    <Reference Include="HotSwap">
-      <HintPath>..\..\..\HotSwap\Assemblies\HotSwap.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Data\AI\JobDrivers\" />
-    <Folder Include="Data\Generics\Container\Implemented\" />
-    <Folder Include="Data\Research\" />
-    <Folder Include="Data\World\Layers\" />
-    <Folder Include="Interfaces\" />
-    <Folder Include="Rendering\Tools\DefEditor" />
-    <Folder Include="Rendering\Tools\ModuleVisualizer\ModuleNodes" />
-    <Folder Include="VFX\Particles" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Compile Remove="NodeEditorFramework\**" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <EmbeddedResource Remove="NodeEditorFramework\**" />
-  </ItemGroup>
-
-  <Target Name="MyCode" BeforeTargets="UpdateReferences">
-    <!-- Set our variables -->
     <PropertyGroup>
-      <AssemblyCSharp>$(PkgKrafs_Rimworld_Ref)\ref\net472\Assembly-CSharp.dll</AssemblyCSharp>
-      <PubliciseOutputPath>$(PkgKrafs_Rimworld_Ref)\ref\net472\</PubliciseOutputPath>
-      <AssemblyCSharp_Publicised>$(PubliciseOutputPath)Assembly-CSharp_publicised.dll</AssemblyCSharp_Publicised>
+        <Authors>Telefonmast (aka Maxim)</Authors>
+        <Company>Telefonmast</Company>
+        <Description>A collection of tools and functionalities for RimWorld modding.</Description>
+        <RootNamespace>TeleCore</RootNamespace>
+        <AssemblyName>TeleCore</AssemblyName>
+        <TargetFramework>net472</TargetFramework>
+        <LangVersion>preview</LangVersion>
+        <OutputPath>..\..\Assemblies</OutputPath>
+        <DocumentationFile>..\..\Assemblies\TeleCore.xml</DocumentationFile>
+        <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+        <PackageTags>RimWorld;Mod;Telefonmast;Framework;Library;</PackageTags>
+        <RepositoryUrl>https://github.com/RealTelefonmast/TeleCore</RepositoryUrl>
+        <PackageProjectUrl>https://github.com/RealTelefonmast/TeleCore</PackageProjectUrl>
+        <PackageIcon>TeleCore.jpg</PackageIcon>
+        <!---->
+        <Optimize>true</Optimize>
+        <PlatformTarget>AnyCPU</PlatformTarget>
+        <!--
+        <Optimize>true</Optimize>
+        <DebugType>none</DebugType>
+        <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+        -->
+        <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+        <Version>1.2.5</Version>
+        <SignAssembly>False</SignAssembly>
+        <PackageVersion>1.8.5.2</PackageVersion>
+        <Nullable>enable</Nullable>
     </PropertyGroup>
 
-    <!-- Publicise the dlls (if required) -->
-    <Message Importance="High" Text="Publicising Rimworld Assembly ..." />
-    <Publicise TargetAssemblyPath="$(AssemblyCSharp)" OutputPath="$(PubliciseOutputPath)" Condition="Exists('$(AssemblyCSharp)')" />
+    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+        <DefineConstants>TRACE;DEBUG</DefineConstants>
+        <WarningLevel>4</WarningLevel>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+        <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+        <DebugType>full</DebugType>
+        <NoWarn>1701;1702;IL2121;1591;</NoWarn>
+        <CheckForOverflowUnderflow>true</CheckForOverflowUnderflow>
+        <DebugSymbols>true</DebugSymbols>
+    </PropertyGroup>
 
-    <!-- Add references to the new publicised dlls -->
-    <Message Importance="High" Text="Replacing reference to un-publicised assemblies with publicised equivalents ..." />
+    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+        <DefineConstants>DEBUG;TRACE</DefineConstants>
+        <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+        <DebugType>full</DebugType>
+        <NoWarn>1701;1702;IL2121;1591;</NoWarn>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
+        <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
+    </PropertyGroup>
 
     <ItemGroup>
-      <Reference Include="$(AssemblyCSharp_Publicised)">
-        <SpecificVersion>false</SpecificVersion>
-        <HintPath>$(AssemblyCSharp_Publicised)</HintPath>
-        <Implicit>true</Implicit>
-        <Private>false</Private>
-      </Reference>
+        <None Include="LICENSE.md" Pack="true" PackagePath=""/>
+        <None Include="..\..\README.md" Pack="true" PackagePath=""/>
+        <None Remove="NodeEditorFramework\**"/>
     </ItemGroup>
-  </Target>
-
-  <Target Name="UpdateReferences" AfterTargets="ResolveLockFileReferences">
-    <Message Importance="High" Text="Remove References ..." />
 
     <ItemGroup>
-      <Reference Remove="$(PkgKrafs_Rimworld_Ref)\ref\net472\Assembly-CSharp.dll" />
+        <PackageReference Include="Krafs.Rimworld.Ref" Version="1.4.3704" GeneratePathProperty="true">
+            <PrivateAssets>all</PrivateAssets>
+        </PackageReference>
+
+        <PackageReference Include="Lib.Harmony" Version="2.2.2" ExcludeAssets="runtime">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>compile; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+
+        <PackageReference Include="OneOf" Version="3.0.243"/>
+
+        <PackageReference Include="System.Collections.Immutable" Version="7.0.0"/>
+
+        <PackageReference Include="TaskPubliciser" Version="1.0.3">
+            <PrivateAssets>all</PrivateAssets>
+        </PackageReference>
+        <!--
+        <PackageReference Include="Microsoft.NETCore.Platforms" Version="*" />
+        -->
+        <PackageReference Include="UnlimitedHugs.Rimworld.HugsLib" Version="10.0.1" ExcludeAssets="runtime">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>compile; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+        <PackageReference Include="RimWorld.MultiplayerAPI" Version="0.4.0" ExcludeAssets="runtime">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>compile; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
     </ItemGroup>
-  </Target>
+
+    <ItemGroup>
+        <None Update="TeleCore.jpg">
+            <Pack>True</Pack>
+            <PackagePath>\</PackagePath>
+        </None>
+    </ItemGroup>
+
+    <ItemGroup>
+        <Reference Include="HotSwap">
+            <HintPath>..\..\..\HotSwap\Assemblies\HotSwap.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+    </ItemGroup>
+
+    <ItemGroup>
+        <Folder Include="Data\AI\JobDrivers\"/>
+        <Folder Include="Data\FlowCore\Containers\Holder\" />
+        <Folder Include="Data\Generics\Container\Gizmos\" />
+        <Folder Include="Data\Generics\Container\Implemented\"/>
+        <Folder Include="Data\Research\"/>
+        <Folder Include="Data\World\Layers\"/>
+        <Folder Include="Interfaces\"/>
+        <Folder Include="Rendering\Tools\DefEditor"/>
+        <Folder Include="Rendering\Tools\ModuleVisualizer\ModuleNodes"/>
+        <Folder Include="VFX\Particles"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <Compile Remove="NodeEditorFramework\**"/>
+        <Compile Remove="Data\FlowCore\Containers\ContainerConfig.cs" />
+        <Compile Remove="Data\FlowCore\Containers\Gizmo_ContainerStorage.cs" />
+        <Compile Remove="Data\FlowCore\Containers\IContainerHolderInterfaces.cs" />
+        <Compile Remove="Data\FlowCore\Containers\ValueContainerBase.cs" />
+        <Compile Remove="Data\FlowCore\Containers\ValueContainerWithHolder.cs" />
+        <Compile Remove="Data\FlowCore\Containers\ValueContainerWithHolderThing.cs" />
+        <Compile Remove="Data\FlowCore\Containers\Holder\IContainerHolderBase.cs" />
+        <Compile Remove="Data\FlowCore\Containers\Holder\IContainerHolderRoom.cs" />
+        <Compile Remove="Data\FlowCore\Containers\Holder\IContainerHolderThing.cs" />
+        <Compile Remove="Data\FlowCore\Containers\ValueResult.cs" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <EmbeddedResource Remove="NodeEditorFramework\**"/>
+    </ItemGroup>
+
+    <Target Name="MyCode" BeforeTargets="UpdateReferences">
+        <!-- Set our variables -->
+        <PropertyGroup>
+            <AssemblyCSharp>$(PkgKrafs_Rimworld_Ref)\ref\net472\Assembly-CSharp.dll</AssemblyCSharp>
+            <PubliciseOutputPath>$(PkgKrafs_Rimworld_Ref)\ref\net472\</PubliciseOutputPath>
+            <AssemblyCSharp_Publicised>$(PubliciseOutputPath)Assembly-CSharp_publicised.dll</AssemblyCSharp_Publicised>
+        </PropertyGroup>
+
+        <!-- Publicise the dlls (if required) -->
+        <Message Importance="High" Text="Publicising Rimworld Assembly ..."/>
+        <Publicise TargetAssemblyPath="$(AssemblyCSharp)" OutputPath="$(PubliciseOutputPath)" Condition="Exists('$(AssemblyCSharp)')"/>
+
+        <!-- Add references to the new publicised dlls -->
+        <Message Importance="High" Text="Replacing reference to un-publicised assemblies with publicised equivalents ..."/>
+
+        <ItemGroup>
+            <Reference Include="$(AssemblyCSharp_Publicised)">
+                <SpecificVersion>false</SpecificVersion>
+                <HintPath>$(AssemblyCSharp_Publicised)</HintPath>
+                <Implicit>true</Implicit>
+                <Private>false</Private>
+            </Reference>
+        </ItemGroup>
+    </Target>
+
+    <Target Name="UpdateReferences" AfterTargets="ResolveLockFileReferences">
+        <Message Importance="High" Text="Remove References ..."/>
+
+        <ItemGroup>
+            <Reference Remove="$(PkgKrafs_Rimworld_Ref)\ref\net472\Assembly-CSharp.dll"/>
+        </ItemGroup>
+    </Target>
 
 </Project>

@@ -2,17 +2,16 @@
 using System.Linq;
 using Verse;
 
-namespace TeleCore
+namespace TeleCore;
+
+public class HediffCompProperties_RangedVerb : HediffCompProperties
 {
-    public class HediffCompProperties_RangedVerb : HediffCompProperties
+    public List<VerbProperties_Extended> verbs;
+
+    public HediffCompProperties_RangedVerb()
     {
-        public HediffCompProperties_RangedVerb()
-        {
-            compClass = typeof(HediffComp_RangedVerb);
-        }
-
-        public IEnumerable<VerbProperties> VerbsBase => verbs.Select(v => v as VerbProperties);
-
-        public List<VerbProperties_Extended> verbs;
+        compClass = typeof(HediffComp_RangedVerb);
     }
+
+    public IEnumerable<VerbProperties> VerbsBase => verbs.Select(v => v as VerbProperties);
 }

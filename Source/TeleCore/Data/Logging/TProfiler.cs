@@ -4,25 +4,22 @@ namespace TeleCore.Data.Logging;
 
 public static class TProfiler
 {
-    private static bool _Disabled = true;
-    
-    private static Stopwatch Watch { get; }
-    private static string CurScope { get; set; }
+    private static readonly bool _Disabled = true;
 
-    public static bool IsActive => !_Disabled && Watch.IsRunning;
-    
     static TProfiler()
     {
         Watch = new Stopwatch();
     }
 
+    private static Stopwatch Watch { get; }
+    private static string CurScope { get; set; }
+
+    public static bool IsActive => !_Disabled && Watch.IsRunning;
+
     public static void Begin(string label = null)
     {
         //
-        if (_Disabled)
-        {
-            return;
-        }
+        if (_Disabled) return;
         CurScope = label ?? null;
         Watch.Reset();
         Watch.Start();
@@ -35,16 +32,15 @@ public static class TProfiler
             TLog.Warning("Cant check profiling while not running.");
             return;
         }
+
         TLogger.Log($"[{tag}]: {Watch.Elapsed.TotalMilliseconds}ms");
     }
-    
+
     public static void End(string message = null)
     {
-        if (!Watch.IsRunning)
-        {
-            return;
-        }
+        if (!Watch.IsRunning) return;
         Watch.Stop();
-        TLogger.Log($"{(CurScope != null ? $"[{CurScope}]: " : null)}Profiling Result: {Watch.Elapsed.TotalMilliseconds}ms");
+        TLogger.Log(
+            $"{(CurScope != null ? $"[{CurScope}]: " : null)}Profiling Result: {Watch.Elapsed.TotalMilliseconds}ms");
     }
 }

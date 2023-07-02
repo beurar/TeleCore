@@ -1,48 +1,47 @@
 ﻿using UnityEngine;
 using Verse;
 
-namespace TeleCore
+namespace TeleCore;
+
+public class EffectElement : UIElement
 {
-    public class EffectElement : UIElement
+    private readonly Def def;
+
+    public EffectElement(Rect rect, Def def) : base(rect, UIElementMode.Dynamic)
     {
-        private Def def;
+        //
+        bgColor = Color.clear;
+        hasTopBar = false;
 
-        //DataSet
-        public bool IsMote => def is ThingDef;
-        public bool IsFleck => def is FleckDef;
+        Size = new Vector2(20, 20);
 
-        public EffectCanvas ParentCanvas => (EffectCanvas)_parent;
+        //
+        this.def = def;
+    }
 
-        //EffectData
-        public Vector2 EffectOffset => Position - Parent.InRect.center;
+    //DataSet
+    public bool IsMote => def is ThingDef;
+    public bool IsFleck => def is FleckDef;
 
-        public EffectElement(Rect rect, Def def) : base(rect, UIElementMode.Dynamic)
-        {
-            //
-            bgColor = Color.clear;
-            hasTopBar = false;
+    public EffectCanvas ParentCanvas => (EffectCanvas) _parent;
 
-            Size = new Vector2(20, 20);
-            
-            //
-            this.def = def;
-        }
+    //EffectData
+    public Vector2 EffectOffset => Position - Parent.InRect.center;
 
-        protected override void HandleEvent_Custom(Event ev, bool inContext = false)
-        {
-        }
+    protected override void HandleEvent_Custom(Event ev, bool inContext = false)
+    {
+    }
 
-        protected override void DrawContentsBeforeRelations(Rect inRect)
-        {
-            var label = $"[{def.defName}]\n{EffectOffset}";
-            var labelSize = Text.CalcSize(label);
-            Rect labelRect = new Rect(Rect.x, Rect.y - labelSize.y, labelSize.x, labelSize.y);
-            TWidgets.DoTinyLabel(labelRect, label);
-            
-            //
-            GUI.color = Color.red;
-            Widgets.DrawTextureFitted(Rect, TeleContent.UIDataNode, 1f);
-            GUI.color = Color.white;
-        }
+    protected override void DrawContentsBeforeRelations(Rect inRect)
+    {
+        var label = $"[{def.defName}]\n{EffectOffset}";
+        var labelSize = Text.CalcSize(label);
+        var labelRect = new Rect(Rect.x, Rect.y - labelSize.y, labelSize.x, labelSize.y);
+        TWidgets.DoTinyLabel(labelRect, label);
+
+        //
+        GUI.color = Color.red;
+        Widgets.DrawTextureFitted(Rect, TeleContent.UIDataNode, 1f);
+        GUI.color = Color.white;
     }
 }

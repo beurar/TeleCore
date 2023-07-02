@@ -32,26 +32,20 @@ internal static class TLog
 
     public static void Debug(string msg, bool flag = true)
     {
-        if (flag)
-        {
-            Log.Message($"{"[TELE-Debug]".Colorize(TColor.Green)} {msg}");
-        }
+        if (flag) Log.Message($"{"[TELE-Debug]".Colorize(TColor.Green)} {msg}");
     }
 
     public static void DebugOnce(string msg, int hash)
     {
-        object obj = Log.logLock;
+        var obj = Log.logLock;
         lock (obj)
         {
             if (!Log.ReachedMaxMessagesLimit)
-            {
                 if (!Log.usedKeys.Contains(hash))
                 {
                     Log.usedKeys.Add(hash);
                     Debug(msg);
                 }
-            }
         }
     }
 }
-

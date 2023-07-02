@@ -5,7 +5,8 @@ namespace TeleCore;
 
 public class Graphic_RandomExtra : Graphic_Random
 {
-    public float ParamRandChance => data.shaderParameters.FirstOrDefault(p => p.name == "_TeleFakeParamRandChance").value.x;
+    public float ParamRandChance =>
+        data.shaderParameters.FirstOrDefault(p => p.name == "_TeleFakeParamRandChance").value.x;
 
     public override Material MatSingle
     {
@@ -28,9 +29,8 @@ public class Graphic_RandomExtra : Graphic_Random
     {
         if (Rand.Chance(ParamRandChance))
             return TeleContent.ClearTextureMat;
-        if (thing == null) 
+        if (thing == null)
             return MatSingle;
         return SubGraphicFor(thing).MatSingle;
     }
-    
 }

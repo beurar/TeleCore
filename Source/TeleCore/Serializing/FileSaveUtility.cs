@@ -40,7 +40,7 @@ public static class FileSaveUtility
     public static void MoveFile(string from, string to)
     {
         Exception ex = null;
-        for (int i = 0; i < 50; i++)
+        for (var i = 0; i < 50; i++)
         {
             try
             {
@@ -49,10 +49,7 @@ public static class FileSaveUtility
             }
             catch (Exception ex2)
             {
-                if (ex == null)
-                {
-                    ex = ex2;
-                }
+                if (ex == null) ex = ex2;
             }
 
             Thread.Sleep(1);

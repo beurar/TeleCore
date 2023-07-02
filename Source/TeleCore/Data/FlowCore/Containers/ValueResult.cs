@@ -1,22 +1,21 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
-using TeleCore.Defs;
-using TeleCore.Network.Flow.Values;
-using TeleCore.Primitive;
 using UnityEngine;
 
 namespace TeleCore.Generics.Container;
 
 /// <summary>
-/// The result of a <see cref="ValueContainerBase{TValue}"/> Value-Change operation.
+///     The result of a <see cref="ValueContainerBase{TValue}" /> Value-Change operation.
 /// </summary>
 public struct ValueResult<TValue>
-where TValue : FlowValueDef
+    where TValue : FlowValueDef
 {
     public ValueState State { get; private set; }
+
     //Initial desire value
     public int DesiredAmount { get; private set; }
+
     //Actual resulting value
     public int ActualAmount { get; private set; }
 
@@ -24,7 +23,7 @@ where TValue : FlowValueDef
     public int Diff { get; private set; }
 
     public DefValueStack<TValue> FullDiff { get; private set; }
-    
+
     public static implicit operator bool(ValueResult<TValue> result)
     {
         return result.State != ValueState.Failed;
@@ -40,7 +39,7 @@ where TValue : FlowValueDef
         {
             State = ValueState.Failed,
             DesiredAmount = desiredAmount,
-            ActualAmount = 0,
+            ActualAmount = 0
         };
     }
 
@@ -50,10 +49,10 @@ where TValue : FlowValueDef
         {
             State = ValueState.Incomplete,
             DesiredAmount = desiredAmount,
-            ActualAmount = 0,
+            ActualAmount = 0
         };
     }
-    
+
     public static ValueResult<TValue> Init(int desiredAmount, TValue usedDef)
     {
         return new ValueResult<TValue>
@@ -75,20 +74,20 @@ where TValue : FlowValueDef
             FullDiff = new DefValueStack<TValue>(usedDefs)
         };
     }
-    
+
     public ValueResult<TValue> AddDiff(TValue def, int diffAmount)
     {
         FullDiff += (def, diffAmount);
         Diff += diffAmount;
         return this;
     }
-    
+
     public ValueResult<TValue> SetActual(int actual)
     {
         ActualAmount = actual;
         return this;
     }
-    
+
     public ValueResult<TValue> Fail()
     {
         State = ValueState.Failed;
@@ -115,7 +114,7 @@ where TValue : FlowValueDef
 
     public override string ToString()
     {
-        StringBuilder sb = new StringBuilder();
+        var sb = new StringBuilder();
         sb.Append($"State: {State} | ");
         sb.Append($"DesiredToActual: {DesiredAmount} -> {ActualAmount} | ");
         sb.Append($"Diff: {Diff}");

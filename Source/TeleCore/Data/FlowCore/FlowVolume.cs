@@ -2,58 +2,34 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
-using TeleCore.Defs;
+using TeleCore.FlowCore.Events;
 using TeleCore.Generics.Container;
-using TeleCore.Network.Flow;
-using TeleCore.Network.Flow.Values;
+using TeleCore.Primitive;
 
 namespace TeleCore.FlowCore;
 
-public interface INotifyFlowEvent
+public abstract class FlowVolume<T> : INotifyFlowEvent where T : FlowValueDef
 {
-    event FlowEventHandler FlowEvent;
-    void OnFlowEvent(FlowEventArgs e);
-}
+    protected DefValueStack<T, double> mainStack;
+    protected DefValueStack<T, double> prevStack;
 
-public delegate void FlowEventHandler(object sender, FlowEventArgs e);
+    public DefValueStack<T, double> Stack => mainStack;
 
-public class FlowEventArgs : EventArgs
-{
-    public FlowValue Value { get; private set; }
-
-    public FlowEventArgs(FlowValue valueChange)
-    {
-        Value = valueChange;
-    }
-}
-
-public abstract class FlowVolume<T> : INotifyFlowEvent where T: FlowValueDef
-{
-    private double _flowRate;
-
-    protected FlowValueStack mainStack;
-    protected FlowValueStack prevStack;
-    
-    public event FlowEventHandler? FlowEvent;
-    
-    public FlowValueStack Stack => mainStack;
-    
-    public FlowValueStack PrevStack
+    public DefValueStack<T, double> PrevStack
     {
         get => prevStack;
         set => prevStack = value;
     }
 
-    public double FlowRate
-    {
-        get => _flowRate;
-        set => _flowRate = value;
-    }
-    
+    public double FlowRate { get; set; }
+
     public double TotalValue => mainStack.TotalValue;
     public abstract double MaxCapacity { get; }
-    
-    public double FillPercent => TotalValue /MaxCapacity;
+
+    public double FillPercent => TotalValue / MaxCapacity;
+
+    public bool Full => TotalValue >= MaxCapacity;
+    public bool Empty => TotalValue <= 0;
     
     public ContainerFillState FillState
     {
@@ -67,65 +43,71 @@ public abstract class FlowVolume<T> : INotifyFlowEvent where T: FlowValueDef
             };
         }
     }
-    
-    #region Data Getters
-    
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public double CapacityOf(FlowValueDef? def)
-    {
-        return MaxCapacity;
-    }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public double StoredValueOf(FlowValueDef? def)
-    {
-        if (def == null) return 0;
-        return Stack[def].Value;
-    }
-    
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public double TotalStoredOfMany(IEnumerable<FlowValueDef> defs)
-    {
-        return defs.Sum(StoredValueOf);
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public float StoredPercentOf(FlowValueDef def)
-    {
-        return (float) (StoredValueOf(def) / Math.Ceiling(CapacityOf(def)));
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public bool IsFull(FlowValueDef def)
-    {
-        if (def.sharesCapacity) return StoredValueOf(def) >= CapacityOf(def);
-        return FillState == ContainerFillState.Full;
-    }
-    
-    #endregion
-    
-    #region Manipulation Helpers
-
-    public FlowValueStack RemoveContent(double moveAmount)
-    {
-        var rem = mainStack * moveAmount;
-        mainStack -= rem;
-        return rem;
-    }
-
-    public void AddContent(FlowValueStack fullDiff)
-    {
-        mainStack += fullDiff;
-    }
-
-
-    #endregion
+    public event FlowEventHandler? FlowEvent;
 
     #region EventHandling
 
     public void OnFlowEvent(FlowEventArgs e)
     {
         FlowEvent?.Invoke(this, e);
+    }
+
+    #endregion
+
+    #region Data Getters
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public double CapacityOf(T? def)
+    {
+        return MaxCapacity;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public double StoredValueOf(T? def)
+    {
+        if (def == null) return 0;
+        return Stack[def].Value;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public double TotalStoredOfMany(IEnumerable<T> defs)
+    {
+        return defs.Sum(StoredValueOf);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public float StoredPercentOf(T def)
+    {
+        return (float) (StoredValueOf(def) / Math.Ceiling(CapacityOf(def)));
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public bool IsFull(T def)
+    {
+        if (def.sharesCapacity) return StoredValueOf(def) >= CapacityOf(def);
+        return FillState == ContainerFillState.Full;
+    }
+
+    #endregion
+
+    #region Manipulation Helpers
+
+    public DefValueStack<T, double> RemoveContent(double moveAmount)
+    {
+        var rem = mainStack * moveAmount;
+        mainStack -= rem;
+        return rem;
+    }
+
+    public void AddContent(DefValueStack<T, double> fullDiff)
+    {
+        mainStack += fullDiff;
+    }
+
+    public void LoadFromStack(DefValueStack<T, double> stack)
+    {
+        mainStack = stack;
     }
 
     #endregion

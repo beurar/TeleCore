@@ -5,24 +5,20 @@ namespace TeleCore;
 
 public class EventListener
 {
-    private Action callback;
-    private Func<Event, bool> listener;
-    private string refID;
+    private readonly Action callback;
+    private readonly Func<Event, bool> listener;
 
     public EventListener(Func<Event, bool> listener, Action callBack, string ID)
     {
         this.listener = listener;
-        this.callback = callBack;
-        this.refID = ID;
+        callback = callBack;
+        this.ID = ID;
     }
 
-    public string ID => refID;
+    public string ID { get; }
 
     public void ListenToEvent(Event curEvent)
     {
-        if (listener.Invoke(curEvent))
-        {
-            callback.Invoke();
-        }
+        if (listener.Invoke(curEvent)) callback.Invoke();
     }
 }

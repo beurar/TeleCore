@@ -5,10 +5,8 @@ namespace TeleCore;
 
 public class ThingGroupDef : Def
 {
-    private ThingGroupDef parentGroup;
     public List<ThingGroupDef> subGroups;
-
-    public ThingGroupDef ParentGroup => parentGroup;
+    public ThingGroupDef parentGroup;
 
     public override void ResolveReferences()
     {
@@ -23,9 +21,10 @@ public class ThingGroupDef : Def
                     groupDef.subGroups.Add(this);
                     break;
                 }
+
                 continue;
             }
-            
+
             //
             if (groupDef.subGroups is null) continue;
             if (groupDef.subGroups.Contains(this))
@@ -36,4 +35,3 @@ public class ThingGroupDef : Def
         }
     }
 }
-

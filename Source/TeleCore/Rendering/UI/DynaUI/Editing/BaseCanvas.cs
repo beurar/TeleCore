@@ -16,18 +16,6 @@ public class BaseCanvas : UIElement, IDragAndDropReceiver
     //
     private Vector2? oldDragPos;
 
-    //
-    public Vector2 DragPos { get; protected set; } = Vector2.zero;
-    public float CanvasZoomScale { get; protected set; } = 1;
-
-    public Vector2 MouseOnCanvas => (Event.current.mousePosition - TrueOrigin) / CanvasZoomScale;
-
-
-    //
-    public Vector2 Origin => InRect.AtZero().center + DragPos;
-    public Vector2 TrueOrigin => InRect.center + DragPos;
-    protected Vector2 LimitSize => (Size * 1f) * CanvasZoomScale;
-
 
     public BaseCanvas(UIElementMode mode) : base(mode)
     {
@@ -39,6 +27,33 @@ public class BaseCanvas : UIElement, IDragAndDropReceiver
     public BaseCanvas(Vector2 pos, Vector2 size, UIElementMode mode) : base(pos, size, mode)
     {
         UIDragNDropper.RegisterAcceptor(this);
+    }
+
+    //
+    public Vector2 DragPos { get; protected set; } = Vector2.zero;
+    public float CanvasZoomScale { get; protected set; } = 1;
+
+    public Vector2 MouseOnCanvas => (Event.current.mousePosition - TrueOrigin) / CanvasZoomScale;
+
+
+    //
+    public Vector2 Origin => InRect.AtZero().center + DragPos;
+    public Vector2 TrueOrigin => InRect.center + DragPos;
+    protected Vector2 LimitSize => Size * 1f * CanvasZoomScale;
+
+    //Drag & Drop
+    public virtual void DrawHoveredData(object draggedObject, Vector2 pos)
+    {
+    }
+
+    public virtual bool TryAcceptDrop(object draggedObject, Vector2 pos)
+    {
+        return false;
+    }
+
+    public virtual bool CanAcceptDrop(object draggedObject)
+    {
+        return false;
     }
 
     //Basic Property Setters
@@ -56,7 +71,6 @@ public class BaseCanvas : UIElement, IDragAndDropReceiver
     protected sealed override void HandleEvent_Custom(Event ev, bool inContext = false)
     {
         if (Mouse.IsOver(InRect))
-        {
             if (CanManipulateAt(ev.mousePosition, InRect))
             {
                 if (IsFocused && ev.button == 0)
@@ -76,19 +90,15 @@ public class BaseCanvas : UIElement, IDragAndDropReceiver
                 //MouseWheel Zoom
                 if (ev.type == EventType.ScrollWheel)
                 {
-                    var zoomDelta = (ev.delta.y / _TileSize) * CanvasZoomScale;
+                    var zoomDelta = ev.delta.y / _TileSize * CanvasZoomScale;
                     CanvasZoomScale = Mathf.Clamp(CanvasZoomScale - zoomDelta, ScaleRange.min, ScaleRange.max);
                     if (CanvasZoomScale < ScaleRange.max && CanvasZoomScale > ScaleRange.min)
                         DragPos += MouseOnCanvas * zoomDelta;
                 }
 
                 //Clear data always
-                if (ev.type == EventType.MouseUp)
-                {
-                    oldDragPos = null;
-                }
+                if (ev.type == EventType.MouseUp) oldDragPos = null;
             }
-        }
 
         //
         HandleEvent_OnCanvas(ev, inContext);
@@ -107,14 +117,14 @@ public class BaseCanvas : UIElement, IDragAndDropReceiver
             //Limit rect
             var dimension = 5;
             var tileSize = _TileSize * CanvasZoomScale;
-            var limitSize = (new Vector2(tileSize, tileSize) * dimension);
+            var limitSize = new Vector2(tileSize, tileSize) * dimension;
             var canvasRect = Origin.RectOnPos(limitSize).Rounded();
             TWidgets.DrawColoredBox(canvasRect, TColor.BGDarker, TColor.White05, 1);
 
             GUI.color = TColor.White025;
             var curX = canvasRect.x;
             var curY = canvasRect.y;
-            for (int x = 0; x < dimension; x++)
+            for (var x = 0; x < dimension; x++)
             {
                 Widgets.DrawLineVertical(curX, canvasRect.y, canvasRect.height);
                 Widgets.DrawLineHorizontal(canvasRect.x, curY, canvasRect.width);
@@ -133,7 +143,6 @@ public class BaseCanvas : UIElement, IDragAndDropReceiver
     //Drawing
     protected virtual void DrawOnCanvas(Rect inRect)
     {
-
     }
 
     protected sealed override void DrawContentsBeforeRelations(Rect inRect)
@@ -146,25 +155,9 @@ public class BaseCanvas : UIElement, IDragAndDropReceiver
         DrawOnCanvas(inRect);
     }
 
-    //Drag & Drop
-    public virtual void DrawHoveredData(object draggedObject, Vector2 pos)
-    {
-    }
-
-    public virtual bool TryAcceptDrop(object draggedObject, Vector2 pos)
-    {
-        return false;
-    }
-
-    public virtual bool CanAcceptDrop(object draggedObject)
-    {
-        return false;
-    }
-
     //
     protected override IEnumerable<FloatMenuOption> RightClickOptions()
     {
         yield return new FloatMenuOption("Recenter...", delegate { DragPos = Vector2.zero; });
     }
 }
-

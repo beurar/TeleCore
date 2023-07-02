@@ -8,25 +8,34 @@ namespace TeleCore.Primitive;
 public struct DefFloat<TDef> : IExposable where TDef : Def
 {
     private ushort defID;
-    private float value;
 
-    public static implicit operator DefFloat<TDef>((TDef Def, float Value) value) => new (value.Def, value.Value);
-    
-    public static implicit operator DefValueLoadable<TDef, float>(DefFloat<TDef> defInt) => new (defInt.Def, defInt.value);
-    public static implicit operator TDef(DefFloat<TDef> defInt) => defInt.Def;
-    public static explicit operator float(DefFloat<TDef> defInt) => defInt.Value;
-    
+    public static implicit operator DefFloat<TDef>((TDef Def, float Value) value)
+    {
+        return new DefFloat<TDef>(value.Def, value.Value);
+    }
+
+    public static implicit operator DefValueLoadable<TDef, float>(DefFloat<TDef> defInt)
+    {
+        return new DefValueLoadable<TDef, float>(defInt.Def, defInt.Value);
+    }
+
+    public static implicit operator TDef(DefFloat<TDef> defInt)
+    {
+        return defInt.Def;
+    }
+
+    public static explicit operator float(DefFloat<TDef> defInt)
+    {
+        return defInt.Value;
+    }
+
     public TDef Def
     {
         get => defID.ToDef<TDef>();
         set => defID = value.ToID();
     }
 
-    public float Value
-    {
-        readonly get => value;
-        set => this.value = value;
-    }
+    public float Value { get; set; }
 
     public DefFloat(DefFloatRef<TDef> defValue)
     {
@@ -54,13 +63,13 @@ public struct DefFloat<TDef> : IExposable where TDef : Def
 
     public void ExposeData()
     {
-        DefFloatRef<TDef> defRef = (DefFloatRef<TDef>) this;
+        var defRef = (DefFloatRef<TDef>) this;
         Scribe_Deep.Look(ref defRef, "defRef");
 
         if (Scribe.mode == LoadSaveMode.LoadingVars)
         {
-            this.Def = defRef.Def;
-            this.Value = defRef.Value;
+            Def = defRef.Def;
+            Value = defRef.Value;
         }
     }
 
@@ -68,38 +77,38 @@ public struct DefFloat<TDef> : IExposable where TDef : Def
 
     public static DefFloat<TDef> operator +(DefFloat<TDef> a, float b)
     {
-        a.value += b;
+        a.Value += b;
         return a;
     }
 
     public static DefFloat<TDef> operator -(DefFloat<TDef> a, float b)
     {
-        a.value -= b;
+        a.Value -= b;
         return a;
     }
-    
+
     public static DefFloat<TDef> operator *(DefFloat<TDef> a, float b)
     {
-        a.value *= b;
+        a.Value *= b;
         return a;
     }
 
     public static DefFloat<TDef> operator +(DefFloat<TDef> a, DefFloat<TDef> b)
     {
         if (a.defID != b.defID) return a;
-        a.value += b.value;
+        a.Value += b.Value;
         return a;
     }
-        
+
     public static DefFloat<TDef> operator -(DefFloat<TDef> a, DefFloat<TDef> b)
     {
         if (a.defID != b.defID) return a;
-        a.value -= b.value;
+        a.Value -= b.Value;
         return a;
     }
 
     #endregion
-    
+
     #region Comparision
 
     public static bool operator ==(DefFloat<TDef> left, DefFloat<TDef> right)

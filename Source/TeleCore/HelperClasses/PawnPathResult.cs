@@ -4,15 +4,13 @@ namespace TeleCore;
 
 public struct PawnPathResult
 {
-    private PawnPath _result;
-    private string _reason;
+    public PawnPath Path { get; }
 
-    public PawnPath Path => _result;
-    public string Reason => _reason;
-            
+    public string Reason { get; }
+
     public PawnPathResult(PawnPath result, string reason = null)
     {
-        _result = result;
-        _reason = reason;
+        Path = result;
+        Reason = reason;
     }
 }

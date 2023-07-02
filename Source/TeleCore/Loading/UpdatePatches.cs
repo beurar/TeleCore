@@ -1,21 +1,17 @@
-﻿using HarmonyLib;
-using RimWorld;
-using Verse;
+﻿namespace TeleCore;
 
-namespace TeleCore
+
+/*
+internal static class UpdatePatches
 {
-    /*
-    internal static class UpdatePatches
+    [HarmonyPatch(typeof(TickManager), nameof(TickManager.DoSingleTick))]
+    public static class TickManagerDoSingleTickPatch
     {
-        [HarmonyPatch(typeof(TickManager), nameof(TickManager.DoSingleTick))]
-        public static class TickManagerDoSingleTickPatch
+        public static bool Prefix()
         {
-            public static bool Prefix()
-            {
-                TLog.Message("Doing single normal tick");
-                return true;
-            }
+            TLog.Message("Doing single normal tick");
+            return true;
         }
     }
-    */
 }
+*/

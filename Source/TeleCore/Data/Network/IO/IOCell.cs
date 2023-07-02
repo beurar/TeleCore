@@ -4,7 +4,7 @@ using Verse;
 namespace TeleCore.Network.IO;
 
 /// <summary>
-/// Meant to be set and created in XML
+///     Meant to be set and created in XML
 /// </summary>
 public struct IOCellPrototype
 {
@@ -14,7 +14,7 @@ public struct IOCellPrototype
 }
 
 /// <summary>
-/// Implements the actual IO Cell of NetworkPart
+///     Implements the actual IO Cell of NetworkPart
 /// </summary>
 public struct IOCell
 {

@@ -10,17 +10,17 @@ public class PressureWorker_WaveEquationDamping2 : PressureWorker
     public override double CSquared => 0.03;
     public double DampFriction => 0.01;
 
-    public override double FlowFunction(FlowBox t0, FlowBox t1, double f) 
+    public override double FlowFunction(NetworkVolume t0, NetworkVolume t1, double f)
     {
-        var dp = this.PressureFunction(t0) - this.PressureFunction(t1);
+        var dp = PressureFunction(t0) - PressureFunction(t1);
         var counterFlow = Math.Sign(f) != Math.Sign(dp);
         f += dp * CSquared;
         f *= 1 - Friction;
-        if (counterFlow) f *= (1 - Math.Min(0.9,(DampFriction * Math.Abs(dp)*0.01))); 
+        if (counterFlow) f *= 1 - Math.Min(0.9, DampFriction * Math.Abs(dp) * 0.01);
         return f;
     }
-    
-    public override double PressureFunction(FlowBox t) 
+
+    public override double PressureFunction(NetworkVolume t)
     {
         return t.TotalValue / t.MaxCapacity * 100;
     }

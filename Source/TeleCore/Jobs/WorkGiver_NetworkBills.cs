@@ -10,7 +10,6 @@ namespace TeleCore;
 public class WorkGiver_NetworkBills : WorkGiver_Scanner
 {
     public override PathEndMode PathEndMode => PathEndMode.InteractionCell;
-    public override Danger MaxPathDanger(Pawn pawn) => Danger.Some;
 
     public override ThingRequest PotentialWorkThingRequest
     {
@@ -21,6 +20,11 @@ public class WorkGiver_NetworkBills : WorkGiver_Scanner
 
             return ThingRequest.ForGroup(ThingRequestGroup.Undefined);
         }
+    }
+
+    public override Danger MaxPathDanger(Pawn pawn)
+    {
+        return Danger.Some;
     }
 
     public override IEnumerable<Thing> PotentialWorkThingsGlobal(Pawn pawn)
@@ -52,6 +56,7 @@ public class WorkGiver_NetworkBills : WorkGiver_Scanner
             if (!compTNW.billStack.CurrentBill.ShouldDoNow()) return false;
             return !t.IsReserved(pawn.Map, out _);
         }
+
         return false;
     }
 

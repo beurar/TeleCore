@@ -1,7 +1,5 @@
 ﻿using System.Collections.Generic;
 using System.Runtime.CompilerServices;
-using TeleCore.Data.Events;
-using TeleCore.Defs;
 using TeleCore.Network.Data;
 using TeleCore.Network.Utility;
 using Verse;
@@ -9,31 +7,31 @@ using Verse;
 namespace TeleCore.Network;
 
 /// <summary>
-/// Creates, Modifies and Destroys PipeNetworks of the same NetworkDef.
+///     Creates, Modifies and Destroys PipeNetworks of the same NetworkDef.
 /// </summary>
 public class PipeSystem
 {
-    private readonly NetworkDef _def;
-    private readonly Map _map;
-    
-    //
-    private readonly List<PipeNetwork> _allNetworks;
-    private readonly PipeNetwork?[] _lookUpGrid;
-    //private readonly NetworkPartSet _allParts;
-    
-    //
-    private readonly List<DelayedNetworkAction> delayedActions = new();
-    
     //Debug
     internal static bool DEBUG_DrawNetwork = false;
-    
+
+    //
+    private readonly List<PipeNetwork> _allNetworks;
+    private readonly NetworkDef _def;
+    private readonly PipeNetwork?[] _lookUpGrid;
+
+    private readonly Map _map;
+    //private readonly NetworkPartSet _allParts;
+
+    //
+    private readonly List<DelayedNetworkAction> delayedActions = new();
+
     public PipeSystem(Map map, NetworkDef networkDef)
     {
         _def = networkDef;
         _map = map;
-        _allNetworks = new();
+        _allNetworks = new List<PipeNetwork>();
         _lookUpGrid = new PipeNetwork[map.cellIndices.NumGridCells];
-        
+
         //_allParts = new NetworkPartSet(networkDef, null);
         //_allParts.RegisterParentForEvents(this);
 
@@ -70,7 +68,7 @@ public class PipeSystem
     {
         delayedActions.Add(new DelayedNetworkAction(DelayedNetworkActionType.Deregister, part, part.Thing.Position));
     }
-    
+
     //Notify Spawned 1.
     //Delay 2.
     //IF CREATE
@@ -79,73 +77,63 @@ public class PipeSystem
     //Register new
     //Create new from factory with graph 
     //Notify new network created and update a bunch of shit 5.
-    
+
     public void Notify_PipeNetCreated(PipeNetwork newNetwork) //5.
     {
         var graph = newNetwork.Graph;
         var graphCells = newNetwork.Graph.Cells;
-        for (int i = 0; i < graphCells.Count; i++)
+        for (var i = 0; i < graphCells.Count; i++)
         {
             var cell = graphCells[i];
-            int num = _map.cellIndices.CellToIndex(cell);
+            var num = _map.cellIndices.CellToIndex(cell);
             if (_lookUpGrid[num] != null)
             {
                 if (_lookUpGrid[num] == newNetwork)
-                {
                     TLog.Warning($"Multiple identical cells in NetworkCells list of {newNetwork.NetworkDef}: {cell}");
-                }
                 else
-                {
                     TLog.Warning(
                         $"Two Pipe nets on the same cell {cell}: {_lookUpGrid[num].NetworkDef}[{_lookUpGrid[num].ID}] instead of {newNetwork.NetworkDef}[{newNetwork.ID}]");
-                }
             }
 
             _lookUpGrid[num] = newNetwork;
-            _map.mapDrawer.MapMeshDirty(cell, MapMeshFlag.Buildings | MapMeshFlag.Things | MapMeshFlag.PowerGrid | MapMeshFlag.Terrain);
+            _map.mapDrawer.MapMeshDirty(cell,
+                MapMeshFlag.Buildings | MapMeshFlag.Things | MapMeshFlag.PowerGrid | MapMeshFlag.Terrain);
         }
     }
-    
+
     public void Notify_PipeNetDestroyed(PipeNetwork deadNetwork)
     {
         var list = deadNetwork.Graph.Cells;
-        
+
         //
-        for (int i = 0; i < list.Count; i++)
+        for (var i = 0; i < list.Count; i++)
         {
-            int num = _map.cellIndices.CellToIndex(list[i]);
+            var num = _map.cellIndices.CellToIndex(list[i]);
             if (_lookUpGrid[num] == deadNetwork)
-            {
                 _lookUpGrid[num] = null;
-            }
             else if (_lookUpGrid[num] != null)
-            {
                 TLog.Warning(
                     $"Multiple networks on the same cell {list[i]}. This is probably a result of an earlier error.");
-            }
         }
 
         //OnNetworkDestroyed();
-        foreach (var networkSubPart in deadNetwork.PartSet.FullSet)
-        {
-            networkSubPart.Network = null;
-        }
-        
+        foreach (var networkSubPart in deadNetwork.PartSet.FullSet) networkSubPart.Network = null;
+
         deadNetwork.Dispose();
     }
-    
+
     private void RegisterNetwork(PipeNetwork newNet) //4.
     {
         _allNetworks.Add(newNet);
         Notify_PipeNetCreated(newNet);
     }
-    
+
     private void DeregisterNetwork(PipeNetwork oldNet)
     {
         _allNetworks.Remove(oldNet);
         Notify_PipeNetDestroyed(oldNet);
     }
-    
+
     private void TryCreateNetworkAt(IntVec3 cell, INetworkPart part) //3.
     {
         if (!cell.InBounds(_map)) return;
@@ -160,25 +148,20 @@ public class PipeSystem
     {
         if (!cell.InBounds(_map)) return;
         if (NetworkAt(cell, _map) == null)
-        {
             if (PipeNetworkFactory.Fits(cell.GetFirstBuilding(_map), destroyedPart.Config.networkDef, out var part))
             {
                 PipeNetworkFactory.CreateNetwork(part, out var network);
                 RegisterNetwork(network);
             }
-        }
     }
 
     private void TryDestroyNetworkAt(IntVec3 cell)
     {
         if (!cell.InBounds(_map)) return;
         var network = NetworkAt(cell, _map);
-        if (network != null)
-        {
-            DeregisterNetwork(network);
-        }
+        if (network != null) DeregisterNetwork(network);
     }
-    
+
     //Update Delayed Actions
     private void TickUpdate() //2.
     {
@@ -189,29 +172,23 @@ public class PipeSystem
         //Destroy Networks First
         for (var i = 0; i < count; i++)
         {
-            DelayedNetworkAction delayedActionForDestruction = delayedActions[i];
+            var delayedActionForDestruction = delayedActions[i];
             switch (delayedActions[i].type)
             {
                 //Should always happen first
                 //When registering a new part, first clear the network at the position
                 case DelayedNetworkActionType.Register:
                 {
-                    if (delayedActionForDestruction.pos != delayedActionForDestruction.Part.Thing.Position)
-                    {
-                        break;
-                    }
+                    if (delayedActionForDestruction.pos != delayedActionForDestruction.Part.Thing.Position) break;
 
-                    Thing parent = delayedActionForDestruction.Part.Thing;
+                    var parent = delayedActionForDestruction.Part.Thing;
                     if (NetworkAt(parent.Position, parent.Map) != null)
-                    {
-                        TLog.Warning($"Tried to register trasmitter {parent} at {parent.Position}, but there is already a power net here. There can't be two transmitters on the same cell.");
-                    }
+                        TLog.Warning(
+                            $"Tried to register trasmitter {parent} at {parent.Position}, but there is already a power net here. There can't be two transmitters on the same cell.");
 
                     //Ensure we only destroy network that we can also connect to
                     foreach (var subPart in delayedActionForDestruction.Part.AdjacentSet.FullSet)
-                    {
                         TryDestroyNetworkAt(subPart.Parent.Thing.Position);
-                    }
 
                     break;
                 }
@@ -224,10 +201,10 @@ public class PipeSystem
         }
 
         //Create Networks 
-        for (int j = 0; j < count; j++)
+        for (var j = 0; j < count; j++)
         {
-            DelayedNetworkAction delayedActionForCreation = delayedActions[j];
-            Thing parentThing = delayedActionForCreation.Part.Thing;
+            var delayedActionForCreation = delayedActions[j];
+            var parentThing = delayedActionForCreation.Part.Thing;
 
             switch (delayedActions[j].type)
             {
@@ -240,10 +217,9 @@ public class PipeSystem
                 //Create By Checking Adjacent Cells Of Despawned Component
                 case DelayedNetworkActionType.Deregister:
                 {
-                    foreach (IntVec3 adjPos in GenAdj.CellsAdjacentCardinal(delayedActionForCreation.pos, parentThing.Rotation, parentThing.def.size))
-                    {
+                    foreach (var adjPos in GenAdj.CellsAdjacentCardinal(delayedActionForCreation.pos,
+                                 parentThing.Rotation, parentThing.def.size))
                         TryCreateNetworkAtForDestruction(adjPos, delayedActionForCreation.Part);
-                    }
                     break;
                 }
             }
@@ -253,7 +229,7 @@ public class PipeSystem
     }
 
     #endregion
-    
+
     /*private void OnNetworkDestroyed()
     {
         NetworkDestroyed(new NetworkChangedEventArgs(NetworkChangeType.Destroyed));
@@ -271,25 +247,21 @@ public class PipeSystem
         //TotalPartSet.RemoveComponent(part);
         RemovedPart(new NetworkChangedEventArgs(NetworkChangeType.RemovedPart, part));
     }*/
-    
+
     #region TickUpdates
 
     public void Tick()
     {
-        foreach (var network in _allNetworks)
-        {
+        foreach (var network in _allNetworks) 
             network.Tick();
-        }
     }
 
     public void Draw()
     {
         //
         foreach (var network in _allNetworks)
-        {
             network.Draw();
-        }
-        
+
         //
         if (DEBUG_DrawNetwork)
         {
@@ -301,15 +273,11 @@ public class PipeSystem
             }
         }
     }
-    
+
     public void DrawOnGUI()
     {
-        foreach (var network in _allNetworks)
-        {
-            network.OnGUI();
-        }
+        foreach (var network in _allNetworks) network.OnGUI();
     }
-    
+
     #endregion
-    
 }

@@ -1,49 +1,45 @@
 ﻿using System.Collections.Generic;
 using TeleCore.Network.Utility;
+using TeleCore.Primitive;
 using Verse;
 
 namespace TeleCore.Network.IO;
 
 /// <summary>
-/// 
 /// </summary>
 public class NetworkIO
 {
-    private List<IOCell> _cells;
-    private List<IOCell> _visCells;
-    
-    public List<IOCell> Connections => _cells;
-    public List<IOCell> VisualCells => _visCells;
-    
     public NetworkIO(NetIOConfig config, IntVec3 refPos, Rot4 parentRotation)
     {
-        _cells = new List<IOCell>();
-        _visCells = new List<IOCell>();
-        
+        Connections = new List<IOCell>();
+        VisualCells = new List<IOCell>();
+
         var cells = config.GetCellsFor(parentRotation);
         foreach (var cell in cells)
         {
-            if(cell.mode == NetworkIOMode.None) continue;
+            if (cell.mode == NetworkIOMode.None) continue;
             if ((NetworkIOMode.ForRender & cell.mode) != 0)
-            {
-                _visCells.Add(new IOCell()
+                VisualCells.Add(new IOCell
                 {
-                    Pos = new(cell.offset + refPos, cell.direction),
+                    Pos = new IntVec3Rot(cell.offset + refPos, cell.direction),
                     Mode = cell.mode
                 });
-            }
 
-            _cells.Add(new IOCell()
+            Connections.Add(new IOCell
             {
-                Pos = new(cell.offset + refPos, cell.direction),
+                Pos = new IntVec3Rot(cell.offset + refPos, cell.direction),
                 Mode = cell.mode
             });
         }
     }
 
+    public List<IOCell> Connections { get; }
+
+    public List<IOCell> VisualCells { get; }
+
     public NetworkIOMode IOModeAt(IntVec3 pos)
     {
-        foreach (var cell in _cells)
+        foreach (var cell in Connections)
             if (cell.Pos.Pos == pos)
                 return cell.Mode;
         return 0;
@@ -51,29 +47,27 @@ public class NetworkIO
 
     public IOConnectionResult ConnectsTo(NetworkIO other)
     {
-        foreach (var cell in _cells)
+        foreach (var cell in Connections)
+        foreach (var otherCell in other.Connections)
         {
-            foreach (var otherCell in other._cells)
-            {
-                if (cell.Pos != otherCell.Interface) continue;
-                
-                if (cell.Mode.Matches(otherCell.Mode))
-                    return new IOConnectionResult()
-                    {
-                        In = cell.Pos,
-                        Out = cell.Pos + cell.Pos.Dir.Opposite.FacingCell,
-                        InMode = cell.Mode,
-                        OutMode = otherCell.Mode
-                    };
-                else if (otherCell.Mode.Matches(cell.Mode)) //Reverse
-                    return new IOConnectionResult()
-                    {
-                        In = otherCell.Pos,
-                        Out = otherCell.Pos + otherCell.Pos.Dir.Opposite.FacingCell,
-                        InMode = otherCell.Mode,
-                        OutMode = cell.Mode
-                    };
-            }
+            if (cell.Pos != otherCell.Interface) continue;
+
+            if (cell.Mode.Matches(otherCell.Mode))
+                return new IOConnectionResult
+                {
+                    In = cell.Pos,
+                    Out = cell.Pos + cell.Pos.Dir.Opposite.FacingCell,
+                    InMode = cell.Mode,
+                    OutMode = otherCell.Mode
+                };
+            if (otherCell.Mode.Matches(cell.Mode)) //Reverse
+                return new IOConnectionResult
+                {
+                    In = otherCell.Pos,
+                    Out = otherCell.Pos + otherCell.Pos.Dir.Opposite.FacingCell,
+                    InMode = otherCell.Mode,
+                    OutMode = cell.Mode
+                };
         }
 
         return IOConnectionResult.Invalid;

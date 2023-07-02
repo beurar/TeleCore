@@ -11,14 +11,8 @@ public static class TeleThingMaker
     {
         if (stuff != null && !stuff.IsStuff)
         {
-            TLog.Error(string.Concat(new object[]
-            {
-                "MakeThing error: Tried to make ",
-                def,
-                " from ",
-                stuff,
-                " which is not a stuff. Assigning default."
-            }));
+            TLog.Error(string.Concat("MakeThing error: Tried to make ", def, " from ", stuff,
+                " which is not a stuff. Assigning default."));
             stuff = GenStuff.DefaultStuffFor(def);
         }
 
@@ -30,18 +24,12 @@ public static class TeleThingMaker
 
         if (!def.MadeFromStuff && stuff != null)
         {
-            Log.Error(string.Concat(new object[]
-            {
-                "MakeThing error: ",
-                def,
-                " is not madeFromStuff but stuff=",
-                stuff,
-                ". Setting to null."
-            }));
+            Log.Error(string.Concat("MakeThing error: ", def, " is not madeFromStuff but stuff=", stuff,
+                ". Setting to null."));
             stuff = null;
         }
 
-        TThing thing = (TThing) Activator.CreateInstance(typeof(TThing));
+        var thing = (TThing) Activator.CreateInstance(typeof(TThing));
         thing.def = def;
         thing.SetStuffDirect(stuff);
         thing.PostMake();

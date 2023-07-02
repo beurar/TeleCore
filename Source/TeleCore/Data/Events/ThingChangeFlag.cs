@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace TeleCore.Data.Events;
+﻿namespace TeleCore.Data.Events;
 
 public enum ThingChangeFlag
 {

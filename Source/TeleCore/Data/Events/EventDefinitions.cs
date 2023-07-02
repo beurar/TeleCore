@@ -1,12 +1,15 @@
-﻿
-using TeleCore.Events;
+﻿using TeleCore.Events;
 
 namespace TeleCore.Data.Events;
 
 public delegate void ThingSpawnedEvent(ThingStateChangedEventArgs args);
+
 public delegate void ThingDespawnedEvent(ThingStateChangedEventArgs args);
+
 public delegate void ThingStateChangedEvent(ThingStateChangedEventArgs args);
+
 public delegate void TerrainChangedEvent(TerrainChangedEventArgs args);
+
 public delegate void CellChangedEvent(CellChangedEventArgs args);
 
 //Hediffs
@@ -27,6 +30,7 @@ public delegate bool FXShouldThrowEffectsEvent(EffecterLayerArgs args);
 public delegate void OnEffectSpawnedEvent(FXEffecterSpawnedEventArgs spawnedEventArgs);
 
 public delegate void NetworkChangedEvent(NetworkChangedEventArgs args);
+
 public delegate void MovedEventHandler(object sender, MovedEventArgs args);
 
 //Tele Specific

@@ -1,15 +1,14 @@
 ﻿using Verse;
 
-namespace TeleCore
+namespace TeleCore;
+
+public class TurretHubProperties
 {
-    public class TurretHubProperties
-    {
-        public bool isHub = false;
-        public ThingDef hubDef;
-        public ThingDef turretDef;
-        public GraphicData cableGraphic;
-        public string cableTexturePath;
-        public int maxTurrets = 3;
-        public float connectRadius = 7.9f;
-    }
+    public GraphicData cableGraphic;
+    public string cableTexturePath;
+    public float connectRadius = 7.9f;
+    public ThingDef hubDef;
+    public bool isHub = false;
+    public int maxTurrets = 3;
+    public ThingDef turretDef;
 }

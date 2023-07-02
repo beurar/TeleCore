@@ -1,12 +1,13 @@
-﻿
-namespace TeleCore;
+﻿namespace TeleCore;
 
 public struct CellValueData
 {
     //Index of the cell
     public uint index;
+
     //Actual value
     public uint value;
+
     //CPU value input
     public uint inputValue;
 
@@ -14,6 +15,6 @@ public struct CellValueData
     {
         this.index = index;
         this.value = value;
-        this.inputValue = 0;
+        inputValue = 0;
     }
 }

@@ -3,10 +3,15 @@
 namespace TeleCore;
 
 /// <summary>
-/// Provides an entry point to add a custom PlaySettings Option
+///     Provides an entry point to add a custom PlaySettings Option
 /// </summary>
 public abstract class PlaySettingsWorker
 {
+    protected PlaySettingsWorker()
+    {
+        Active = DefaultValue;
+    }
+
     public abstract bool Visible { get; }
     public bool Active { get; internal set; }
 
@@ -14,17 +19,12 @@ public abstract class PlaySettingsWorker
     public virtual bool ShowOnMapView { get; } = true;
 
     public virtual bool DefaultValue { get; } = false;
-    
+
     public abstract Texture2D Icon { get; }
 
     public abstract string Description { get; }
-    
-    public abstract void OnToggled(bool isActive);
 
-    protected PlaySettingsWorker()
-    {
-        Active = DefaultValue;
-    }
+    public abstract void OnToggled(bool isActive);
 
     internal void Toggle()
     {

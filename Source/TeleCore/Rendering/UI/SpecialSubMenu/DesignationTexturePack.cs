@@ -3,22 +3,21 @@ using Verse;
 
 namespace TeleCore;
 
-
 /// <summary>
-/// The texture pack provides textures for the custom build menu
+///     The texture pack provides textures for the custom build menu
 /// </summary>
 public class DesignationTexturePack
 {
-    private static string DefaultPackPath = "Menu/SubBuildMenu";
-        
+    private static readonly string DefaultPackPath = "Menu/SubBuildMenu";
+
     //
     public Texture2D backGround;
-    public Texture2D tab;
-    public Texture2D tabSelected;
     public Texture2D designator;
     public Texture2D designatorSelected;
+    public Texture2D tab;
+    public Texture2D tabSelected;
 
-    
+
     public DesignationTexturePack(string packPath, Def fromDef)
     {
         packPath ??= DefaultPackPath;

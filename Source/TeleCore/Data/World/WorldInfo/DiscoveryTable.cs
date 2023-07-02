@@ -7,14 +7,14 @@ namespace TeleCore;
 
 public class DiscoveryTable : IExposable
 {
-    private Dictionary<DiscoveryDef, bool> discoveries = new Dictionary<DiscoveryDef, bool>();
+    private Dictionary<DiscoveryDef, bool> discoveries = new();
 
     //TODO: Research For ALL!
     //public Dictionary<TResearchDef, bool> DiscoveredResearch = new Dictionary<TResearchDef, bool>();
 
     public bool this[DiscoveryDef discovery] => IsDiscovered(discovery);
     public bool this[IDiscoverable discovery] => this[discovery.DiscoveryDef];
-    
+
     public Dictionary<DiscoveryDef, bool> Discoveries => discoveries;
 
     public void ExposeData()
@@ -26,7 +26,7 @@ public class DiscoveryTable : IExposable
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool IsDiscovered(DiscoveryDef discovery)
     {
-        return Discoveries.TryGetValue(discovery, out bool value) && value;
+        return Discoveries.TryGetValue(discovery, out var value) && value;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -39,9 +39,10 @@ public class DiscoveryTable : IExposable
     {
         if (IsDiscovered(discovery)) return;
         Discoveries.Add(discovery, true);
-        Find.LetterStack.ReceiveLetter(TranslationUtil.Discovery.DiscoveryNew, TranslationUtil.Discovery.DiscoveryDesc(discovery.description), TeleDefOf.DiscoveryLetter);
+        Find.LetterStack.ReceiveLetter(TranslationUtil.Discovery.DiscoveryNew,
+            TranslationUtil.Discovery.DiscoveryDesc(discovery.description), TeleDefOf.DiscoveryLetter);
     }
-    
+
     // //Research Discovery
     // public bool ResearchHasBeenSeen(TResearchDef research)
     // {

@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using TeleCore.FlowCore;
 using TeleCore.Network.Data;
 using TeleCore.Static;
 using Verse;
@@ -8,56 +9,43 @@ namespace TeleCore;
 //Defines the logical ruleset for a network
 public class NetworkDef : FlowValueCollectionDef
 {
+    [Unsaved] private Graphic_Linked_NetworkStructureOverlay cachedOverlayGraphic;
+
     //Cached Data
-    [Unsaved]
-    private Graphic_LinkedNetworkStructure cachedTransmitterGraphic;
-    [Unsaved]
-    private Graphic_Linked_NetworkStructureOverlay cachedOverlayGraphic;
+    [Unsaved] private Graphic_LinkedNetworkStructure cachedTransmitterGraphic;
 
     //General Label
     public string containerLabel;
+
+    //Structure Ruleset
+    public ThingDef controllerDef;
     public string labelShort;
-        
-    //
-    public GraphicData transmitterGraphic;
     public GraphicData overlayGraphic;
 
     //
     public ThingDef portableContainerDefFallback = TeleDefOf.PortableContainer;
-        
-    //Structure Ruleset
-    public ThingDef controllerDef;
     public ThingDef transmitterDef;
+
+    //
+    public GraphicData transmitterGraphic;
 
     public bool UsesController => controllerDef != null;
 
     public Graphic_LinkedNetworkStructure TransmitterGraphic
     {
-        get
-        {
-            return cachedTransmitterGraphic ??= new Graphic_LinkedNetworkStructure(transmitterGraphic.Graphic);
-        }
+        get { return cachedTransmitterGraphic ??= new Graphic_LinkedNetworkStructure(transmitterGraphic.Graphic); }
     }
 
     public Graphic_Linked_NetworkStructureOverlay OverlayGraphic
     {
-        get
-        {
-            return cachedOverlayGraphic ??= new Graphic_Linked_NetworkStructureOverlay(overlayGraphic.Graphic);
-        }
+        get { return cachedOverlayGraphic ??= new Graphic_Linked_NetworkStructureOverlay(overlayGraphic.Graphic); }
     }
 
     public override IEnumerable<string> ConfigErrors()
     {
-        foreach (var configError in base.ConfigErrors())
-        {
-            yield return configError;
-        }
+        foreach (var configError in base.ConfigErrors()) yield return configError;
 
-        if (labelShort == null)
-        {
-            labelShort = label ?? defName.Substring(0, 2);
-        }
+        if (labelShort == null) labelShort = label ?? defName.Substring(0, 2);
 
         if (controllerDef != null)
         {
@@ -74,13 +62,10 @@ public class NetworkDef : FlowValueCollectionDef
             {
                 var networkDef = compProps.networks.Find(n => n.networkDef == this);
                 if (networkDef == null)
-                {
-                    yield return $"Network seems unused: Cannot find any {nameof(NetworkPartConfig)} using this network.";
-                }
-                else if((networkDef.role & NetworkRole.Controller) != NetworkRole.Controller)
-                {
+                    yield return
+                        $"Network seems unused: Cannot find any {nameof(NetworkPartConfig)} using this network.";
+                else if ((networkDef.roles & NetworkRole.Controller) != NetworkRole.Controller)
                     yield return $"controllerDef {controllerDef} does not have the Controller NetworkRole assigned!";
-                }
             }
         }
     }

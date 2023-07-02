@@ -1,19 +1,19 @@
 ﻿using System.IO;
 using Verse;
 
-namespace TeleCore
+namespace TeleCore;
+
+internal static class StringCache
 {
-    internal static class StringCache
-    {
-        internal static string TeleTools = "[TELE TOOLS]";
-        internal static string DirectoryBrowserTitle = "Directory Selection";
-        internal static string ToolSelection = "Select a Tool";
+    internal static string TeleTools = "[TELE TOOLS]";
+    internal static string DirectoryBrowserTitle = "Directory Selection";
+    internal static string ToolSelection = "Select a Tool";
 
-        //ClipBoards
-        internal static string NetworkFilterClipBoard = "NetworkFilterClipBoard";
-        internal static string NetworkBillClipBoard = "NetworkBillClipBoard";
+    //ClipBoards
+    internal static string NetworkFilterClipBoard = "NetworkFilterClipBoard";
+    internal static string NetworkBillClipBoard = "NetworkBillClipBoard";
 
-        //
-        internal static string DefaultAnimationDefLocation = Path.Combine(GenFilePaths.FolderUnderSaveData("Animations"), "Defs");
-    }
+    //
+    internal static string DefaultAnimationDefLocation =
+        Path.Combine(GenFilePaths.FolderUnderSaveData("Animations"), "Defs");
 }

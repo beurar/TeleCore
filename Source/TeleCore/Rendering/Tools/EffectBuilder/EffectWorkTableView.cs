@@ -5,9 +5,9 @@ namespace TeleCore.Rendering.Tools.EffectBuilder;
 
 public class EffectWorkTableView : UIElement
 {
-    private EffectCanvas _workCanvas;
-    private ElementScroller _elementView;
-    private DefBrowser _browser;
+    private readonly DefBrowser _browser;
+    private readonly ElementScroller _elementView;
+    private readonly EffectCanvas _workCanvas;
 
 
     public EffectWorkTableView(Vector2 pos, Vector2 size, UIElementMode mode) : base(pos, size, mode)
@@ -15,9 +15,9 @@ public class EffectWorkTableView : UIElement
         _workCanvas = new EffectCanvas(UIElementMode.Static);
         _elementView = new ElementScroller(_workCanvas, UIElementMode.Static);
         _browser = new DefBrowser(new Vector2(size.x - 225, pos.y), new Vector2(225, size.y), UIElementMode.Static,
-            new DefBrowserSettings()
+            new DefBrowserSettings
             {
-                filter = (def) => def is ThingDef {IsFrame: false, IsBlueprint: false} or FleckDef,
+                filter = def => def is ThingDef {IsFrame: false, IsBlueprint: false} or FleckDef
             });
     }
 
@@ -25,10 +25,10 @@ public class EffectWorkTableView : UIElement
     {
         GUI.BeginGroup(inRect);
         {
-            Rect settingsArea = inRect.TopPartPixels(100);
-            Rect workArea = inRect.BottomPartPixels(inRect.height - settingsArea.height);
-            Rect canvasRect = workArea.LeftPartPixels(workArea.height);
-            Rect scrollView = new Rect(canvasRect.xMax + 1, canvasRect.y, 125, canvasRect.height);
+            var settingsArea = inRect.TopPartPixels(100);
+            var workArea = inRect.BottomPartPixels(inRect.height - settingsArea.height);
+            var canvasRect = workArea.LeftPartPixels(workArea.height);
+            var scrollView = new Rect(canvasRect.xMax + 1, canvasRect.y, 125, canvasRect.height);
 
             Widgets.DrawHighlightIfMouseover(settingsArea);
             Widgets.DrawHighlightIfMouseover(workArea);

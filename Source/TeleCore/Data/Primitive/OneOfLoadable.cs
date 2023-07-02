@@ -5,7 +5,7 @@ using Verse;
 namespace TeleCore.Primitive;
 
 /// <summary>
-/// Allows loading a simple <see cref="OneOf"/> for int and float.
+///     Allows loading a simple <see cref="OneOf" /> for int and float.
 /// </summary>
 public struct OneOfLoadable
 {
@@ -18,12 +18,8 @@ public struct OneOfLoadable
         var valTxt = isF ? val.Substring(0, val.Length - 1) : val;
 
         if (xmlRoot.InnerText.EndsWith("f"))
-        {
             Value = ParseHelper.FromString<float>(valTxt);
-        }
         else
-        {
             Value = ParseHelper.FromString<int>(valTxt);
-        }
     }
 }

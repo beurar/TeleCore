@@ -1,13 +1,12 @@
 ﻿using UnityEngine;
 using Verse;
 
-namespace TeleCore
+namespace TeleCore;
+
+public class TurretBarrelProperties
 {
-    public class TurretBarrelProperties
-    {
-        public GraphicData graphic;
-        public float altitudeOffset = 0;
-        public Vector3 barrelOffset = Vector3.zero;
-        public Vector3 recoilOffset;
-    }
+    public float altitudeOffset = 0;
+    public Vector3 barrelOffset = Vector3.zero;
+    public GraphicData graphic;
+    public Vector3 recoilOffset;
 }

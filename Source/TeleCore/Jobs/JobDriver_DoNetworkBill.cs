@@ -8,16 +8,14 @@ namespace TeleCore;
 
 public class JobDriver_DoNetworkBill : JobDriver
 {
-    public Comp_NetworkBillsCrafter Crafter => job.GetTarget(TargetIndex.A).Thing.TryGetComp<Comp_NetworkBillsCrafter>();
+    public Comp_NetworkBillsCrafter Crafter =>
+        job.GetTarget(TargetIndex.A).Thing.TryGetComp<Comp_NetworkBillsCrafter>();
 
     public CustomNetworkBill CurrentBill => Crafter.BillStack.CurrentBill;
 
     public override bool TryMakePreToilReservations(bool errorOnFailed)
     {
-        if (!pawn.Reserve(this.job.GetTarget(TargetIndex.A), this.job))
-        {
-            return false;
-        }
+        if (!pawn.Reserve(job.GetTarget(TargetIndex.A), job)) return false;
         return true;
     }
 
@@ -28,23 +26,21 @@ public class JobDriver_DoNetworkBill : JobDriver
         billToil.FailOn(() => CurrentBill == null || !CurrentBill.ShouldDoNow());
         billToil.tickAction = delegate
         {
-            Pawn actor = billToil.actor;
-            Job curJob = actor.jobs.curJob;
+            var actor = billToil.actor;
+            var curJob = actor.jobs.curJob;
             var bill = CurrentBill;
-            Pawn pawn = billToil.actor;
+            var pawn = billToil.actor;
             bill.DoWork(pawn);
             if (bill.TryFinish(out var results))
             {
                 //
-                IntVec3 invalid = IntVec3.Invalid;
+                var invalid = IntVec3.Invalid;
                 if (bill.StoreMode == BillStoreModeDefOf.BestStockpile)
-                {
-                    StoreUtility.TryFindBestBetterStoreCellFor(results[0], actor, actor.Map, StoragePriority.Unstored, actor.Faction, out invalid, true);
-                }
+                    StoreUtility.TryFindBestBetterStoreCellFor(results[0], actor, actor.Map, StoragePriority.Unstored,
+                        actor.Faction, out invalid);
                 else if (bill.StoreMode == BillStoreModeDefOf.SpecificStockpile)
-                {
-                    StoreUtility.TryFindBestBetterStoreCellForIn(results[0], actor, actor.Map, StoragePriority.Unstored, actor.Faction, bill.StoreZone.slotGroup, out invalid, true);
-                }
+                    StoreUtility.TryFindBestBetterStoreCellForIn(results[0], actor, actor.Map, StoragePriority.Unstored,
+                        actor.Faction, bill.StoreZone.slotGroup, out invalid);
                 if (invalid.IsValid)
                 {
                     actor.carryTracker.TryStartCarry(results[0]);
@@ -52,19 +48,20 @@ public class JobDriver_DoNetworkBill : JobDriver
                     curJob.targetA = results[0];
                     curJob.count = 99999;
                 }
+
                 EndJobWith(JobCondition.Succeeded);
             }
         };
         billToil.defaultCompleteMode = ToilCompleteMode.Never;
         billToil.WithEffect(() => EffecterDefOf.ConstructMetal, TargetIndex.A);
         //billToil.PlaySustainerOrSound(() => SoundDefOf.);
-        billToil.WithProgressBar(TargetIndex.A, () => 1 - (CurrentBill.WorkLeft / CurrentBill.workAmountTotal), false, -0.5f);
+        billToil.WithProgressBar(TargetIndex.A, () => 1 - CurrentBill.WorkLeft / CurrentBill.workAmountTotal);
         yield return billToil;
 
         //
         yield return Toils_Reserve.Reserve(TargetIndex.B);
-        Toil carryToCell = Toils_Haul.CarryHauledThingToCell(TargetIndex.B);
+        var carryToCell = Toils_Haul.CarryHauledThingToCell(TargetIndex.B);
         yield return carryToCell;
-        yield return Toils_Haul.PlaceHauledThingInCell(TargetIndex.B, carryToCell, storageMode: true, tryStoreInSameStorageIfSpotCantHoldWholeStack: true);
+        yield return Toils_Haul.PlaceHauledThingInCell(TargetIndex.B, carryToCell, true, true);
     }
 }

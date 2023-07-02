@@ -17,10 +17,7 @@ public class AlternateGraphicWorkerWallOnSouth : AlternateGraphicWorker
         if (rot == Rot4.East || rot == Rot4.West)
         {
             var checkPos = thing.Position + Rot4.South.FacingCell;
-            if (checkPos.GetEdifice(thing.Map) != null)
-            {
-                return true;
-            }
+            if (checkPos.GetEdifice(thing.Map) != null) return true;
         }
 
         return false;

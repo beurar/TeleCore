@@ -12,9 +12,9 @@ internal static class ReplacePatches
     {
         public static void Postfix(ref Bill __result)
         {
-            if (__result.recipe is RecipeDef_Network {networkCost: { }} tRecipe)
+            if (__result.recipe is RecipeDef_Network {networkCost: not null} tRecipe)
             {
-                Bill_Production_Network billProductionNetworkBill = new Bill_Production_Network(tRecipe);
+                var billProductionNetworkBill = new Bill_Production_Network(tRecipe);
                 __result = billProductionNetworkBill;
             }
         }

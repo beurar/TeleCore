@@ -3,54 +3,52 @@ using HarmonyLib;
 using UnityEngine;
 using Verse;
 
-namespace TeleCore
+namespace TeleCore;
+
+public class TeleCoreMod : Mod
 {
-    public class TeleCoreMod : Mod
+    //Static Data
+    private static Harmony teleCore;
+
+    public TeleCoreMod(ModContentPack content) : base(content)
     {
-        //Static Data
-        private static TeleCoreMod modInt;
-        private static Harmony teleCore;
+        Mod = this;
+        var assembly = Assembly.GetExecutingAssembly();
+        var version = assembly.GetName().Version.ToString();
 
-        public static TeleCoreMod Mod => modInt;
-        public static Harmony TeleCore
+        //
+        TLog.Message($"[{version}] - Init", Color.cyan);
+        modSettings = GetSettings<TeleCoreSettings>();
+
+        //
+        TeleCore.PatchAll(assembly);
+    }
+
+    public static TeleCoreMod Mod { get; private set; }
+
+    public static Harmony TeleCore
+    {
+        get
         {
-            get
-            {
-                Harmony.DEBUG = true;
-                return teleCore ??= new Harmony("telefonmast.telecore");
-            }
+            Harmony.DEBUG = true;
+            return teleCore ??= new Harmony("telefonmast.telecore");
         }
+    }
 
-        public static TeleCoreSettings Settings => (TeleCoreSettings)modInt.modSettings;
+    public static TeleCoreSettings Settings => (TeleCoreSettings) Mod.modSettings;
 
-        public TeleCoreMod(ModContentPack content) : base(content)
-        {
-            modInt = this;
-            var assembly = Assembly.GetExecutingAssembly();
-            var version = assembly.GetName().Version.ToString();
-            
-            //
-            TLog.Message($"[{version}] - Init", Color.cyan);
-            modSettings = GetSettings<TeleCoreSettings>();
+    public override string SettingsCategory()
+    {
+        return "TeleCore";
+    }
 
-            //
-            TeleCore.PatchAll(assembly);
+    public override void WriteSettings()
+    {
+        base.WriteSettings();
+    }
 
-        }
-
-        public override string SettingsCategory()
-        {
-            return "TeleCore";
-        }
-
-        public override void WriteSettings()
-        {
-            base.WriteSettings();
-        }
-
-        public override void DoSettingsWindowContents(Rect inRect)
-        {
-            TWidgets.DoTinyLabel(inRect, "Hi :)");
-        }
+    public override void DoSettingsWindowContents(Rect inRect)
+    {
+        TWidgets.DoTinyLabel(inRect, "Hi :)");
     }
 }

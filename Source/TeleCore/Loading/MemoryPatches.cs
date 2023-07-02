@@ -19,10 +19,7 @@ internal static class MemoryPatches
             UnloadUtility.MemoryUnloadEvent?.Invoke();
 
             if (UnloadUtility.MemoryUnloadEventThreadSafe != null)
-            {
                 LongEventHandler.ExecuteWhenFinished(UnloadUtility.MemoryUnloadEventThreadSafe);
-            }
         }
     }
 }
-

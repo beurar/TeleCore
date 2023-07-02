@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Linq;
+﻿using System.Linq;
 using HarmonyLib;
 using RimWorld;
 using TeleCore.Data.Events;
@@ -17,60 +16,50 @@ internal static class ThingPatches
             if (constr == null || pipe == null) return false;
             var networkConstr = constr.GetCompProperties<CompProperties_Network>();
             var networkPipe = pipe.GetCompProperties<CompProperties_Network>();
-            if (networkConstr == null || networkPipe == null)
-            {
-                return false;
-            }
+            if (networkConstr == null || networkPipe == null) return false;
 
-            return (from network in networkConstr.networks 
-                from pipeNetwork in networkPipe.networks 
-                where network.networkDef == pipeNetwork.networkDef 
+            return (from network in networkConstr.networks
+                from pipeNetwork in networkPipe.networks
+                where network.networkDef == pipeNetwork.networkDef
                 select network).Any();
         }
-        
+
         internal static ThingDef GetThingDef(ThingDef thingDef)
         {
-            return thingDef.entityDefToBuild as ThingDef ?? thingDef;;
+            return thingDef.entityDefToBuild as ThingDef ?? thingDef;
+            ;
         }
-        
+
         internal static ThingDef? GetThingDef(Thing thing)
         {
             ThingDef? thingDef;
             if (thing is Blueprint)
-            {
                 thingDef = thing.def.entityDefToBuild as ThingDef;
-            }
             else if (thing is Frame)
-            {
                 thingDef = thing.def.entityDefToBuild as ThingDef;
-            }
             else
-            {
                 thingDef = thing.def;
-            }
 
             return thingDef;
         }
     }
-    
+
     [HarmonyPatch(typeof(GenSpawn), nameof(GenSpawn.SpawningWipes))]
     internal static class GenSpawnSpawningWipesPatch
     {
         public static bool Prefix(BuildableDef newEntDef, BuildableDef oldEntDef, ref bool __result)
         {
             if (newEntDef is ThingDef constr && oldEntDef is ThingDef pipe)
-            {
                 if (Tools.PipeBlocking(Tools.GetThingDef(constr), Tools.GetThingDef(pipe)))
                 {
                     __result = true;
                     return false;
                 }
-            }
+
             return true;
         }
-        
     }
-    
+
     [HarmonyPatch(typeof(GenConstruct), nameof(GenConstruct.BlocksConstruction))]
     internal static class GenConstructBlocksConstructionPatch
     {
@@ -82,6 +71,7 @@ internal static class ThingPatches
                 __result = true;
                 return false;
             }
+
             return true;
         }
     }
@@ -104,17 +94,18 @@ internal static class ThingPatches
         public static bool Prefix(Thing __instance)
         {
             //Event Handling
-            GlobalEventHandler.OnThingDespawning(new ThingStateChangedEventArgs(ThingChangeFlag.Despawning, __instance));
+            GlobalEventHandler.OnThingDespawning(new ThingStateChangedEventArgs(ThingChangeFlag.Despawning,
+                __instance));
             return true;
         }
-        
+
         public static void Postfix(Thing __instance)
         {
             //Event Handling
             GlobalEventHandler.OnThingDespawned(new ThingStateChangedEventArgs(ThingChangeFlag.Despawned, __instance));
         }
     }
-        
+
     [HarmonyPatch(typeof(ThingWithComps))]
     [HarmonyPatch(nameof(ThingWithComps.BroadcastCompSignal))]
     public static class ThingWithComps_BroadcastCompSignalPatch
@@ -122,10 +113,11 @@ internal static class ThingPatches
         public static void Postfix(Thing __instance, string signal)
         {
             //Event Handling
-            GlobalEventHandler.OnThingSentSignal(new ThingStateChangedEventArgs(ThingChangeFlag.SentSignal, __instance, signal));
+            GlobalEventHandler.OnThingSentSignal(new ThingStateChangedEventArgs(ThingChangeFlag.SentSignal, __instance,
+                signal));
         }
     }
-        
+
     //Door state changed
     [HarmonyPatch(typeof(Building_Door))]
     [HarmonyPatch(nameof(Building_Door.CheckClearReachabilityCacheBecauseOpenedOrClosed))]
@@ -134,7 +126,8 @@ internal static class ThingPatches
         public static void Postfix(Building_Door __instance)
         {
             //Event Handling
-            GlobalEventHandler.OnThingSentSignal(new ThingStateChangedEventArgs(ThingChangeFlag.SentSignal, __instance, __instance.Open ? "DoorOpened" : "DoorClosed"));
+            GlobalEventHandler.OnThingSentSignal(new ThingStateChangedEventArgs(ThingChangeFlag.SentSignal, __instance,
+                __instance.Open ? "DoorOpened" : "DoorClosed"));
         }
     }
 
@@ -146,9 +139,7 @@ internal static class ThingPatches
         public static void Postfix(Projectile __instance, ref float __result)
         {
             if (__instance is IPatchedProjectile patchedProjectile)
-            {
                 __result += patchedProjectile.ArcHeightFactorPostAdd;
-            }
         }
     }
 
@@ -159,36 +150,34 @@ internal static class ThingPatches
         public static void Postfix(Projectile __instance, Thing thing, ref bool __result)
         {
             if (__instance is IPatchedProjectile patchedProjectile)
-            {
                 patchedProjectile.CanHitOverride(thing, ref __result);
-            }
         }
     }
 
     [HarmonyPatch(typeof(Projectile))]
-    [HarmonyPatch(nameof(Projectile.Launch), typeof(Thing), typeof(Vector3), typeof(LocalTargetInfo), typeof(LocalTargetInfo), typeof(ProjectileHitFlags), typeof(bool), typeof(Thing), typeof(ThingDef))]
+    [HarmonyPatch(nameof(Projectile.Launch), typeof(Thing), typeof(Vector3), typeof(LocalTargetInfo),
+        typeof(LocalTargetInfo), typeof(ProjectileHitFlags), typeof(bool), typeof(Thing), typeof(ThingDef))]
     public static class ProjectileLaunchPatch
     {
-        public static bool Prefix(Projectile __instance, Thing launcher, Vector3 origin, LocalTargetInfo usedTarget, LocalTargetInfo intendedTarget, ProjectileHitFlags hitFlags, bool preventFriendlyFire = false, Thing equipment = null, ThingDef targetCoverDef = null)
+        public static bool Prefix(Projectile __instance, Thing launcher, Vector3 origin, LocalTargetInfo usedTarget,
+            LocalTargetInfo intendedTarget, ProjectileHitFlags hitFlags, bool preventFriendlyFire = false,
+            Thing equipment = null, ThingDef targetCoverDef = null)
         {
             //
             if (__instance is IPatchedProjectile patchedProjectile)
-            {
-                if (!patchedProjectile.PreLaunch(launcher, origin, usedTarget, intendedTarget, hitFlags, preventFriendlyFire, equipment, targetCoverDef))
-                {
+                if (!patchedProjectile.PreLaunch(launcher, origin, usedTarget, intendedTarget, hitFlags,
+                        preventFriendlyFire, equipment, targetCoverDef))
                     return false;
-                }
-            }
             return true;
         }
 
-        public static void Postfix(Projectile __instance, Thing launcher, Vector3 origin, LocalTargetInfo usedTarget, LocalTargetInfo intendedTarget, ProjectileHitFlags hitFlags, bool preventFriendlyFire = false, Thing equipment = null, ThingDef targetCoverDef = null)
+        public static void Postfix(Projectile __instance, Thing launcher, Vector3 origin, LocalTargetInfo usedTarget,
+            LocalTargetInfo intendedTarget, ProjectileHitFlags hitFlags, bool preventFriendlyFire = false,
+            Thing equipment = null, ThingDef targetCoverDef = null)
         {
             //
             if (__instance is IPatchedProjectile patchedProjectile)
-            {
                 patchedProjectile.PostLaunch(ref __instance.origin, ref __instance.destination);
-            }
         }
     }
 
@@ -205,10 +194,7 @@ internal static class ThingPatches
             Map = __instance.Map;
 
             //
-            if (__instance is IPatchedProjectile patchedProj)
-            {
-                return patchedProj.PreImpact();
-            }
+            if (__instance is IPatchedProjectile patchedProj) return patchedProj.PreImpact();
 
             return true;
         }
@@ -216,21 +202,16 @@ internal static class ThingPatches
         public static void Postfix(Thing __instance)
         {
             //
-            if (__instance is IPatchedProjectile patchedProj)
-            {
-                patchedProj.PostImpact();
-            }
+            if (__instance is IPatchedProjectile patchedProj) patchedProj.PostImpact();
 
             //
             if (__instance.def.HasTeleExtension(out var extension))
-            {
                 if (extension.projectile != null)
                 {
                     extension.projectile.impactExplosion?.DoExplosion(Position, Map, __instance);
                     extension.projectile.impactFilth?.SpawnFilth(Position, Map);
                     extension.projectile.impactEffecter?.Spawn(Position, Map);
                 }
-            }
 
             //
             Position = IntVec3.Invalid;

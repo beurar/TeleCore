@@ -7,25 +7,53 @@ namespace TeleCore;
 
 public class FloatControl
 {
+    public enum FCState
+    {
+        Accelerating,
+        Decelerating,
+        Sustaining,
+        Idle
+    }
+
     private const float deltaTime = 0.016666668f;
 
     private readonly float fixedAcc;
     private readonly float fixedTimeInc;
     private readonly float maxValue;
 
-    private bool starting, stopping;
-    private float curProgress = 0;
-    private float curValue;
+    private readonly SimpleCurve AccelerationCurve;
+    private float curProgress;
+    private readonly SimpleCurve DecelerationCurve;
+    private readonly SimpleCurve OutputCurve;
 
-    private SimpleCurve AccelerationCurve;
-    private SimpleCurve DecelerationCurve;
-    private SimpleCurve OutputCurve;
+    private bool starting, stopping;
+
+    public FloatControl(float maxValue, float secondsToMax, SimpleCurve accCurve = null, SimpleCurve decCurve = null,
+        SimpleCurve outCurve = null)
+    {
+        this.maxValue = maxValue;
+        fixedAcc = maxValue / secondsToMax;
+        fixedTimeInc = secondsToMax / deltaTime;
+
+        AccelerationCurve = accCurve ?? new SimpleCurve
+        {
+            new(0, 0),
+            new(1, 1)
+        };
+        DecelerationCurve = decCurve ?? AccelerationCurve;
+        OutputCurve = outCurve ?? new SimpleCurve
+        {
+            new(0, 0),
+            new(1, maxValue)
+        };
+    }
 
     public bool ReachedPeak => Math.Abs(CurPct - 1f) < 0.001953125f;
     public bool StoppedDead => CurPct == 0f;
-    public float CurPct => curValue / maxValue;
-    public float CurValue => curValue;
-    public float OutputValue => OutputCurve?.Evaluate(CurPct) ?? curValue;
+    public float CurPct => CurValue / maxValue;
+    public float CurValue { get; private set; }
+
+    public float OutputValue => OutputCurve?.Evaluate(CurPct) ?? CurValue;
 
     public float Acceleration
     {
@@ -39,14 +67,6 @@ public class FloatControl
         }
     }
 
-    public enum FCState
-    {
-        Accelerating,
-        Decelerating,
-        Sustaining,
-        Idle
-    }
-
     public FCState CurState
     {
         get
@@ -58,30 +78,11 @@ public class FloatControl
         }
     }
 
-    public FloatControl(float maxValue, float secondsToMax, SimpleCurve accCurve = null, SimpleCurve decCurve = null, SimpleCurve outCurve = null)
-    {
-        this.maxValue = maxValue;
-        fixedAcc = maxValue / secondsToMax;
-        fixedTimeInc = secondsToMax / deltaTime;
-
-        AccelerationCurve = accCurve ?? new SimpleCurve()
-        {
-            new(0, 0),
-            new(1, 1),
-        };
-        DecelerationCurve = decCurve ?? AccelerationCurve;
-        OutputCurve = outCurve ?? new SimpleCurve()
-        {
-            new(0, 0),
-            new(1, maxValue),
-        };
-    }
-
     public void Tick()
     {
         if (CurState == FCState.Sustaining) return;
         curProgress = Mathf.Clamp01(curProgress + fixedTimeInc);
-        curValue = Mathf.Clamp(curValue + Acceleration * deltaTime, 0, maxValue);
+        CurValue = Mathf.Clamp(CurValue + Acceleration * deltaTime, 0, maxValue);
     }
 
     public void Start()
@@ -98,7 +99,7 @@ public class FloatControl
 
     public override string ToString()
     {
-        StringBuilder sb = new StringBuilder();
+        var sb = new StringBuilder();
         sb.AppendLine($"CurSate: {CurState}");
         sb.AppendLine($"ReachedPeak: {ReachedPeak}");
         sb.AppendLine($"StoppedDead: {StoppedDead}");

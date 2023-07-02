@@ -1,50 +1,46 @@
 ﻿using System;
 using System.Collections.Generic;
-using RimWorld;
-using TeleCore.Defs;
-using TeleCore.FlowCore;
+using TeleCore.FlowCore.Events;
 using TeleCore.Network.Data;
 using TeleCore.Network.Flow.Clamping;
 using TeleCore.Network.Flow.Pressure;
-using TeleCore.Network.Flow.Values;
 using TeleCore.Network.Graph;
-using Enumerable = System.Linq.Enumerable;
+using TeleCore.Primitive;
 
 namespace TeleCore.Network.Flow;
 
 /// <summary>
-/// The main algorithm container for fluid flow.
+///     The main algorithm container for fluid flow.
 /// </summary>
 public class FlowSystem : IDisposable
 {
-    private FlowValueStack _totalStack;
-    private List<FlowBox> _flowBoxes;
-    private Dictionary<NetworkPart, FlowBox> _flowBoxByPart;
-    private Dictionary<FlowBox, List<FlowInterface>> _connections;
+    private readonly List<NetworkVolume> _flowBoxes;
+    private DefValueStack<NetworkValueDef, double> _totalStack;
+
+    public FlowSystem()
+    {
+        _flowBoxes = new List<NetworkVolume>();
+        Relations = new Dictionary<NetworkPart, NetworkVolume>();
+        ConnectionTable = new Dictionary<NetworkVolume, List<FlowInterface>>();
+
+        ClampWorker = new ClampWorker_Overcommit();
+        PressureWorker = new PressureWorker_WaveEquation();
+    }
 
     public ClampWorker ClampWorker { get; set; }
     public PressureWorker PressureWorker { get; set; }
 
-    internal Dictionary<NetworkPart, FlowBox> Relations => _flowBoxByPart;
-    internal Dictionary<FlowBox, List<FlowInterface>> ConnectionTable => _connections;
+    internal Dictionary<NetworkPart, NetworkVolume> Relations { get; }
+
+    internal Dictionary<NetworkVolume, List<FlowInterface>> ConnectionTable { get; }
 
     public double TotalValue => _totalStack.TotalValue;
-    
-    public FlowSystem()
-    {
-        _flowBoxes = new List<FlowBox>();
-        _flowBoxByPart = new Dictionary<NetworkPart, FlowBox>();
-        _connections = new Dictionary<FlowBox, List<FlowInterface>>();
-        
-        ClampWorker = new ClampWorker_Overcommit();
-        PressureWorker = new PressureWorker_WaveEquation();
-    }
-    
+
     public void Dispose()
     {
         _flowBoxes.Clear();
-        _flowBoxByPart.Clear();
-        _connections.Clear();
+        Relations.Clear();
+        ConnectionTable.Clear();
     }
 
     internal void Notify_Populate(NetGraph graph)
@@ -55,30 +51,29 @@ public class FlowSystem : IDisposable
             var list = new List<FlowInterface>();
             for (var i = 0; i < adjacent.Count; i++)
             {
-                (NetEdge, NetNode) nghb = adjacent[i];
+                var nghb = adjacent[i];
                 var fb2 = GenerateFor(nghb.Item2.Value);
                 var conn = new FlowInterface(flowBox, fb2);
                 list.Add(conn);
             }
 
-            _connections.Add(flowBox, list);
+            ConnectionTable.Add(flowBox, list);
         }
     }
 
-    private FlowBox GenerateFor(NetworkPart part)
+    private NetworkVolume GenerateFor(NetworkPart part)
     {
-        var fb = new FlowBox(part.Config.flowBoxConfig);
+        var fb = new NetworkVolume(part.Config.volumeConfig);
         fb.FlowEvent += OnFlowBoxEvent;
-        _flowBoxByPart.Add(part, fb);
+        Relations.Add(part, fb);
         return fb;
     }
 
     private void OnFlowBoxEvent(object sender, FlowEventArgs e)
     {
-        
     }
 
-    public double TotalValueFor(FlowValueDef def)
+    public double TotalValueFor(NetworkValueDef def)
     {
         return _totalStack[def].Value;
     }
@@ -88,62 +83,60 @@ public class FlowSystem : IDisposable
         //TODO: Implement
         return 0;
     }
-    
-    public void TryAddValue(FlowBox fb, FlowValueDef def, double amount)
+
+    public void TryAddValue(NetworkVolume fb, FlowValueDef def, double amount)
     {
         throw new NotImplementedException();
     }
 
-    public void TryRemoveValue(FlowBox fb, FlowValueDef def, double amount)
+    public void TryRemoveValue(NetworkVolume fb, FlowValueDef def, double amount)
     {
         throw new NotImplementedException();
     }
-    
-    public bool TryConsume(FlowBox fb, NetworkValueDef def, double value)
+
+    public bool TryConsume(NetworkVolume fb, NetworkValueDef def, double value)
     {
         return false;
     }
-    
-    public void Clear(FlowBox fb)
+
+    public void Clear(NetworkVolume fb)
     {
-        
         throw new NotImplementedException();
     }
-    
+
+    internal void Draw()
+    {
+    }
+
+    internal void OnGUI()
+    {
+    }
+
     #region Updates
 
     /// <summary>
-    /// Update flow.
+    ///     Update flow.
     /// </summary>
     public void Tick()
     {
         foreach (var fb in _flowBoxes)
         {
             fb.PrevStack = fb.Stack;
-            _connections[fb].ForEach(c => c.Notify_SetDirty());
-        }
-        
-        foreach (var flowBox in _flowBoxes)
-        {
-            UpdateFlow(flowBox);
+            ConnectionTable[fb].ForEach(c => c.Notify_SetDirty());
         }
 
-        foreach (var flowBox in _flowBoxes)
-        {
-            UpdateContent(flowBox);
-        }
+        foreach (var flowBox in _flowBoxes) UpdateFlow(flowBox);
 
-        foreach (var flowBox in _flowBoxes)
-        {
-            UpdateFlowRate(flowBox);
-        }
+        foreach (var flowBox in _flowBoxes) UpdateContent(flowBox);
+
+        foreach (var flowBox in _flowBoxes) UpdateFlowRate(flowBox);
     }
 
-    private void UpdateFlow(FlowBox fb)
+    private void UpdateFlow(NetworkVolume fb)
     {
-        for (var i = 0; i < _connections[fb].Count; i++)
+        for (var i = 0; i < ConnectionTable[fb].Count; i++)
         {
-            var conn = _connections[fb][i];
+            var conn = ConnectionTable[fb][i];
             if (conn.ResolvedFlow) continue;
 
             var flow = conn.Flow;
@@ -151,26 +144,26 @@ public class FlowSystem : IDisposable
             conn.Flow = ClampWorker.ClampFunction(conn.To, conn.From, flow, ClampType.FlowSpeed);
             conn.Move = ClampWorker.ClampFunction(conn.To, conn.From, flow, ClampType.FluidMove);
             conn.Notify_ResolvedFlow();
-            
+
             //TODO: Structify for: _connections[fb][i] = conn;
         }
     }
 
-    private void UpdateContent(FlowBox fb)
+    private void UpdateContent(NetworkVolume fb)
     {
-        for (var i = 0; i < _connections[fb].Count; i++)
+        for (var i = 0; i < ConnectionTable[fb].Count; i++)
         {
-            var conn = _connections[fb][i];
-            if(conn.ResolvedMove) continue;
+            var conn = ConnectionTable[fb][i];
+            if (conn.ResolvedMove) continue;
             var res = conn.To.RemoveContent(conn.Move);
             fb.AddContent(res);
             conn.Notify_ResolvedMove();
-            
+
             //TODO: Structify for: _connections[fb][i] = conn;
         }
     }
-    
-    private void UpdateFlowRate(FlowBox fb)
+
+    private void UpdateFlowRate(NetworkVolume fb)
     {
         double fp = 0;
         double fn = 0;
@@ -182,25 +175,12 @@ public class FlowSystem : IDisposable
             else
                 fn -= f;
         }
-        
-        foreach (var conn in _connections[fb])
-        {
-            Add(conn.Move);
-        }
+
+        foreach (var conn in ConnectionTable[fb]) Add(conn.Move);
 
         //
         fb.FlowRate = Math.Max(fp, fn);
     }
 
     #endregion
-
-    internal void Draw()
-    {
-        
-    }
-
-    internal void OnGUI()
-    {
-        
-    }
 }

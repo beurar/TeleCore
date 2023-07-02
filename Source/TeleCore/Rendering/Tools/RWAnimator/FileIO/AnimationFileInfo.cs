@@ -1,34 +1,31 @@
 ﻿using System;
 using System.IO;
 
-namespace TeleCore
+namespace TeleCore;
+
+internal class AnimationFileInfo
 {
-    internal class AnimationFileInfo
+    private string fileName;
+    private DateTime lastWriteTime;
+    private bool loaded;
+
+    private readonly object lockObject = new();
+
+    public AnimationFileInfo(FileInfo fileInfo)
     {
-        private string fileName;
-        private bool loaded;
+        FileInfo = fileInfo;
+        fileName = fileInfo.Name;
+        lastWriteTime = fileInfo.LastWriteTime;
+    }
 
-        private FileInfo fileInfo;
-        private DateTime lastWriteTime;
+    public FileInfo FileInfo { get; }
 
-        private object lockObject = new object();
-
-        public FileInfo FileInfo => fileInfo;
-
-        public AnimationFileInfo(FileInfo fileInfo)
+    public void LoadData()
+    {
+        var obj = lockObject;
+        lock (obj)
         {
-            this.fileInfo = fileInfo;
-            fileName = fileInfo.Name;
-            lastWriteTime = fileInfo.LastWriteTime;
-        }
-
-        public void LoadData()
-        {
-            var obj = lockObject;
-            lock (obj)
-            {
-                loaded = true;
-            }
+            loaded = true;
         }
     }
 }

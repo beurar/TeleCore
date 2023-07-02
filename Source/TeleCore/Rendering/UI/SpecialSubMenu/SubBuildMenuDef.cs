@@ -6,27 +6,23 @@ namespace TeleCore;
 
 public class SubBuildMenuDef : Def
 {
-    [Unsaved] 
-    private DesignationTexturePack _textures;
-    [Unsaved] 
-    private SubMenuVisibilityWorker _visWorker;
-    
     //
     public List<SubMenuGroupDef> subMenus;
     public string superPackPath;
     public Type visWorker = typeof(SubMenuVisibilityWorker);
-    
+
     //
-    public DesignationTexturePack TexturePack => _textures;
-    public SubMenuVisibilityWorker VisWorker => _visWorker;
-    
+    [field: Unsaved] public DesignationTexturePack TexturePack { get; private set; }
+
+    [field: Unsaved] public SubMenuVisibilityWorker VisWorker { get; private set; }
+
     public override void PostLoad()
     {
         base.PostLoad();
         LongEventHandler.ExecuteWhenFinished(delegate
         {
-            _textures ??= new DesignationTexturePack(superPackPath, this);
-            _visWorker = (SubMenuVisibilityWorker) Activator.CreateInstance(visWorker);
+            TexturePack ??= new DesignationTexturePack(superPackPath, this);
+            VisWorker = (SubMenuVisibilityWorker) Activator.CreateInstance(visWorker);
         });
     }
 }

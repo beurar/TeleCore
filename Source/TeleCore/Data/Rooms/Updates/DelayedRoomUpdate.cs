@@ -5,23 +5,23 @@ namespace TeleCore.Rooms.Updates;
 
 internal class DelayedRoomUpdate : IDisposable
 {
-    public DelayedRoomUpdateType Type { get; private set; }
-    public RoomTracker Tracker { get; private set; }
-    public RoomTracker?[] Previous { get; set; }
-    public Room Room { get; private set; }
-    
     public DelayedRoomUpdate(DelayedRoomUpdateType type, Room room)
     {
         Type = type;
         Room = room;
     }
-    
+
     public DelayedRoomUpdate(DelayedRoomUpdateType type, RoomTracker tracker)
     {
         Type = type;
         Tracker = tracker;
     }
-    
+
+    public DelayedRoomUpdateType Type { get; }
+    public RoomTracker Tracker { get; private set; }
+    public RoomTracker?[] Previous { get; set; }
+    public Room Room { get; private set; }
+
     public void Dispose()
     {
         Tracker = null;

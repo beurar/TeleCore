@@ -1,13 +1,12 @@
 ﻿using System.Collections.Generic;
 using Verse;
 
-namespace TeleCore
+namespace TeleCore;
+
+public class HediffComp_Gizmo : HediffComp
 {
-    public class HediffComp_Gizmo : HediffComp
+    public virtual IEnumerable<Gizmo> GetGizmos()
     {
-        public virtual IEnumerable<Gizmo> GetGizmos()
-        {
-            yield return null;
-        }
+        yield return null;
     }
 }

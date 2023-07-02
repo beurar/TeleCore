@@ -2,35 +2,34 @@
 using UnityEngine;
 using Verse;
 
-namespace TeleCore
+namespace TeleCore;
+
+public abstract class TaggedResource<T>
 {
-    public abstract class TaggedResource<T>
+    protected T resource;
+    public string resourceData;
+
+    public string resourceTag;
+
+    public T Resource => resource;
+
+    protected virtual T GetResource()
     {
-        protected T resource;
-
-        public string resourceTag;
-        public string resourceData;
-
-        public T Resource => resource;
-
-        protected virtual T GetResource()
-        {
-            return default;
-        }
-
-        public void LoadDataFromXmlCustom(XmlNode xmlRoot)
-        {
-            resourceTag = xmlRoot.Name;
-            resourceData = xmlRoot.FirstChild.Value;
-            GetResource();
-        }
+        return default;
     }
 
-    public class TextureResource : TaggedResource<Texture2D>
+    public void LoadDataFromXmlCustom(XmlNode xmlRoot)
     {
-        protected override Texture2D GetResource()
-        {
-            return resource ??= ContentFinder<Texture2D>.Get(resourceData);
-        }
+        resourceTag = xmlRoot.Name;
+        resourceData = xmlRoot.FirstChild.Value;
+        GetResource();
+    }
+}
+
+public class TextureResource : TaggedResource<Texture2D>
+{
+    protected override Texture2D GetResource()
+    {
+        return resource ??= ContentFinder<Texture2D>.Get(resourceData);
     }
 }

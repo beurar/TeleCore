@@ -11,30 +11,26 @@ namespace TeleCore.Network.UI;
 
 public class Gizmo_NetworkOverview : Gizmo, IDisposable
 {
-    private readonly Comp_Network compNetwork;
-    private readonly Dictionary<INetworkPart, NetworkInfoView> _viewByPart;
-
     //Sizes
     private const float mainWidth = 200f;
     private const int gizmoPadding = 5;
-
-    //Extendo Consts
-    private float currentExtendedY = 0;
-    private float desiredExtendedY;
     internal const int selSettingHeight = 22;
+    private readonly Dictionary<INetworkPart, NetworkInfoView> _viewByPart;
+    private readonly Comp_Network compNetwork;
 
     //Part Extendo Consts
     private readonly Vector2 partSelectionSize;
-    private float curExtendedPartX = 0;
+    private float curExtendedPartX;
+
+    //Extendo Consts
+    private float currentExtendedY;
     private float desiredExtendedPartX;
+    private float desiredExtendedY;
     private FloatRange partSelRange;
 
-    //
-    public NetworkInfoView SelectedPart { get; private set; }
-
-    public Gizmo_NetworkOverview(Comp_Network compParent) : base()
+    public Gizmo_NetworkOverview(Comp_Network compParent)
     {
-        this.order = -250f;
+        order = -250f;
         compNetwork = compParent;
         _viewByPart = new Dictionary<INetworkPart, NetworkInfoView>();
 
@@ -55,6 +51,14 @@ public class Gizmo_NetworkOverview : Gizmo, IDisposable
 
         //
         TFind.TickManager.RegisterMapUITickAction(Tick);
+    }
+
+    //
+    public NetworkInfoView SelectedPart { get; private set; }
+
+    public void Dispose()
+    {
+        //TODO: Deregister Tick
     }
 
     public override float GetWidth(float maxWidth)
@@ -89,7 +93,7 @@ public class Gizmo_NetworkOverview : Gizmo, IDisposable
         var inspector = Find.MainTabsRoot.OpenTab.TabWindow as MainTabWindow_Inspect;
         var inspectorSize = inspector.RequestedTabSize;
         var maxY = inspectorSize.y - 10;
-        var fitted = Mathf.FloorToInt((partSelectionSize.y * _viewByPart.Count) / maxY);
+        var fitted = Mathf.FloorToInt(partSelectionSize.y * _viewByPart.Count / maxY);
         return new Vector2((fitted + 1) * curExtendedPartX, inspectorSize.y);
     }
 
@@ -98,14 +102,14 @@ public class Gizmo_NetworkOverview : Gizmo, IDisposable
         var inspector = Find.MainTabsRoot.OpenTab.TabWindow as MainTabWindow_Inspect;
         var inspectorSize = inspector.RequestedTabSize;
         var maxY = inspectorSize.y - 10;
-        var fitted = Mathf.FloorToInt((partSelectionSize.y * _viewByPart.Count) / maxY);
+        var fitted = Mathf.FloorToInt(partSelectionSize.y * _viewByPart.Count / maxY);
         return (fitted + 1) * partSelectionSize.x;
     }
 
     public override GizmoResult GizmoOnGUI(Vector2 topLeft, float maxWidth, GizmoRenderParms parms)
     {
         InspectorRef(topLeft, out var pos, out var size);
-        Rect mainRect = new Rect(pos, size);
+        var mainRect = new Rect(pos, size);
 
         //Draw Part Selection
         if (_viewByPart.Count > 1)
@@ -128,14 +132,14 @@ public class Gizmo_NetworkOverview : Gizmo, IDisposable
 
     private void DrawPartSelection(Rect mainRect)
     {
-        Rect hoverArea = new Rect(mainRect.xMax, mainRect.y, Mathf.Max(15, curExtendedPartX), mainRect.height);
-        Rect area = new Rect(mainRect.xMax, mainRect.y + 5, curExtendedPartX, mainRect.height - 10);
+        var hoverArea = new Rect(mainRect.xMax, mainRect.y, Mathf.Max(15, curExtendedPartX), mainRect.height);
+        var area = new Rect(mainRect.xMax, mainRect.y + 5, curExtendedPartX, mainRect.height - 10);
         Notify_PartSelHovered(Mouse.IsOver(hoverArea));
 
-        Vector2 curPos = area.position;
-        float t = Mathf.InverseLerp(partSelRange.min, partSelRange.max, curExtendedPartX);
-        float partWidth = Mathf.Max(partSelectionSize.x * t, 10);
-        Vector2 partSize = new Vector2(partWidth, partSelectionSize.y);
+        var curPos = area.position;
+        var t = Mathf.InverseLerp(partSelRange.min, partSelRange.max, curExtendedPartX);
+        var partWidth = Mathf.Max(partSelectionSize.x * t, 10);
+        var partSize = new Vector2(partWidth, partSelectionSize.y);
         foreach (var partView in _viewByPart)
         {
             var part = partView.Key;
@@ -149,16 +153,13 @@ public class Gizmo_NetworkOverview : Gizmo, IDisposable
 
             TWidgets.DrawColoredBox(partRect, colorBG, colorBorder, 1);
             TWidgets.DrawHighlightIfMouseOverColor(partRect, TColor.White05);
-            NetworkUI.HoverFlowBoxReadout(partRect, part.FlowBox);
+            NetworkUI.HoverFlowBoxReadout(partRect, part.Volume);
 
             Text.Anchor = TextAnchor.MiddleLeft;
             Widgets.Label(textRect.ContractedBy(5, 0), part.Config.networkDef.labelShort);
             Text.Anchor = default;
 
-            if (Widgets.ButtonInvisible(partRect))
-            {
-                SelectedPart = partView.Value;
-            }
+            if (Widgets.ButtonInvisible(partRect)) SelectedPart = partView.Value;
 
             //
             curPos.y += partSelectionSize.y;
@@ -175,8 +176,8 @@ public class Gizmo_NetworkOverview : Gizmo, IDisposable
         if (!SelectedPart.HasExtensions) return;
 
         var yMax = Math.Max(15, currentExtendedY) + 10;
-        Rect extendTriggerArea = new Rect(mainRect.x, mainRect.y - (yMax - 5), mainRect.width, yMax);
-        Rect extendedButton = new Rect(mainRect.x, mainRect.y - (currentExtendedY + 1), mainRect.width,
+        var extendTriggerArea = new Rect(mainRect.x, mainRect.y - (yMax - 5), mainRect.width, yMax);
+        var extendedButton = new Rect(mainRect.x, mainRect.y - (currentExtendedY + 1), mainRect.width,
             currentExtendedY + 1);
         Notify_ExtendHovered(Mouse.IsOver(extendTriggerArea));
 
@@ -186,14 +187,11 @@ public class Gizmo_NetworkOverview : Gizmo, IDisposable
         foreach (var setting in SelectedPart.ExtendoTabs)
         {
             if (curY > extendedButton.yMax) continue;
-            Rect labelRect = new Rect(extendedButton.x, curY, extendedButton.width,
+            var labelRect = new Rect(extendedButton.x, curY, extendedButton.width,
                 Math.Min(extendedButton.height, selSettingHeight));
             Widgets.Label(labelRect, setting.Key);
             Widgets.DrawHighlightIfMouseover(labelRect);
-            if (Widgets.ButtonInvisible(labelRect))
-            {
-                SelectedPart.SetExtendoTab(setting.Key);
-            }
+            if (Widgets.ButtonInvisible(labelRect)) SelectedPart.SetExtendoTab(setting.Key);
 
             curY += selSettingHeight;
         }
@@ -206,10 +204,10 @@ public class Gizmo_NetworkOverview : Gizmo, IDisposable
         if (SelectedPart.ExtendedTab == null) return;
 
         //Extend Rect
-        Rect settingRect = new Rect(mainRect.x, mainRect.y - mainRect.height, mainRect.width, mainRect.height);
-        var closeButtonSize = new Vector2(settingRect.width - (gizmoPadding * 2), 16);
-        var offset = (settingRect.width / 2) - (closeButtonSize.x / 2);
-        Rect closeButtonRect = new Rect(settingRect.x + offset, settingRect.y - closeButtonSize.y, closeButtonSize.x,
+        var settingRect = new Rect(mainRect.x, mainRect.y - mainRect.height, mainRect.width, mainRect.height);
+        var closeButtonSize = new Vector2(settingRect.width - gizmoPadding * 2, 16);
+        var offset = settingRect.width / 2 - closeButtonSize.x / 2;
+        var closeButtonRect = new Rect(settingRect.x + offset, settingRect.y - closeButtonSize.y, closeButtonSize.x,
             closeButtonSize.y + gizmoPadding);
 
         Widgets.DrawWindowBackground(closeButtonRect);
@@ -255,13 +253,8 @@ public class Gizmo_NetworkOverview : Gizmo, IDisposable
         if (Math.Abs(curExtendedPartX - desiredExtendedPartX) > 0.01)
         {
             var val = desiredExtendedPartX > curExtendedPartX ? 3f : -3f;
-            curExtendedPartX = Mathf.Clamp(curExtendedPartX + (val * (partSelRange.TrueMax / partSelectionSize.x)),
+            curExtendedPartX = Mathf.Clamp(curExtendedPartX + val * (partSelRange.TrueMax / partSelectionSize.x),
                 partSelRange.TrueMin, partSelRange.TrueMax);
         }
-    }
-
-    public void Dispose()
-    {
-        //TODO: Deregister Tick
     }
 }

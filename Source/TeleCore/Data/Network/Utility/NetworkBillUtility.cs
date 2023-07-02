@@ -7,54 +7,51 @@ namespace TeleCore.Network.Utility;
 
 internal static class NetworkBillUtility
 {
-    public static DefValueStack<NetworkValueDef> ConstructCustomCostStack(List<DefIntRef<CustomRecipeRatioDef>> list, bool isByProduct = false)
+    public static DefValueStack<NetworkValueDef, double> ConstructCustomCostStack(
+        List<DefIntRef<CustomRecipeRatioDef>> list,
+        bool isByProduct = false)
     {
-        DefValueStack<NetworkValueDef> stack = new DefValueStack<NetworkValueDef>();
+        var stack = new DefValueStack<NetworkValueDef, double>();
         foreach (var defIntRef in list)
         {
             if (isByProduct)
             {
                 foreach (var ratio in defIntRef.Def.byProducts)
-                {
-                    stack += new DefValue<NetworkValueDef>(ratio.Def, ratio.Value * defIntRef.Value);
-                }
+                    stack += new DefValue<NetworkValueDef, double>(ratio.Def, ratio.Value * defIntRef.Value);
                 continue;
             }
 
             foreach (var ratio in defIntRef.Def.inputRatio)
-            {
-                stack += new DefValue<NetworkValueDef>(ratio.Def, ratio.Value * defIntRef.Value);
-            }
+                stack += new DefValue<NetworkValueDef, double>(ratio.Def, ratio.Value * defIntRef.Value);
         }
+
         return stack;
     }
 
-    public static DefValueStack<NetworkValueDef> ConstructCustomCostStack(IDictionary<CustomRecipeRatioDef, int> requestedAmount, bool isByProduct = false)
+    public static DefValueStack<NetworkValueDef, double> ConstructCustomCostStack(
+        IDictionary<CustomRecipeRatioDef, int> requestedAmount, bool isByProduct = false)
     {
-        DefValueStack<NetworkValueDef> stack = new DefValueStack<NetworkValueDef>();
+        var stack = new DefValueStack<NetworkValueDef, double>();
         foreach (var defIntRef in requestedAmount)
         {
             if (isByProduct)
             {
                 foreach (var ratio in defIntRef.Key.byProducts)
-                {
-                    stack += new DefValue<NetworkValueDef>(ratio.Def, ratio.Value * defIntRef.Value);
-                }
+                    stack += new DefValue<NetworkValueDef, double>(ratio.Def, ratio.Value * defIntRef.Value);
                 continue;
             }
-                
+
             foreach (var ratio in defIntRef.Key.inputRatio)
-            {
-                stack += new DefValue<NetworkValueDef>(ratio.Def, ratio.Value * defIntRef.Value);
-            }
+                stack += new DefValue<NetworkValueDef, double>(ratio.Def, ratio.Value * defIntRef.Value);
         }
+
         return stack;
     }
 
-    public static string CostLabel(DefValueStack<NetworkValueDef> values)
+    public static string CostLabel(DefValueStack<NetworkValueDef, double> values)
     {
         if (values.Empty) return "N/A";
-        StringBuilder sb = new StringBuilder();
+        var sb = new StringBuilder();
         sb.Append("(");
         for (var i = 0; i < values.Length; i++)
         {
@@ -67,11 +64,11 @@ internal static class NetworkBillUtility
         sb.Append(")");
         return sb.ToString();
     }
-        
+
     public static string CostLabel(List<DefFloat<NetworkValueDef>> values)
     {
         if (values.NullOrEmpty()) return "N/A";
-        StringBuilder sb = new StringBuilder();
+        var sb = new StringBuilder();
         sb.Append("(");
         for (var i = 0; i < values.Count; i++)
         {

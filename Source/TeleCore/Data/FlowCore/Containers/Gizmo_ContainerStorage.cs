@@ -1,8 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using Multiplayer.API;
-using TeleCore.Defs;
 using UnityEngine;
 using Verse;
 
@@ -10,10 +8,10 @@ namespace TeleCore.Generics.Container.Gizmos;
 
 public class Gizmo_ContainerStorage : Gizmo_ContainerStorage<FlowValueDef, ValueContainerBase<FlowValueDef>>
 {
-    public Gizmo_ContainerStorage(object container) : base((ValueContainerBase<FlowValueDef>)container)
+    public Gizmo_ContainerStorage(object container) : base((ValueContainerBase<FlowValueDef>) container)
     {
     }
-    
+
     public Gizmo_ContainerStorage(ValueContainerBase<FlowValueDef> container) : base(container)
     {
     }
@@ -21,10 +19,7 @@ public class Gizmo_ContainerStorage : Gizmo_ContainerStorage<FlowValueDef, Value
     [SyncMethod]
     protected override void Debug_AddAll(int part)
     {
-        foreach (var type in container.AcceptedTypes)
-        {
-            container.TryAdd(type, part);
-        }
+        foreach (var type in container.AcceptedTypes) container.TryAdd(type, part);
     }
 
     [SyncMethod]
@@ -49,7 +44,21 @@ public class Gizmo_ContainerStorage<TValue, TContainer> : Gizmo
     public Gizmo_ContainerStorage(TContainer container)
     {
         this.container = container;
-        this.order = -200f;
+        order = -200f;
+    }
+
+    public override IEnumerable<FloatMenuOption> RightClickFloatMenuOptions
+    {
+        get
+        {
+            var part = container.Capacity / (float) container.AcceptedTypes.Count;
+            yield return new FloatMenuOption("Add ALL", delegate { Debug_AddAll((int) part); });
+
+            yield return new FloatMenuOption("Remove ALL", Debug_Clear);
+
+            foreach (var type in container.AcceptedTypes)
+                yield return new FloatMenuOption($"Add {type}", delegate { Debug_AddType(type, (int) part); });
+        }
     }
 
     public override float GetWidth(float maxWidth)
@@ -79,12 +88,12 @@ public class Gizmo_ContainerStorage<TValue, TContainer> : Gizmo
 
     public override GizmoResult GizmoOnGUI(Vector2 topLeft, float maxWidth, GizmoRenderParms parms)
     {
-        Rect MainRect = new Rect(topLeft.x, topLeft.y, GetWidth(maxWidth), 75f);
+        var MainRect = new Rect(topLeft.x, topLeft.y, GetWidth(maxWidth), 75f);
         Find.WindowStack.ImmediateWindow(container.GetHashCode(), MainRect, WindowLayer.GameUI, delegate
         {
-            Rect rect = MainRect.AtZero().ContractedBy(5f);
-            Rect optionRect = new Rect(rect.xMax - 15, rect.y, 15, 15);
-            bool mouseOver = Mouse.IsOver(rect);
+            var rect = MainRect.AtZero().ContractedBy(5f);
+            var optionRect = new Rect(rect.xMax - 15, rect.y, 15, 15);
+            var mouseOver = Mouse.IsOver(rect);
             GUI.color = mouseOver ? Color.cyan : Color.white;
             Widgets.DrawTextureFitted(optionRect, TeleContent.InfoButton, 1f);
             GUI.color = Color.white;
@@ -99,21 +108,21 @@ public class Gizmo_ContainerStorage<TValue, TContainer> : Gizmo
             Text.Font = GameFont.Small;
             Widgets.Label(rect, $"{container.TotalStored}/{container.Capacity}");
             Text.Anchor = 0;
-            Rect rect2 = rect.BottomHalf();
-            Rect rect3 = rect2.BottomHalf();
+            var rect2 = rect.BottomHalf();
+            var rect3 = rect2.BottomHalf();
             //
             Widgets.BeginGroup(rect3);
             {
-                Rect BGRect = new Rect(0, 0, rect3.width, rect3.height);
-                Rect BarRect = BGRect.ContractedBy(2.5f);
-                float xPos = 0f;
+                var BGRect = new Rect(0, 0, rect3.width, rect3.height);
+                var BarRect = BGRect.ContractedBy(2.5f);
+                var xPos = 0f;
                 Widgets.DrawBoxSolid(BGRect, new Color(0.05f, 0.05f, 0.05f));
                 Widgets.DrawBoxSolid(BarRect, new Color(0.25f, 0.25f, 0.25f));
                 foreach (var type in container.StoredDefs)
                 {
-                    float percent = (container.StoredValueOf(type) / container.Capacity);
-                    Rect typeRect = new Rect(2.5f + xPos, BarRect.y, BarRect.width * percent, BarRect.height);
-                    Color color = type.valueColor;
+                    float percent = container.StoredValueOf(type) / container.Capacity;
+                    var typeRect = new Rect(2.5f + xPos, BarRect.y, BarRect.width * percent, BarRect.height);
+                    var color = type.valueColor;
                     xPos += BarRect.width * percent;
                     Widgets.DrawBoxSolid(typeRect, color);
                 }
@@ -121,49 +130,27 @@ public class Gizmo_ContainerStorage<TValue, TContainer> : Gizmo
             Widgets.EndGroup();
 
             //Right Click Input
-            Event curEvent = Event.current;
+            var curEvent = Event.current;
             if (Mouse.IsOver(rect) && curEvent.type == EventType.MouseDown && curEvent.button == 1)
-            {
                 if (DebugSettings.godMode)
                 {
-                    FloatMenu menu = new FloatMenu(RightClickFloatMenuOptions.ToList(), $"Add NetworkValue", true);
+                    var menu = new FloatMenu(RightClickFloatMenuOptions.ToList(), "Add NetworkValue", true);
                     menu.vanishIfMouseDistant = true;
                     Find.WindowStack.Add(menu);
                 }
-            }
-
-        }, true, false, 1f);
+        });
         return new GizmoResult(GizmoState.Clear);
     }
-    
+
     protected virtual void Debug_AddAll(int part)
     {
     }
-    
+
     protected virtual void Debug_Clear()
     {
     }
-    
+
     protected virtual void Debug_AddType(FlowValueDef type, int part)
     {
-    }
-
-    public override IEnumerable<FloatMenuOption> RightClickFloatMenuOptions
-    {
-        get
-        {
-            float part = container.Capacity / (float)container.AcceptedTypes.Count;
-            yield return new FloatMenuOption("Add ALL", delegate { Debug_AddAll((int)part); });
-
-            yield return new FloatMenuOption("Remove ALL", Debug_Clear);
-
-            foreach (var type in container.AcceptedTypes)
-            {
-                yield return new FloatMenuOption($"Add {type}", delegate
-                {
-                    Debug_AddType(type, (int)part);
-                });
-            }
-        }
     }
 }

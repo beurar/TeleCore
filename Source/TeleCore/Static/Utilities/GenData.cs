@@ -6,7 +6,6 @@ using System.Runtime.CompilerServices;
 using System.Xml;
 using RimWorld;
 using TeleCore.Data.Events;
-using TeleCore.Defs;
 using TeleCore.Network.Data;
 using TeleCore.RWExtended;
 using UnityEngine;
@@ -20,7 +19,7 @@ public static class GenData
     {
         return verb.IsIncendiary_Melee() || verb.IsIncendiary_Ranged();
     }
-        
+
     public static string Location(this Texture texture)
     {
         if (texture is not Texture2D tx2D)
@@ -28,6 +27,7 @@ public static class GenData
             TLog.Error($"Tried to find {texture} location as non Texture2D");
             return null;
         }
+
         return LoadedModManager.RunningMods.SelectMany(m => m.textures.contentList).First(t => t.Value == tx2D).Key;
     }
 
@@ -48,10 +48,7 @@ public static class GenData
 
     public static bool IsCustomLinked(this Graphic graphic)
     {
-        if (graphic is Graphic_LinkedWithSame or Graphic_LinkedNetworkStructure)
-        {
-            return true;
-        }
+        if (graphic is Graphic_LinkedWithSame or Graphic_LinkedNetworkStructure) return true;
         return false;
     }
 
@@ -60,18 +57,20 @@ public static class GenData
         if (type == null)
             throw new ArgumentNullException(nameof(type));
 
-        bool hasCompilerGeneratedAttribute = Attribute.IsDefined(type, typeof(CompilerGeneratedAttribute), false);
+        var hasCompilerGeneratedAttribute = Attribute.IsDefined(type, typeof(CompilerGeneratedAttribute), false);
         //bool isGeneric = type.IsGenericType;
-        bool hasCompilerStrings = (type.Name.StartsWith("<>") || type.Name.StartsWith("VB$"));
-        bool hasFlags = type.Attributes.HasFlag(TypeAttributes.NotPublic);
-            
-        TLog.Debug($"{hasCompilerGeneratedAttribute} && {hasCompilerStrings} && {hasFlags} || {type.Name.Contains("DisplayClass")} | {type.IsGenericType}");
-        isDisplayClass = type.Name.Contains("DisplayClass");;
+        var hasCompilerStrings = type.Name.StartsWith("<>") || type.Name.StartsWith("VB$");
+        var hasFlags = type.Attributes.HasFlag(TypeAttributes.NotPublic);
+
+        TLog.Debug(
+            $"{hasCompilerGeneratedAttribute} && {hasCompilerStrings} && {hasFlags} || {type.Name.Contains("DisplayClass")} | {type.IsGenericType}");
+        isDisplayClass = type.Name.Contains("DisplayClass");
+        ;
         return hasCompilerGeneratedAttribute && hasCompilerStrings && hasFlags;
     }
 
     /// <summary>
-    /// Defines whether a structure is powered by electricity and returns whether it actually uses power.
+    ///     Defines whether a structure is powered by electricity and returns whether it actually uses power.
     /// </summary>
     public static bool IsElectricallyPowered(this ThingWithComps thing, out bool usesPower)
     {
@@ -79,9 +78,9 @@ public static class GenData
         usesPower = comp != null;
         return usesPower && comp.PowerOn;
     }
-        
+
     /// <summary>
-    /// If the thing uses a PowerComp, returns the PowerOn property, otherwise returns true if no PowerComp exists.
+    ///     If the thing uses a PowerComp, returns the PowerOn property, otherwise returns true if no PowerComp exists.
     /// </summary>
     public static bool IsPoweredOn(this ThingWithComps thing)
     {
@@ -89,7 +88,7 @@ public static class GenData
     }
 
     /// <summary>
-    /// Checks whether a thing is reserved by any pawn.
+    ///     Checks whether a thing is reserved by any pawn.
     /// </summary>
     public static bool IsReserved(this Thing thing, Map onMap, out Pawn reservedBy)
     {
@@ -101,54 +100,47 @@ public static class GenData
     }
 
     /// <summary>
-    /// 
     /// </summary>
     public static Room NeighborRoomOf(this Building building, Room room)
     {
-        for (int i = 0; i < 4; i++)
+        for (var i = 0; i < 4; i++)
         {
             var cell = GenAdj.CardinalDirections[i] + building.Position;
             var roomAt = cell.GetRoom(building.Map);
             if (roomAt == room)
             {
-                Rot4 rotOfRoom = new Rot4(i);
+                var rotOfRoom = new Rot4(i);
                 var otherSide = rotOfRoom.Opposite.FacingCell + building.Position;
                 var otherRoom = otherSide.GetRoom(building.Map);
                 return otherRoom;
             }
-                
         }
+
         return null;
     }
 
     /// <summary>
-    /// Returns the current room at a position.
+    ///     Returns the current room at a position.
     /// </summary>
     public static Room? GetRoomFast(this IntVec3 pos, Map map)
     {
-        Region validRegion = map.regionGrid.GetValidRegionAt_NoRebuild(pos);
-        if (validRegion != null && validRegion.type.Passable())
-        {
-            return validRegion.Room;
-        }
+        var validRegion = map.regionGrid.GetValidRegionAt_NoRebuild(pos);
+        if (validRegion != null && validRegion.type.Passable()) return validRegion.Room;
         return null;
     }
 
     /// <summary>
-    /// 
     /// </summary>
     public static Room? GetRoomIndirect(this Thing thing)
     {
         var room = thing.GetRoom();
         if (room == null)
-        {
             room = thing.CellsAdjacent8WayAndInside().Select(c => c.GetRoom(thing.Map)).First(r => r != null);
-        }
         return room;
     }
 
     /// <summary>
-    /// Get the desired <see cref="MapInformation"/> based on type of <typeparamref name="T"/>.
+    ///     Get the desired <see cref="MapInformation" /> based on type of <typeparamref name="T" />.
     /// </summary>
     public static T GetMapInfo<T>(this Map map) where T : MapInformation
     {
@@ -156,30 +148,27 @@ public static class GenData
     }
 
     /// <summary>
-    /// Get the desired <see cref="Designator"/> based on type of <typeparamref name="T"/>.
+    ///     Get the desired <see cref="Designator" /> based on type of <typeparamref name="T" />.
     /// </summary>
     public static T GetDesignatorFor<T>(BuildableDef def) where T : Designator
     {
-        if (StaticData.cachedDesignators.TryGetValue(def, out var des))
-        {
-            return (T)des;
-        }
+        if (StaticData.cachedDesignators.TryGetValue(def, out var des)) return (T) des;
 
-        des = (Designator)Activator.CreateInstance(typeof(T), def);
+        des = (Designator) Activator.CreateInstance(typeof(T), def);
         des.icon = def.uiIcon;
         StaticData.cachedDesignators.Add(def, des);
-        return (T)des;
+        return (T) des;
     }
 
     //Room Tracking
-    /// <returns>The main <see cref="TeleCore.RoomTracker"/> object of the <paramref name="room"/>.</returns>
+    /// <returns>The main <see cref="TeleCore.RoomTracker" /> object of the <paramref name="room" />.</returns>
     public static RoomTracker RoomTracker(this Room room)
     {
         return room.Map.GetMapInfo<RoomTrackerMapInfo>()[room];
     }
 
     /// <summary>
-    /// Get the desired <see cref="RoomComponent"/> based on type of <typeparamref name="T"/>.
+    ///     Get the desired <see cref="RoomComponent" /> based on type of <typeparamref name="T" />.
     /// </summary>
     public static T? GetRoomComp<T>(this Room room) where T : RoomComponent
     {
@@ -196,7 +185,7 @@ public static class GenData
     {
         return thing is TeleThing or TeleBuilding;
     }
-        
+
     public static bool IsMetallic(this Thing thing)
     {
         if (thing.def.MadeFromStuff && thing.Stuff.IsMetal) return true;
@@ -238,6 +227,7 @@ public static class GenData
             comp = thingWComps.GetComp<T>();
             return comp != null;
         }
+
         return false;
     }
 
@@ -249,13 +239,13 @@ public static class GenData
         part = networkComp[def];
         return part != null;
     }
-        
+
     //
     public static List<T> ToSingleItemList<T>(this T item)
     {
-        return new List<T>() {item};
+        return new List<T> {item};
     }
-        
+
     //
     internal static FXLayerArgs GetArgs(this FXLayer layer)
     {
@@ -265,7 +255,7 @@ public static class GenData
             renderPriority = layer.RenderPriority,
             layerTag = layer.data.layerTag,
             needsPower = layer.data.needsPower,
-            data = layer.data,
+            data = layer.data
         };
     }
 }

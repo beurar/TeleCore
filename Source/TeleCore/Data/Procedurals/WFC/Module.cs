@@ -6,6 +6,4 @@ public struct Module
     public Interface east;
     public Interface south;
     public Interface west;
-    
-    
 }

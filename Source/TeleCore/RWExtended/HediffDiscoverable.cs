@@ -7,8 +7,10 @@ public class HediffDiscoverable : HediffWithGizmos, IDiscoverable
 {
     public TeleDefExtension Extension { get; private set; }
     public DiscoveryProperties Discovery => Extension?.discovery!;
-    
+
     public override string Label => Discovered ? DiscoveredLabel : UnknownLabel;
+
+    public bool IsDiscoverable => Discovery != null;
 
     //public override string DescriptionFlavor => Discovered ? DiscoveredDescription : UnknownDescription;
 
@@ -18,8 +20,6 @@ public class HediffDiscoverable : HediffWithGizmos, IDiscoverable
     public string DiscoveredDescription => def.description;
     public string UnknownDescription => Discovery.unknownDescription;
     public string DescriptionExtra => Discovery.extraDescription;
-
-    public bool IsDiscoverable => Discovery != null;
     public bool Discovered => !IsDiscoverable || TFind.Discoveries[this];
 
 
@@ -42,12 +42,10 @@ public class HediffDiscoverable : HediffWithGizmos, IDiscoverable
     {
         if (!DebugSettings.godMode) yield break;
         if (IsDiscoverable && !Discovered)
-        {
-            yield return new Command_Action()
+            yield return new Command_Action
             {
                 defaultLabel = "Discover Hediff",
                 action = delegate { DiscoveryDef.Discover(); }
             };
-        }
     }
 }

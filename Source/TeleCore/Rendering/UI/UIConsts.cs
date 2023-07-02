@@ -1,6 +1,4 @@
-﻿using UnityEngine;
-
-namespace TeleCore;
+﻿namespace TeleCore;
 
 public static class UIConsts
 {

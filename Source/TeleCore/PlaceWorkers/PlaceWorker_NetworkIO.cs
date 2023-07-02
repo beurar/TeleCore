@@ -15,14 +15,10 @@ public class PlaceWorker_NetworkIO : PlaceWorker
             Draw(network.generalIOConfig, center, def, rot);
             return;
         }
-        
+
         foreach (var part in network.networks)
-        {
             if (part.netIOConfig != null)
-            {
                 Draw(part.netIOConfig, center, def, rot);
-            }
-        }
     }
 
     public void Draw(NetIOConfig config, IntVec3 center, ThingDef def, Rot4 rot)

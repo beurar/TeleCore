@@ -11,14 +11,14 @@ public class DisposableAction : IDisposable
         this.action = action;
     }
 
+    public void Dispose()
+    {
+        action = null;
+    }
+
     public void DoAction()
     {
         action.Invoke();
         Dispose();
-    }
-
-    public void Dispose()
-    {
-        action = null;
     }
 }

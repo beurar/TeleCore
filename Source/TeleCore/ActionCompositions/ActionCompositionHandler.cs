@@ -1,42 +1,38 @@
 ﻿using System.Collections.Generic;
 using Verse;
 
-namespace TeleCore
+namespace TeleCore;
+
+public class ActionCompositionHandler : IExposable
 {
-    public class ActionCompositionHandler : IExposable
+    private static ActionCompositionHandler instance;
+
+    //Local Instance
+    private List<ActionComposition> currentCompositions = new();
+
+    public ActionCompositionHandler()
     {
-        private static ActionCompositionHandler instance;
+        instance = this;
+    }
 
-        //Local Instance
-        private List<ActionComposition> currentCompositions = new List<ActionComposition>();
+    public void ExposeData()
+    {
+        Scribe_Collections.Look(ref currentCompositions, nameof(currentCompositions), LookMode.Deep);
+    }
 
-        public ActionCompositionHandler()
-        {
-            instance = this;
-        }
+    //Static Accessors
+    public static void InitComposition(ActionComposition composition)
+    {
+        instance.currentCompositions.Add(composition);
+    }
 
-        public void ExposeData()
-        {
-            Scribe_Collections.Look(ref currentCompositions, nameof(currentCompositions), LookMode.Deep);
-        }
+    public static void RemoveComposition(ActionComposition composition)
+    {
+        instance.currentCompositions.Remove(composition);
+    }
 
-        //Static Accessors
-        public static void InitComposition(ActionComposition composition)
-        {
-            instance.currentCompositions.Add(composition);
-        }
-
-        public static void RemoveComposition(ActionComposition composition)
-        {
-            instance.currentCompositions.Remove(composition);
-        }
-
-        public void TickActionComps()
-        {
-            for (int i = currentCompositions.Count - 1; i >= 0; i--)
-            {
-                currentCompositions[i].Tick();
-            }
-        }
+    public void TickActionComps()
+    {
+        for (var i = currentCompositions.Count - 1; i >= 0; i--) currentCompositions[i].Tick();
     }
 }

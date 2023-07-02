@@ -12,7 +12,7 @@ public class Comp_Network_Power : Comp_Network
         return role switch
         {
             NetworkRole.Requester => !_powerComp.IsAtCapacity,
-            _ => true,
+            _ => true
         };
     }
 
@@ -20,6 +20,5 @@ public class Comp_Network_Power : Comp_Network
     {
         base.PostSpawnSetup(respawningAfterLoad);
         _powerComp = parent.TryGetComp<CompPowerPlant_Network>();
-        
     }
 }

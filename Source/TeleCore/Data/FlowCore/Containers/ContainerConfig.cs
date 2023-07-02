@@ -2,101 +2,94 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Xml;
-using TeleCore.Defs;
-using TeleCore.Network;
+using TeleCore.FlowCore;
+using TeleCore.FlowCore.Containers;
 using Verse;
 
 namespace TeleCore.Generics.Container;
 
-public class ContainerConfig<TValue> : IExposable
-where TValue: FlowValueDef
+public class ContainerConfig<TDef> : IExposable
+    where TDef : FlowValueDef
 {
-    [Unsaved]
-    private List<TValue> allowedValuesInt = null!;
-    
-    public Type containerClass = typeof(ValueContainerBase<TValue>);
-        
-    public int baseCapacity = 0;
+    [Unsaved] private List<TDef> allowedValuesInt = null!;
+
+    public int baseCapacity;
+
+    public Type containerClass = typeof(ValueContainerBase<TDef, double>);
     public string containerLabel;
-        
-    //TODO: 
-    public bool storeEvenly = false;
-    public bool dropContents = false;
-    
+    public bool dropContents;
+
     //Assumed for Networks only
-    public bool leaveContainer = false;
-    // ReSharper disable local UnassignedField.Global
+    public bool leaveContainer;
+
+    //TODO: 
+    public bool storeEvenly; // ReSharper disable local UnassignedField.Global
     public ThingDef? droppedContainerDef;
     public ExplosionProperties? explosionProps;
     public FlowValueFilterSettings? defaultFilterSettings;
-    
+
     //
     public FlowValueDefFilter valueDefs;
 
-    public List<TValue> AllowedValues
+    public List<TDef> AllowedValues
     {
         get
         {
             if (allowedValuesInt == null)
             {
-                var list = new List<TValue>();
+                var list = new List<TDef>();
                 if (valueDefs != null)
                 {
                     if (valueDefs.fromCollection != null)
-                    {
-                        list.AddRange(valueDefs.fromCollection.ValueDefs.Cast<TValue>());
-                    }
-                    if (!valueDefs.values.NullOrEmpty())
-                    {
-                        list.AddRange(valueDefs.values);
-                    }
+                        list.AddRange(valueDefs.fromCollection.ValueDefs.Cast<TDef>());
+                    if (!valueDefs.values.NullOrEmpty()) list.AddRange(valueDefs.values);
                 }
-                
+
                 allowedValuesInt = list.Distinct().ToList();
             }
+
             return allowedValuesInt;
         }
     }
-    
+
     public sealed class FlowValueDefFilter : IExposable
     {
         public FlowValueCollectionDef fromCollection;
-        public List<TValue> values;
-
-        public static implicit operator FlowValueDefFilter(List<TValue> values) => new FlowValueDefFilter()
-        {
-            values = values,
-        };
-        
-        public void LoadDataFromXmlCustom(XmlNode xmlRoot)
-        {
-            if (xmlRoot.FirstChild.Name == "li")
-            {
-                values = DirectXmlToObject.ObjectFromXml<List<TValue>>(xmlRoot, true);
-                return;
-            }
-                
-            var fromDefNode = xmlRoot.SelectSingleNode(nameof(fromCollection));
-            if (fromDefNode != null)
-            {
-                DirectXmlCrossRefLoader.RegisterObjectWantsCrossRef(this, $"{nameof(fromCollection)}", fromDefNode.InnerText);
-            }
-
-            //
-            var valuesNode = xmlRoot.SelectSingleNode(nameof(values));
-            if (valuesNode != null)
-            {
-                values = DirectXmlToObject.ObjectFromXml<List<TValue>>(valuesNode, true);
-            }
-        }
+        public List<TDef> values;
 
         public void ExposeData()
         {
             Scribe_Defs.Look(ref fromCollection, nameof(fromCollection));
             Scribe_Collections.Look(ref values, nameof(values), LookMode.Def);
         }
+
+        public static implicit operator FlowValueDefFilter(List<TDef> values)
+        {
+            return new FlowValueDefFilter
+            {
+                values = values
+            };
+        }
+
+        public void LoadDataFromXmlCustom(XmlNode xmlRoot)
+        {
+            if (xmlRoot.FirstChild.Name == "li")
+            {
+                values = DirectXmlToObject.ObjectFromXml<List<TDef>>(xmlRoot, true);
+                return;
+            }
+
+            var fromDefNode = xmlRoot.SelectSingleNode(nameof(fromCollection));
+            if (fromDefNode != null)
+                DirectXmlCrossRefLoader.RegisterObjectWantsCrossRef(this, $"{nameof(fromCollection)}",
+                    fromDefNode.InnerText);
+
+            //
+            var valuesNode = xmlRoot.SelectSingleNode(nameof(values));
+            if (valuesNode != null) values = DirectXmlToObject.ObjectFromXml<List<TDef>>(valuesNode, true);
+        }
     }
-    
+
     public void ExposeData()
     {
         Scribe_Values.Look(ref baseCapacity, nameof(baseCapacity));
@@ -107,17 +100,17 @@ where TValue: FlowValueDef
         Scribe_Deep.Look(ref valueDefs, nameof(valueDefs));
         Scribe_Deep.Look(ref explosionProps, nameof(explosionProps));
     }
-    
-    public ContainerConfig<TValue> Copy()
+
+    public ContainerConfig<TDef> Copy()
     {
-        return new ContainerConfig<TValue>
+        return new ContainerConfig<TDef>
         {
-            containerClass = this.containerClass,
+            containerClass = containerClass,
             baseCapacity = baseCapacity,
             storeEvenly = storeEvenly,
             dropContents = dropContents,
             leaveContainer = leaveContainer,
-            explosionProps = explosionProps,
+            explosionProps = explosionProps
         };
     }
 }

@@ -1,5 +1,5 @@
-﻿using RimWorld;
-using TeleCore.Defs;
+﻿using System;
+using RimWorld;
 using TeleCore.Network.Flow;
 using Verse;
 
@@ -7,23 +7,24 @@ namespace TeleCore;
 
 public class PortableNetworkContainer : FXThing
 {
+    private LocalTargetInfo currentDesignatedTarget = LocalTargetInfo.Invalid;
+
     //Portable Data
-    private NetworkDef networkDef;
-        
+
     //Targeting
     private TargetingParameters? paramsInt;
-    private LocalTargetInfo currentDesignatedTarget = LocalTargetInfo.Invalid;
-        
+
     //
-    public NetworkDef NetworkDef => networkDef;
-    public FlowBox FlowBox { get; private set; }
-    
-    public float EmptyPercent => (float)FlowBox.FillPercent - 1f;
+    public NetworkDef NetworkDef { get; }
+
+    public NetworkVolume NetworkVolume { get; }
+
+    public float EmptyPercent => (float) NetworkVolume.FillPercent - 1f;
     public bool HasValidTarget { get; set; }
     public LocalTargetInfo TargetToEmptyAt { get; set; }
 
     public void Notify_FinishEmptyingToTarget()
     {
-        throw new System.NotImplementedException();
+        throw new NotImplementedException();
     }
 }

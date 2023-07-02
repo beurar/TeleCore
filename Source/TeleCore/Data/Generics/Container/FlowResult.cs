@@ -44,7 +44,7 @@
         hadFlow = flowToOther = true;
         flowDirection = flowDir;
     }
-    
+
     public void SetFlow(ValueFlowDirection flowDir)
     {
         hadFlow = flowToOther = true;

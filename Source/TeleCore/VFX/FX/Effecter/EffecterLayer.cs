@@ -6,18 +6,7 @@ namespace TeleCore;
 public class EffecterLayer
 {
     private FXEffecterData _data;
-    private Effecter _effecter;
-
-    public CompFX CompFX { get; }
-    public FXEffecterArgs Args { get; }
-
-    
-    //FX Property Getters
-    private bool HasPower => CompFX.HasPower(Args);
-    private bool ShouldThrowEffects => CompFX.ShouldThrowEffects(Args);
-
-    public TargetInfo TargetAOverride => CompFX.TargetAOverride(Args);
-    public TargetInfo TargetBOverride => CompFX.TargetBOverride(Args);
+    private readonly Effecter _effecter;
 
     public EffecterLayer(CompFX fxComp, FXEffecterData data, int index)
     {
@@ -33,19 +22,27 @@ public class EffecterLayer
         };
     }
 
+    public CompFX CompFX { get; }
+    public FXEffecterArgs Args { get; }
+
+
+    //FX Property Getters
+    private bool HasPower => CompFX.HasPower(Args);
+    private bool ShouldThrowEffects => CompFX.ShouldThrowEffects(Args);
+
+    public TargetInfo TargetAOverride => CompFX.TargetAOverride(Args);
+    public TargetInfo TargetBOverride => CompFX.TargetBOverride(Args);
+
     public void Tick()
     {
         Tick(TargetAOverride, TargetBOverride);
     }
-    
+
     public void Tick(TargetInfo A, TargetInfo B)
     {
-        if (HasPower && ShouldThrowEffects)
-        {
-            _effecter.EffectTick(A, B);
-        }
+        if (HasPower && ShouldThrowEffects) _effecter.EffectTick(A, B);
     }
-    
+
     //
     private static Effecter GetEffecter(EffecterDef def, CompFX fxComp)
     {

@@ -1,12 +1,12 @@
 ﻿using System.Collections.Generic;
 using NUnit.Framework;
-using TeleCore.Defs;
-using TeleCore.Network.Flow.Values;
+using TeleCore;
+using TeleCore.Primitive;
 
 namespace TeleTests;
 
 [TestFixture]
-public class MutabilityTests
+public class FlowStackTests
 {
     public static List<FlowValueDef> Defs;
 
@@ -44,15 +44,27 @@ public class MutabilityTests
     }
     
     [Test]
-    public void FlowValueStackMutability()
+    public void Mutability()
     {
-        FlowValueStack stack = new FlowValueStack();
-        stack += new FlowValue(Defs[0], 1);
-        stack += new FlowValue(Defs[1], 33);
-        stack += new FlowValue(Defs[2], 66);
+        DefValueStack<FlowValueDef, double> stack = new ();
+        stack += new DefValue<FlowValueDef, double>(Defs[0], 1);
+        stack += new DefValue<FlowValueDef, double>(Defs[1], 33);
+        stack += new DefValue<FlowValueDef, double>(Defs[2], 66);
         var stck2 = stack + stack;
         
         Assert.AreNotEqual(stack, stck2);
-
+    }
+    
+    [Test]
+    public void TotalValue()
+    {
+        DefValueStack<FlowValueDef, double> stack = new ();
+        stack += new DefValue<FlowValueDef, double>(Defs[0], 1);
+        stack += new DefValue<FlowValueDef, double>(Defs[1], 33);
+        stack += new DefValue<FlowValueDef, double>(Defs[2], 66);
+        var stck2 = stack + stack;
+        
+        Assert.AreEqual(stack.TotalValue.Value, 1 + 33 + 66);
+        Assert.AreEqual(stck2.TotalValue, stack.TotalValue + stack.TotalValue);
     }
 }

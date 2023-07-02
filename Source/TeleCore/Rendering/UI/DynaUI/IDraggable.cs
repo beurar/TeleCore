@@ -1,12 +1,11 @@
 ﻿using UnityEngine;
 
-namespace TeleCore
+namespace TeleCore;
+
+public interface IDraggable
 {
-    public interface IDraggable
-    {
-        public Vector2 Position { get; set; }
-        public Rect? DragContext { get; }
-        public Rect Rect { get; }
-        public int Priority { get; }
-    }
+    public Vector2 Position { get; set; }
+    public Rect? DragContext { get; }
+    public Rect Rect { get; }
+    public int Priority { get; }
 }

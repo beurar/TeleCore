@@ -14,29 +14,6 @@ public static class TRContentDatabase
     private static Dictionary<string, ComputeShader> lookupComputeShades;
     private static Dictionary<string, Material> lookupMats;
     private static Dictionary<string, Texture2D> lookupTextures;
-    
-    public static AssetBundle TeleCoreBundle
-    {
-        get
-        {
-            if (bundleInt == null)
-            {
-                string pathPart = "";
-                if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-                    pathPart = "StandaloneOSX";
-                else if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                    pathPart = "StandaloneWindows64";
-                else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-                    pathPart = "StandaloneLinux64";
-
-                string mainBundlePath = Path.Combine(TeleCoreMod.Mod.Content.RootDir, $@"UnityAssets\{pathPart}\telecore");
-                bundleInt = AssetBundle.LoadFromFile(mainBundlePath);
-                TLog.Message($"AssetBundle Loaded: {bundleInt != null}");
-            }
-
-            return bundleInt;
-        }
-    }
 
     //Shaders
     public static readonly Shader TextureBlend = LoadShader("TextureBlend");
@@ -46,9 +23,37 @@ public static class TRContentDatabase
     public static readonly ComputeShader GasGridCompute = LoadComputeShader("GasGridCompute");
     public static readonly ComputeShader GlowFlooderCompute = LoadComputeShader("GlowFlooder");
 
-    internal static readonly Texture2D CustomCursor_Drag = TRContentDatabase.LoadTexture("CursorCustom_Drag"); //ContentFinder<Texture2D>.Get("UI/Cursors/CursorCustom_Drag", true);
-    internal static readonly Texture2D CustomCursor_Rotate = TRContentDatabase.LoadTexture("CursorCustom_Rotate"); //ContentFinder<Texture2D>.Get("UI/Cursors/CursorCustom_Rotate", true);
-    
+    internal static readonly Texture2D
+        CustomCursor_Drag =
+            LoadTexture("CursorCustom_Drag"); //ContentFinder<Texture2D>.Get("UI/Cursors/CursorCustom_Drag", true);
+
+    internal static readonly Texture2D
+        CustomCursor_Rotate =
+            LoadTexture("CursorCustom_Rotate"); //ContentFinder<Texture2D>.Get("UI/Cursors/CursorCustom_Rotate", true);
+
+    public static AssetBundle TeleCoreBundle
+    {
+        get
+        {
+            if (bundleInt == null)
+            {
+                var pathPart = "";
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                    pathPart = "StandaloneOSX";
+                else if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                    pathPart = "StandaloneWindows64";
+                else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                    pathPart = "StandaloneLinux64";
+
+                var mainBundlePath = Path.Combine(TeleCoreMod.Mod.Content.RootDir, $@"UnityAssets\{pathPart}\telecore");
+                bundleInt = AssetBundle.LoadFromFile(mainBundlePath);
+                TLog.Message($"AssetBundle Loaded: {bundleInt != null}");
+            }
+
+            return bundleInt;
+        }
+    }
+
     //Materials
     //public static readonly Shader AlphaShader = LoadShader("AlphaShader");
     //public static readonly Material AlphaShaderMaterial = LoadMaterial("ShaderMaterial");
@@ -60,7 +65,7 @@ public static class TRContentDatabase
         if (!lookupComputeShades.ContainsKey(shaderName))
             lookupComputeShades[shaderName] = TeleCoreBundle.LoadAsset<ComputeShader>(shaderName);
 
-        ComputeShader shader = lookupComputeShades[shaderName];
+        var shader = lookupComputeShades[shaderName];
         if (shader == null)
         {
             TLog.Warning($"Could not load shader '{shaderName}'");
@@ -77,7 +82,7 @@ public static class TRContentDatabase
         if (!lookupShades.ContainsKey(shaderName))
             lookupShades[shaderName] = TeleCoreBundle.LoadAsset<Shader>(shaderName);
 
-        Shader shader = lookupShades[shaderName];
+        var shader = lookupShades[shaderName];
         if (shader == null)
         {
             TLog.Warning($"Could not load shader '{shaderName}'");
@@ -94,7 +99,7 @@ public static class TRContentDatabase
         if (!lookupMats.ContainsKey(materialName))
             lookupMats[materialName] = TeleCoreBundle.LoadAsset<Material>(materialName);
 
-        Material mat = lookupMats[materialName];
+        var mat = lookupMats[materialName];
         if (mat == null)
         {
             TLog.Warning($"Could not load material '{materialName}'");
@@ -103,7 +108,7 @@ public static class TRContentDatabase
 
         return mat;
     }
-    
+
     public static Texture2D LoadTexture(string textureName)
     {
         if (lookupTextures == null)
@@ -111,7 +116,7 @@ public static class TRContentDatabase
         if (!lookupTextures.ContainsKey(textureName))
             lookupTextures[textureName] = TeleCoreBundle.LoadAsset<Texture2D>(textureName);
 
-        Texture2D texture = lookupTextures[textureName];
+        var texture = lookupTextures[textureName];
         if (texture == null)
         {
             TLog.Warning($"Could not load Texture2D '{textureName}'");

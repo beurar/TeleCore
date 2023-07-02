@@ -1,11 +1,10 @@
 ﻿using RimWorld;
 
-namespace TeleCore
+namespace TeleCore;
+
+[DefOf]
+public static class ThingGroupDefOf
 {
-    [DefOf]
-    public static class ThingGroupDefOf
-    {
-        public static ThingGroupDef All;
-        public static ThingGroupDef NetworkBillCrafters;
-    }
+    public static ThingGroupDef All;
+    public static ThingGroupDef NetworkBillCrafters;
 }

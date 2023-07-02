@@ -1,12 +1,10 @@
-﻿
+﻿namespace TeleCore;
 
-namespace TeleCore
+public enum FXMode
 {
-    public enum FXMode
-    {
-        //Prints the mesh
-        Static,
-        //Draws the mesh (allows dynamic movement and changes)
-        Dynamic,
-    }
+    //Prints the mesh
+    Static,
+
+    //Draws the mesh (allows dynamic movement and changes)
+    Dynamic
 }

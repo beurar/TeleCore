@@ -13,25 +13,25 @@ internal enum DelayedRoomUpdateType
 
 public class RoomUpdater
 {
-    private int lastGameTick = 0;
+    private readonly RoomTracker?[] _trackerGrid;
+
+    //
+    private readonly List<DelayedRoomUpdate> delayedActions = new();
+    private readonly List<DelayedCacheAction> delayedCacheActions = new();
     private readonly RoomTrackerMapInfo parent;
-    
+
     //
     private readonly List<Room> tempNewRooms = new();
     private readonly List<Room> tempReusedRooms = new();
-    
-    //
-    private readonly List<DelayedRoomUpdate> delayedActions = new ();
-    private readonly List<DelayedCacheAction> delayedCacheActions = new ();
-    private readonly RoomTracker?[] _trackerGrid;
-    
-    public bool IsWorking { get; private set; } = false;
+    private int lastGameTick;
 
     public RoomUpdater(RoomTrackerMapInfo parent)
     {
         this.parent = parent;
         _trackerGrid = new RoomTracker[this.parent.Map.cellIndices.NumGridCells];
     }
+
+    public bool IsWorking { get; private set; }
 
     internal void Update(bool isManual = false)
     {
@@ -40,11 +40,11 @@ public class RoomUpdater
 
         //
         foreach (var action in delayedActions)
-        {
             switch (action.Type)
             {
                 case DelayedRoomUpdateType.Added:
-                    var previous = action.Room.Cells.Select(c => _trackerGrid[parent.Map.cellIndices.CellToIndex(c)]).Where(t => t != null).Distinct().ToArray();
+                    var previous = action.Room.Cells.Select(c => _trackerGrid[parent.Map.cellIndices.CellToIndex(c)])
+                        .Where(t => t != null).Distinct().ToArray();
                     var newTracker = new RoomTracker(action.Room);
                     action.SetTracker(newTracker);
                     action.SetPrevious(previous);
@@ -54,41 +54,29 @@ public class RoomUpdater
                     parent.MarkDisband(action.Tracker);
                     break;
             }
-        }
-        
+
         //Reused
         foreach (var action in delayedActions)
-        {
             if (action.Type == DelayedRoomUpdateType.Reused)
             {
                 action.Tracker.Reset();
                 action.Tracker.Notify_Reused();
             }
-        }
-        
+
         foreach (var action in delayedActions)
-        {
-            if (action.Type == DelayedRoomUpdateType.Disbanded) 
+            if (action.Type == DelayedRoomUpdateType.Disbanded)
                 parent.Disband(action.Tracker);
-        }
-        
+
         foreach (var action in delayedActions)
-        {
-            if (action.Type == DelayedRoomUpdateType.Added) 
+            if (action.Type == DelayedRoomUpdateType.Added)
                 action.Tracker.Init(action.Previous);
-        }
 
         foreach (var action in delayedActions)
-        {
-            if (action.Type == DelayedRoomUpdateType.Added) 
+            if (action.Type == DelayedRoomUpdateType.Added)
                 action.Tracker.PostInit(action.Previous);
-        }
 
-        foreach (var action in delayedCacheActions)
-        {
-            _trackerGrid[action.Index] = null;
-        }
-        
+        foreach (var action in delayedCacheActions) _trackerGrid[action.Index] = null;
+
         //
         IsWorking = false;
         delayedActions.Clear();
@@ -99,7 +87,7 @@ public class RoomUpdater
     {
         _trackerGrid[parent.Map.cellIndices.CellToIndex(cell)] = parent[region.Room];
     }
-    
+
     internal void Notify_ResetDirtyCell(IntVec3 cell)
     {
         //_trackerGrid[parent.Map.cellIndices.CellToIndex(cell)] = null;
@@ -116,8 +104,10 @@ public class RoomUpdater
                 if (!(delayedRoomUpdate.Room?.Dereferenced ?? true)) continue;
                 delayedActions.Remove(delayedRoomUpdate);
             }
+
             return;
         }
+
         IsWorking = true;
     }
 
@@ -131,21 +121,15 @@ public class RoomUpdater
     {
         //Compare with new generated rooms
         foreach (var newAddedRoom in tempNewRooms)
-        {
             delayedActions.Add(new DelayedRoomUpdate(DelayedRoomUpdateType.Added, newAddedRoom));
-        }
 
         foreach (var tracker in parent.AllTrackers.Values)
         {
             if (tempReusedRooms.Contains(tracker.Room))
-            {
                 delayedActions.Add(new DelayedRoomUpdate(DelayedRoomUpdateType.Reused, tracker));
-            }
 
             if (tracker.Room.Dereferenced)
-            {
                 delayedActions.Add(new DelayedRoomUpdate(DelayedRoomUpdateType.Disbanded, tracker));
-            }
         }
 
         //
@@ -154,9 +138,6 @@ public class RoomUpdater
         tempReusedRooms.Clear();
 
         //During map generation, update immediately
-        if (Current.ProgramState != ProgramState.Playing)
-        {
-            Update(true);
-        }
+        if (Current.ProgramState != ProgramState.Playing) Update(true);
     }
 }

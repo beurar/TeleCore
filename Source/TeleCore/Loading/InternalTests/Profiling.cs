@@ -1,12 +1,10 @@
-﻿using TeleCore.Defs;
-
-namespace TeleCore.Loading.InternalTests;
+﻿namespace TeleCore.Loading.InternalTests;
 
 internal class Profiling
 {
     public static NetworkDef[] NetworkDefs = new NetworkDef[1]
     {
-        new NetworkDef
+        new()
         {
             defName = "TestNetworkDef",
             containerLabel = "ContainerLabel",
@@ -14,13 +12,13 @@ internal class Profiling
             overlayGraphic = null,
             controllerDef = null,
             transmitterDef = null
-        },
+        }
     };
 
 
     public static NetworkValueDef[] ValueDefs = new NetworkValueDef[2]
     {
-        new NetworkValueDef
+        new()
         {
             defName = "Value1",
             label = null,
@@ -46,7 +44,7 @@ internal class Profiling
             ThingDroppedFromContainer = null,
             ValueToThingRatio = 0
         },
-        new NetworkValueDef
+        new()
         {
             defName = "Value2",
             label = null,
@@ -71,7 +69,7 @@ internal class Profiling
             SpecialDroppedContainerDef = null,
             ThingDroppedFromContainer = null,
             ValueToThingRatio = 0
-        },
+        }
     };
 
     /*internal class NetworkClassTest : IContainerImplementer<NetworkValueDef, IContainerHolderNetwork, NetworkContainer>,

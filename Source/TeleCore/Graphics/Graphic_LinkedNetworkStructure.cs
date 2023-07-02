@@ -27,11 +27,9 @@ public class Graphic_LinkedNetworkStructure : Graphic_Linked
 
     public void Print(SectionLayer layer, Thing thing, float extraRotation, INetworkPart forPart)
     {
-        foreach (var pos in forPart.NetworkIO.VisualCells)
-        {
+        foreach (var pos in forPart.PartIO.VisualCells)
             Printer_Plane.PrintPlane(layer, pos.Pos.Pos.ToVector3ShiftedWithAltitude(AltitudeLayer.FloorEmplacement),
                 Vector2.one, LinkedDrawMatFrom(thing, pos));
-        }
     }
 
     public override void Print(SectionLayer layer, Thing thing, float extraRotation)
@@ -40,13 +38,8 @@ public class Graphic_LinkedNetworkStructure : Graphic_Linked
         if (comp == null) return;
 
         foreach (var subPart in comp.NetworkParts)
-        {
-            foreach (var pos in subPart.NetworkIO.VisualCells)
-            {
-                Printer_Plane.PrintPlane(layer, pos.Pos.Pos.ToVector3ShiftedWithAltitude(AltitudeLayer.FloorEmplacement),
-                    Vector2.one, LinkedDrawMatFrom(thing, pos));
-            }
-        }
+        foreach (var pos in subPart.PartIO.VisualCells)
+            Printer_Plane.PrintPlane(layer, pos.Pos.Pos.ToVector3ShiftedWithAltitude(AltitudeLayer.FloorEmplacement),
+                Vector2.one, LinkedDrawMatFrom(thing, pos));
     }
 }
-

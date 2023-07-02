@@ -1,6 +1,5 @@
 ﻿using System;
 using System.IO;
-using System.Text;
 using Verse;
 
 namespace TeleCore.Data.Logging;
@@ -8,10 +7,8 @@ namespace TeleCore.Data.Logging;
 [StaticConstructorOnStartup]
 public static class TLogger
 {
-    private static StreamWriter _Writer;
+    private static readonly StreamWriter _Writer;
 
-    private static string Prefix => $"[{Find.TickManager.TicksGame}]";
-    
     static TLogger()
     {
         try
@@ -21,26 +18,28 @@ public static class TLogger
             if (file.Exists)
             {
                 var count = directory.GetFiles().Length;
-                string backupPath = $"{Path.GetFileNameWithoutExtension(file.FullName)}_{count-1}.txt";
+                var backupPath = $"{Path.GetFileNameWithoutExtension(file.FullName)}_{count - 1}.txt";
                 file.CopyTo(backupPath, true);
                 file.Delete();
             }
+
             var _fileStream = file.Open(FileMode.CreateNew, FileAccess.ReadWrite, FileShare.Read);
             _Writer = new StreamWriter(_fileStream);
             _Writer.AutoFlush = true;
-            
+
             ApplicationQuitUtility.ApplicationQuitEvent += delegate
             {
                 _Writer.Close();
                 _Writer.Dispose();
             };
-  
         }
-        catch(Exception ex)
+        catch (Exception ex)
         {
             TLog.Error($"Error while creating logger: {ex}");
         }
     }
+
+    private static string Prefix => $"[{Find.TickManager.TicksGame}]";
 
     public static void Log(string message)
     {
