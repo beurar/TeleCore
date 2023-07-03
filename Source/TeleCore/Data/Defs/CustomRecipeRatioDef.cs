@@ -5,9 +5,9 @@ namespace TeleCore;
 
 public class CustomRecipeRatioDef : Def
 {
-    public List<DefFloatRef<NetworkValueDef>> byProducts;
+    public List<DefValueLoadable<NetworkValueDef, float>> byProducts;
+    public List<DefValueLoadable<NetworkValueDef, float>> inputRatio;
     public bool hidden = false;
-    public List<DefFloatRef<NetworkValueDef>> inputRatio;
     public ThingDef result;
     public List<string> tags;
 

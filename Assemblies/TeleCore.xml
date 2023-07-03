@@ -27,12 +27,6 @@
                 If set on a projectile's def, on Impact, all of these effects will be created - if available.
             </summary>
         </member>
-        <member name="T:TeleCore.DefFloatRef`1">
-            <summary>
-                Used to load a <see cref="T:TeleCore.Primitive.DefFloat`1" /> struct via xml.
-            </summary>
-        </member>
-        <!-- Badly formed XML comment ignored for member "T:TeleCore.DefIntRef`1" -->
         <member name="T:TeleCore.Network.Data.NetworkValueFilterByRole">
             <summary>
                 <para>Allows to set a network value filter for a specific role.</para>

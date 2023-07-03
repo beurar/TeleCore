@@ -7,7 +7,7 @@ namespace TeleCore;
 
 public class CustomRecipePresetDef : Def
 {
-    public List<DefIntRef<CustomRecipeRatioDef>> desiredResources;
+    public List<DefValueLoadable<CustomRecipeRatioDef, int>> desiredResources;
 
     public List<string> tags;
 

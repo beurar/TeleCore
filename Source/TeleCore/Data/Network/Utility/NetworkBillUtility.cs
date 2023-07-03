@@ -7,9 +7,7 @@ namespace TeleCore.Network.Utility;
 
 internal static class NetworkBillUtility
 {
-    public static DefValueStack<NetworkValueDef, double> ConstructCustomCostStack(
-        List<DefIntRef<CustomRecipeRatioDef>> list,
-        bool isByProduct = false)
+    public static DefValueStack<NetworkValueDef, double> ConstructCustomCostStack(List<DefValueLoadable<CustomRecipeRatioDef, int>> list,bool isByProduct = false)
     {
         var stack = new DefValueStack<NetworkValueDef, double>();
         foreach (var defIntRef in list)
@@ -65,7 +63,7 @@ internal static class NetworkBillUtility
         return sb.ToString();
     }
 
-    public static string CostLabel(List<DefFloat<NetworkValueDef>> values)
+    public static string CostLabel(List<DefValueLoadable<NetworkValueDef, float>> values)
     {
         if (values.NullOrEmpty()) return "N/A";
         var sb = new StringBuilder();
