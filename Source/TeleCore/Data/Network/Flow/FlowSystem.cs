@@ -17,24 +17,25 @@ public class FlowSystem : IDisposable
     private readonly List<NetworkVolume> _flowBoxes;
     private DefValueStack<NetworkValueDef, double> _totalStack;
 
+    private Dictionary<NetworkPart, NetworkVolume> _relations;
+    private Dictionary<NetworkVolume, List<FlowInterface>> _connectionTable;
+
+    internal Dictionary<NetworkPart, NetworkVolume> Relations => _relations;
+    internal Dictionary<NetworkVolume, List<FlowInterface>> ConnectionTable => _connectionTable;
+    public double TotalValue => _totalStack.TotalValue;
+    
+    public ClampWorker ClampWorker { get; set; }
+    public PressureWorker PressureWorker { get; set; }
+    
     public FlowSystem()
     {
         _flowBoxes = new List<NetworkVolume>();
-        Relations = new Dictionary<NetworkPart, NetworkVolume>();
-        ConnectionTable = new Dictionary<NetworkVolume, List<FlowInterface>>();
+        _relations = new Dictionary<NetworkPart, NetworkVolume>();
+        _connectionTable = new Dictionary<NetworkVolume, List<FlowInterface>>();
 
         ClampWorker = new ClampWorker_Overcommit();
         PressureWorker = new PressureWorker_WaveEquation();
     }
-
-    public ClampWorker ClampWorker { get; set; }
-    public PressureWorker PressureWorker { get; set; }
-
-    internal Dictionary<NetworkPart, NetworkVolume> Relations { get; }
-
-    internal Dictionary<NetworkVolume, List<FlowInterface>> ConnectionTable { get; }
-
-    public double TotalValue => _totalStack.TotalValue;
 
     public void Dispose()
     {
@@ -125,11 +126,14 @@ public class FlowSystem : IDisposable
             ConnectionTable[fb].ForEach(c => c.Notify_SetDirty());
         }
 
-        foreach (var flowBox in _flowBoxes) UpdateFlow(flowBox);
+        foreach (var flowBox in _flowBoxes) 
+            UpdateFlow(flowBox);
 
-        foreach (var flowBox in _flowBoxes) UpdateContent(flowBox);
+        foreach (var flowBox in _flowBoxes) 
+            UpdateContent(flowBox);
 
-        foreach (var flowBox in _flowBoxes) UpdateFlowRate(flowBox);
+        foreach (var flowBox in _flowBoxes)
+            UpdateFlowRate(flowBox);
     }
 
     private void UpdateFlow(NetworkVolume fb)

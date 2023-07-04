@@ -5,24 +5,22 @@
 /// </summary>
 public class FlowInterface
 {
-    public FlowInterface(NetworkVolume from, NetworkVolume to)
-    {
-        From = from;
-        To = to;
-    }
-
     public double Move { get; set; }
     public double Flow { get; set; }
     public double PrevFlow { get; set; }
 
     public NetworkVolume From { get; }
-
     public NetworkVolume To { get; }
 
     public bool Dirty => !(ResolvedMove && ResolvedFlow);
     public bool ResolvedFlow { get; private set; }
-
     public bool ResolvedMove { get; private set; }
+    
+    public FlowInterface(NetworkVolume from, NetworkVolume to)
+    {
+        From = from;
+        To = to;
+    }
 
     internal void Notify_SetDirty()
     {
