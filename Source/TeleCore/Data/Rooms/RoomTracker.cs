@@ -151,7 +151,7 @@ public class RoomTracker
             var otherRoom = door.NeighborRoomOf(Room);
             if (otherRoom == null) return;
             var otherTracker = otherRoom.RoomTracker();
-
+            if(otherTracker == this) return;
             var portal = new RoomPortal(door, this, otherTracker, door.GetRoom().RoomTracker());
             adjacentTrackers.Add(otherTracker);
             roomPortals.Add(portal);
@@ -169,7 +169,8 @@ public class RoomTracker
     {
         //Things
         ListerThings.Remove(thing);
-        foreach (var comp in comps) comp.Notify_ThingRemoved(thing);
+        foreach (var comp in comps) 
+            comp.Notify_ThingRemoved(thing);
 
         //Pawns
         if (thing is Pawn pawn) DeregisterPawn(pawn);
@@ -177,7 +178,8 @@ public class RoomTracker
 
     protected void DeregisterPawn(Pawn pawn)
     {
-        foreach (var comp in comps) comp.Notify_PawnLeftRoom(pawn);
+        foreach (var comp in comps) 
+            comp.Notify_PawnLeftRoom(pawn);
     }
 
     public bool ContainsRegionType(RegionType type)
@@ -240,36 +242,44 @@ public class RoomTracker
     {
         RegenerateData(true, false, false);
         //Check if room closed
-        if (_wasOutSide && !IsOutside) RoofClosed();
+        if (_wasOutSide && !IsOutside) 
+            RoofClosed();
 
-        if (!_wasOutSide && IsOutside) RoofOpened();
+        if (!_wasOutSide && IsOutside) 
+            RoofOpened();
 
-        foreach (var comp in comps) comp.Notify_RoofChanged();
+        foreach (var comp in comps) 
+            comp.Notify_RoofChanged();
     }
 
     private void RoofClosed()
     {
-        foreach (var comp in comps) comp.Notify_RoofClosed();
+        foreach (var comp in comps) 
+            comp.Notify_RoofClosed();
     }
 
     private void RoofOpened()
     {
-        foreach (var comp in comps) comp.Notify_RoofOpened();
+        foreach (var comp in comps) 
+            comp.Notify_RoofOpened();
     }
 
     public void RoomTick()
     {
-        foreach (var comp in comps) comp.CompTick();
+        foreach (var comp in comps) 
+            comp.CompTick();
     }
 
     public void RoomOnGUI()
     {
-        foreach (var comp in comps) comp.OnGUI();
+        foreach (var comp in comps) 
+            comp.OnGUI();
     }
 
     public void RoomDraw()
     {
-        foreach (var comp in comps) comp.Draw();
+        foreach (var comp in comps) 
+            comp.Draw();
     }
 
     private string Icon(bool checkFail)
@@ -349,13 +359,15 @@ public class RoomTracker
                 {
                     if (item.Position.GetRoomFast(Map) != Room)
                     {
-                        if (uniqueContainedThingsSet.Add(item)) Notify_RegisterBorderThing(item);
+                        if (uniqueContainedThingsSet.Add(item)) 
+                            Notify_RegisterBorderThing(item);
                         return;
                     }
 
                     if (IsOutside) return;
 
-                    if (uniqueContainedThingsSet.Add(item)) Notify_RegisterThing(item);
+                    if (uniqueContainedThingsSet.Add(item)) 
+                        Notify_RegisterThing(item);
                 }
 
                 //TODO: Research viability of parallel
@@ -371,12 +383,14 @@ public class RoomTracker
                             var item = allThings[j];
                             if (item.Position.GetRoomFast(Map) != Room)
                             {
-                                if (uniqueContainedThingsSet.Add(item)) Notify_RegisterBorderThing(item);
+                                if (uniqueContainedThingsSet.Add(item)) 
+                                    Notify_RegisterBorderThing(item);
                                 continue;
                             }
 
                             if (IsOutside) continue;
-                            if (uniqueContainedThingsSet.Add(item)) Notify_RegisterThing(item);
+                            if (uniqueContainedThingsSet.Add(item)) 
+                                Notify_RegisterThing(item);
                         }
                 }
 
@@ -407,7 +421,8 @@ public class RoomTracker
                 var cardinal = c + GenAdj.CardinalDirections[i];
 
                 var region = cardinal.GetRegion(Map);
-                if ((region == null || region.Room != Room) && cardinal.InBounds(Map)) bCells.Add(cardinal);
+                if ((region == null || region.Room != Room) && cardinal.InBounds(Map)) 
+                    bCells.Add(cardinal);
             }
         }
 
@@ -430,6 +445,12 @@ public class RoomTracker
         if (!IsOutside)
             //If not outside, we want to know if there are any open roof cells (implies: small room with a few open roof cells
             OpenRoofCount = Room.OpenRoofCount;
-        foreach (var roomRegion in Room.Regions) RegionTypes |= roomRegion.type;
+        foreach (var roomRegion in Room.Regions) 
+            RegionTypes |= roomRegion.type;
+    }
+
+    public override string ToString()
+    {
+        return base.ToString();
     }
 }

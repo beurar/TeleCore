@@ -112,7 +112,7 @@ public class NetworkInfoView
             }
 
             //Hover Readout
-            NetworkUI.DrawFlowBoxReadout(containerRect, _part.Volume);
+            FlowUI<NetworkValueDef>.DrawFlowBoxReadout(containerRect, _part.Volume);
         }
 
         var padding = 5;
@@ -191,7 +191,7 @@ public class NetworkInfoView
             ExtendoTabs.Add("Container Settings", delegate(Rect rect)
             {
                 Widgets.DrawWindowBackground(rect);
-                NetworkUI.DrawFlowBoxReadout(rect, _part.Volume);
+                FlowUI<NetworkValueDef>.DrawFlowBoxReadout(rect, _part.Volume);
 
                 //Right Click Input
                 if (TWidgets.MouseClickIn(rect, 1) && DebugSettings.godMode)

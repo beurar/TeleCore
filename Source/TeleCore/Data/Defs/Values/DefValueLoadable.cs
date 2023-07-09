@@ -1,28 +1,29 @@
-﻿using System.Text.RegularExpressions;
+﻿using System.Reflection;
+using System.Text.RegularExpressions;
 using System.Xml;
 using TeleCore.Primitive;
 using Verse;
 
 namespace TeleCore;
 
-public class DefValueLoadable<TDef, TValue> : IExposable
-    where TDef : Def
+public class DefValueLoadable<TDef, TValue> : IExposable 
+    where TDef : Def 
     where TValue : struct
 {
-    private TDef _def;
-    private Numeric<TValue> _value;
+    private TDef def;
+    private Numeric<TValue> value;
     
-    public TDef Def => _def;
-    public Numeric<TValue> Value => _value;
-    public bool IsValid => _def != null!;
+    public TDef Def => def;
+    public Numeric<TValue> Value => value;
+    public bool IsValid => def != null!;
     
     public static implicit operator DefValue<TDef, TValue>(DefValueLoadable<TDef, TValue> refValue) => new(refValue.Def, refValue.Value);
     
     public void ExposeData()
     {
         //Scribe_Defs.Look(ref _def, "def");
-        Look(ref _def, "def");
-        Scribe_Values.Look(ref _value, "value");
+        Look(ref def, "def");
+        Scribe_Values.Look(ref value, "value");
         
         return;
 
@@ -44,20 +45,21 @@ public class DefValueLoadable<TDef, TValue> : IExposable
     public void LoadDataFromXmlCustom(XmlNode xmlRoot)
     {
         //Listing
+        var fi = typeof(DefValueLoadable<TDef, TValue>).GetField("def", BindingFlags.NonPublic | BindingFlags.Instance);
         if (xmlRoot.Name == "li")
         {
             var innerValue = xmlRoot.InnerText;
             var s = Regex.Replace(innerValue, @"\s+", "");
             var array = s.Split(',');
-            DirectXmlCrossRefLoader.RegisterObjectWantsCrossRef(this, $"{nameof(_def)}", array[0]);
-            _value = ParseHelper.FromString<TValue>(array.Length > 1 ? array[1] : "0");
+            DirectXmlCrossRefLoader.RegisterObjectWantsCrossRef(this, fi, array[0]);
+            value = ParseHelper.FromString<TValue>(array.Length > 1 ? array[1] : "0");
         }
 
         //InLined
         else
         {
-            DirectXmlCrossRefLoader.RegisterObjectWantsCrossRef(this, $"{nameof(_def)}", xmlRoot.Name);
-            _value = ParseHelper.FromString<TValue>(xmlRoot.FirstChild.Value);
+            DirectXmlCrossRefLoader.RegisterObjectWantsCrossRef(this, fi, xmlRoot.Name);
+            value = ParseHelper.FromString<TValue>(xmlRoot.FirstChild.Value);
         }
     }
 }

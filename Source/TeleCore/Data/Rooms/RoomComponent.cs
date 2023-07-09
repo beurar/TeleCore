@@ -159,6 +159,6 @@ public abstract class RoomComponent
 
     public override string ToString()
     {
-        return $"{nameof(GetType)}[{Room.ID}]";
+        return $"{GetType().Name}[{Room.ID}]";
     }
 }

@@ -92,7 +92,7 @@ public abstract class FlowVolume<T> : INotifyFlowEvent where T : FlowValueDef
     #endregion
 
     #region Manipulation Helpers
-
+    
     public DefValueStack<T, double> RemoveContent(double moveAmount)
     {
         var rem = mainStack * moveAmount;
@@ -108,6 +108,28 @@ public abstract class FlowVolume<T> : INotifyFlowEvent where T : FlowValueDef
     public void LoadFromStack(DefValueStack<T, double> stack)
     {
         mainStack = stack;
+    }
+    
+    public FlowResult<T, double>  TryAdd(T def, double value)
+    {
+        mainStack += (def, value);
+        return FlowResult<T, double>.Init(value).Complete((def, value)).Resolve();
+    }
+
+    public FlowResult<T, double> TryRemove(T def, double value)
+    {
+        mainStack -= (def, value);
+        return FlowResult<T, double>.Init(-value).Complete((def, -value));
+    }
+
+    public FlowResult<T, double>  TryConsume(T def, double value)
+    {
+        return TryRemove(def, value);
+    }
+    
+    public void Clear()
+    {
+        
     }
 
     #endregion

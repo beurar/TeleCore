@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using TeleCore.FlowCore;
 using TeleCore.Generics.Container;
 using TeleCore.Network.Flow;
 using TeleCore.Static;
@@ -7,7 +8,7 @@ using Verse;
 
 namespace TeleCore.Network.Utility;
 
-public static class NetworkUI
+public static class FlowUI<T> where T : FlowValueDef
 {
     /*public static Vector2 GetValueContainerReadoutSize<TValue>(ValueContainerBase<TValue> container)
         where TValue : FlowValueDef
@@ -27,7 +28,7 @@ public static class NetworkUI
         return size;
     }*/
 
-    public static Vector2 GetFlowBoxReadoutSize(NetworkVolume fb)
+    public static Vector2 GetFlowBoxReadoutSize(FlowVolume<T> fb)
     {
         var size = new Vector2(10, 10);
         var stack = fb.Stack;
@@ -47,7 +48,7 @@ public static class NetworkUI
         return size;
     }
 
-    public static void DrawFlowBoxReadout(Rect rect, NetworkVolume fb)
+    public static void DrawFlowBoxReadout(Rect rect, FlowVolume<T> fb)
     {
         float height = 5;
         Widgets.DrawMenuSection(rect);
@@ -79,7 +80,7 @@ public static class NetworkUI
             }
     }
 
-    public static List<FloatMenuOption> DebugFloatMenuOptions(NetworkVolume fb)
+    public static List<FloatMenuOption> DebugFloatMenuOptions(FlowVolume<T> fb)
     {
         var tempList = StaticListHolder<FloatMenuOption>.RequestList($"FlowMenuOptions_{fb.GetHashCode()}");
         /*
@@ -180,7 +181,7 @@ public static class NetworkUI
     */
 
 
-    public static void HoverFlowBoxReadout(Rect hoverArea, NetworkVolume networkVolume)
+    public static void HoverFlowBoxReadout(Rect hoverArea, FlowVolume<T> networkVolume)
     {
         if (networkVolume == null) return;
 

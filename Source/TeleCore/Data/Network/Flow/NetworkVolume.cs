@@ -24,25 +24,4 @@ public class NetworkVolume : FlowVolume<NetworkValueDef>
 
     //TODO => Move into container config
     public IList<NetworkValueDef> AcceptedTypes { get; set; }
-
-    public FlowResult<NetworkValueDef, double>  TryAdd(NetworkValueDef def, double value)
-    {
-        mainStack += (def, value);
-        return FlowResult<NetworkValueDef, double>.Init(value).Complete((def, value)).Resolve();
-    }
-
-    public FlowResult<NetworkValueDef, double> TryRemove(NetworkValueDef def, double value)
-    {
-        mainStack -= (def, value);
-        return FlowResult<NetworkValueDef, double>.Init(-value).Complete((def, -value));
-    }
-
-    public FlowResult<NetworkValueDef, double>  TryConsume(NetworkValueDef def, double value)
-    {
-        return TryRemove(def, value);
-    }
-
-    public void Clear()
-    {
-    }
 }

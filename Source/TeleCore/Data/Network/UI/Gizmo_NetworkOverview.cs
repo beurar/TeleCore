@@ -153,7 +153,7 @@ public class Gizmo_NetworkOverview : Gizmo, IDisposable
 
             TWidgets.DrawColoredBox(partRect, colorBG, colorBorder, 1);
             TWidgets.DrawHighlightIfMouseOverColor(partRect, TColor.White05);
-            NetworkUI.HoverFlowBoxReadout(partRect, part.Volume);
+            FlowUI<NetworkValueDef>.HoverFlowBoxReadout(partRect, part.Volume);
 
             Text.Anchor = TextAnchor.MiddleLeft;
             Widgets.Label(textRect.ContractedBy(5, 0), part.Config.networkDef.labelShort);
