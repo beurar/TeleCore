@@ -125,7 +125,8 @@ public static class GenData
     public static Room? GetRoomFast(this IntVec3 pos, Map map)
     {
         var validRegion = map.regionGrid.GetValidRegionAt_NoRebuild(pos);
-        if (validRegion != null && validRegion.type.Passable()) return validRegion.Room;
+        if (validRegion != null && validRegion.type.Passable()) 
+            return validRegion.Room;
         return null;
     }
 
@@ -164,7 +165,7 @@ public static class GenData
     /// <returns>The main <see cref="TeleCore.RoomTracker" /> object of the <paramref name="room" />.</returns>
     public static RoomTracker RoomTracker(this Room room)
     {
-        return room.Map.GetMapInfo<RoomTrackerMapInfo>()[room];
+        return room.Map.GetMapInfo<MapInformation_Rooms>()[room];
     }
 
     /// <summary>

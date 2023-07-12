@@ -66,7 +66,7 @@ public abstract class FlowVolume<T> : INotifyFlowEvent where T : FlowValueDef
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public double StoredValueOf(T? def)
     {
-        if (def == null) return 0;
+        if (def == null) return Numeric<double>.Zero;
         return Stack[def].Value;
     }
 

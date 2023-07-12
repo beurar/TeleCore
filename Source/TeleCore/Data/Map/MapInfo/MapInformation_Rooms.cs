@@ -6,6 +6,7 @@ using UnityEngine;
 using Verse;
 
 namespace TeleCore;
+
 /* Update Flow
  * Any room-structure changed (wall)
  * Add actions for each change within the tick
@@ -14,23 +15,23 @@ namespace TeleCore;
  * => efficiency
  */
 
-public class RoomTrackerMapInfo : MapInformation
+public class MapInformation_Rooms : MapInformation
 {
     //DEBUG
     private static readonly char check = '✓';
     private static readonly char fail = '❌';
     private readonly List<RoomTracker> allTrackers;
 
-    public RoomTrackerMapInfo(Map map) : base(map)
+    public MapInformation_Rooms(Map map) : base(map)
     {
         AllTrackers = new Dictionary<Room, RoomTracker>();
         allTrackers = new List<RoomTracker>();
-        Updater = new RoomUpdater(this);
+        TrackerUpdater = new RoomTrackerUpdater(this);
 
-        TFind.TickManager.RegisterMapUITickAction(() => Updater.Update());
+        TFind.TickManager.RegisterMapUITickAction(() => TrackerUpdater.Update());
     }
 
-    public RoomUpdater Updater { get; }
+    public RoomTrackerUpdater TrackerUpdater { get; }
 
     public Dictionary<Room, RoomTracker> AllTrackers { get; }
 
@@ -151,19 +152,47 @@ public class RoomTrackerMapInfo : MapInformation
             tracker.Notify_DeregisterThing(thing);
     }
 
-    //
+    #region Rendering
+    
     public override void UpdateOnGUI()
     {
-        if (Find.CurrentMap != Map) return;
-        foreach (var tracker in allTrackers) tracker.RoomOnGUI();
+        if (Find.CurrentMap != Map) 
+            return;
+        foreach (var tracker in allTrackers) 
+            tracker.RoomOnGUI();
     }
 
     public override void Update()
     {
-        if (Find.CurrentMap != Map) return;
-        foreach (var tracker in allTrackers) tracker.RoomDraw();
+        if (Find.CurrentMap != Map)
+            return;
+        foreach (var tracker in allTrackers)
+            tracker.RoomDraw();
+
+        if (TeleCoreDebugViewSettings.ShowRoomtrackers)
+        {
+            IntVec3 intVec = UI.MouseCell();
+            if (intVec.InBounds(map))
+            {
+                var room = intVec.GetRoom(this.map);
+                if (room != null)
+                {
+                    var tracker = this[room];
+                    if (tracker == null)
+                    {
+                        CellRenderer.RenderCell(intVec, BaseContent.BadMat);
+                    }
+                    else
+                    {
+                        tracker.DrawDebug();
+                    }
+                }
+            }
+        }
     }
 
+    #endregion
+    
     public void VerifyState()
     {
         var allRooms = Map.regionGrid.allRooms;

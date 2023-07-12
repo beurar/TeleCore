@@ -122,6 +122,6 @@ public struct DefValue<TDef, TValue>
 
     public override string ToString()
     {
-        return $"(({Def.GetType()}):{Def}, {Value})";
+        return $"({Def}, {Value})";
     }
 }

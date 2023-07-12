@@ -12,7 +12,19 @@ public struct Numeric<TValue> where TValue : struct
     public static Numeric<TValue> Zero => new(NumericLibrary<TValue>.ZeroGetter());
     public static Numeric<TValue> One => new(NumericLibrary<TValue>.OneGetter());
     public static Numeric<TValue> NegativeOne => new(NumericLibrary<TValue>.NegativeOneGetter());
-    
+    public bool IsNaN
+    {
+        get
+        {
+            return _number switch
+            {
+                double d => double.IsNaN(d),
+                float f => float.IsNaN(f),
+                _ => false
+            };
+        }
+    }
+
     public Numeric(TValue value)
     {
         _number = value;
@@ -100,10 +112,14 @@ public struct Numeric<TValue> where TValue : struct
     {
         return obj is Numeric<TValue> other && Equals(other);
     }
-
+    
+    public override string ToString()
+    {
+        return Value.ToString();
+    }
+    
     public override int GetHashCode()
     {
         return _number.GetHashCode();
     }
-
 }

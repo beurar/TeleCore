@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using Multiplayer.API;
 using Verse;
 
@@ -27,10 +28,32 @@ internal static class TeleCoreStaticStartup
 
         //Process Defs after load
         ApplyDefChangesPostLoad();
-
         TLog.Message("Startup Finished!", TColor.Green);
     }
+    
+    public static List<(string TypeName, Assembly Assembly)> FindDuplicateTypes()
+    {
+        var types = GenTypes.AllTypes;;
+        var duplicates = new List<(string TypeName, Assembly Assembly)>();
+        
+        foreach (var type in types)
+        {
+            // Get type details
+            var typeName = type.FullName;
+            var assembly = type.Assembly;
 
+            duplicates.Add((typeName, assembly));           
+        }
+
+        var duplicateTypes = duplicates.GroupBy(x => x)
+            .Where(group => group.Count() > 1)
+            .Select(group => group.Key)
+            .ToList();
+
+        // Return only the types that occur more than once
+        return duplicateTypes;
+    }
+    
     private static void DefIDCheck()
     {
         var allDefs = LoadedModManager.RunningModsListForReading.SelectMany(pack => pack.AllDefs);

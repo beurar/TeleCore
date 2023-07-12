@@ -27,7 +27,7 @@
         <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
         <Version>1.2.5</Version>
         <SignAssembly>False</SignAssembly>
-        <PackageVersion>1.8.5.7</PackageVersion>
+        <PackageVersion>1.8.5.8</PackageVersion>
         <Nullable>enable</Nullable>
     </PropertyGroup>
 
@@ -61,30 +61,40 @@
         <None Remove="NodeEditorFramework\**"/>
     </ItemGroup>
 
+    <!-- DLL References -->
     <ItemGroup>
-        <PackageReference Include="Krafs.Rimworld.Ref" Version="1.4.3704" GeneratePathProperty="true">
+        <Reference Include="HotSwap">
+            <HintPath>..\..\..\HotSwap\Assemblies\HotSwap.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+    </ItemGroup>
+    
+    <!-- NuGet References -->
+    <ItemGroup>
+ 
+       <PackageReference Include="Krafs.Rimworld.Ref" Version="1.4.3704" GeneratePathProperty="true" ExcludeAssets="runtime">
             <PrivateAssets>all</PrivateAssets>
         </PackageReference>
 
-        <PackageReference Include="Lib.Harmony" Version="2.2.2" ExcludeAssets="runtime">
+        <PackageReference Include="OneOf" Version="3.0.243" >
             <PrivateAssets>all</PrivateAssets>
+        </PackageReference>
+        
+        <PackageReference Include="Lib.Harmony" Version="2.2.2">
+            <PrivateAssets>all</PrivateAssets>
+            <ExcludeAssets>runtime</ExcludeAssets>
             <IncludeAssets>compile; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
-
-        <PackageReference Include="OneOf" Version="3.0.243"/>
-
-        <PackageReference Include="System.Collections.Immutable" Version="7.0.0"/>
 
         <PackageReference Include="TaskPubliciser" Version="1.0.3">
             <PrivateAssets>all</PrivateAssets>
         </PackageReference>
-        <!--
-        <PackageReference Include="Microsoft.NETCore.Platforms" Version="*" />
-        -->
+        
         <PackageReference Include="UnlimitedHugs.Rimworld.HugsLib" Version="10.0.1" ExcludeAssets="runtime">
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>compile; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
+        
         <PackageReference Include="RimWorld.MultiplayerAPI" Version="0.4.0" ExcludeAssets="runtime">
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>compile; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -96,13 +106,6 @@
             <Pack>True</Pack>
             <PackagePath>\</PackagePath>
         </None>
-    </ItemGroup>
-
-    <ItemGroup>
-        <Reference Include="HotSwap">
-            <HintPath>..\..\..\HotSwap\Assemblies\HotSwap.dll</HintPath>
-            <Private>False</Private>
-        </Reference>
     </ItemGroup>
 
     <ItemGroup>
@@ -168,5 +171,6 @@
             <Reference Remove="$(PkgKrafs_Rimworld_Ref)\ref\net472\Assembly-CSharp.dll"/>
         </ItemGroup>
     </Target>
+
 
 </Project>

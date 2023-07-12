@@ -6,18 +6,18 @@ namespace TeleCore;
 
 internal static class RoomUpdateNotifiers
 {
-    private static RoomUpdater CurrentWorker { get; set; }
+    private static RoomTrackerUpdater CurrentWorker { get; set; }
 
     //Notify roof change on this room group
     public static void Notify_RoofChanged(Room room)
     {
-        room.Map.GetMapInfo<RoomTrackerMapInfo>().Notify_RoofChanged(room);
+        room.Map.GetMapInfo<MapInformation_Rooms>().Notify_RoofChanged(room);
     }
 
     //Prepare Room Updates by caching previous room trackers
     public static void Notify_RoomUpdatePrefix(Map map)
     {
-        CurrentWorker = map.GetMapInfo<RoomTrackerMapInfo>().Updater;
+        CurrentWorker = map.GetMapInfo<MapInformation_Rooms>().TrackerUpdater;
         CurrentWorker.Notify_UpdateStarted();
     }
 
@@ -42,7 +42,7 @@ internal static class RoomUpdateNotifiers
         }
         else
         {
-            var worker = map.GetMapInfo<RoomTrackerMapInfo>().Updater;
+            var worker = map.GetMapInfo<MapInformation_Rooms>().TrackerUpdater;
             worker.Notify_CacheDirtyCell(cell, reg);
         }
     }
@@ -55,7 +55,7 @@ internal static class RoomUpdateNotifiers
         }
         else
         {
-            var worker = map.GetMapInfo<RoomTrackerMapInfo>().Updater;
+            var worker = map.GetMapInfo<MapInformation_Rooms>().TrackerUpdater;
             worker.Notify_ResetDirtyCell(cell);
         }
     }

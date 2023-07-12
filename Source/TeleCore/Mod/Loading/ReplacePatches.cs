@@ -1,6 +1,8 @@
-﻿using HarmonyLib;
+﻿using System.Reflection;
+using HarmonyLib;
 using RimWorld;
 using TeleCore.Network.Bills;
+using Verse;
 
 namespace TeleCore.Loading;
 
@@ -17,6 +19,17 @@ internal static class ReplacePatches
                 var billProductionNetworkBill = new Bill_Production_Network(tRecipe);
                 __result = billProductionNetworkBill;
             }
+        }
+    }
+    
+    //[HarmonyPatch(typeof(GenAttribute))]
+    //[HarmonyPatch(nameof(GenAttribute.TryGetAttribute), typeof(MemberInfo), typeof(object))]
+    public static class GenAttribute_Patch
+    {
+        public static bool Prefix()
+        {
+            TLog.Debug("Prefix'd");
+            return true; 
         }
     }
 }

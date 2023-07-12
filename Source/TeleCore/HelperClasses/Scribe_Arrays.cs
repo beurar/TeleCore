@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.Linq;
 using System.Xml;
 using RimWorld.Planet;
+using TeleCore.Primitive.Immutable;
 using Verse;
 
 namespace TeleCore;

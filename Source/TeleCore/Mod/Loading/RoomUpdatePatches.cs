@@ -7,9 +7,16 @@ namespace TeleCore;
 /// <summary>
 ///     Main handling of changes in regions and rooms of RimWorld
 /// </summary>
-internal static class RegionPatches
+internal static class RoomUpdatePatches
 {
-    public static Room GetParentRoom(Thing thing, Map map)
+    
+    // Rebuilding Dirty Regions And Rooms Begins
+    // > RegenerateNewRegionsFromDirtyCells
+    //   Crates new Regions based on dirty cells
+    // > CreateOrUpdateRooms
+    //   Actaully creates rooms from new regions
+    
+    private static Room GetParentRoom(Thing thing, Map map)
     {
         var position = thing.Position;
         if (!position.InBounds(map)) return null;
@@ -76,7 +83,7 @@ internal static class RegionPatches
         {
             var room = GetParentRoom(thing, map);
             if (room is null) return;
-            map.GetMapInfo<RoomTrackerMapInfo>().Notify_RegisterThing(thing, room);
+            map.GetMapInfo<MapInformation_Rooms>().Notify_RegisterThing(thing, room);
         }
     }
 
@@ -86,7 +93,7 @@ internal static class RegionPatches
     {
         public static void Postfix(Thing thing, Map map)
         {
-            map.GetMapInfo<RoomTrackerMapInfo>().Notify_DeregisterThing(thing, GetParentRoom(thing, map));
+            map.GetMapInfo<MapInformation_Rooms>().Notify_DeregisterThing(thing, GetParentRoom(thing, map));
         }
     }
 

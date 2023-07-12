@@ -11,21 +11,21 @@ internal enum DelayedRoomUpdateType
     Disbanded
 }
 
-public class RoomUpdater
+public class RoomTrackerUpdater
 {
     private readonly RoomTracker?[] _trackerGrid;
 
     //
     private readonly List<DelayedRoomUpdate> delayedActions = new();
     private readonly List<DelayedCacheAction> delayedCacheActions = new();
-    private readonly RoomTrackerMapInfo parent;
+    private readonly MapInformation_Rooms parent;
 
     //
     private readonly List<Room> tempNewRooms = new();
     private readonly List<Room> tempReusedRooms = new();
     private int lastGameTick;
 
-    public RoomUpdater(RoomTrackerMapInfo parent)
+    public RoomTrackerUpdater(MapInformation_Rooms parent)
     {
         this.parent = parent;
         _trackerGrid = new RoomTracker[this.parent.Map.cellIndices.NumGridCells];

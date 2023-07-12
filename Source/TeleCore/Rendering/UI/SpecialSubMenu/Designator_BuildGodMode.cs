@@ -29,7 +29,6 @@ public class Designator_BuildGodMode : Designator_Build
     [SyncMethod]
     public override void DesignateSingleCell(IntVec3 c)
     {
-        TLog.Message($"Spawning thing in godmode: {entDef}");
         var thing = ThingMaker.MakeThing((ThingDef) entDef, stuffDef);
         GenSpawn.Spawn(thing, c, Map, placingRot);
         FleckMaker.ThrowMetaPuffs(GenAdj.OccupiedRect(c, placingRot, entDef.Size), Map);

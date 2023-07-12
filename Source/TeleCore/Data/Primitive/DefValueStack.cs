@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
+using TeleCore.Primitive.Immutable;
 using Verse;
 
 namespace TeleCore.Primitive;
@@ -16,13 +16,13 @@ public struct DefValueStack<TDef, TValue> : IExposable
     where TValue : struct
 {
     private ImmutableArray<DefValue<TDef, TValue>> _stack;
-    private Numeric<TValue> _maxCapacity;
     private Numeric<TValue> _totalValue;
-
+    private Numeric<TValue> _maxCapacity;
+    
     //States
     public int Length => _stack.Length;
     public Numeric<TValue> TotalValue => _totalValue;
-    public bool IsValid => _stack != null;
+    public bool IsValid => _stack != null && !_stack.IsDefaultOrEmpty;
     public bool Empty => _totalValue.IsZero;
 
     public bool? Full
@@ -55,10 +55,11 @@ public struct DefValueStack<TDef, TValue> : IExposable
 
     public DefValueStack()
     {
-        _stack = ImmutableArray<DefValue<TDef, TValue>>.Empty;
+        _stack = new ImmutableArray<DefValue<TDef, TValue>>(new DefValue<TDef, TValue>[]{});
         _totalValue = Numeric<TValue>.Zero;
+        
     }
-
+    
     public DefValueStack(TValue maxCapacity) : this()
     {
         _maxCapacity = maxCapacity;
@@ -203,10 +204,24 @@ public struct DefValueStack<TDef, TValue> : IExposable
 
     private void TryAddOrSet(DefValue<TDef, TValue> newValue)
     {
+        if (newValue.Value.IsNaN)
+        {
+            TLog.Warning("Catched NaN!");
+            newValue = new DefValue<TDef, TValue>(newValue.Def, Numeric<TValue>.Zero);
+        }
+        
         if (!TryGetValue(newValue.Def, out var index, out var previous))
         {
             //Add onto stack
-            _stack = _stack.Add(newValue);
+            if (_stack.IsDefaultOrEmpty)
+            {
+                _stack = new ImmutableArray<DefValue<TDef, TValue>>(new[] {newValue});
+            }
+            else
+            {
+                _stack = _stack.Add(newValue);
+            }
+
             index = _stack.Length - 1;
         }
         else
@@ -276,6 +291,7 @@ public struct DefValueStack<TDef, TValue> : IExposable
 
     public static DefValueStack<TDef, TValue> operator +(DefValueStack<TDef, TValue> a, DefValueStack<TDef, TValue> b)
     {
+        if (a._stack.IsDefaultOrEmpty) return a;
         foreach (var value in a.Values) 
             a[value.Def] += b[value.Def];
         return a;
@@ -283,6 +299,7 @@ public struct DefValueStack<TDef, TValue> : IExposable
 
     public static DefValueStack<TDef, TValue> operator -(DefValueStack<TDef, TValue> a, DefValueStack<TDef, TValue> b)
     {
+        if (a._stack.IsDefaultOrEmpty) return a;
         foreach (var value in a.Values) 
             a[value.Def] -= b[value.Def];
         return a;
@@ -290,6 +307,7 @@ public struct DefValueStack<TDef, TValue> : IExposable
 
     public static DefValueStack<TDef, TValue> operator *(DefValueStack<TDef, TValue> a, DefValueStack<TDef, TValue> b)
     {
+        if (a._stack.IsDefaultOrEmpty) return a;
         foreach (var value in a.Values) 
             a[value.Def] *= b[value.Def];
         return a;
@@ -297,6 +315,7 @@ public struct DefValueStack<TDef, TValue> : IExposable
 
     public static DefValueStack<TDef, TValue> operator /(DefValueStack<TDef, TValue> a, DefValueStack<TDef, TValue> b)
     {
+        if (a._stack.IsDefaultOrEmpty) return a;
         foreach (var value in a.Values) 
             a[value.Def] /= b[value.Def];
         return a;

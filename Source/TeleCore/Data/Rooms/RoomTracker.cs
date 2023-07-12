@@ -1,6 +1,9 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
+using System.Threading.Tasks;
 using HarmonyLib;
 using RimWorld;
 using UnityEngine;
@@ -22,13 +25,10 @@ public class RoomTracker
     private readonly Dictionary<Type, RoomComponent> compsByType = new();
     private readonly List<RoomPortal> roomPortals;
 
-    //Shared Room Data
-    private readonly HashSet<Thing> uniqueContainedThingsSet = new();
-
+    //
     private bool _wasOutSide;
 
     private HashSet<IntVec3> borderCells = new();
-
     private HashSet<IntVec3> thinRoofCells = new();
 
     static RoomTracker()
@@ -61,6 +61,9 @@ public class RoomTracker
         foreach (var comp in comps) comp.PostCreate(this);
     }
 
+    
+    #region Properties
+
     public Map Map { get; private set; }
     public bool IsDisbanded { get; private set; }
     public bool IsOutside { get; private set; }
@@ -71,11 +74,10 @@ public class RoomTracker
     public Room Room { get; }
 
     public ListerThings ListerThings { get; }
-
     public ListerThings BorderListerThings { get; }
 
     public IReadOnlyCollection<Thing> ContainedPawns => ListerThings.ThingsInGroup(ThingRequestGroup.Pawn);
-
+    
     public IReadOnlyCollection<RoomComponent> AllComps => comps;
     public IReadOnlyCollection<RoomTracker> AdjacentTrackers => adjacentTrackers;
     public IReadOnlyCollection<RoomPortal> RoomPortals => roomPortals;
@@ -100,113 +102,11 @@ public class RoomTracker
     public Vector3 ActualCenter { get; private set; }
 
     public Vector3 DrawPos { get; private set; }
-
-    public void FinalizeMapInit()
-    {
-        foreach (var comp in comps) comp.FinalizeMapInit();
-    }
-
-    public T GetRoomComp<T>() where T : RoomComponent
-    {
-        return (T) compsByType[typeof(T)];
-    }
-
-    public void MarkDisbanded()
-    {
-        IsDisbanded = true;
-    }
-
-    public void Disband(Map onMap)
-    {
-        adjacentTrackers.Clear();
-        roomPortals.Clear();
-
-        foreach (var comp in comps)
-        {
-            comp.DisbandInternal();
-            comp.Disband(this, onMap);
-        }
-    }
-
-    public void Notify_RegisterThing(Thing thing)
-    {
-        //Things
-        ListerThings.Add(thing);
-        foreach (var comp in comps)
-        {
-            comp.Notify_ThingAdded(thing);
-            if (thing is Pawn pawn)
-                //Entered room
-                //var followerExtra = pawn.GetComp<Comp_PathFollowerExtra>();
-                //followerExtra?.Notify_EnteredRoom(this);
-                comp.Notify_PawnEnteredRoom(pawn);
-        }
-    }
-
-    public void Notify_RegisterBorderThing(Thing thing)
-    {
-        //Register Portals
-        if (thing is Building_Door door)
-        {
-            var otherRoom = door.NeighborRoomOf(Room);
-            if (otherRoom == null) return;
-            var otherTracker = otherRoom.RoomTracker();
-            if(otherTracker == this) return;
-            var portal = new RoomPortal(door, this, otherTracker, door.GetRoom().RoomTracker());
-            adjacentTrackers.Add(otherTracker);
-            roomPortals.Add(portal);
-        }
-
-        BorderListerThings.Add(thing);
-        foreach (var comp in comps)
-        {
-            comp.Notify_BorderThingAdded(thing);
-            adjacentTrackers.Do(a => comp.AddAdjacent(a.compsByType[comp.GetType()]));
-        }
-    }
-
-    public void Notify_DeregisterThing(Thing thing)
-    {
-        //Things
-        ListerThings.Remove(thing);
-        foreach (var comp in comps) 
-            comp.Notify_ThingRemoved(thing);
-
-        //Pawns
-        if (thing is Pawn pawn) DeregisterPawn(pawn);
-    }
-
-    protected void DeregisterPawn(Pawn pawn)
-    {
-        foreach (var comp in comps) 
-            comp.Notify_PawnLeftRoom(pawn);
-    }
-
-    public bool ContainsRegionType(RegionType type)
-    {
-        return RegionTypes.HasFlag(type);
-    }
-
-    public bool ContainsPawn(Pawn pawn)
-    {
-        return ContainedPawns.Contains(pawn);
-    }
-
-    public void Reset()
-    {
-        adjacentTrackers.Clear();
-        roomPortals.Clear();
-
-        foreach (var comp in comps)
-            comp.Reset();
-    }
-
-    public void Notify_Reused()
-    {
-        RegenerateData(true);
-        foreach (var comp in comps) 
-            comp.Notify_Reused();
-    }
+    
+    #endregion
+    
+    
+    #region Room State Change
 
     public void Init(RoomTracker?[] previous)
     {
@@ -237,7 +137,40 @@ public class RoomTracker
         foreach (var comp in comps)
             comp.PostInit(previous);
     }
+    
+    public void Reset()
+    {
+        adjacentTrackers.Clear();
+        roomPortals.Clear();
 
+        foreach (var comp in comps)
+            comp.Reset();
+    }
+
+    public void Notify_Reused()
+    {
+        RegenerateData(true);
+        foreach (var comp in comps) 
+            comp.Notify_Reused();
+    }
+    
+    public void MarkDisbanded()
+    {
+        IsDisbanded = true;
+    }
+    
+    public void Disband(Map onMap)
+    {
+        adjacentTrackers.Clear();
+        roomPortals.Clear();
+
+        foreach (var comp in comps)
+        {
+            comp.DisbandInternal();
+            comp.Disband(this, onMap);
+        }
+    }
+    
     public void Notify_RoofChanged()
     {
         RegenerateData(true, false, false);
@@ -264,6 +197,94 @@ public class RoomTracker
             comp.Notify_RoofOpened();
     }
 
+    #endregion
+
+    #region Room Thing Data
+
+    public void Notify_RegisterThing(Thing thing)
+    {
+        //Things
+        ListerThings.Add(thing);
+        foreach (var comp in comps)
+        {
+            comp.Notify_ThingAdded(thing);
+            if (thing is Pawn pawn)
+            {
+                //Entered room
+                //var followerExtra = pawn.GetComp<Comp_PathFollowerExtra>();
+                //followerExtra?.Notify_EnteredRoom(this);
+                comp.Notify_PawnEnteredRoom(pawn);
+            }
+        }
+    }
+
+    public void Notify_DeregisterThing(Thing thing)
+    {
+        //Things
+        ListerThings.Remove(thing);
+        foreach (var comp in comps)
+        {
+            comp.Notify_ThingRemoved(thing);
+            if (thing is Pawn pawn) 
+                comp.Notify_PawnLeftRoom(pawn);
+        }
+    }
+
+    public void Notify_PawnEnteredRoom(Pawn pawn)
+    {
+        foreach (var comp in comps)
+        {
+            comp.Notify_PawnEnteredRoom(pawn);
+        }
+    }
+
+    public void Notify_RegisterBorderThing(Thing thing)
+    {
+        //TODO: Doesnt account for custom portals (ie, atmospheric links through vents)
+        
+        //Register Portals
+        if (thing is Building_Door door)
+        {
+            var otherRoom = door.NeighborRoomOf(Room);
+            if (otherRoom == null) return;
+            var otherTracker = otherRoom.RoomTracker();
+            if(otherTracker == this) return;
+            var portal = new RoomPortal(door, this, otherTracker, door.GetRoom().RoomTracker());
+            adjacentTrackers.Add(otherTracker);
+            roomPortals.Add(portal);
+        }
+
+        BorderListerThings.Add(thing);
+        foreach (var comp in comps)
+        {
+            comp.Notify_BorderThingAdded(thing);
+            adjacentTrackers.Do(a => comp.AddAdjacent(a.compsByType[comp.GetType()]));
+        }
+    }
+    
+    #endregion
+    
+    public void FinalizeMapInit()
+    {
+        foreach (var comp in comps) 
+            comp.FinalizeMapInit();
+    }
+
+    public T GetRoomComp<T>() where T : RoomComponent
+    {
+        return (T) compsByType[typeof(T)];
+    }
+    
+    public bool ContainsRegionType(RegionType type)
+    {
+        return RegionTypes.HasFlag(type);
+    }
+
+    public bool ContainsPawn(Pawn pawn)
+    {
+        return ContainedPawns.Contains(pawn);
+    }
+
     public void RoomTick()
     {
         foreach (var comp in comps) 
@@ -282,6 +303,20 @@ public class RoomTracker
             comp.Draw();
     }
 
+    internal void DrawDebug()
+    {
+        var num = Gen.HashCombineInt(GetHashCode(), 1948571531);
+        GenDraw.DrawFieldEdges(Room.Cells.ToList(), Color.cyan);
+
+        foreach (var portal in this.RoomPortals)
+        {
+            GenDraw.DrawFieldEdges(portal.Connector.Position.ToSingleItemList(), Color.red);
+            GenDraw.DrawFieldEdges(portal.Opposite(this).Room.Cells.ToList(), Color.green);
+        }
+        
+        GenDraw.DrawFieldEdges(borderCells.ToList(), Color.blue);
+    }
+    
     private string Icon(bool checkFail)
     {
         return $"{(checkFail ? check : fail)}";
@@ -349,53 +384,7 @@ public class RoomTracker
             if (regenListerThings)
             {
                 stepCounter = 6;
-                ListerThings.Clear();
-                BorderListerThings.Clear();
-                //TODO: Main Performance Killer - Thing processing, maybe parallel for?
-                List<Region> regions = Room.Regions;
-                stepCounter = 7;
-
-                void ProcessItem(Thing item)
-                {
-                    if (item.Position.GetRoomFast(Map) != Room)
-                    {
-                        if (uniqueContainedThingsSet.Add(item)) 
-                            Notify_RegisterBorderThing(item);
-                        return;
-                    }
-
-                    if (IsOutside) return;
-
-                    if (uniqueContainedThingsSet.Add(item)) 
-                        Notify_RegisterThing(item);
-                }
-
-                //TODO: Research viability of parallel
-                //var allThingsRegions = regions.SelectMany(r => r.ListerThings.AllThings);
-                //Parallel.ForEach(allThingsRegions, ProcessItem);
-
-                for (var i = 0; i < regions.Count; i++)
-                {
-                    List<Thing> allThings = regions[i].ListerThings.AllThings;
-                    if (allThings != null)
-                        for (var j = 0; j < allThings.Count; j++)
-                        {
-                            var item = allThings[j];
-                            if (item.Position.GetRoomFast(Map) != Room)
-                            {
-                                if (uniqueContainedThingsSet.Add(item)) 
-                                    Notify_RegisterBorderThing(item);
-                                continue;
-                            }
-
-                            if (IsOutside) continue;
-                            if (uniqueContainedThingsSet.Add(item)) 
-                                Notify_RegisterThing(item);
-                        }
-                }
-
-                stepCounter = 8;
-                uniqueContainedThingsSet.Clear();
+                RegenerateListerThings();
             }
         }
         catch (Exception ex)
@@ -405,16 +394,47 @@ public class RoomTracker
         }
     }
 
+    private void RegenerateListerThings()
+    {
+        var watch = new Stopwatch();
+        watch.Start();
+        
+        ListerThings.Clear();
+        BorderListerThings.Clear();
+
+        for (var r = 0; r < Room.Regions.Count; r++)
+        {
+            var region = Room.Regions[r];
+            var pawns = region.ListerThings.ThingsInGroup(ThingRequestGroup.Pawn);
+            foreach (var pawn in pawns)
+            {
+                Notify_PawnEnteredRoom((Pawn)pawn);
+            }
+
+            foreach (var cell in borderCells)
+            {
+                var things = cell.GetThingList(Map);
+                foreach (var thing in things)
+                {
+                    Notify_RegisterBorderThing(thing);
+                }
+            }
+        }
+        
+        watch.Stop();
+        TLog.Message($"RegenerateListerThings took {watch.ElapsedMilliseconds}ms");
+    }
+
     private void GenerateCellData()
     {
         if (!IsProper) return;
 
-        var tCells = new HashSet<IntVec3>();
-        var bCells = new HashSet<IntVec3>();
+        thinRoofCells.Clear();
+        borderCells.Clear();
         foreach (var c in Room.Cells)
         {
             if (!Map.roofGrid.RoofAt(c)?.isThickRoof ?? false)
-                tCells.Add(c);
+                thinRoofCells.Add(c);
 
             for (var i = 0; i < 4; i++)
             {
@@ -422,12 +442,9 @@ public class RoomTracker
 
                 var region = cardinal.GetRegion(Map);
                 if ((region == null || region.Room != Room) && cardinal.InBounds(Map)) 
-                    bCells.Add(cardinal);
+                    borderCells.Add(cardinal);
             }
         }
-
-        borderCells = bCells;
-        thinRoofCells = tCells;
     }
 
     //Cache Room-Data incase the Room is dereferenced.

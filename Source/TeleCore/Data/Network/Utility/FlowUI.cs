@@ -55,16 +55,24 @@ public static class FlowUI<T> where T : FlowValueDef
         Widgets.BeginGroup(rect);
         Text.Font = GameFont.Tiny;
         Text.Anchor = TextAnchor.UpperLeft;
-        foreach (var fv in fb.Stack.Values)
+        if (fb.Stack.IsValid)
         {
-            var type = fv.Def;
-            var label = $"{type.labelShort}: {fb.StoredValueOf(type)} ({fb.StoredPercentOf(type).ToStringPercent()})";
-            var typeRect = new Rect(5, height, 10, 10);
-            var typeSize = Text.CalcSize(label);
-            var typeLabelRect = new Rect(20, height - 2, typeSize.x, typeSize.y);
-            Widgets.DrawBoxSolid(typeRect, type.valueColor);
-            Widgets.Label(typeLabelRect, label);
-            height += 10 + 2;
+            foreach (var fv in fb.Stack.Values)
+            {
+                var type = fv.Def;
+                var label =
+                    $"{type.labelShort}: {fb.StoredValueOf(type)} ({fb.StoredPercentOf(type).ToStringPercent()})";
+                var typeRect = new Rect(5, height, 10, 10);
+                var typeSize = Text.CalcSize(label);
+                var typeLabelRect = new Rect(20, height - 2, typeSize.x, typeSize.y);
+                Widgets.DrawBoxSolid(typeRect, type.valueColor);
+                Widgets.Label(typeLabelRect, label);
+                height += 10 + 2;
+            }
+        }
+        else
+        {
+            Widgets.Label(new Rect(5, height, rect.width - 10, rect.height - 10), "Invalid..");
         }
 
         Text.Font = default;
@@ -72,12 +80,14 @@ public static class FlowUI<T> where T : FlowValueDef
         Widgets.EndGroup();
 
         if (DebugSettings.godMode)
+        {
             if (TWidgets.MouseClickIn(rect, 1))
             {
                 var menu = new FloatMenu(DebugFloatMenuOptions(fb), "", true);
                 menu.vanishIfMouseDistant = true;
                 Find.WindowStack.Add(menu);
             }
+        }
     }
 
     public static List<FloatMenuOption> DebugFloatMenuOptions(FlowVolume<T> fb)
