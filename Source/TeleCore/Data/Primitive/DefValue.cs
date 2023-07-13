@@ -52,31 +52,49 @@ public struct DefValue<TDef, TValue>
 
     public static DefValue<TDef, TValue> operator /(DefValue<TDef, TValue> a, TValue b)
     {
+        if (new Numeric<TValue>(b).IsZero) return new DefValue<TDef, TValue>(a.Def, Numeric<TValue>.Zero);
         return new DefValue<TDef, TValue>(a.Def, a.Value / b);
     }
 
 
     public static DefValue<TDef, TValue> operator +(DefValue<TDef, TValue> a, DefValue<TDef, TValue> b)
     {
-        if (a.Def != b.Def) return Invalid;
+        if (a.Def != b.Def)
+        {
+            TLog.Warning($"Tried to add two DefValues with different Defs. {a} + {b}");
+            return Invalid;
+        }
         return new DefValue<TDef, TValue>(a.Def, a.Value + b.Value);
     }
 
     public static DefValue<TDef, TValue> operator -(DefValue<TDef, TValue> a, DefValue<TDef, TValue> b)
     {
-        if (a.Def != b.Def) return Invalid;
+        if (a.Def != b.Def)
+        {
+            TLog.Warning($"Tried to subtract two DefValues with different Defs. {a} - {b}");
+            return Invalid;
+        }
         return new DefValue<TDef, TValue>(a.Def, a.Value - b.Value);
     }
 
     public static DefValue<TDef, TValue> operator *(DefValue<TDef, TValue> a, DefValue<TDef, TValue> b)
     {
-        if (a.Def != b.Def) return Invalid;
+        if (a.Def != b.Def)
+        {
+            TLog.Warning($"Tried to multiply two DefValues with different Defs. {a} * {b}");
+            return Invalid;
+        }
         return new DefValue<TDef, TValue>(a.Def, a.Value * b.Value);
     }
 
     public static DefValue<TDef, TValue> operator /(DefValue<TDef, TValue> a, DefValue<TDef, TValue> b)
     {
-        if (a.Def != b.Def) return Invalid;
+        if (a.Def != b.Def)
+        {
+            TLog.Warning($"Tried to divide two DefValues with different Defs. {a} / {b}");
+            return Invalid;
+        }
+        if (b.Value.IsZero) return new DefValue<TDef, TValue>(a.Def, Numeric<TValue>.Zero);
         return new DefValue<TDef, TValue>(a.Def, a.Value / b.Value);
     }
 

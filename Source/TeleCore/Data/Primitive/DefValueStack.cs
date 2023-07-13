@@ -263,8 +263,6 @@ public struct DefValueStack<TDef, TValue> : IExposable
         _stack = _stack.Clear();
     }
     
-    //Math
-
     #region Math
     
     #region Value Math
@@ -280,6 +278,10 @@ public struct DefValueStack<TDef, TValue> : IExposable
     public static DefValueStack<TDef, TValue> operator /(DefValueStack<TDef, TValue> a, TValue b)
     {
         if (a._stack.IsDefaultOrEmpty) return a;
+        if (new Numeric<TValue>(b).IsZero)
+        {
+            return new DefValueStack<TDef, TValue>();
+        }
         foreach (var value in a.Values) 
             a[value.Def] /= b;
         return a;
@@ -316,8 +318,16 @@ public struct DefValueStack<TDef, TValue> : IExposable
     public static DefValueStack<TDef, TValue> operator /(DefValueStack<TDef, TValue> a, DefValueStack<TDef, TValue> b)
     {
         if (a._stack.IsDefaultOrEmpty) return a;
-        foreach (var value in a.Values) 
+        foreach (var value in a.Values)
+        {
+            if (b[value.Def].Value.IsZero)
+            {
+                a[value.Def] = new DefValue<TDef, TValue>(value.Def, Numeric<TValue>.Zero);
+                continue;
+            }
             a[value.Def] /= b[value.Def];
+        }
+
         return a;
     }
 
@@ -325,28 +335,36 @@ public struct DefValueStack<TDef, TValue> : IExposable
 
     #region DefValue Math
 
-    public static DefValueStack<TDef, TValue> operator +(DefValueStack<TDef, TValue> stack, DefValue<TDef, TValue> value)
+    public static DefValueStack<TDef, TValue> operator +(DefValueStack<TDef, TValue> a, DefValue<TDef, TValue> value)
     {
-        stack[value.Def] += value;
-        return stack;
+        if (a._stack.IsDefaultOrEmpty) return a;
+        a[value.Def] += value;
+        return a;
     }
 
-    public static DefValueStack<TDef, TValue> operator -(DefValueStack<TDef, TValue> stack, DefValue<TDef, TValue> value)
+    public static DefValueStack<TDef, TValue> operator -(DefValueStack<TDef, TValue> a, DefValue<TDef, TValue> value)
     {
-        stack[value.Def] -= value;
-        return stack;
+        if (a._stack.IsDefaultOrEmpty) return a;
+        a[value.Def] -= value;
+        return a;
     }
 
-    public static DefValueStack<TDef, TValue> operator *(DefValueStack<TDef, TValue> stack, DefValue<TDef, TValue> value)
+    public static DefValueStack<TDef, TValue> operator *(DefValueStack<TDef, TValue> a, DefValue<TDef, TValue> value)
     {
-        stack[value.Def] *= value;
-        return stack;
+        if (a._stack.IsDefaultOrEmpty) return a;
+        a[value.Def] *= value;
+        return a;
     }
 
-    public static DefValueStack<TDef, TValue> operator /(DefValueStack<TDef, TValue> stack, DefValue<TDef, TValue> value)
+    public static DefValueStack<TDef, TValue> operator /(DefValueStack<TDef, TValue> a, DefValue<TDef, TValue> value)
     {
-        stack[value.Def] /= value;
-        return stack;
+        if (a._stack.IsDefaultOrEmpty) return a;
+        if (value.Value.IsZero)
+        {
+            return new DefValueStack<TDef, TValue>();
+        }
+        a[value.Def] /= value;
+        return a;
     }
 
     #endregion
