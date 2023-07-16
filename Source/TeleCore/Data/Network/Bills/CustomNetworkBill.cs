@@ -115,7 +115,7 @@ public class CustomNetworkBill : IExposable
 
     private bool CanPay()
     {
-        if (networkCost.Empty)
+        if (networkCost.IsEmpty)
         {
             TLog.Error(
                 $"Trying to pay for {billName} with empty networkCost! | Paid: {HasBeenPaid} WorkLeft: {WorkLeft}");
@@ -167,7 +167,7 @@ public class CustomNetworkBill : IExposable
                 billStack.Delete(this);
         }
 
-        if (!byProducts.Empty)
+        if (!byProducts.IsEmpty)
             foreach (var byProduct in byProducts)
             {
                 var network = billStack.ParentComp[byProduct.Def.NetworkDef];
@@ -249,7 +249,7 @@ public class CustomNetworkBill : IExposable
 
     private DefValueStack<NetworkValueDef, double> StackFor(INetworkPart comp)
     {
-        return DefValueStack<NetworkValueDef,double>.Invalid;
+        return DefValueStack<NetworkValueDef,double>.Empty;
 
         /*var storages = comp.ContainerSet[NetworkFlags];
         DefValueStack<NetworkValueDef> stack = new DefValueStack<NetworkValueDef>();
@@ -280,7 +280,7 @@ public class CustomNetworkBill : IExposable
             var portableDef = netComp.Config.networkDef.portableContainerDefFallback;
             if (portableDef == null) continue;
             var newStack = StackFor(netComp);
-            if (newStack.TotalValue > 0)
+            if (newStack.TotalValue > 0d)
                 TLog.Warning($"Stack not empty ({newStack.TotalValue}) after refunding... dropping container.");
             //TODO: Refund portable container
             //GenPlace.TryPlaceThing(PortableNetworkContainer.CreateFromStack(portableDef, newStack), billStack.ParentBuilding.Position, billStack.ParentBuilding.Map, ThingPlaceMode.Near);

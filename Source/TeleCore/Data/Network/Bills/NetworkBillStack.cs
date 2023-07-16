@@ -38,7 +38,7 @@ public class NetworkBillStack : IExposable
     public DefValueStack<NetworkValueDef, double> TotalCost { get; set; }
     public DefValueStack<NetworkValueDef,double> ByProducts { get; set; }
 
-    public int TotalWorkAmount => TotalCost.Empty ? 0 : TotalCost.Values.Sum(m => (int) (m.Value * WorkAmountFactor));
+    public int TotalWorkAmount => TotalCost.IsEmpty ? 0 : TotalCost.Values.Sum(m => (int) (m.Value * WorkAmountFactor));
 
     //
     public Building ParentBuilding => ParentComp.parent;
@@ -84,13 +84,13 @@ public class NetworkBillStack : IExposable
 
     public void TryCreateNewBill()
     {
-        if (TotalCost.Empty) return;
+        if (TotalCost.IsEmpty) return;
 
         var customBill = new CustomNetworkBill(TotalWorkAmount);
         customBill.billName = billName;
         customBill.networkCost = new DefValueStack<NetworkValueDef, double>(TotalCost);
 
-        if (!ByProducts.Empty)
+        if (!ByProducts.IsEmpty)
             customBill.byProducts = new DefValueStack<NetworkValueDef, double>(ByProducts);
 
         customBill.billStack = this;

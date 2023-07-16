@@ -27,7 +27,7 @@
         <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
         <Version>1.2.5</Version>
         <SignAssembly>False</SignAssembly>
-        <PackageVersion>1.8.5.8</PackageVersion>
+        <PackageVersion>1.8.6.2</PackageVersion>
         <Nullable>enable</Nullable>
     </PropertyGroup>
 
@@ -71,7 +71,7 @@
     
     <!-- NuGet References -->
     <ItemGroup>
- 
+        
        <PackageReference Include="Krafs.Rimworld.Ref" Version="1.4.3704" GeneratePathProperty="true" ExcludeAssets="runtime">
             <PrivateAssets>all</PrivateAssets>
         </PackageReference>

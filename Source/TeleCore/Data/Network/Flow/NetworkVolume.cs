@@ -11,17 +11,7 @@ namespace TeleCore.Network.Flow;
 /// </summary>
 public class NetworkVolume : FlowVolume<NetworkValueDef>
 {
-    private readonly FlowVolumeConfig _config;
-
-    public NetworkVolume(FlowVolumeConfig config)
+    public NetworkVolume(FlowVolumeConfig<NetworkValueDef> config) : base(config)
     {
-        _config = config;
     }
-
-    public override double MaxCapacity => _config.Volume;
-
-    public double FillHeight => TotalValue / MaxCapacity * _config.height;
-
-    //TODO => Move into container config
-    public IList<NetworkValueDef> AcceptedTypes { get; set; }
 }

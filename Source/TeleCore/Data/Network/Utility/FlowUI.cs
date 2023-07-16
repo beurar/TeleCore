@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using Multiplayer.API;
 using TeleCore.FlowCore;
 using TeleCore.Generics.Container;
 using TeleCore.Network.Flow;
@@ -32,6 +34,7 @@ public static class FlowUI<T> where T : FlowValueDef
     {
         var size = new Vector2(10, 10);
         var stack = fb.Stack;
+        if(stack.IsEmpty) return Vector2.zero;
         foreach (var fv in stack.Values)
         {
             var type = fv.Def;
@@ -60,8 +63,7 @@ public static class FlowUI<T> where T : FlowValueDef
             foreach (var fv in fb.Stack.Values)
             {
                 var type = fv.Def;
-                var label =
-                    $"{type.labelShort}: {fb.StoredValueOf(type)} ({fb.StoredPercentOf(type).ToStringPercent()})";
+                var label = $"{type.labelShort}: {Math.Round(fb.StoredValueOf(type),1)} ({fb.StoredPercentOf(type).ToStringPercent()})";
                 var typeRect = new Rect(5, height, 10, 10);
                 var typeSize = Text.CalcSize(label);
                 var typeLabelRect = new Rect(20, height - 2, typeSize.x, typeSize.y);
@@ -90,24 +92,46 @@ public static class FlowUI<T> where T : FlowValueDef
         }
     }
 
-    public static List<FloatMenuOption> DebugFloatMenuOptions(FlowVolume<T> fb)
+    public static List<FloatMenuOption> DebugFloatMenuOptions(FlowVolume<T> fv)
     {
-        var tempList = StaticListHolder<FloatMenuOption>.RequestList($"FlowMenuOptions_{fb.GetHashCode()}");
-        /*
+        var tempList = StaticListHolder<FloatMenuOption>.RequestList($"FlowMenuOptions_{fv.GetHashCode()}");
+        
         if (tempList.Count == 0)
         {
-            int part = (int)(fb.MaxCapacity / fb.AcceptedTypes.Count);
-            tempList.Add(new FloatMenuOption("Add ALL", delegate { Debug_AddAll(part); }));
-
-            tempList.Add(new FloatMenuOption("Remove ALL", Debug_Clear));
-
-            foreach (var type in fb.AcceptedTypes)
+            var part = (int)(fv.MaxCapacity / fv.AcceptedTypes.Count);
+            tempList.Add(new FloatMenuOption("Add ALL", delegate
             {
-                tempList.Add(new FloatMenuOption($"Add {type}", delegate { Debug_AddType(type, part); }));
+                Debug_AddAll(fv, part);
+            }));
+
+            tempList.Add(new FloatMenuOption("Remove ALL", () => Debug_Clear(fv)));
+
+            foreach (var type in fv.AcceptedTypes)
+            {
+                tempList.Add(new FloatMenuOption($"Add {type}", delegate { Debug_AddType(fv, type, part); }));
             }
         }
-        */
+        
         return tempList;
+    }
+    
+    [SyncMethod]
+    private static void Debug_AddAll(FlowVolume<T> fb, double part)
+    {
+        foreach (var type in fb.AcceptedTypes)
+            fb.TryAdd(type, part);
+    }
+
+    [SyncMethod]
+    private static void Debug_Clear(FlowVolume<T> fv)
+    {
+        fv.Clear();
+    }
+
+    [SyncMethod]
+    private static void Debug_AddType(FlowVolume<T> fv, T type, double part)
+    {
+        fv.TryAdd(type, part);
     }
 
 

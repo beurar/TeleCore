@@ -17,23 +17,15 @@ public struct DefValueStack<TDef, TValue> : IExposable
 {
     private ImmutableArray<DefValue<TDef, TValue>> _stack;
     private Numeric<TValue> _totalValue;
-    private Numeric<TValue> _maxCapacity;
     
     //States
     public int Length => _stack.Length;
     public Numeric<TValue> TotalValue => _totalValue;
     public bool IsValid => _stack != null && !_stack.IsDefaultOrEmpty;
-    public bool Empty => _totalValue.IsZero;
-
-    public bool? Full
-    {
-        get
-        {
-            if (!_maxCapacity.IsZero) return null;
-            return _totalValue >= _maxCapacity.Value;
-        }
-    }
-
+    public bool Invalid => _stack == null || _stack.IsDefaultOrEmpty;
+    
+    public bool IsEmpty => _totalValue.IsZero;
+    
     public static implicit operator DefValueStack<TDef, TValue>(DefValue<TDef, TValue> value) =>new DefValueStack<TDef, TValue>(value);
     
     //Stack Info
@@ -48,10 +40,7 @@ public struct DefValueStack<TDef, TValue> : IExposable
         private set => TryAddOrSet(value);
     }
 
-    public static DefValueStack<TDef, TValue> Invalid => new()
-    {
-        _totalValue = Numeric<TValue>.NegativeOne
-    };
+    public static DefValueStack<TDef, TValue> Empty => new();
 
     public DefValueStack()
     {
@@ -59,13 +48,8 @@ public struct DefValueStack<TDef, TValue> : IExposable
         _totalValue = Numeric<TValue>.Zero;
         
     }
-    
-    public DefValueStack(TValue maxCapacity) : this()
-    {
-        _maxCapacity = maxCapacity;
-    }
 
-    public DefValueStack(DefValueStack<TDef, TValue> other, TValue maxCapacity) : this(maxCapacity)
+    public DefValueStack(DefValueStack<TDef, TValue> other) : this()
     {
         if (!other.IsValid)
         {
@@ -77,7 +61,7 @@ public struct DefValueStack<TDef, TValue> : IExposable
         _totalValue = other._totalValue;
     }
 
-    public DefValueStack(DefValue<TDef,TValue> value) : this( Numeric<TValue>.Zero)
+    public DefValueStack(DefValue<TDef,TValue> value) : this()
     {
         if (value.Def == null)
         {
@@ -86,10 +70,6 @@ public struct DefValueStack<TDef, TValue> : IExposable
         }
         _stack = new ImmutableArray<DefValue<TDef, TValue>>().Add(value);
         _totalValue = value.Value;
-    }
-    
-    public DefValueStack(DefValueStack<TDef,TValue> other) : this(other, Numeric<TValue>.Zero)
-    {
     }
     
     /*public DefValueStack(IDictionary<TDef, TValue> source, TValue maxCapacity) : this(maxCapacity)
@@ -166,7 +146,6 @@ public struct DefValueStack<TDef, TValue> : IExposable
 
     public void ExposeData()
     {
-        Scribe_Values.Look(ref _maxCapacity, "maxCapacity");
         Scribe_Values.Look(ref _totalValue, "totalValue");
         Scribe_Arrays.Look(ref _stack, "stack");
     }
@@ -293,16 +272,16 @@ public struct DefValueStack<TDef, TValue> : IExposable
 
     public static DefValueStack<TDef, TValue> operator +(DefValueStack<TDef, TValue> a, DefValueStack<TDef, TValue> b)
     {
-        if (a._stack.IsDefaultOrEmpty) return a;
-        foreach (var value in a.Values) 
+        if (b._stack.IsDefaultOrEmpty) return a;
+        foreach (var value in b.Values) 
             a[value.Def] += b[value.Def];
         return a;
     }
 
     public static DefValueStack<TDef, TValue> operator -(DefValueStack<TDef, TValue> a, DefValueStack<TDef, TValue> b)
     {
-        if (a._stack.IsDefaultOrEmpty) return a;
-        foreach (var value in a.Values) 
+        if (b._stack.IsDefaultOrEmpty) return a;
+        foreach (var value in b.Values) 
             a[value.Def] -= b[value.Def];
         return a;
     }
@@ -337,14 +316,12 @@ public struct DefValueStack<TDef, TValue> : IExposable
 
     public static DefValueStack<TDef, TValue> operator +(DefValueStack<TDef, TValue> a, DefValue<TDef, TValue> value)
     {
-        if (a._stack.IsDefaultOrEmpty) return a;
         a[value.Def] += value;
         return a;
     }
 
     public static DefValueStack<TDef, TValue> operator -(DefValueStack<TDef, TValue> a, DefValue<TDef, TValue> value)
     {
-        if (a._stack.IsDefaultOrEmpty) return a;
         a[value.Def] -= value;
         return a;
     }
@@ -384,8 +361,7 @@ public struct DefValueStack<TDef, TValue> : IExposable
     {
         return a.TotalValue < b.TotalValue;
     }
-
-
+    
     public static bool operator ==(DefValueStack<TDef, TValue> a, DefValueStack<TDef, TValue> b)
     {
         return a.TotalValue == b.TotalValue;
@@ -413,6 +389,17 @@ public struct DefValueStack<TDef, TValue> : IExposable
 
     #region Value
 
+    public static bool operator >(TValue a, DefValueStack<TDef, TValue> b)
+    {
+        return a > b._totalValue;
+    }
+    
+    
+    public static bool operator<(TValue a, DefValueStack<TDef, TValue> b)
+    {
+        return a < b._totalValue;
+    }
+    
     public static bool operator >(DefValueStack<TDef, TValue> a, TValue b)
     {
         return a._totalValue > b;
@@ -422,8 +409,7 @@ public struct DefValueStack<TDef, TValue> : IExposable
     {
         return a._totalValue < b;
     }
-
-
+    
     public static bool operator ==(DefValueStack<TDef, TValue> a, TValue b)
     {
         return a._totalValue == b;
@@ -452,7 +438,6 @@ public struct DefValueStack<TDef, TValue> : IExposable
     public bool Equals(DefValueStack<TDef, TValue> other)
     {
         return _stack.Equals(other._stack)
-               && _maxCapacity == other._maxCapacity
                && _totalValue == other._totalValue;
     }
 
@@ -465,8 +450,7 @@ public struct DefValueStack<TDef, TValue> : IExposable
     {
         unchecked
         {
-            var hashCode = _maxCapacity.GetHashCode();
-            hashCode = (hashCode * 397) ^ _stack.GetHashCode();
+            var hashCode =  _stack.GetHashCode();
             hashCode = (hashCode * 397) ^ _totalValue.GetHashCode();
             return hashCode;
         }

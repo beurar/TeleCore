@@ -105,18 +105,20 @@ public class NetworkValueFilter : FlowValueFilter
     }
 }
 
-public class FlowVolumeConfig
+public class FlowVolumeConfig<T> where T : FlowValueDef
 {
-    private const int AREA_VALUE = 128;
+    //private const int AREA_VALUE = 128;
 
-    public List<FlowValueDef> allowedValues;
+    public List<T> allowedValues;
 
     public int capacity;
     public int area = 1;
     public int elevation = 0;
     public int height = 1;
 
-    public double Volume => area * height * AREA_VALUE;
+    //We dont need this approach for now
+    public double Volume => capacity;
+    //public double Volume => area * height * AREA_VALUE;
 }
 
 public class NetworkPartConfig
@@ -134,7 +136,7 @@ public class NetworkPartConfig
     public NetworkValueFilter valueFilter;
     public bool requiresController;
     public NetIOConfig? netIOConfig;
-    public FlowVolumeConfig volumeConfig;
+    public FlowVolumeConfig<NetworkValueDef> volumeConfig;
 
     #endregion
 }

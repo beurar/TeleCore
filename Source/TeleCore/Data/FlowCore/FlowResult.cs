@@ -48,6 +48,12 @@ public struct FlowResult<TDef, TValue>
     {
         State = FlowState.Completed;
         Actual += result;
+        return Resolve();
+    }
+    
+    public FlowResult<TDef, TValue> Fail()
+    {
+        State = FlowState.Failed;
         return this;
     }
     
@@ -55,9 +61,9 @@ public struct FlowResult<TDef, TValue>
     {
         if (MathG.Abs(Actual.TotalValue - Desired) < Numeric<TValue>.Epsilon)
             State = FlowState.Completed;
-        if (Actual > Desired)
+        if (Desired > Actual)
             State = FlowState.CompletedWithExcess;
-        if (Actual < Desired)
+        if (Desired < Actual)
             State = FlowState.CompletedWithShortage;
         return this;
     }

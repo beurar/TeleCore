@@ -48,7 +48,7 @@ internal static class NetworkBillUtility
 
     public static string CostLabel(DefValueStack<NetworkValueDef, double> values)
     {
-        if (values.Empty) return "N/A";
+        if (values.IsEmpty) return "N/A";
         var sb = new StringBuilder();
         sb.Append("(");
         for (var i = 0; i < values.Length; i++)

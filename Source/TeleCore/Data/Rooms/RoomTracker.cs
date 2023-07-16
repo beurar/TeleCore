@@ -387,10 +387,9 @@ public class RoomTracker
                 RegenerateListerThings();
             }
         }
-        catch (Exception ex)
+        catch (OverflowException oEx)
         {
-            if (ex is OverflowException oEx)
-                TLog.Error($"Arithmetic Overflow Exception in RegenerateData - reached step {stepCounter}: {oEx}");
+            TLog.Error($"Arithmetic Overflow Exception in RegenerateData - reached step {stepCounter}: {oEx}");
         }
     }
 

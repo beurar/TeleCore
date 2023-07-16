@@ -39,7 +39,14 @@ public class RoomTrackerUpdater
         if ((!IsWorking || Find.TickManager.TicksGame <= lastGameTick) && !isManual) return;
 
         //
-        foreach (var action in delayedActions)
+        for (var i = delayedActions.Count - 1; i >= 0; i--)
+        {
+            var action = delayedActions[i];
+            if (action.Room?.Dereferenced ?? true)
+            {
+                delayedActions.Remove(action);
+            }
+            
             switch (action.Type)
             {
                 case DelayedRoomUpdateType.Added:
@@ -54,28 +61,46 @@ public class RoomTrackerUpdater
                     parent.MarkDisband(action.Tracker);
                     break;
             }
+        }
 
         //Reused
         foreach (var action in delayedActions)
+        {
             if (action.Type == DelayedRoomUpdateType.Reused)
             {
                 action.Tracker.Reset();
                 action.Tracker.Notify_Reused();
             }
+        }
 
         foreach (var action in delayedActions)
+        {
             if (action.Type == DelayedRoomUpdateType.Disbanded)
+            {
                 parent.Disband(action.Tracker);
+            }
+        }
 
         foreach (var action in delayedActions)
+        {
             if (action.Type == DelayedRoomUpdateType.Added)
+            {
                 action.Tracker.Init(action.Previous);
+            }
+        }
 
         foreach (var action in delayedActions)
+        {
             if (action.Type == DelayedRoomUpdateType.Added)
+            {
                 action.Tracker.PostInit(action.Previous);
+            }
+        }
 
-        foreach (var action in delayedCacheActions) _trackerGrid[action.Index] = null;
+        foreach (var action in delayedCacheActions)
+        {
+            _trackerGrid[action.Index] = null;
+        }
 
         //
         IsWorking = false;

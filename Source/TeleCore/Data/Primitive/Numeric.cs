@@ -71,6 +71,26 @@ public struct Numeric<TValue> where TValue : struct
 
     #region Comparision
 
+    public static bool operator >(Numeric<TValue> value, Numeric<TValue> num)
+    {
+        return NumericLibrary<TValue>.GreaterThan(value, num);
+    }
+    
+    public static bool operator <(Numeric<TValue> value, Numeric<TValue> num)
+    {
+        return NumericLibrary<TValue>.LessThan(value, num);
+    }
+    
+    public static bool operator >(TValue value, Numeric<TValue> num)
+    {
+        return NumericLibrary<TValue>.GreaterThan(value, num.Value);
+    }
+    
+    public static bool operator <(TValue value, Numeric<TValue> num)
+    {
+        return NumericLibrary<TValue>.LessThan(value, num.Value);
+    }
+    
     public static bool operator >(Numeric<TValue> num, TValue value)
     {
         return NumericLibrary<TValue>.GreaterThan(num.Value, value);

@@ -13,7 +13,7 @@ public struct DefValue<TDef, TValue>
 {
     public TDef Def { get; }
     public Numeric<TValue> Value { get; set; }
-
+    
     public static implicit operator DefValue<TDef, TValue>((TDef Def, Numeric<TValue> Value) value) => new(value.Def, value.Value);
     public static implicit operator TDef(DefValue<TDef, TValue> def) => def.Def;
     public static explicit operator Numeric<TValue>(DefValue<TDef, TValue> def) => def.Value;
