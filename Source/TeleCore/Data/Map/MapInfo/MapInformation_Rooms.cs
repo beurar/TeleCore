@@ -164,8 +164,8 @@ public class MapInformation_Rooms : MapInformation
 
     public override void Update()
     {
-        if (Find.CurrentMap != Map)
-            return;
+        if (Find.CurrentMap != Map) return;
+        
         foreach (var tracker in allTrackers)
             tracker.RoomDraw();
 
