@@ -13,27 +13,21 @@ namespace TeleCore;
 
 public class RoomTracker
 {
-    //Statics
+    private const char check = '✓';
+    private const char fail = '❌';
     internal static readonly List<Type> RoomComponentTypes;
 
-    private static readonly char check = '✓';
-    private static readonly char fail = '❌';
-
-    //
-    private readonly Dictionary<Type, RoomComponent> _compsByType = new();
-    
-    private readonly List<RoomTracker> _neighbours;
-    private readonly HashSet<RoomTracker> adjacentTrackers;
-    private readonly List<RoomPortal> roomPortals;
-    
     //
     private bool _wasOutSide;
-
     private HashSet<IntVec3> borderCells = new();
     private HashSet<IntVec3> thinRoofCells = new();
-    
-    private IEnumerable<RoomComponent> Comps => _compsByType.Values;
+    private readonly Dictionary<Type, RoomComponent> _compsByType = new();
 
+    private RoomNeighborSet _roomNeighbors = new();
+    
+    public IEnumerable<RoomComponent> Comps => _compsByType.Values;
+    public RoomNeighborSet RoomNeighbors => _roomNeighbors;
+        
     static RoomTracker()
     {
         RoomComponentTypes = typeof(RoomComponent).AllSubclassesNonAbstract();
@@ -44,10 +38,9 @@ public class RoomTracker
         Room = room;
         ListerThings = new ListerThings(ListerThingsUse.Region);
         BorderListerThings = new ListerThings(ListerThingsUse.Region);
-        
-        adjacentTrackers = new HashSet<RoomTracker>();
-        roomPortals = new List<RoomPortal>();
 
+        _roomNeighbors = new RoomNeighborSet();
+        
         //Get Group Data
         UpdateRoomData();
 
@@ -64,7 +57,6 @@ public class RoomTracker
             comp.PostCreate(this);
         }
     }
-
     
     #region Properties
 
@@ -81,9 +73,6 @@ public class RoomTracker
     public ListerThings BorderListerThings { get; }
 
     public IReadOnlyCollection<Thing> ContainedPawns => ListerThings.ThingsInGroup(ThingRequestGroup.Pawn);
-    
-    public IReadOnlyCollection<RoomTracker> AdjacentTrackers => adjacentTrackers;
-    public IReadOnlyCollection<RoomPortal> RoomPortals => roomPortals;
 
     public RoomPortal SelfPortal
     {
@@ -143,9 +132,8 @@ public class RoomTracker
     
     public void Reset()
     {
-        adjacentTrackers.Clear();
-        roomPortals.Clear();
-
+        _roomNeighbors.Reset();
+        
         foreach (var comp in Comps)
             comp.Reset();
     }
@@ -164,8 +152,7 @@ public class RoomTracker
     
     public void Disband(Map onMap)
     {
-        adjacentTrackers.Clear();
-        roomPortals.Clear();
+        _roomNeighbors.Reset();
 
         foreach (var comp in Comps)
         {
@@ -243,31 +230,48 @@ public class RoomTracker
 
     public void Notify_RegisterBorderThing(Thing thing)
     {
-        //TODO: Doesnt account for custom portals (ie, atmospheric links through vents)
-        
-        //Register Neighbour
-        if()
-        
-        //Register Portals
-        if (thing is Building_Door door)
-        {
-            var otherRoom = door.NeighborRoomOf(Room);
-            if (otherRoom == null) return;
-            var otherTracker = otherRoom.RoomTracker();
-            if(otherTracker == this) return;
-            var portal = new RoomPortal(door, this, otherTracker, door.GetRoom().RoomTracker());
-            adjacentTrackers.Add(otherTracker);
-            roomPortals.Add(portal);
-        }
+        HandlePotentialNeighbor(thing);
 
         BorderListerThings.Add(thing);
         foreach (var comp in Comps)
         {
             comp.Notify_BorderThingAdded(thing);
-            adjacentTrackers.Do(a => comp.AddAdjacent(a._compsByType[comp.GetType()]));
+            //_neighbors.TrueNeighbors.Do(a => comp.AddAdjacent(a._compsByType[comp.GetType()]));
         }
     }
-    
+
+    private void HandlePotentialNeighbor(Thing thing)
+    {
+        //TODO: Doesnt account for custom portals (ie, atmospheric links through vents)
+
+        //Register Links/Neighbours
+        // foreach (var roomComp in Comps)
+        // {
+        //     if (roomComp.IsRelevantLink(thing))
+        //     {
+        //         var roomLink = new RoomComponentLink(thing, roomComp);
+        //         roomComp.Notify_AddLink(roomLink);
+        //         roomComp.Notify_AddNeighbor(roomLink.Opposite(roomComp));
+        //     }
+        // }
+        
+        if (thing is Building_Door door)
+        {
+            //Add direct room
+            _roomNeighbors.Notify_AddNeighbor(door.GetRoom().RoomTracker());
+        }
+
+        if (thing is Building b)
+        {
+            //Add room on other side
+            var otherRoom = b.NeighborRoomOf(Room);
+            if (otherRoom == null) return;
+            var otherTracker = otherRoom.RoomTracker();
+            if (otherTracker == this) return;
+            _roomNeighbors.Notify_AddAttachedNeighbor(otherTracker);
+        }
+    }
+
     #endregion
     
     public void FinalizeMapInit()
@@ -276,6 +280,11 @@ public class RoomTracker
             comp.FinalizeMapInit();
     }
 
+    public RoomComponent GetRoomComp(Type type) 
+    {
+        return _compsByType[type];
+    }
+    
     public T GetRoomComp<T>() where T : RoomComponent
     {
         return (T) _compsByType[typeof(T)];
@@ -314,10 +323,9 @@ public class RoomTracker
         var num = Gen.HashCombineInt(GetHashCode(), 1948571531);
         GenDraw.DrawFieldEdges(Room.Cells.ToList(), Color.cyan);
 
-        foreach (var portal in this.RoomPortals)
+        foreach (var comp in Comps)
         {
-            GenDraw.DrawFieldEdges(portal.Connector.Position.ToSingleItemList(), Color.red);
-            GenDraw.DrawFieldEdges(portal.Opposite(this).Room.Cells.ToList(), Color.green);
+            comp.DrawDebug();
         }
         
         GenDraw.DrawFieldEdges(borderCells.ToList(), Color.blue);

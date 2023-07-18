@@ -101,7 +101,7 @@ public static class GenData
 
     /// <summary>
     /// </summary>
-    public static Room NeighborRoomOf(this Building building, Room room)
+    public static Room? NeighborRoomOf(this Building building, Room room)
     {
         for (var i = 0; i < 4; i++)
         {
@@ -115,7 +115,6 @@ public static class GenData
                 return otherRoom;
             }
         }
-
         return null;
     }
 
@@ -174,6 +173,11 @@ public static class GenData
     public static T? GetRoomComp<T>(this Room room) where T : RoomComponent
     {
         return room.RoomTracker()?.GetRoomComp<T>();
+    }
+    
+    public static RoomComponent GetRoomComp(this Room room, Type type)
+    {
+        return room.RoomTracker()?.GetRoomComp(type);
     }
 
     public static IEnumerable<Thing> OfType<T>(this ListerThings lister) where T : Thing

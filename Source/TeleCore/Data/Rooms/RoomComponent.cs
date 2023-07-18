@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using Verse;
 
@@ -6,11 +7,14 @@ namespace TeleCore;
 
 public abstract class RoomComponent
 {
-    private HashSet<RoomComponent> _adjRoomComps;
+    //Component specific neighbors
+    private List<RoomComponent> _neighbors;
+    private List<RoomComponentLink> _links;
+    
 
     public RoomTracker Parent { get; private set; }
 
-    public IReadOnlyCollection<RoomComponent> AdjRoomComps => _adjRoomComps;
+    public IReadOnlyCollection<RoomComponent> Neighbors => _neighbors;
 
     //
     public Map Map => Parent.Map;
@@ -23,8 +27,28 @@ public abstract class RoomComponent
     internal void Create(RoomTracker parent)
     {
         Parent = parent;
-        _adjRoomComps = new HashSet<RoomComponent>();
+        _neighbors = new List<RoomComponent>();
+        _links = new List<RoomComponentLink>();
     }
+
+    #region Room Linking
+    
+    public virtual bool IsRelevantLink(Thing thing)
+    {
+        return false;
+    }
+    
+    public void Notify_AddLink(RoomComponentLink link)
+    {
+        _links.Add(link);
+    }
+    
+    internal void Notify_AddNeighbor<T>(T neighbor) where T : RoomComponent
+    {
+        _neighbors.Add(neighbor);
+    }
+
+    #endregion
 
     /// <summary>
     ///     Called after all <see cref="RoomComponent" />s on the <see cref="RoomTracker" /> parent have been created.
@@ -129,6 +153,16 @@ public abstract class RoomComponent
     public virtual void PostInit(RoomTracker?[]? previous = null)
     {
     }
+    
+    internal void Reset()
+    {
+        _neighbors.Clear();
+    }
+
+    internal void DisbandInternal()
+    {
+        _neighbors.Clear();
+    }
 
     public virtual void CompTick()
     {
@@ -141,20 +175,14 @@ public abstract class RoomComponent
     public virtual void Draw()
     {
     }
-
-    internal void AddAdjacent<T>(T comp) where T : RoomComponent
+    
+    internal void DrawDebug()
     {
-        _adjRoomComps.Add(comp);
-    }
-
-    internal void Reset()
-    {
-        _adjRoomComps.Clear();
-    }
-
-    internal void DisbandInternal()
-    {
-        _adjRoomComps.Clear();
+        foreach (var portal in this._links)
+        {
+            GenDraw.DrawFieldEdges(portal.Connector.Position.ToSingleItemList(), Color.red);
+            GenDraw.DrawFieldEdges(portal.Opposite(this).Room.Cells.ToList(), Color.green);
+        }
     }
 
     public override string ToString()
