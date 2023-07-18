@@ -1,20 +1,54 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using RimWorld;
 using UnityEngine;
 using Verse;
 
 namespace TeleCore;
 
-public abstract class RoomComponent
+public class RoomCompNeighborSet
 {
-    //Component specific neighbors
     private List<RoomComponent> _neighbors;
     private List<RoomComponentLink> _links;
     
+    public IReadOnlyCollection<RoomComponent> CompNeighbors => _neighbors;
+    public IReadOnlyCollection<RoomComponentLink> CompLinks => _links;
+    
+    public void Notify_AddNeighbor<T>(T neighbor) where T : RoomComponent
+    {
+        _neighbors.Add(neighbor);
+    }
 
+    public void Notify_AddLink(RoomComponentLink link)
+    {
+        _links.Add(link);
+    }
+    
+    public void DrawDebug(RoomComponent comp)
+    {
+        foreach (var portal in this._links)
+        {
+            GenDraw.DrawFieldEdges(portal.Connector.Position.ToSingleItemList(), Color.red);
+            GenDraw.DrawFieldEdges(portal.Opposite(comp).Room.Cells.ToList(), Color.green);
+        }
+    }
+
+    public void Reset()
+    {
+        _neighbors.Clear();
+        _links.Clear();
+    }
+}
+
+public abstract class RoomComponent
+{
+    //Component specific neighbors
+    private RoomCompNeighborSet _compNeighborSet;
+    
     public RoomTracker Parent { get; private set; }
 
-    public IReadOnlyCollection<RoomComponent> Neighbors => _neighbors;
+    public RoomNeighborSet Neighbors => Parent.RoomNeighbors;
+    public RoomCompNeighborSet CompNeighbors => _compNeighborSet;
 
     //
     public Map Map => Parent.Map;
@@ -27,8 +61,7 @@ public abstract class RoomComponent
     internal void Create(RoomTracker parent)
     {
         Parent = parent;
-        _neighbors = new List<RoomComponent>();
-        _links = new List<RoomComponentLink>();
+        _compNeighborSet = new RoomCompNeighborSet();
     }
 
     #region Room Linking
@@ -40,12 +73,12 @@ public abstract class RoomComponent
     
     public void Notify_AddLink(RoomComponentLink link)
     {
-        _links.Add(link);
+        _compNeighborSet.Notify_AddLink(link);
     }
     
     internal void Notify_AddNeighbor<T>(T neighbor) where T : RoomComponent
     {
-        _neighbors.Add(neighbor);
+        _compNeighborSet.Notify_AddNeighbor(neighbor);
     }
 
     #endregion
@@ -98,6 +131,23 @@ public abstract class RoomComponent
     /// </summary>
     public virtual void Notify_RoofChanged()
     {
+    }
+
+    internal void Notify_HandleBorderThing(Thing thing)
+    {
+        Notify_BorderThingAdded(thing);
+        if (IsRelevantLink(thing))
+        {
+            if (thing is Building_Door door) //Special edge case
+            {
+                var roomLink = new RoomComponentLink(thing, this, door.GetRoom().RoomTracker().GetRoomComp(this.GetType()));
+                return;
+            }
+            
+            var roomLink = new RoomComponentLink(thing, this);
+            Notify_AddLink(roomLink);
+            Notify_AddNeighbor(roomLink.Opposite(this));
+        }
     }
 
     /// <summary>
@@ -156,12 +206,12 @@ public abstract class RoomComponent
     
     internal void Reset()
     {
-        _neighbors.Clear();
+        _compNeighborSet.Reset();
     }
 
     internal void DisbandInternal()
     {
-        _neighbors.Clear();
+        _compNeighborSet.Reset();
     }
 
     public virtual void CompTick()
@@ -178,11 +228,7 @@ public abstract class RoomComponent
     
     internal void DrawDebug()
     {
-        foreach (var portal in this._links)
-        {
-            GenDraw.DrawFieldEdges(portal.Connector.Position.ToSingleItemList(), Color.red);
-            GenDraw.DrawFieldEdges(portal.Opposite(this).Room.Cells.ToList(), Color.green);
-        }
+        _compNeighborSet.DrawDebug(this);
     }
 
     public override string ToString()

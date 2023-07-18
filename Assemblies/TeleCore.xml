@@ -2704,6 +2704,14 @@
                 Runs once after all components have been initialized.
             </summary>
         </member>
+        <member name="T:TeleCore.RoomNeighborSet">
+            <summary>
+            A room's neighbor can be defined in different ways:
+            <para>- A true neighbor (ie: Doorways)</para>
+            <para>- Any attached room (Rooms on the other side of doors/walls)</para>
+            So we need to track of that.
+            </summary>
+        </member>
         <member name="T:TeleCore.RoomOverlayRenderer">
             <summary>
             </summary>

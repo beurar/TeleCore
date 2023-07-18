@@ -235,26 +235,13 @@ public class RoomTracker
         BorderListerThings.Add(thing);
         foreach (var comp in Comps)
         {
-            comp.Notify_BorderThingAdded(thing);
+            comp.Notify_HandleBorderThing(thing);
             //_neighbors.TrueNeighbors.Do(a => comp.AddAdjacent(a._compsByType[comp.GetType()]));
         }
     }
 
     private void HandlePotentialNeighbor(Thing thing)
     {
-        //TODO: Doesnt account for custom portals (ie, atmospheric links through vents)
-
-        //Register Links/Neighbours
-        // foreach (var roomComp in Comps)
-        // {
-        //     if (roomComp.IsRelevantLink(thing))
-        //     {
-        //         var roomLink = new RoomComponentLink(thing, roomComp);
-        //         roomComp.Notify_AddLink(roomLink);
-        //         roomComp.Notify_AddNeighbor(roomLink.Opposite(roomComp));
-        //     }
-        // }
-        
         if (thing is Building_Door door)
         {
             //Add direct room
