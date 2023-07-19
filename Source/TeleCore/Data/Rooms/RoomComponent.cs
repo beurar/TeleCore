@@ -140,10 +140,13 @@ public abstract class RoomComponent
         {
             if (thing is Building_Door door) //Special edge case
             {
-                var roomLink = new RoomComponentLink(thing, this, door.GetRoom().RoomTracker().GetRoomComp(this.GetType()));
+                var doorRoom = door.GetRoom().RoomTracker().GetRoomComp(GetType());
+                var doorLink = new RoomComponentLink(thing, this, doorRoom);
+                Notify_AddLink(doorLink);
+                Notify_AddNeighbor(doorRoom);
                 return;
             }
-            
+
             var roomLink = new RoomComponentLink(thing, this);
             Notify_AddLink(roomLink);
             Notify_AddNeighbor(roomLink.Opposite(this));
