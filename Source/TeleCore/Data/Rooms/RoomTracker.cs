@@ -1,10 +1,7 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Threading.Tasks;
-using HarmonyLib;
 using RimWorld;
 using UnityEngine;
 using Verse;
@@ -74,7 +71,7 @@ public class RoomTracker
 
     public IReadOnlyCollection<Thing> ContainedPawns => ListerThings.ThingsInGroup(ThingRequestGroup.Pawn);
 
-    public RoomPortal SelfPortal
+    public RoomTrackerLink SelfTrackerLink
     {
         get;
         private set;
@@ -110,18 +107,20 @@ public class RoomTracker
             var roomOpposite = (door.Rotation.Opposite.FacingCell + door.Position).GetRoom(Map)?.RoomTracker();
             if (roomFacing == null || roomOpposite == null)
             {
-                SelfPortal = new RoomPortal(door, this);
+                SelfTrackerLink = new RoomTrackerLink(door, this);
             }
             else
             {
-                SelfPortal = new RoomPortal(Room.Regions[0].door, roomFacing,roomOpposite, this);
+                SelfTrackerLink = new RoomTrackerLink(Room.Regions[0].door, roomFacing,roomOpposite, this);
             }
         }
         
         //
         RegenerateData();
-        foreach (var comp in Comps) 
+        foreach (var comp in Comps)
+        {
             comp.Init(previous);
+        }
     }
 
     public void PostInit(RoomTracker?[] previous)

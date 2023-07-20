@@ -1,44 +1,8 @@
 ﻿using System.Collections.Generic;
-using System.Linq;
 using RimWorld;
-using UnityEngine;
 using Verse;
 
 namespace TeleCore;
-
-public class RoomCompNeighborSet
-{
-    private List<RoomComponent> _neighbors;
-    private List<RoomComponentLink> _links;
-    
-    public IReadOnlyCollection<RoomComponent> CompNeighbors => _neighbors;
-    public IReadOnlyCollection<RoomComponentLink> CompLinks => _links;
-    
-    public void Notify_AddNeighbor<T>(T neighbor) where T : RoomComponent
-    {
-        _neighbors.Add(neighbor);
-    }
-
-    public void Notify_AddLink(RoomComponentLink link)
-    {
-        _links.Add(link);
-    }
-    
-    public void DrawDebug(RoomComponent comp)
-    {
-        foreach (var portal in this._links)
-        {
-            GenDraw.DrawFieldEdges(portal.Connector.Position.ToSingleItemList(), Color.red);
-            GenDraw.DrawFieldEdges(portal.Opposite(comp).Room.Cells.ToList(), Color.green);
-        }
-    }
-
-    public void Reset()
-    {
-        _neighbors.Clear();
-        _links.Clear();
-    }
-}
 
 public abstract class RoomComponent
 {

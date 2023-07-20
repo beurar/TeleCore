@@ -174,7 +174,7 @@ public class MapInformation_Rooms : MapInformation
             IntVec3 intVec = UI.MouseCell();
             if (intVec.InBounds(map))
             {
-                var room = intVec.GetRoom(this.map);
+                var room = intVec.GetRoom(map);
                 if (room != null)
                 {
                     var tracker = this[room];
