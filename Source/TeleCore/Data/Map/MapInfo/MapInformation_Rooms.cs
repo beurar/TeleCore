@@ -34,6 +34,7 @@ public class MapInformation_Rooms : MapInformation
     public RoomTrackerUpdater TrackerUpdater { get; }
 
     public Dictionary<Room, RoomTracker> AllTrackers { get; }
+    public List<RoomTracker> AllList => allTrackers;
 
     public RoomTracker this[Room room]
     {
@@ -160,6 +161,14 @@ public class MapInformation_Rooms : MapInformation
             return;
         foreach (var tracker in allTrackers) 
             tracker.RoomOnGUI();
+
+        if (TeleCoreDebugViewSettings.DrawRoomLabels)
+        {
+            foreach (var tracker in allTrackers)
+            {
+                GenMapUI.DrawThingLabel(GenMapUI.LabelDrawPosFor(tracker.MinVec), $"[{tracker?.Room?.ID}]", Color.white);   
+            }
+        }
     }
 
     public override void Update()

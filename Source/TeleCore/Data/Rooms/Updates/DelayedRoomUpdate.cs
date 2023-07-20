@@ -15,6 +15,7 @@ internal class DelayedRoomUpdate : IDisposable
     {
         Type = type;
         Tracker = tracker;
+        Room = tracker.Room;
     }
 
     public DelayedRoomUpdateType Type { get; }

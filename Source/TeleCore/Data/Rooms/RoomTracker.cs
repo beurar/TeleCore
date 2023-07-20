@@ -119,7 +119,7 @@ public class RoomTracker
         RegenerateData();
         foreach (var comp in Comps)
         {
-            comp.Init(previous);
+            comp.InternalInit(previous);
         }
     }
 

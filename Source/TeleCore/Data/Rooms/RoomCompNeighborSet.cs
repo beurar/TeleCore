@@ -13,6 +13,12 @@ public class RoomCompNeighborSet : IEnumerable<RoomComponent>
     
     public IReadOnlyCollection<RoomComponent> Neighbors => _neighbors;
     public IReadOnlyCollection<RoomComponentLink> Links => _links;
+
+    public RoomCompNeighborSet()
+    {
+        _neighbors = new List<RoomComponent>();
+        _links = new List<RoomComponentLink>();
+    }
     
     public void Notify_AddNeighbor<T>(T neighbor) where T : RoomComponent
     {

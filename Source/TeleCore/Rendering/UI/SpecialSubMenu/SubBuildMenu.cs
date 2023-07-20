@@ -96,7 +96,7 @@ public class SubBuildMenu : Window, IExposable
     {
         //Menu Settings
         SelectedGroup = menuDef.subMenus.First();
-
+        
         //
         lastPos = new Vector2(UI.screenWidth / 2f, UI.screenHeight / 2f);
 

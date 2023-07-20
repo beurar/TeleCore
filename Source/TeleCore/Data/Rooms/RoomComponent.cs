@@ -157,6 +157,29 @@ public abstract class RoomComponent
     {
     }
 
+    internal void InternalInit(RoomTracker?[]? previous = null)
+    {
+        //Handle edge case - Door
+        if (Parent.Room.IsDoorway)
+        {
+            var door = Parent.Room.Regions[0].door;
+            for (var i = 0; i < 4; i++)
+            {
+                var cell = GenAdj.CardinalDirections[i] + door.Position;
+                var roomAt = cell.GetRoom(Map);
+                if (roomAt != null)
+                {
+                    var otherRoom = roomAt.RoomTracker().GetRoomComp(GetType());
+                    var doorLink = new RoomComponentLink(door, this, otherRoom);
+                    Notify_AddLink(doorLink);
+                    Notify_AddNeighbor(otherRoom);
+                }
+            }
+        }
+        
+        Init(previous);
+    }
+    
     /// <summary>
     ///     Runs once on initialization.
     /// </summary>

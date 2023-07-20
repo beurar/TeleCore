@@ -40,7 +40,7 @@ public class PathHelperInfo : MapInformation
         //Debug Rendering
         if (!PlaySettingsAvoidGrid.DrawAvoidGridsAroundMouse) return;
 
-        var root = UI.MouseCell();
+        var root = Verse.UI.MouseCell();
         var map = Find.CurrentMap;
         for (var i = 0; i < SampleNumCells; i++)
         {

@@ -42,10 +42,10 @@ public class RoomTrackerUpdater
         for (var i = delayedActions.Count - 1; i >= 0; i--)
         {
             var action = delayedActions[i];
-            if (action.Room?.Dereferenced ?? true)
+            if (action.Room == null || (action.Room.Dereferenced && action.Type != DelayedRoomUpdateType.Disbanded))
             {
                 delayedActions.Remove(action);
-            }
+            } 
             
             switch (action.Type)
             {

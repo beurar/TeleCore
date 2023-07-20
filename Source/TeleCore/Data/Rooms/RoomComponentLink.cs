@@ -45,4 +45,9 @@ public class RoomComponentLink
     {
         return other == _connections[0] ? _connections[1] : _connections[0];
     }
+
+    public override string ToString()
+    {
+        return $"[{_connections[0]?.Room?.ID}->{_connections[1]?.Room?.ID}]";
+    }
 }
