@@ -7,9 +7,9 @@ public class PressureWorker_WaveEquation : PressureWorker
     public override double Friction => 0.001;
     public override double CSquared => 0.01;
 
-    public override double FlowFunction(NetworkVolume t0, NetworkVolume t1, double f)
+    public override double FlowFunction(NetworkVolume from, NetworkVolume to, double f)
     {
-        f += (PressureFunction(t0) - PressureFunction(t1)) * CSquared;
+        f += (PressureFunction(from) - PressureFunction(to)) * CSquared;
         f *= 1 - Friction;
         return f;
     }

@@ -1,12 +1,14 @@
 ﻿using System;
+using System.Collections.Generic;
+using TeleCore.FlowCore;
 
 namespace TeleCore.Network.Flow.Clamping;
 
 public class ClampWorker_ConnectionCountLimit : ClampWorker
 {
-    private readonly FlowSystem _parentSystem;
+    private readonly NetworkSystem _parentSystem;
 
-    public ClampWorker_ConnectionCountLimit(FlowSystem parentSystem)
+    public ClampWorker_ConnectionCountLimit(NetworkSystem parentSystem)
     {
         _parentSystem = parentSystem;
     }

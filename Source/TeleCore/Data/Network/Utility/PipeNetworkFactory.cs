@@ -16,7 +16,7 @@ public static class PipeNetworkFactory
 
     private static PipeNetwork _curNetwork;
     private static NetGraph _curGraph;
-    private static FlowSystem _curFlowSystem;
+    private static NetworkSystem _curNetworkSystem;
 
     //Graph Generation Steps
     //Look at root
@@ -28,18 +28,18 @@ public static class PipeNetworkFactory
     public static void CreateNetwork(INetworkPart part, out PipeNetwork network)
     {
         _curNetwork = new PipeNetwork(part.Config.networkDef);
-        _curNetwork.PrepareForRegen(out _curGraph, out _curFlowSystem);
+        _curNetwork.PrepareForRegen(out _curGraph, out _curNetworkSystem);
 
         //Graph
         GenerateGraph(part);
 
 
         //Populate FlowSystem
-        _curFlowSystem.Notify_Populate(_curGraph);
+        _curNetworkSystem.Notify_Populate(_curGraph);
 
         network = _curNetwork;
         _curGraph = null;
-        _curFlowSystem = null;
+        _curNetworkSystem = null;
         _curNetwork = null;
     }
 
@@ -176,7 +176,7 @@ public static class PipeNetworkFactory
         closedSetGlobalLocal.Clear();
     }
 
-    private static void GenerateFlow(FlowSystem flowSystem)
+    private static void GenerateFlow(NetworkSystem networkSystem)
     {
     }
 

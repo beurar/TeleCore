@@ -42,7 +42,7 @@ public class NetworkPart : INetworkPart
 
     public NetworkPartSet AdjacentSet => _adjacentSet;
     
-    public NetworkVolume Volume => Network.FlowSystem.Relations[this];
+    public NetworkVolume Volume => Network.NetworkSystem.Relations[this];
 
     public bool IsController => (Config.roles | NetworkRole.Controller) == NetworkRole.Controller;
 

@@ -11,10 +11,10 @@ public class PressureWorker_FixedAcceleration : PressureWorker
     public double Acceleration => 5;
     public double Inertia => 0.9;
 
-    public override double FlowFunction(NetworkVolume t0, NetworkVolume t1, double f)
+    public override double FlowFunction(NetworkVolume from, NetworkVolume to, double f)
     {
         f *= Inertia;
-        f += (PressureFunction(t0) - PressureFunction(t1) > 0 ? 1 : -1) * Acceleration;
+        f += (PressureFunction(from) - PressureFunction(to) > 0 ? 1 : -1) * Acceleration;
         return f;
     }
 

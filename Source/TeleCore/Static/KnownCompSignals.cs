@@ -2,15 +2,19 @@
 
 public static class KnownCompSignals
 {
-    //
+    //Door
+    public const string DoorOpened = "DoorOpened";
+    public const string DoorClosed = "DoorClosed";
+    
+    //Flicking
     public const string FlickedOn = "FlickedOn";
     public const string FlickedOff = "FlickedOff";
 
-    //
+    //Power
     public const string PowerTurnedOn = "PowerTurnedOn";
     public const string PowerTurnedOff = "PowerTurnedOff";
 
-    //
+    //Refuelable
     public const string Refueled = "Refueled";
     public const string RanOutOfFuel = "RanOutOfFuel";
 

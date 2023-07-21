@@ -18,6 +18,7 @@ public class FlowValueDef : Def
 
     //The rate at which value flows between containers
     public float viscosity = 1;
+    public double friction;
 
     //Runtime
     public float FlowRate => 1f / viscosity;

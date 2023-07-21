@@ -10,9 +10,9 @@ public class PressureWorker_WaveEquationDamping : PressureWorker
     public override double CSquared => 0.03;
     public double CSquaredDamper => 0.04;
 
-    public override double FlowFunction(NetworkVolume t0, NetworkVolume t1, double f)
+    public override double FlowFunction(NetworkVolume from, NetworkVolume to, double f)
     {
-        var dp = PressureFunction(t0) - PressureFunction(t1);
+        var dp = PressureFunction(from) - PressureFunction(to);
         var c = Math.Sign(f) == Math.Sign(dp) ? CSquared : CSquaredDamper;
         f += dp * c;
         f *= 1 - Friction;

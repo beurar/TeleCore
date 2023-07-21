@@ -45,9 +45,9 @@ internal static class DebugTools
         }
     }
 
-    internal static void Debug_DrawPressure(FlowSystem flowSys)
+    internal static void Debug_DrawPressure(NetworkSystem networkSys)
     {
-        foreach (var (part, fb) in flowSys.Relations)
+        foreach (var (part, fb) in networkSys.Relations)
         {
             var r = default(GenDraw.FillableBarRequest);
             r.center = part.Parent.Thing.Position.ToVector3() + new Vector3(0.25f, 0, 0.75f);

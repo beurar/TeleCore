@@ -31,7 +31,7 @@ public class PipeNetwork : IDisposable
 
     public NetGraph Graph { get; private set; }
 
-    public FlowSystem FlowSystem { get; private set; }
+    public NetworkSystem NetworkSystem { get; private set; }
 
     public NetworkPartSetExtended PartSet => _partSet;
 
@@ -40,14 +40,14 @@ public class PipeNetwork : IDisposable
     public void Dispose()
     {
         Graph.Dispose();
-        FlowSystem.Dispose();
+        NetworkSystem.Dispose();
         _partSet.Dispose();
     }
 
-    internal void PrepareForRegen(out NetGraph graph, out FlowSystem flow)
+    internal void PrepareForRegen(out NetGraph graph, out NetworkSystem networkSystem)
     {
         graph = Graph = new NetGraph();
-        flow = FlowSystem = new FlowSystem();
+        networkSystem = NetworkSystem = new NetworkSystem();
     }
 
     internal bool Notify_AddPart(INetworkPart part)
@@ -73,24 +73,27 @@ public class PipeNetwork : IDisposable
 
     internal void Tick()
     {
-        FlowSystem.Tick();
-        foreach (var part in _partSet.TickSet) part.Tick();
+        NetworkSystem.Tick();
+        foreach (var part in _partSet.TickSet)
+            part.Tick();
     }
 
     internal void Draw()
     {
-        FlowSystem.Draw();
+        NetworkSystem.Draw();
         Graph.Draw();
 
-        if (DEBUG_DrawFlowPressure) DebugTools.Debug_DrawPressure(FlowSystem);
+        if (DEBUG_DrawFlowPressure)
+            DebugTools.Debug_DrawPressure(NetworkSystem);
     }
 
     internal void OnGUI()
     {
-        FlowSystem.OnGUI();
+        NetworkSystem.OnGUI();
         Graph.OnGUI();
 
-        if (DEBUG_DrawGraph) DebugTools.Debug_DrawGraphOnUI(Graph);
+        if (DEBUG_DrawGraph)
+            DebugTools.Debug_DrawGraphOnUI(Graph);
     }
 
     internal IEnumerable<Gizmo> GetGizmos()
