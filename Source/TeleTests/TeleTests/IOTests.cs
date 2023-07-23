@@ -2,6 +2,7 @@
 using NUnit.Framework;
 using RimWorld;
 using TeleCore.Network.IO;
+using TeleCore.Network.Utility;
 using TeleCore.Primitive;
 using Verse;
 using NetworkIO = TeleCore.Network.IO.NetworkIO;
@@ -41,7 +42,7 @@ public class IOTests
         //     var io1 = new NetworkIO(config, new IntVec3(5, 0, 5), Rot4.North);
         // });
         
-        config2.PostLoad();
+        config2.PostLoadCustom(null);
         var io2 = new NetworkIO(config2, new IntVec3(5, 0, 5), Rot4.North);
         Assert.IsTrue(io2.IOModeAt(new IntVec3(5,0,6)) == NetworkIOMode.TwoWay);
         Assert.IsTrue(io2.IOModeAt(new IntVec3(4,0,5)) == NetworkIOMode.TwoWay);
@@ -83,7 +84,7 @@ public class IOTests
             }
         };
         
-        config.PostLoad();
+        config.PostLoadCustom(null);
         
         //5
         //#  +
@@ -96,5 +97,33 @@ public class IOTests
         NetworkIO io2 = new NetworkIO(config, new IntVec3(4, 0, 3), Rot4.North);
         
         Assert.IsTrue(io1.ConnectsTo(io2));
+    }
+
+    [Test]
+    public void DefaultIOGenerationTest()
+    {
+        var pattern = IOUtils.DefaultFallbackIfNecessary(null, new IntVec2(3,3));
+        var pattern2 = IOUtils.DefaultFallbackIfNecessary(null, new IntVec2(4,4));
+        Assert.AreEqual("#X#X+X#X#", pattern);
+        Assert.AreEqual("#XX#" +
+                        "X++X" +
+                        "X++X" +
+                        "#XX#", pattern2);
+    }
+
+
+    [Test]
+    public void IOCellGenerationTest()
+    {
+        var cells = IOUtils.GenerateFromPattern(null, new IntVec2(3, 3));
+        var config = new NetIOConfig()
+        {
+            cellsNorth = cells,
+        };
+        config.PostLoadCustom(null);
+
+        var netIO = new NetworkIO(config, new IntVec3(5, 0, 5), Rot4.North);
+        Assert.AreEqual(4, netIO.Connections.Count);
+        Assert.AreEqual(1, netIO.VisualCells.Count);
     }
 }

@@ -1,11 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using TeleCore.FlowCore;
 using TeleCore.Network.Flow.Clamping;
-using TeleCore.Network.Flow.Pressure;
 using TeleCore.Primitive;
 
-namespace TeleCore.Network.Flow;
+namespace TeleCore.FlowCore;
 
 public abstract class FlowSystem<TAttach, TVolume, TValueDef> : IDisposable
 where TValueDef : FlowValueDef
@@ -15,17 +13,19 @@ where TVolume : FlowVolume<TValueDef>
     private readonly List<FlowInterface<TVolume, TValueDef>> _interfaces;
     private Dictionary<TAttach, TVolume> _relations;
     private Dictionary<TVolume, List<FlowInterface<TVolume, TValueDef>>> _connections;
-    
     private DefValueStack<TValueDef, double> _totalStack;
-
-    public DefValueStack<TValueDef, double> TotalStack => _totalStack;
+    
+    public List<TVolume> Volumes => _volumes;
+    public List<FlowInterface<TVolume, TValueDef>> Interfaces => _interfaces;
     public Dictionary<TAttach, TVolume> Relations => _relations;
-    public Dictionary<TVolume, List<FlowInterface<TVolume, TValueDef>>> ConnectionTable => _connections;
+    public Dictionary<TVolume, List<FlowInterface<TVolume, TValueDef>>> Connections => _connections;
+    public DefValueStack<TValueDef, double> TotalStack => _totalStack;
     public double TotalValue => _totalStack.TotalValue;
 
     public FlowSystem()
     {
         _volumes = new List<TVolume>();
+        _interfaces = new List<FlowInterface<TVolume, TValueDef>>();
         _relations = new Dictionary<TAttach, TVolume>();
         _connections = new Dictionary<TVolume, List<FlowInterface<TVolume, TValueDef>>>();
     }
@@ -34,12 +34,18 @@ where TVolume : FlowVolume<TValueDef>
     {
         _volumes.Clear();
         Relations.Clear();
-        ConnectionTable.Clear();
+        Connections.Clear();
     }
-
     
-    public void Tick()
+    protected virtual void PreTickProcessor(int tick)
     {
+        
+    }
+    
+    public void Tick(int tick)
+    {
+        PreTickProcessor(tick);
+        
         foreach (var _volume in _volumes)
         {
             _volume.PrevStack = _volume.Stack;

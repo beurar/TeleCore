@@ -1,10 +1,29 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using TeleCore.Network.Data;
 using Verse;
 
 namespace TeleCore.Network.Graph;
 
+public class DataGraph<TNode, TEdge> : IDisposable
+where TEdge : IEdge<TNode>
+{
+    public List<TNode> Nodes { get; private set; }
+
+    public List<TEdge> Edges { get; private set; }
+    
+    public Dictionary<TNode, List<(TEdge, TNode)>> AdjacencyList { get; private set; }
+
+    public Dictionary<(TNode, TNode), TEdge> EdgeLookUp { get; private set; }
+    
+    public void Dispose()
+    {
+        // TODO release managed resources here
+    }
+}
+
+[DebuggerDisplay("{Nodes.Count} | {Edges.Count}")]
 public class NetGraph : IDisposable
 {
     public NetGraph()
@@ -13,6 +32,7 @@ public class NetGraph : IDisposable
         Edges = new List<NetEdge>();
         AdjacencyList = new Dictionary<NetNode, List<(NetEdge, NetNode)>>();
         EdgeLookUp = new Dictionary<(NetNode, NetNode), NetEdge>();
+        Cells = new List<IntVec3>();
     }
 
     public List<NetNode> Nodes { get; private set; }
@@ -43,8 +63,10 @@ public class NetGraph : IDisposable
     public List<(NetEdge, NetNode)>? GetAdjacencyList(INetworkPart forPart)
     {
         if (forPart is NetworkPart part)
+        {
             if (AdjacencyList.TryGetValue(part, out var list))
                 return list;
+        }
 
         return null;
     }
@@ -57,7 +79,10 @@ public class NetGraph : IDisposable
 
     internal void AddCells(INetworkPart netPart)
     {
-        foreach (var cell in netPart.Thing.OccupiedRect()) Cells.Add(cell);
+        foreach (var cell in netPart.Thing.OccupiedRect())
+        {
+            Cells.Add(cell);
+        }
     }
 
     internal bool AddEdge(NetEdge edge)
@@ -92,11 +117,9 @@ public class NetGraph : IDisposable
 
     internal void Draw()
     {
-        throw new NotImplementedException();
     }
 
     internal void OnGUI()
     {
-        throw new NotImplementedException();
     }
 }

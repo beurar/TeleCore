@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using TeleCore.Network.Data;
 using TeleCore.Network.Utility;
@@ -12,17 +13,15 @@ namespace TeleCore.Network;
 public class PipeSystem
 {
     //Debug
-    internal static bool DEBUG_DrawNetwork = false;
-
-    //
+    internal static bool DEBUG_DrawNetwork = true;
+    
     private readonly List<PipeNetwork> _allNetworks;
     private readonly NetworkDef _def;
     private readonly PipeNetwork?[] _lookUpGrid;
 
     private readonly Map _map;
     //private readonly NetworkPartSet _allParts;
-
-    //
+    
     private readonly List<DelayedNetworkAction> delayedActions = new();
 
     public PipeSystem(Map map, NetworkDef networkDef)
@@ -82,6 +81,11 @@ public class PipeSystem
     {
         var graph = newNetwork.Graph;
         var graphCells = newNetwork.Graph.Cells;
+        if (graphCells.NullOrEmpty())
+        {
+            TLog.Warning("Tried to generate system from empty graph.");
+            return;
+        }
         for (var i = 0; i < graphCells.Count; i++)
         {
             var cell = graphCells[i];
@@ -173,30 +177,39 @@ public class PipeSystem
         for (var i = 0; i < count; i++)
         {
             var delayedActionForDestruction = delayedActions[i];
-            switch (delayedActions[i].type)
+            try
             {
-                //Should always happen first
-                //When registering a new part, first clear the network at the position
-                case DelayedNetworkActionType.Register:
+                switch (delayedActions[i].type)
                 {
-                    if (delayedActionForDestruction.pos != delayedActionForDestruction.Part.Thing.Position) break;
+                    //Should always happen first
+                    //When registering a new part, first clear the network at the position
+                    case DelayedNetworkActionType.Register:
+                    {
+                        if (delayedActionForDestruction.pos != delayedActionForDestruction.Part.Thing.Position) break;
 
-                    var parent = delayedActionForDestruction.Part.Thing;
-                    if (NetworkAt(parent.Position, parent.Map) != null)
-                        TLog.Warning(
-                            $"Tried to register trasmitter {parent} at {parent.Position}, but there is already a power net here. There can't be two transmitters on the same cell.");
+                        var parent = delayedActionForDestruction.Part.Thing;
+                        if (NetworkAt(parent.Position, parent.Map) != null)
+                            TLog.Warning(
+                                $"Tried to register trasmitter {parent} at {parent.Position}, but there is already a power net here. There can't be two transmitters on the same cell.");
 
-                    //Ensure we only destroy network that we can also connect to
-                    foreach (var subPart in delayedActionForDestruction.Part.AdjacentSet.FullSet)
-                        TryDestroyNetworkAt(subPart.Parent.Thing.Position);
+                        //Ensure we only destroy network that we can also connect to
+                        foreach (var subPart in delayedActionForDestruction.Part.AdjacentSet.FullSet)
+                            TryDestroyNetworkAt(subPart.Parent.Thing.Position);
 
-                    break;
+                        break;
+                    }
+                    case DelayedNetworkActionType.Deregister:
+                    {
+                        TryDestroyNetworkAt(delayedActionForDestruction.pos);
+                        break;
+                    }
                 }
-                case DelayedNetworkActionType.Deregister:
-                {
-                    TryDestroyNetworkAt(delayedActionForDestruction.pos);
-                    break;
-                }
+            }
+            catch (Exception e)
+            {
+                TLog.Error(e.Message + "\n" + e.StackTrace);
+                delayedActions.RemoveAt(i);
+                continue;
             }
         }
 
@@ -205,23 +218,31 @@ public class PipeSystem
         {
             var delayedActionForCreation = delayedActions[j];
             var parentThing = delayedActionForCreation.Part.Thing;
-
-            switch (delayedActions[j].type)
+            try
             {
-                //Create On Newly Spawned Comp
-                case DelayedNetworkActionType.Register:
+                switch (delayedActions[j].type)
                 {
-                    TryCreateNetworkAt(delayedActionForCreation.pos, delayedActionForCreation.Part);
-                    break;
+                    //Create On Newly Spawned Comp
+                    case DelayedNetworkActionType.Register:
+                    {
+                        TryCreateNetworkAt(delayedActionForCreation.pos, delayedActionForCreation.Part);
+                        break;
+                    }
+                    //Create By Checking Adjacent Cells Of Despawned Component
+                    case DelayedNetworkActionType.Deregister:
+                    {
+                        foreach (var adjPos in GenAdj.CellsAdjacentCardinal(delayedActionForCreation.pos,
+                                     parentThing.Rotation, parentThing.def.size))
+                            TryCreateNetworkAtForDestruction(adjPos, delayedActionForCreation.Part);
+                        break;
+                    }
                 }
-                //Create By Checking Adjacent Cells Of Despawned Component
-                case DelayedNetworkActionType.Deregister:
-                {
-                    foreach (var adjPos in GenAdj.CellsAdjacentCardinal(delayedActionForCreation.pos,
-                                 parentThing.Rotation, parentThing.def.size))
-                        TryCreateNetworkAtForDestruction(adjPos, delayedActionForCreation.Part);
-                    break;
-                }
+            }           
+            catch (Exception e)
+            {
+                TLog.Error(e.Message + "\n" + e.StackTrace);
+                delayedActions.RemoveAt(j);
+                continue;
             }
         }
 
@@ -250,10 +271,10 @@ public class PipeSystem
 
     #region TickUpdates
 
-    public void Tick()
+    public void Tick(int tick)
     {
         foreach (var network in _allNetworks) 
-            network.Tick();
+            network.Tick(tick);
     }
 
     public void Draw()
@@ -269,14 +290,15 @@ public class PipeSystem
             {
                 var network = _lookUpGrid[i];
                 if (network == null) continue;
-                CellRenderer.RenderCell(_map.cellIndices.IndexToCell(i), 0.75f);
+                CellRenderer.RenderCell(_map.cellIndices.IndexToCell(i), network.GetHashCode()/10000f);
             }
         }
     }
 
     public void DrawOnGUI()
     {
-        foreach (var network in _allNetworks) network.OnGUI();
+        foreach (var network in _allNetworks) 
+            network.OnGUI();
     }
 
     #endregion

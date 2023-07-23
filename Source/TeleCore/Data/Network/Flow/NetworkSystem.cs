@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using TeleCore.FlowCore;
 using TeleCore.FlowCore.Events;
 using TeleCore.Network.Data;
 using TeleCore.Network.Flow.Clamping;
@@ -27,23 +28,28 @@ public class NetworkSystem : FlowSystem<NetworkPart, NetworkVolume, NetworkValue
     {
         foreach (var (node, adjacent) in graph.AdjacencyList)
         {
-            var flowBox = GenerateFor(node);
+            var flowBox = GenerateForOrGet(node);
             var list = new List<FlowInterface<NetworkVolume, NetworkValueDef>>();
             for (var i = 0; i < adjacent.Count; i++)
             {
                 var nghb = adjacent[i];
-                var fb2 = GenerateFor(nghb.Item2.Value);
+                var fb2 = GenerateForOrGet(nghb.Item2.Value);
                 var conn = new FlowInterface<NetworkVolume, NetworkValueDef>(flowBox, fb2);
                 list.Add(conn);
             }
 
-            ConnectionTable.Add(flowBox, list);
+            Connections.Add(flowBox, list);
         }
     }
-
-    private NetworkVolume GenerateFor(NetworkPart part)
+    
+    private NetworkVolume GenerateForOrGet(NetworkPart part)
     {
-        var fb = new NetworkVolume(part.Config.volumeConfig);
+        if (Relations.TryGetValue(part, out var fb))
+        {
+            return fb;
+        }
+        
+        fb = new NetworkVolume(part.Config.volumeConfig);
         fb.FlowEvent += OnFlowBoxEvent;
         Relations.Add(part, fb);
         return fb;

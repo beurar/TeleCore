@@ -9,7 +9,7 @@ namespace TeleCore;
 /// </summary>
 public class CompProperties_Network : CompProperties
 {
-    public NetIOConfig generalIOConfig;
+    public NetIOConfig generalIOConfig = new NetIOConfig();
     public List<NetworkPartConfig> networks;
 
     public CompProperties_Network()
@@ -20,7 +20,8 @@ public class CompProperties_Network : CompProperties
     public override void PostLoadSpecial(ThingDef parent)
     {
         base.PostLoadSpecial(parent);
-        generalIOConfig?.PostLoad();
-        foreach (var network in networks) network.PostLoadSpecial(parent);
+        generalIOConfig.PostLoadCustom(parent);
+        foreach (var network in networks) 
+            network.PostLoadSpecial(parent);
     }
 }

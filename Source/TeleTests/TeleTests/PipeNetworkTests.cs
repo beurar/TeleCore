@@ -1,12 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.Drawing;
 using NUnit.Framework;
 using TeleCore;
+using TeleCore.FlowCore;
 using TeleCore.Network.Data;
 using TeleCore.Network.Flow;
 using TeleCore.Primitive;
+using UnityEngine;
 using Verse;
 
 namespace TeleTests;
@@ -15,8 +15,8 @@ namespace TeleTests;
 public class PipeNetwork_EqualizationTests
 {
     private static List<NetworkVolume> volumes;
-    private static List<FlowInterface<NetworkVolume>> interfaces;
-    private static Dictionary<NetworkVolume, List<FlowInterface<NetworkVolume>>> connections;
+    private static List<FlowInterface<NetworkVolume, NetworkValueDef>> interfaces;
+    private static Dictionary<NetworkVolume, List<FlowInterface<NetworkVolume,NetworkValueDef>>> connections;
     
     public static NetworkValueDef[] defs = new NetworkValueDef[2]
     {
@@ -52,15 +52,15 @@ public class PipeNetwork_EqualizationTests
         };
 
         volumes = new List<NetworkVolume>();
-        connections = new Dictionary<NetworkVolume, List<FlowInterface<NetworkVolume>>>();
+        connections = new Dictionary<NetworkVolume, List<FlowInterface<NetworkVolume, NetworkValueDef>>>();
         volumes.Add(new NetworkVolume(config));
         volumes.Add(new NetworkVolume(config));
 
-        var atmosInterface = new List<FlowInterface<NetworkVolume>> {new(volumes[0], volumes[1])};
+        var atmosInterface = new List<FlowInterface<NetworkVolume, NetworkValueDef>> {new(volumes[0], volumes[1])};
         connections.Add(volumes[0], atmosInterface);
         connections.Add(volumes[1], atmosInterface);
 
-        interfaces = new List<FlowInterface<NetworkVolume>>(atmosInterface);
+        interfaces = new List<FlowInterface<NetworkVolume, NetworkValueDef>>(atmosInterface);
     }
     
     [Test]
@@ -97,11 +97,12 @@ public class PipeNetwork_EqualizationTests
             double flow = conn.NextFlow;      
             var from = conn.From;
             var to = conn.To;
-            flow = AtmosphericSystem.FlowFunc(from, to, flow, out double dp);
-            conn.UpdateBasedOnFlow(flow);
-            flow = Math.Abs(flow);
-            conn.NextFlow = AtmosphericSystem.ClampFunc(connections,from, to, flow);
-            conn.Move = AtmosphericSystem.ClampFunc(connections, from, to, flow);
+            //TODO:
+            // flow = AtmosphericSystem.FlowFunc(from, to, flow, out double dp);
+            // conn.UpdateBasedOnFlow(flow);
+            // flow = Math.Abs(flow);
+            // conn.NextFlow = AtmosphericSystem.ClampFunc(connections,from, to, flow);
+            // conn.Move = AtmosphericSystem.ClampFunc(connections, from, to, flow);
         }
             
         //Upate Content

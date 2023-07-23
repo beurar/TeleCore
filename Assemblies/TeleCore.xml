@@ -64,19 +64,9 @@
                 "Divider for remaining space [1..4]"
             </summary>
         </member>
-        <member name="T:TeleCore.Network.Flow.FlowInterface">
-            <summary>
-                A connection point for pipes between flow boxes.
-            </summary>
-        </member>
-        <member name="T:TeleCore.Network.Flow.FlowSystem">
+        <member name="T:TeleCore.Network.Flow.NetworkSystem">
             <summary>
                 The main algorithm container for fluid flow.
-            </summary>
-        </member>
-        <member name="M:TeleCore.Network.Flow.FlowSystem.Tick">
-            <summary>
-                Update flow.
             </summary>
         </member>
         <member name="T:TeleCore.Network.Flow.NetworkVolume">

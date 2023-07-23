@@ -62,10 +62,11 @@ public class PipeNetworkMapInfo : MapInformation
 
     public override void TeleTick()
     {
+        var tick = Find.TickManager.TicksAbs;
         if (TFind.TickManager.CurrentMapTick % NetworkTickInterval == 0)
             //TLog.Message($"Ticking all networks | {TFind.TickManager.CurrentTick}");
             foreach (var system in _systemsByType)
-                system.Value.Tick();
+                system.Value.Tick(tick);
     }
 
     public override void Update()

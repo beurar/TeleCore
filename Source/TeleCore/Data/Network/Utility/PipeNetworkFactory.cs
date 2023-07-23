@@ -12,7 +12,6 @@ namespace TeleCore.Network.Utility;
 public static class PipeNetworkFactory
 {
     internal static int MasterNetworkID = 0;
-    internal static readonly HashSet<INetworkPart> _ClosedGlobalSet = new();
 
     private static PipeNetwork _curNetwork;
     private static NetGraph _curGraph;
@@ -33,7 +32,6 @@ public static class PipeNetworkFactory
         //Graph
         GenerateGraph(part);
 
-
         //Populate FlowSystem
         _curNetworkSystem.Notify_Populate(_curGraph);
 
@@ -43,7 +41,7 @@ public static class PipeNetworkFactory
         _curNetwork = null;
     }
 
-    private static void Notify_FoundConsecutivePart(INetworkPart part)
+    private static void RegisterInNetwork(INetworkPart part)
     {
         if (_curNetwork.Notify_AddPart(part))
         {
@@ -56,33 +54,51 @@ public static class PipeNetworkFactory
     {
         if (_curGraph.AddEdge(edge))
         {
+            RegisterInNetwork(edge.From);
+            RegisterInNetwork(edge.To);
+        }
+    }
+    
+    private static void GenerateGraph(INetworkPart root)
+    {
+        //Single root without any neighbors
+        if (root.AdjacentSet.Size == 0)
+        {
+            RegisterInNetwork(root);
+            return;
+        }
+        
+        var parts = ContiguousNetworkParts(root);
+        var allNodes = parts.Where(n => n.IsNode).ToList();
+        
+        if (allNodes.Count <= 1)
+        {
+            foreach (var part in parts)
+            {
+                RegisterInNetwork(part);
+            }
+            return;
+        }
+        
+        foreach (var part in allNodes)
+        {
+            StartAdjacentEdgeSearch(part);
         }
     }
 
-    private static void GenerateGraph(INetworkPart root)
-    {
-        var allParts = ContiguousNetworkParts(root).Where(n => n.IsNode);
-        foreach (var part in allParts)
-            //Register part in network
-            //AddNetworkDataCallback(part, network);
-            StartAdjacentEdgeSearch(part);
-    }
-
-    private static void FindClosesReachableNode(INetworkPart edgeNode)
-    {
-        var closedLocalSet = StaticListHolder<INetworkPart>.RequestSet("ClosedSubSetGlobalLocal");
-    }
-
+    private static HashSet<INetworkPart> _ClosedGlobalSet;
+    
     private static void StartAdjacentEdgeSearch(INetworkPart rootNode)
     {
-        var closedSetGlobalLocal = StaticListHolder<INetworkPart>.RequestSet("ClosedSubSetGlobalLocal");
+        _ClosedGlobalSet = StaticListHolder<INetworkPart>.RequestSet("ClosedSubSetGlobalLocal");
         var map = rootNode.Parent.Thing.Map;
 
         //Add Root To Closed Set
-        closedSetGlobalLocal.Add(rootNode);
-
-        //All directly adjacent parts get added as infinitely small edges
+        _ClosedGlobalSet.Add(rootNode);
+        
         foreach (var directPart in rootNode.AdjacentSet.FullSet)
+        {
+            //All directly adjacent nodes get added as infinitely small edges
             if (directPart.IsNode)
             {
                 var connResult = rootNode.HasIOConnectionTo(directPart);
@@ -105,32 +121,42 @@ public static class PipeNetworkFactory
             else if (directPart.IsEdge)
             {
                 var directPos = directPart.Parent.Thing.Position;
-                InternalEdgeSearch(directPart, directPos, rootNode.PartIO.IOModeAt(directPos), rootNode);
+                InternalEdgeSearch(directPart, directPos, rootNode.PartIO.IOModeAt(directPos), map, rootNode, rootNode);
+            }
+        }
+        
+        _ClosedGlobalSet.Clear();
+    }
+
+    private static void InternalEdgeSearch(INetworkPart subPart, IntVec3 startCell, NetworkIOMode startMode, Map? map, INetworkPart rootNode, INetworkPart originPart = null, int? previousLength = null)
+    {
+        var currentSet = StaticListHolder<INetworkPart>.RequestSet($"CurrentSubSet_{subPart}");
+        var openSet = StaticListHolder<INetworkPart>.RequestSet($"OpenSubSet_{subPart}");
+        var closedSet = StaticListHolder<INetworkPart>.RequestSet($"ClosedSubSet_{subPart}");
+
+        var mainOriginPart = originPart ?? subPart;
+        var curLength = previousLength ?? 1;
+        openSet.Add(subPart);
+
+        do
+        {
+            foreach (var item in openSet)
+            {
+                closedSet.Add(item);
+                _ClosedGlobalSet.Add(item);
+                RegisterInNetwork(item);
             }
 
-        void InternalEdgeSearch(INetworkPart subPart, IntVec3 startCell, NetworkIOMode startMode,
-            INetworkPart originPart = null, int? previousLength = null)
-        {
-            var currentSet = StaticListHolder<INetworkPart>.RequestSet($"CurrentSubSet_{subPart}");
-            var openSet = StaticListHolder<INetworkPart>.RequestSet($"OpenSubSet_{subPart}");
-            var closedSet = StaticListHolder<INetworkPart>.RequestSet($"ClosedSubSet_{subPart}");
-
-            var mainOriginPart = originPart ?? subPart;
-            var curLength = previousLength ?? 1;
-            openSet.Add(subPart);
-
-            do
+            (currentSet, openSet) = (openSet, currentSet);
+            openSet.Clear();
+            
+            var copy = new HashSet<INetworkPart>();
+            foreach (var cur in currentSet)
             {
-                foreach (var item in openSet)
-                {
-                    closedSet.Add(item);
-                    closedSetGlobalLocal.Add(item);
-                    Notify_FoundConsecutivePart(item);
-                }
-
-                (currentSet, openSet) = (openSet, currentSet);
-                openSet.Clear();
-                foreach (var part in currentSet)
+                copy.Add(cur);
+            }
+            foreach (var part in copy)
+            {
                 foreach (IntVec3 output in part.PartIO.Connections)
                 {
                     if (!output.InBounds(map)) continue;
@@ -138,22 +164,21 @@ public static class PipeNetworkFactory
                     foreach (var thing in thingList)
                     {
                         if (!Fits(thing, rootNode.Config.networkDef, out var newPart)) continue;
-                        if (closedSet.Concat(closedSetGlobalLocal).Contains(newPart)) continue;
+                        if (closedSet.Concat(_ClosedGlobalSet).Contains(newPart)) continue;
                         var result = newPart.HasIOConnectionTo(part);
                         if (result.IsValid)
                         {
                             //Make Edge When Node Found
                             if (newPart.IsNode)
                             {
-                                Notify_FoundEdge(new NetEdge(mainOriginPart, newPart, startCell, result.In, startMode,
-                                    result.InMode, curLength));
+                                Notify_FoundEdge(new NetEdge(mainOriginPart, newPart, startCell, result.In, startMode, result.InMode, curLength));
                                 break;
                             }
 
                             //Split At Junction (length tracking)
                             if (newPart.IsJunction)
                             {
-                                InternalEdgeSearch(newPart, startCell, startMode, mainOriginPart, curLength);
+                                InternalEdgeSearch(newPart, startCell, startMode, map, rootNode, mainOriginPart, curLength);
                                 break;
                             }
 
@@ -164,16 +189,13 @@ public static class PipeNetworkFactory
                         }
                     }
                 }
-            } while (openSet.Count > 0);
+            }
+        } while (openSet.Count > 0);
 
-            //
-            currentSet.Clear();
-            openSet.Clear();
-            closedSet.Clear();
-        }
-
-        //    
-        closedSetGlobalLocal.Clear();
+        //
+        currentSet.Clear();
+        openSet.Clear();
+        closedSet.Clear();
     }
 
     private static void GenerateFlow(NetworkSystem networkSystem)
@@ -198,7 +220,7 @@ public static class PipeNetworkFactory
         {
             foreach (var item in openSet)
             {
-                if (item.IsNode) nodeSet.Add(item);
+                nodeSet.Add(item);
                 closedSet.Add(item);
             }
 

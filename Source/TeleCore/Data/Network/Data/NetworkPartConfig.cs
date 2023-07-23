@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Xml;
+using TeleCore.FlowCore;
 using TeleCore.Network.IO;
 using Verse;
 
@@ -68,12 +69,7 @@ public class NetworkValueFilterByRole
     }
 }
 
-public class FlowValueFilter
-{
-    public List<FlowValueDef> allowedValues;
-}
-
-public class NetworkValueFilter : FlowValueFilter
+public class NetworkValueFilter : FlowValueFilter<NetworkValueDef>
 {
     public List<NetworkValueFilterByRole> allowedValuesByRole;
 
@@ -105,27 +101,16 @@ public class NetworkValueFilter : FlowValueFilter
     }
 }
 
-public class FlowVolumeConfig<T> where T : FlowValueDef
+public class NetworkVolumeConfig
 {
-    //private const int AREA_VALUE = 128;
-
-    public List<T> allowedValues;
-
-    public int capacity;
-    public int area = 1;
-    public int elevation = 0;
-    public int height = 1;
-
-    //We dont need this approach for now
-    public double Volume => capacity;
-    //public double Volume => area * height * AREA_VALUE;
+    
 }
 
-public class NetworkPartConfig
+public class NetworkPartConfig : Editable
 {
     public void PostLoadSpecial(ThingDef parent)
     {
-        netIOConfig?.PostLoad();
+        netIOConfig?.PostLoadCustom(parent);
     }
 
     #region XML Fields
@@ -139,4 +124,21 @@ public class NetworkPartConfig
     public FlowVolumeConfig<NetworkValueDef> volumeConfig;
 
     #endregion
+
+    public override void PostLoad()
+    {
+        if (valueFilter != null)
+        {
+            volumeConfig.Attach(valueFilter);
+        }
+
+        if (volumeConfig.allowedValues.NullOrEmpty())
+        {
+            volumeConfig.allowedValues = new ();
+            foreach (var value in networkDef.ValueDefs)
+            {
+                volumeConfig.allowedValues.Add(value);
+            }
+        }
+    }
 }

@@ -1,6 +1,4 @@
-﻿using TeleCore.FlowCore;
-
-namespace TeleCore.Network.Flow;
+﻿namespace TeleCore.FlowCore;
 
 public class FlowInterface<TVolume, TValueDef>
 where TValueDef : FlowValueDef
@@ -14,7 +12,8 @@ where TVolume : FlowVolume<TValueDef>
 
     public TVolume From { get; private set; }
     public TVolume To { get; private set; }
-    
+    public float PassPercent => 1f;
+
     public FlowInterface(TVolume from, TVolume to)
     {
         From = from;

@@ -19,7 +19,7 @@ public class Comp_Network : FXThingComp, INetworkStructure
     //Debug
     protected static bool DebugConnectionCells;
 
-    private List<INetworkPart> _allNetParts;
+    private List<NetworkPart> _allNetParts;
 
     //
     private PipeNetworkMapInfo _mapInfo;
@@ -44,7 +44,7 @@ public class Comp_Network : FXThingComp, INetworkStructure
 
     //
     public Thing Thing => parent;
-    public List<INetworkPart> NetworkParts => _allNetParts;
+    public List<NetworkPart> NetworkParts => _allNetParts;
 
     public bool IsPowered => CompPower?.PowerOn ?? true;
     public bool IsWorking => IsWorkingOverride;
@@ -98,8 +98,12 @@ public class Comp_Network : FXThingComp, INetworkStructure
 
         //
         if (Scribe.mode == LoadSaveMode.PostLoadInit)
+        {
             if (_allNetParts.NullOrEmpty())
+            {
                 TLog.Warning($"Could not load network parts for {parent}... Correcting.");
+            }
+        }
     }
 
     //Init Construction
@@ -123,7 +127,7 @@ public class Comp_Network : FXThingComp, INetworkStructure
 
         //
         if (!respawningAfterLoad)
-            _allNetParts = new List<INetworkPart>(Math.Max(1, Props.networks.Count));
+            _allNetParts = new List<NetworkPart>(Math.Max(1, Props.networks.Count));
 
         _netPartByDef = new Dictionary<NetworkDef, INetworkPart>(Props.networks.Count);
         for (var i = 0; i < Props.networks.Count; i++)
@@ -137,7 +141,7 @@ public class Comp_Network : FXThingComp, INetworkStructure
             }
 
             if (part == null)
-                part = (NetworkPart) _allNetParts[i];
+                part = _allNetParts[i];
 
             _netPartByDef.Add(compProps.networkDef, part);
             part.PartSetup(respawningAfterLoad);
@@ -189,7 +193,9 @@ public class Comp_Network : FXThingComp, INetworkStructure
     {
         base.PostPrintOnto(layer);
         foreach (var networkPart in NetworkParts)
-            networkPart.Config.networkDef.TransmitterGraphic?.Print(layer, Thing, 0, networkPart);
+        {
+            networkPart.Print(layer);
+        }
     }
 
     public override string CompInspectStringExtra()

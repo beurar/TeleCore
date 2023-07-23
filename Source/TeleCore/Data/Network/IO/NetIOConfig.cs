@@ -16,25 +16,10 @@ public class NetIOConfig : Editable
     public List<IOCellPrototype> cellsWest;
 
     public List<IOCellPrototype> cellsVisual;
-    //  \\\\\\\\
-    //  \\\XX\\\
-    //  \\#++#\\
-    //  \I++++O\
-    //  \I++++O\
-    //  \\#++#\\
-    //  \\\XX\\\
-    //  \\\\\\\\
 
     //
-    public IntVec2 patternSize = new IntVec2(1,1);
+    public IntVec2? patternSize;
     public string pattern;
-
-    public override IEnumerable<string> ConfigErrors()
-    {
-        if (pattern != null && pattern.Length != patternSize.Area)
-            yield return
-                $"Pattern with an area of {pattern.Length} cannot fit on a pattern size of {patternSize} with an area of {patternSize.Area}";
-    }
 
     public List<IOCellPrototype> CellsFor(Rot4 rot)
     {
@@ -72,10 +57,13 @@ public class NetIOConfig : Editable
             });
     }
 
-    public void PostLoad()
+    public void PostLoadCustom(ThingDef def)
     {
-        if (pattern != null) 
-            cellsNorth = IOUtils.GenerateFromPattern(pattern, patternSize);
+        if (patternSize == null && def != null)
+            patternSize = def.size + new IntVec2(2, 2);
+        
+        if (pattern != null || (cellsNorth == null && cellsEast == null && cellsSouth == null & cellsWest == null)) 
+            cellsNorth = IOUtils.GenerateFromPattern(pattern, patternSize.Value);
 
         var cells = cellsNorth ?? cellsEast ?? cellsSouth ?? cellsWest;
 

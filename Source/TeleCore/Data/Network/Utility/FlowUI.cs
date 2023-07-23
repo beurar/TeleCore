@@ -10,7 +10,7 @@ using Verse;
 
 namespace TeleCore.Network.Utility;
 
-public static class FlowUI<T> where T : FlowValueDef
+public static class FlowUI<T> where T : FlowValueDef<T>
 {
     /*public static Vector2 GetValueContainerReadoutSize<TValue>(ValueContainerBase<TValue> container)
         where TValue : FlowValueDef

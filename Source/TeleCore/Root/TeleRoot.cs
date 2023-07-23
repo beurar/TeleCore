@@ -18,7 +18,7 @@ public class TeleRoot : MonoBehaviour
         }
         catch (Exception arg)
         {
-            TLog.Error("Error in TiberiumRoot.Start(): " + arg);
+            TLog.Error("Error in TeleRoot.Start(): " + arg);
         }
     }
 

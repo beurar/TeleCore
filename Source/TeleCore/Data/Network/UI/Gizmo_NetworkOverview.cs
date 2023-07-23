@@ -1,11 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Multiplayer.API;
 using RimWorld;
+using TeleCore.Generics.Container;
 using TeleCore.Network.Data;
+using TeleCore.Network.Flow;
 using TeleCore.Network.Utility;
 using UnityEngine;
 using Verse;
+using Verse.Sound;
 
 namespace TeleCore.Network.UI;
 
@@ -16,7 +20,7 @@ public class Gizmo_NetworkOverview : Gizmo, IDisposable
     private const int gizmoPadding = 5;
     internal const int selSettingHeight = 22;
     private readonly Dictionary<INetworkPart, NetworkInfoView> _viewByPart;
-    private readonly Comp_Network compNetwork;
+    private readonly Comp_Network _compNetwork;
 
     //Part Extendo Consts
     private readonly Vector2 partSelectionSize;
@@ -31,12 +35,12 @@ public class Gizmo_NetworkOverview : Gizmo, IDisposable
     public Gizmo_NetworkOverview(Comp_Network compParent)
     {
         order = -250f;
-        compNetwork = compParent;
+        _compNetwork = compParent;
         _viewByPart = new Dictionary<INetworkPart, NetworkInfoView>();
 
         //
         var maxTextSize = 50f;
-        foreach (var part in compNetwork.NetworkParts)
+        foreach (var part in _compNetwork.NetworkParts)
         {
             _viewByPart.Add(part, new NetworkInfoView(part));
             maxTextSize = Mathf.Max(maxTextSize, Text.CalcSize(part.Config.networkDef.labelShort).x + 10);
@@ -89,7 +93,6 @@ public class Gizmo_NetworkOverview : Gizmo, IDisposable
     private Vector2 GetPartSelectionSize()
     {
         if (_viewByPart.Count <= 1) return Vector2.zero;
-        return new Vector2(curExtendedPartX, 0);
         var inspector = Find.MainTabsRoot.OpenTab.TabWindow as MainTabWindow_Inspect;
         var inspectorSize = inspector.RequestedTabSize;
         var maxY = inspectorSize.y - 10;

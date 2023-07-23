@@ -181,11 +181,13 @@ public class NetworkInfoView
     {
         ExtendoTabs = new Dictionary<string, Action<Rect>>();
         if ((_part.Config.roles & NetworkRole.Requester) == NetworkRole.Requester)
+        {
             ExtendoTabs.Add("Requester Settings", delegate
             {
                 //TODO: Replace with extended filter settings (setting how much can be received/taken)
                 //_part.RequestWorker.DrawSettings(rect);
             });
+        }
 
         if (_part.HasContainer)
             ExtendoTabs.Add("Container Settings", delegate(Rect rect)

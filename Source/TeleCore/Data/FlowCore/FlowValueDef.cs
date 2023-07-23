@@ -5,11 +5,28 @@ using Verse;
 
 namespace TeleCore;
 
+public static class FlowValueDefDB<TDef>
+    where TDef : FlowValueDef
+{
+    public static Dictionary<TDef, FlowValueCollectionDef<TDef>> _collections = new();
+    public static Dictionary<TDef, FlowValueCollectionDef<TDef>> DB => _collections;
+
+    public static void ResolveDef(TDef def)
+    {
+        if (_collections.TryGetValue(def, out var collectionDef) == false)
+        {
+            collectionDef = new FlowValueCollectionDef<TDef>();
+            _collections.Add(def, collectionDef);
+        }
+
+        collectionDef.Notify_ResolvedFlowValueDef(def);
+    }
+}
+
 public class FlowValueDef : Def
 {
     public float capacityFactor = 1;
-
-    public FlowValueCollectionDef collectionDef;
+        
     public string labelShort;
 
     public bool sharesCapacity;
@@ -20,6 +37,11 @@ public class FlowValueDef : Def
     public float viscosity = 1;
     public double friction;
 
+    public FlowValueCollectionDef<TDef> CollectionDef<TDef>() where TDef : FlowValueDef
+    {
+        return FlowValueDefDB<TDef>.DB[this];
+    }
+    
     //Runtime
     public float FlowRate => 1f / viscosity;
 
@@ -36,6 +58,6 @@ public class FlowValueDef : Def
         if (labelShort.NullOrEmpty()) labelShort = label;
 
         //
-        collectionDef?.Notify_ResolvedFlowValueDef(this);
+        FlowValueDefDB.ResolveDef(this);
     }
 }

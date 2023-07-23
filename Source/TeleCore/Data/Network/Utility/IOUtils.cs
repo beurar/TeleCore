@@ -40,38 +40,23 @@ public static class IOUtils
         };
     }
 
-    public static Rot4 RelativeDir(IntVec3 center, IntVec3 pos, IntVec2 size)
+    public static Rot4 RelativeDir(IntVec3 center, IntVec3 position, IntVec2 size)
     {
-        var top = center.z - size.z / 2;
-        var bottom = center.z + size.z / 2;
-        var left = center.x - size.x / 2;
-        var right = center.x + size.x / 2;
+        var topLeft = center;
+        var bottomRight = center + new IntVec3(size.x / 2, 0, size.z / 2);
 
-        if (pos.z < top)
-        {
-            if (pos.x < left) //NorthWest
-                return Rot4.Invalid;
-            if (pos.x > right) //NorthEast
-                return Rot4.Invalid;
-            return Rot4.North;
-        }
-
-        if (pos.z > bottom)
-        {
-            if (pos.x < left) //SouthWest
-                return Rot4.Invalid;
-            if (pos.x > right) //SouthEast
-                return Rot4.Invalid;
-            return Rot4.South;
-        }
-
-        if (pos.x < left) //West
+        if (position.x < topLeft.x)
             return Rot4.West;
 
-        if (pos.x > right) //East
+        if (position.x > bottomRight.x)
             return Rot4.East;
 
-        //throw new ArgumentException("The position cannot be inside the bounding box.");
+        if (position.z > bottomRight.z)
+            return Rot4.North;
+
+        if (position.z < topLeft.z)
+            return Rot4.South;
+
         return Rot4.Invalid;
     }
 
@@ -86,20 +71,19 @@ public static class IOUtils
         return (innerInput && outerOutput) || (outerInput && innerOutput);
     }
 
-    public static List<IOCellPrototype> GenerateFromPattern(string ioPattern, IntVec2 thingSize)
+    public static List<IOCellPrototype> GenerateFromPattern(string ioPattern, IntVec2 patternSize)
     {
-        var size = thingSize;
+        var size = patternSize;
         var width = size.x;
         var height = size.z;
 
-        var rect = new CellRect(0 - (width - 1) / 2, 0 - (height - 1) / 2, width, height);
+        var rect = new CellRect(0, 0, width / 2, height / 2).ExpandedBy(1);
         var rectList = rect.ToArray();
-
+        
         ioPattern = DefaultFallbackIfNecessary(ioPattern, size);
         var modeGrid = GetIOModeArrey(ioPattern);
-
+        
         var result = new List<IOCellPrototype>();
-
         for (var y = 0; y < rect.Height; y++)
         for (var x = 0; x < rect.Width; x++)
         {
@@ -108,12 +92,15 @@ public static class IOUtils
             var cell = rectList[actualIndex];
 
             if (ioMode != NetworkIOMode.None)
+            {
+                var rel = RelativeDir(IntVec3.Zero, cell, size / 2);
                 result.Add(new IOCellPrototype
                 {
                     offset = cell,
-                    direction = RelativeDir(IntVec3.Zero, cell, size),
+                    direction = rel,
                     mode = ioMode
                 });
+            }
         }
 
         return result;
@@ -148,7 +135,7 @@ public static class IOUtils
         return modeGrid;
     }
 
-    internal static string DefaultFallbackIfNecessary(string pattern, IntVec2 size)
+    public static string DefaultFallbackIfNecessary(string pattern, IntVec2 size)
     {
         if (pattern != null) return pattern;
 
@@ -158,8 +145,28 @@ public static class IOUtils
         var charArr = new char[widthx * heighty];
 
         for (var x = 0; x < widthx; x++)
-        for (var y = 0; y < heighty; y++)
-            charArr[x + y * widthx] = TwoWay;
+        {
+            for (var y = 0; y < heighty; y++)
+            {
+                //Corners
+                if ((x < 1 || x >= widthx-1) && (y < 1 || y >= heighty-1))
+                {
+                    charArr[x + y * widthx] = Empty;
+                    continue;
+                }
+                
+                //Inside
+                if ((x >= 1 && x < widthx-1) && (y >= 1 && y < heighty-1))
+                {
+                    charArr[x + y * widthx] = Visual;
+                    continue;
+                }
+                
+                //Sides
+                charArr[x + y * widthx] = TwoWay;
+            }
+        }
+
         return charArr.ArrayToString();
     }
 }

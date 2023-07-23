@@ -10,7 +10,7 @@ public interface INetworkStructure
     //Data References
     public Thing Thing { get; }
 
-    public List<INetworkPart> NetworkParts { get; }
+    public List<NetworkPart> NetworkParts { get; }
     public NetworkIO GeneralIO { get; }
 
     //States

@@ -15,6 +15,7 @@ public class NetworkPartSetExtended : NetworkPartSet
 
     public NetworkPartSetExtended(NetworkDef def) : base(def)
     {
+        _tickSet = new HashSet<INetworkPart>();
     }
 
     public INetworkPart? Controller { get; private set; }
@@ -80,9 +81,14 @@ public class NetworkPartSet : IDisposable
         _def = def;
         _fullSet = new HashSet<INetworkPart>();
         _partsByRole = new Dictionary<NetworkRole, HashSet<INetworkPart>>();
+        foreach (NetworkRole role in Enum.GetValues(typeof(NetworkRole)))
+        {
+            _partsByRole.TryAdd(role, new HashSet<INetworkPart>());
+        }
     }
 
     public ICollection<INetworkPart> FullSet => _fullSet;
+    public int Size => _fullSet.Count;
 
     public HashSet<INetworkPart>? this[NetworkRole role] =>
         _partsByRole.TryGetValue(role, out var value) ? value : null;

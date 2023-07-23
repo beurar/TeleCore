@@ -1,7 +1,9 @@
-﻿using TeleCore.Network.Data;
+﻿using System.Diagnostics;
+using TeleCore.Network.Data;
 
 namespace TeleCore.Network.Graph;
 
+[DebuggerDisplay("{Value}")]
 public struct NetNode
 {
     public NetworkPart Value { get; }
@@ -19,5 +21,10 @@ public struct NetNode
     public NetNode(NetworkPart value)
     {
         Value = value;
+    }
+
+    public override int GetHashCode()
+    {
+        return Value.GetHashCode();
     }
 }

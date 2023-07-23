@@ -18,12 +18,15 @@ public class NetworkIO
         foreach (var cell in cells)
         {
             if (cell.mode == NetworkIOMode.None) continue;
-            if ((NetworkIOMode.ForRender & cell.mode) != 0)
+            if ((cell.mode & NetworkIOMode.Visual) == NetworkIOMode.Visual)
+            {
                 VisualCells.Add(new IOCell
                 {
                     Pos = new IntVec3Rot(cell.offset + refPos, cell.direction),
                     Mode = cell.mode
                 });
+                continue;
+            }
 
             Connections.Add(new IOCell
             {
@@ -34,7 +37,6 @@ public class NetworkIO
     }
 
     public List<IOCell> Connections { get; }
-
     public List<IOCell> VisualCells { get; }
 
     public NetworkIOMode IOModeAt(IntVec3 pos)

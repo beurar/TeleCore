@@ -1,5 +1,6 @@
 ﻿using HarmonyLib;
 using RimWorld;
+using TeleCore.Network.IO;
 using UnityEngine;
 using Verse;
 
@@ -125,6 +126,53 @@ internal static class RenderPatches
         }
     }
 
+    [HarmonyPatch(typeof(GenDraw))]
+    [HarmonyPatch(nameof(GenDraw.DrawInteractionCells))]
+    public static class GenDrawDrawInteractionCellsPatch
+    {
+        public static void Postfix(ThingDef tDef, IntVec3 center, Rot4 placingRot)
+        {
+            //Draw Network IO
+            var network = tDef.GetCompProperties<CompProperties_Network>();
+            if (network != null)
+            {
+                if (network.generalIOConfig != null)
+                {
+                    DrawNetIOConfig(network.generalIOConfig, center, tDef, placingRot);
+                    return;
+                }
+
+                foreach (var part in network.networks)
+                    if (part.netIOConfig != null)
+                        DrawNetIOConfig(part.netIOConfig, center, tDef, placingRot);
+            }
+        }
+        
+        private static void DrawNetIOConfig(NetIOConfig config, IntVec3 center, ThingDef def, Rot4 rot)
+        {
+            var cells = config.GetCellsFor(rot);
+            foreach (var ioCell in cells)
+            {
+                var cell = center + ioCell.offset;
+                var drawPos = cell.ToVector3ShiftedWithAltitude(AltitudeLayer.MetaOverlays);
+
+                switch (ioCell.mode)
+                {
+                    case NetworkIOMode.Input:
+                        Graphics.DrawMesh(MeshPool.plane10, drawPos, (ioCell.direction.AsAngle - 180).ToQuat(),TeleContent.IOArrow, 0);
+                        break;
+                    case NetworkIOMode.Output:
+                        Graphics.DrawMesh(MeshPool.plane10, drawPos, ioCell.direction.AsQuat, TeleContent.IOArrow,0);
+                        break;
+                    case NetworkIOMode.TwoWay:
+                        Graphics.DrawMesh(MeshPool.plane10, drawPos, ioCell.direction.AsQuat,TeleContent.IOArrowTwoWay, 0);
+                        break;
+                }
+            }
+        }
+    }
+
+
     [HarmonyPatch(typeof(GhostDrawer))]
     [HarmonyPatch("DrawGhostThing")]
     public static class DrawGhostThingPatch
@@ -138,7 +186,8 @@ internal static class RenderPatches
             var loc = GenThing.TrueCenter(center, rot, thingDef.Size, drawAltitude.AltitudeFor());
             TDrawing.Draw(graphic, loc, rot, null, thingDef, null, extension);
 
-            foreach (var t in thingDef.comps) t.DrawGhost(center, rot, thingDef, ghostCol, drawAltitude);
+            foreach (var t in thingDef.comps) 
+                t.DrawGhost(center, rot, thingDef, ghostCol, drawAltitude);
             if (thingDef.PlaceWorkers != null)
                 foreach (var p in thingDef.PlaceWorkers)
                     p.DrawGhost(thingDef, center, rot, ghostCol);
