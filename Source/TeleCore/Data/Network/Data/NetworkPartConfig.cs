@@ -137,7 +137,14 @@ public class NetworkPartConfig : Editable
             volumeConfig.allowedValues = new ();
             foreach (var value in networkDef.ValueDefs)
             {
-                volumeConfig.allowedValues.Add(value);
+                if (value is NetworkValueDef def)
+                {
+                    volumeConfig.allowedValues.Add(def);
+                }
+                else
+                {
+                    TLog.Error($"NetworkValueDef {value.defName} is not a NetworkValueDef");
+                }
             }
         }
     }

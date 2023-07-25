@@ -2,7 +2,7 @@
 
 namespace TeleCore.FlowCore;
 
-public class FlowVolumeConfig<T> where T : IFlowValueDef
+public class FlowVolumeConfig<T> where T : FlowValueDef
 {
     //private const int AREA_VALUE = 128;
     public FlowValueFilter<T> _filter;

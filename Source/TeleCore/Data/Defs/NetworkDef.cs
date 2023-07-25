@@ -7,7 +7,7 @@ using Verse;
 namespace TeleCore;
 
 //Defines the logical ruleset for a network
-public class NetworkDef : FlowValueCollectionDef<NetworkValueDef>
+public class NetworkDef : FlowValueCollectionDef
 {
     [Unsaved] private Graphic_Linked_NetworkStructureOverlay cachedOverlayGraphic;
 

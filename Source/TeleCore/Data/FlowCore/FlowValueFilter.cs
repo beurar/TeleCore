@@ -4,7 +4,7 @@ using TeleCore.Network.Data;
 namespace TeleCore.FlowCore;
 
 public class FlowValueFilter<TValue>
-    where TValue : IFlowValueDef
+where TValue : FlowValueDef
 {
     public List<TValue> allowedValues;
 }

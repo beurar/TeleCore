@@ -3,7 +3,7 @@ using Verse;
 
 namespace TeleCore;
 
-public class NetworkValueDef : FlowValueDef<NetworkValueDef>
+public class NetworkValueDef : FlowValueDef
 {
     //
     public ThingDef? SpecialDroppedContainerDef = null;
