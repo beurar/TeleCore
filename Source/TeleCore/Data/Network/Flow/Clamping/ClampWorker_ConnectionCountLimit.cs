@@ -22,21 +22,21 @@ public class ClampWorker_ConnectionCountLimit : ClampWorker
     public override double MinDivider => 1;
     public override double MaxDivider => 1;
 
-    public override double ClampFunction(NetworkVolume t0, NetworkVolume t1, double f, ClampType type)
+    public override double ClampFunction(FlowInterface<NetworkVolume, NetworkValueDef> iface, double f, ClampType type)
     {
-        var d0 = 1d / Math.Max(1, _parentSystem.Connections[t0].Count);
-        var d1 = 1d / Math.Max(1, _parentSystem.Connections[t1].Count);
+        var d0 = 1d / Math.Max(1, _parentSystem.Connections[iface.From].Count);
+        var d1 = 1d / Math.Max(1, _parentSystem.Connections[iface.To].Count);
         double c, r;
         if (EnforceMinPipe)
         {
             if (f > 0)
             {
-                c = t0.TotalValue;
+                c = iface.From.TotalValue;
                 f = ClampFlow(c, f, d0 * c);
             }
             else if (f < 0)
             {
-                c = t1.TotalValue;
+                c = iface.To.TotalValue;
                 f = -ClampFlow(c, -f, d1 * c);
             }
         }
@@ -45,12 +45,12 @@ public class ClampWorker_ConnectionCountLimit : ClampWorker
         {
             if (f > 0)
             {
-                r = t1.MaxCapacity - t1.TotalValue;
+                r = iface.To.MaxCapacity - iface.To.TotalValue;
                 f = ClampFlow(r, f, d1 * r);
             }
             else if (f < 0)
             {
-                r = t0.MaxCapacity - t0.TotalValue;
+                r = iface.From.MaxCapacity - iface.From.TotalValue;
                 f = -ClampFlow(r, -f, d0 * r);
             }
         }

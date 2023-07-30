@@ -132,18 +132,18 @@ public class Comp_Network : FXThingComp, INetworkStructure
         _netPartByDef = new Dictionary<NetworkDef, INetworkPart>(Props.networks.Count);
         for (var i = 0; i < Props.networks.Count; i++)
         {
-            var compProps = Props.networks[i];
+            var partConfig = Props.networks[i];
             NetworkPart part = null;
-            if (!_allNetParts.Any(p => p.Config.networkDef == compProps.networkDef))
+            if (!_allNetParts.Any(p => p.Config.networkDef == partConfig.networkDef))
             {
-                part = (NetworkPart) Activator.CreateInstance(compProps.workerType, this, compProps);
+                part = (NetworkPart) Activator.CreateInstance(partConfig.workerType, this, partConfig);
                 _allNetParts.Add(part);
             }
 
             if (part == null)
                 part = _allNetParts[i];
 
-            _netPartByDef.Add(compProps.networkDef, part);
+            _netPartByDef.Add(partConfig.networkDef, part);
             part.PartSetup(respawningAfterLoad);
         }
 
@@ -232,10 +232,13 @@ public class Comp_Network : FXThingComp, INetworkStructure
         yield return NetworkGizmo;
 
         foreach (var networkPart in NetworkParts)
-        foreach (var partGizmo in networkPart.GetPartGizmos())
-            yield return partGizmo;
+        {
+            foreach (var partGizmo in networkPart.GetPartGizmos())
+                yield return partGizmo;
+        }
 
-        foreach (var g in base.CompGetGizmosExtra()) yield return g;
+        foreach (var g in base.CompGetGizmosExtra()) 
+            yield return g;
 
         if (!DebugSettings.godMode) yield break;
 

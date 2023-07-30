@@ -218,7 +218,7 @@ public class NetworkInfoView
                 Widgets.DrawWindowBackground(rect);
                 TWidgets.DrawColoredBox(readoutRect, TColor.BlueHueBG, TColor.MenuSectionBGBorderColor, 1);
 
-                if (_part.Volume.AcceptedTypes.NullOrEmpty())
+                if (_part.Volume.AllowedValues.NullOrEmpty())
                     return;
 
                 //
@@ -231,7 +231,7 @@ public class NetworkInfoView
                 var scrollOutRect = new Rect(listingRect.x, listingRect.y + listing.curY, listingRect.width,
                     listingRect.height - listing.curY);
                 var scrollViewRect = new Rect(listingRect.x, listingRect.y + listing.curY, listingRect.width,
-                    (_part.Volume.AcceptedTypes.Count + 1) * Text.LineHeight);
+                    (_part.Volume.AllowedValues.Count + 1) * Text.LineHeight);
 
                 Widgets.DrawBoxSolid(scrollOutRect, TColor.BGDarker);
                 Widgets.BeginScrollView(scrollOutRect, ref filterScroller, scrollViewRect, false);
@@ -325,12 +325,12 @@ public class NetworkInfoView
             if (_floatMenuOptions == null)
             {
                 _floatMenuOptions = new List<FloatMenuOption>();
-                var part = (float) (_part.Volume.MaxCapacity / (float) _part.Volume.AcceptedTypes.Count);
+                var part = (float) (_part.Volume.MaxCapacity / (float) _part.Volume.AllowedValues.Count);
                 _floatMenuOptions.Add(new FloatMenuOption("Add ALL", delegate { Debug_AddAll(part); }));
 
                 _floatMenuOptions.Add(new FloatMenuOption("Remove ALL", Debug_Clear));
 
-                foreach (var type in _part.Volume.AcceptedTypes)
+                foreach (var type in _part.Volume.AllowedValues)
                     _floatMenuOptions.Add(new FloatMenuOption($"Add {type}", delegate { Debug_AddType(type, part); }));
             }
 
@@ -341,7 +341,7 @@ public class NetworkInfoView
     [SyncMethod]
     private void Debug_AddAll(double part)
     {
-        foreach (var type in NetworkVolume.AcceptedTypes)
+        foreach (var type in NetworkVolume.AllowedValues)
             NetworkVolume.TryAdd(type, part);
     }
 

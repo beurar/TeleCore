@@ -115,7 +115,7 @@ public class Gizmo_NetworkOverview : Gizmo, IDisposable
         var mainRect = new Rect(pos, size);
 
         //Draw Part Selection
-        if (_viewByPart.Count > 1)
+        if (_viewByPart.Count >= 1)
             DrawPartSelection(mainRect);
 
         //Draw Extendo Tabs

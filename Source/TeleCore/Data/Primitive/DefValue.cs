@@ -9,7 +9,7 @@ namespace TeleCore.Primitive;
 /// <typeparam name="TValue">The numeric Type of the value.</typeparam>
 public struct DefValue<TDef, TValue>
     where TDef : Def
-    where TValue : struct
+    where TValue : unmanaged
 {
     public TDef Def { get; }
     public Numeric<TValue> Value { get; set; }

@@ -1,9 +1,41 @@
 ﻿using System;
 using System.Collections.Generic;
+using TeleCore.FlowCore.Events;
 using TeleCore.Network.Flow.Clamping;
 using TeleCore.Primitive;
+using Verse;
 
 namespace TeleCore.FlowCore;
+
+public struct TwoWayKey<TAttach>
+{
+    private TAttach A { get; set; }
+    private TAttach B { get; set; }
+
+    public static implicit operator TwoWayKey<TAttach>((TAttach, TAttach) tuple)
+    {
+        return new TwoWayKey<TAttach>(tuple.Item1, tuple.Item2);
+    }
+    
+    private TwoWayKey(TAttach a, TAttach b)
+    {
+        A = a;
+        B = b;
+    }
+    
+    public override int GetHashCode()
+    {
+        unchecked
+        {
+            var hash = 17;
+
+            hash = hash * 31 + (A == null ? 0 : A.GetHashCode());
+            hash = hash * 31 + (B == null ? 0 : B.GetHashCode());
+
+            return hash;
+        }
+    }
+}
 
 public abstract class FlowSystem<TAttach, TVolume, TValueDef> : IDisposable
 where TValueDef : FlowValueDef
@@ -11,8 +43,9 @@ where TVolume : FlowVolume<TValueDef>
 {
     private readonly List<TVolume> _volumes;
     private readonly List<FlowInterface<TVolume, TValueDef>> _interfaces;
-    private Dictionary<TAttach, TVolume> _relations;
-    private Dictionary<TVolume, List<FlowInterface<TVolume, TValueDef>>> _connections;
+    private readonly Dictionary<TAttach, TVolume> _relations;
+    private readonly Dictionary<TVolume, List<FlowInterface<TVolume, TValueDef>>> _connections;
+    private readonly Dictionary<TwoWayKey<TAttach>, FlowInterface<TVolume, TValueDef>> _interfaceLookUp;
     private DefValueStack<TValueDef, double> _totalStack;
     
     public List<TVolume> Volumes => _volumes;
@@ -28,6 +61,7 @@ where TVolume : FlowVolume<TValueDef>
         _interfaces = new List<FlowInterface<TVolume, TValueDef>>();
         _relations = new Dictionary<TAttach, TVolume>();
         _connections = new Dictionary<TVolume, List<FlowInterface<TVolume, TValueDef>>>();
+        _interfaceLookUp = new();
     }
     
     public void Dispose()
@@ -36,10 +70,36 @@ where TVolume : FlowVolume<TValueDef>
         Relations.Clear();
         Connections.Clear();
     }
+
+    protected TVolume GenerateForOrGet(TAttach part)
+    {
+        if (Relations.TryGetValue(part, out var volume))
+        {
+            return volume;
+        }
+        
+        volume = CreateVolume(part);
+        volume.FlowEvent += OnFlowBoxEvent;
+        Volumes.Add(volume);
+        Relations.Add(part, volume);
+        return volume;
+    }
+
+    protected abstract TVolume CreateVolume(TAttach part);
+
+    protected virtual void OnFlowBoxEvent(object sender, FlowEventArgs e)
+    {
+    }
     
     protected virtual void PreTickProcessor(int tick)
     {
-        
+    }
+
+    //TODO: Add in custom flowsystems
+    public void Notify_CreateInterface( TwoWayKey<TAttach> connectors, FlowInterface<TVolume, TValueDef> iface)
+    {
+        _interfaces.Add(iface);
+        _interfaceLookUp.Add(connectors, iface);
     }
     
     public void Tick(int tick)
@@ -50,7 +110,7 @@ where TVolume : FlowVolume<TValueDef>
         {
             _volume.PrevStack = _volume.Stack;
         }
-
+        
         foreach (var conn in _interfaces)
         {
             UpdateFlow(conn);
@@ -66,28 +126,26 @@ where TVolume : FlowVolume<TValueDef>
             UpdateFlowRate(volume);
         }
     }
-
-    public abstract double FlowFunc(TVolume from, TVolume to, double flow);
-
-    public abstract double ClampFunc(TVolume from, TVolume to, double flow, ClampType clampType);
-
-    public void UpdateFlow(FlowInterface<TVolume, TValueDef> connection)
+    
+    public abstract double FlowFunc(FlowInterface<TVolume, TValueDef> connection, double flow);
+    public abstract double ClampFunc(FlowInterface<TVolume, TValueDef> connection, double flow, ClampType clampType);
+    
+    public void UpdateFlow(FlowInterface<TVolume, TValueDef> iface)
     {
-        if (connection.PassPercent <= 0)
+        if (iface.PassPercent <= 0)
         {
-            connection.NextFlow = 0;
-            connection.Move = 0;
+            iface.NextFlow = 0;
+            iface.Move = 0;
             return;
         }
             
-        double flow = connection.NextFlow;      
-        var from = connection.From;
-        var to = connection.To;
-        flow = FlowFunc(from, to, flow);
-        connection.UpdateBasedOnFlow(flow);
+        var flow = iface.NextFlow;      
+
+        flow = FlowFunc(iface, flow);
+        iface.UpdateBasedOnFlow(flow);
         flow = Math.Abs(flow);
-        connection.NextFlow = ClampFunc(from, to, flow, ClampType.FlowSpeed);
-        connection.Move = ClampFunc( from, to, flow, ClampType.FluidMove);
+        iface.NextFlow = ClampFunc(iface, flow, ClampType.FlowSpeed);
+        iface.Move = ClampFunc(iface, flow, ClampType.FluidMove);
     }
     
     private void UpdateContent(FlowInterface<TVolume, TValueDef> conn)
@@ -103,7 +161,8 @@ where TVolume : FlowVolume<TValueDef>
         double fp = 0;
         double fn = 0;
 
-        foreach (var conn in _connections[fb])
+        if (!_connections.TryGetValue(fb, out var conns)) return;
+        foreach (var conn in conns)
             Add(conn.Move);
 
         fb.FlowRate = Math.Max(fp, fn);

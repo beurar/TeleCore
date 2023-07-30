@@ -8,13 +8,21 @@ public class PressureWorker_WaveEquationDamping3 : PressureWorker
     public override string Description => "Model that adds friction by making fluid stick to the pipe surface.";
 
     //Note: Friction is key!!
-    public override double Friction => 0.01f;
+    public override double Friction => 0.1f;
     public override double CSquared => 0.03;
     public double DampFriction => 0.01;
 
-    public override double FlowFunction(NetworkVolume from, NetworkVolume to, double f)
+    public override double FlowFunction(FlowInterface<NetworkVolume, NetworkValueDef> iface, double f)
     {
+        var from = iface.From;
+        var to = iface.To;
         var dp = PressureFunction(from) - PressureFunction(to);
+
+        if (iface.Mode == InterfaceFlowMode.FromTo && dp <= 0)
+        {
+            return 0;
+        }
+        
         var src = f > 0 ? from : to;
         var dc = Math.Max(0, src.PrevStack.TotalValue - src.TotalValue);
         f += dp * CSquared;

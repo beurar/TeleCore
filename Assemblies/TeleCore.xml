@@ -27,16 +27,16 @@
                 If set on a projectile's def, on Impact, all of these effects will be created - if available.
             </summary>
         </member>
+        <member name="P:TeleCore.Network.Data.NetworkValueFilter.AllowedValuesByRole">
+            <summary>
+                Provides sub-managed values by role, if set in the networkRole props.
+            </summary>
+        </member>
         <member name="T:TeleCore.Network.Data.NetworkValueFilterByRole">
             <summary>
                 <para>Allows to set a network value filter for a specific role.</para>
                 <para>For example: Storage role allows to contain type A, B, C</para>
                 <para>While Requester role only allows to request B, C</para>
-            </summary>
-        </member>
-        <member name="P:TeleCore.Network.Data.NetworkValueFilter.AllowedValuesByRole">
-            <summary>
-                Provides sub-managed values by role, if set in the networkRole props.
             </summary>
         </member>
         <member name="P:TeleCore.Network.Flow.Clamping.ClampWorker.EnforceMinPipe">
@@ -95,14 +95,14 @@
             <summary>
             </summary>
         </member>
+        <member name="T:TeleCore.Network.PipeNetworkManager">
+            <summary>
+                Creates, Modifies and Destroys PipeNetworks of the same NetworkDef.
+            </summary>
+        </member>
         <member name="M:TeleCore.Network.PipeNetworkMapInfo.HasConnectionAtFor(Verse.Thing,Verse.IntVec3)">
             <summary>
                 This checks whether any directly connected parts exist for Linking Graphics.
-            </summary>
-        </member>
-        <member name="T:TeleCore.Network.PipeSystem">
-            <summary>
-                Creates, Modifies and Destroys PipeNetworks of the same NetworkDef.
             </summary>
         </member>
         <member name="M:TeleCore.Network.Utility.IOUtils.RotateIOCells(TeleCore.Network.IO.IOCell[],Verse.Rot4,Verse.IntVec2)">

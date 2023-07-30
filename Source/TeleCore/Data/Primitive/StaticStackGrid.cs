@@ -4,7 +4,7 @@ using Verse;
 
 namespace TeleCore.Primitive;
 
-public unsafe struct StaticStack<TDef, TValue> where TValue : struct where TDef : Def
+public unsafe struct StaticStack<TDef, TValue> where TValue : unmanaged where TDef : Def
 {
     private DefValue<TDef, TValue>* stackPtr;
     private NativeArray<DefValue<TDef, TValue>> stackData;
@@ -24,7 +24,9 @@ public unsafe struct StaticStack<TDef, TValue> where TValue : struct where TDef 
     }
 }
 
-public unsafe class StaticStackGrid<TDef, TValue> where TValue : struct where TDef : Def
+public unsafe class StaticStackGrid<TDef, TValue> 
+    where TValue : unmanaged 
+    where TDef : Def
 {
     private int _gridSize;
     private TDef[] _defArray;

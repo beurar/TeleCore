@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using TeleCore.Network.Data;
 using TeleCore.Network.IO;
 using Verse;
@@ -30,7 +31,10 @@ public struct NetEdge : IEdge<NetworkPart>
     #endregion
 
     public bool BiDirectional => FromIO == NetworkIOMode.TwoWay && ToIO == NetworkIOMode.TwoWay;
-    public bool IsValid => From != null && To != null;
+
+    public bool IsValid => From != null && To != null && 
+                           (FromIO & NetworkIOMode.Output) == NetworkIOMode.Output &&
+                           (ToIO & NetworkIOMode.Input) == NetworkIOMode.Input;
 
     public NetEdge Reverse => new(To, From, ToPos, FromPos, FromIO, ToIO, Length);
 
@@ -50,8 +54,7 @@ public struct NetEdge : IEdge<NetworkPart>
         To = to;
     }
 
-    public NetEdge(INetworkPart from, INetworkPart to, IntVec3 fromPos, IntVec3 toPos, NetworkIOMode fromMode,
-        NetworkIOMode toMode, int length)
+    public NetEdge(INetworkPart from, INetworkPart to, IntVec3 fromPos, IntVec3 toPos, NetworkIOMode fromMode, NetworkIOMode toMode, int length)
     {
         From = (NetworkPart) from;
         To = (NetworkPart) to;
@@ -60,5 +63,16 @@ public struct NetEdge : IEdge<NetworkPart>
         FromIO = fromMode;
         ToIO = toMode;
         Length = length;
+        
+        //Correction
+        if (!BiDirectional)
+        {
+            if ((FromIO & NetworkIOMode.Input) == NetworkIOMode.Input && (ToIO & NetworkIOMode.Output) == NetworkIOMode.Output)
+            {
+                (From, To) = (To, From);
+                (FromIO, ToIO) = (ToIO, FromIO);
+                (FromPos, ToPos) = (ToPos, FromPos);
+            }
+        }
     }
 }

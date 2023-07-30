@@ -10,7 +10,7 @@ namespace TeleCore.Network;
 /// <summary>
 ///     Creates, Modifies and Destroys PipeNetworks of the same NetworkDef.
 /// </summary>
-public class PipeSystem
+public class PipeNetworkManager
 {
     //Debug
     internal static bool DEBUG_DrawNetwork = true;
@@ -24,7 +24,7 @@ public class PipeSystem
     
     private readonly List<DelayedNetworkAction> delayedActions = new();
 
-    public PipeSystem(Map map, NetworkDef networkDef)
+    public PipeNetworkManager(Map map, NetworkDef networkDef)
     {
         _def = networkDef;
         _map = map;
@@ -270,11 +270,15 @@ public class PipeSystem
     }*/
 
     #region TickUpdates
-
-    public void Tick(int tick)
+    
+    public void Tick(bool shouldTick, int tick)
     {
-        foreach (var network in _allNetworks) 
-            network.Tick(tick);
+        foreach (var network in _allNetworks)
+        {
+            network.TickSystem(tick);
+            if(shouldTick)
+                network.Tick(tick);
+        }
     }
 
     public void Draw()
@@ -286,12 +290,12 @@ public class PipeSystem
         //
         if (DEBUG_DrawNetwork)
         {
-            for (var i = 0; i < _lookUpGrid.Length; i++)
-            {
-                var network = _lookUpGrid[i];
-                if (network == null) continue;
-                CellRenderer.RenderCell(_map.cellIndices.IndexToCell(i), network.GetHashCode()/10000f);
-            }
+            // for (var i = 0; i < _lookUpGrid.Length; i++)
+            // {
+            //     var network = _lookUpGrid[i];
+            //     if (network == null) continue;
+            //     CellRenderer.RenderCell(_map.cellIndices.IndexToCell(i), network.GetHashCode()/10000f);
+            // }
         }
     }
 

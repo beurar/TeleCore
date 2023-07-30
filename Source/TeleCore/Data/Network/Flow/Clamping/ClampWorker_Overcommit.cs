@@ -1,4 +1,6 @@
-﻿namespace TeleCore.Network.Flow.Clamping;
+﻿using TeleCore.FlowCore;
+
+namespace TeleCore.Network.Flow.Clamping;
 
 public class ClampWorker_Overcommit : ClampWorker
 {
@@ -11,8 +13,12 @@ public class ClampWorker_Overcommit : ClampWorker
     public override double MinDivider => 4;
     public override double MaxDivider => 1;
 
-    public override double ClampFunction(NetworkVolume t0, NetworkVolume t1, double f, ClampType type)
+    //FlowInterface<NetworkVolume, NetworkValueDef> iface
+    public override double ClampFunction(FlowInterface<NetworkVolume, NetworkValueDef> iface, double f, ClampType type)
     {
+        NetworkVolume t0 = iface.From;
+        NetworkVolume t1 = iface.To;
+        
         double d, c, r;
         if (EnforceMinPipe)
         {

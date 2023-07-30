@@ -16,7 +16,7 @@ public class Dialog_DebugRoomTrackers : Window
     private RoomTracker SelTracker { get; set; }
     private RoomComponent SelComponent { get; set; }
 
-    public override Vector2 InitialSize => new Vector2(800, 512);
+    public override Vector2 InitialSize => new Vector2(1200, 512);
 
     public Dialog_DebugRoomTrackers()
     {
@@ -26,7 +26,9 @@ public class Dialog_DebugRoomTrackers : Window
     
     public override void DoWindowContents(Rect inRect)
     {
-        inRect = inRect.ContractedBy(5);
+        var compDebugRect = inRect.RightPartPixels(400).ContractedBy(5);
+        inRect = inRect.LeftPartPixels(800).ContractedBy(5);
+        
         GridLayout layout = new GridLayout(inRect, 6, 6);
         var metaRect = layout.GetCellRect(0, 0, 2, 2);
         var selRect = layout.GetCellRect(0, 2, 2, 3);
@@ -200,8 +202,10 @@ public class Dialog_DebugRoomTrackers : Window
                 }
             }
             list.EndSection(links);
-            
             list.End();
+            
+            //
+            SelComponent.Draw_DebugExtra(compDebugRect);
         }
         
         Widgets.DrawMenuSection(debugRect);

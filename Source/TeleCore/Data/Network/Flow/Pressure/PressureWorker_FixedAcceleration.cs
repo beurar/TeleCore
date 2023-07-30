@@ -1,4 +1,6 @@
-﻿namespace TeleCore.Network.Flow.Pressure;
+﻿using TeleCore.FlowCore;
+
+namespace TeleCore.Network.Flow.Pressure;
 
 public class PressureWorker_FixedAcceleration : PressureWorker
 {
@@ -11,8 +13,12 @@ public class PressureWorker_FixedAcceleration : PressureWorker
     public double Acceleration => 5;
     public double Inertia => 0.9;
 
-    public override double FlowFunction(NetworkVolume from, NetworkVolume to, double f)
+    //
+    public override double FlowFunction(FlowInterface<NetworkVolume, NetworkValueDef> iface, double f)
     {
+        NetworkVolume from = iface.From;
+        NetworkVolume to = iface.To;
+        
         f *= Inertia;
         f += (PressureFunction(from) - PressureFunction(to) > 0 ? 1 : -1) * Acceleration;
         return f;

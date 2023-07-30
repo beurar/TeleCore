@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using Verse;
 
-namespace TeleCore.FlowCore;
+namespace TeleCore;
 
 public class FlowValueCollectionDef : Def
 {
@@ -11,5 +11,13 @@ public class FlowValueCollectionDef : Def
     public void Notify_ResolvedFlowValueDef(FlowValueDef def)
     {
         ValueDefs.Add(def);
+    }
+
+    public override void ResolveReferences()
+    {
+        foreach (var valueDef in ValueDefs)
+        {
+            valueDef.collectionDef = this;
+        }
     }
 }

@@ -1,5 +1,6 @@
 ﻿using RimWorld;
 using TeleCore.Data.Events;
+using TeleCore.Static;
 using UnityEngine;
 using Verse;
 
@@ -44,6 +45,20 @@ public class Comp_Network_Valve : Comp_Network
         else
         {
             if (_curState < _valveClosedState) _curState += radsPerTick;
+        }
+    }
+
+    public override void Notify_SignalReceived(Signal signal)
+    {
+        base.Notify_SignalReceived(signal);
+        if (signal.tag == KnownCompSignals.FlickedOn)
+        {
+            
+        }
+
+        if (signal.tag == KnownCompSignals.FlickedOff)
+        {
+            
         }
     }
 }

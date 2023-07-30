@@ -223,10 +223,11 @@ internal static class UIPatches
             Func<Gizmo, bool> customActivatorFunc = null, Func<Gizmo, bool> highlightFunc = null,
             Func<Gizmo, bool> lowlightFunc = null)
         {
-            var network = (Gizmo_NetworkOverview) gizmos.FirstOrFallback(g => g is Gizmo_NetworkOverview);
-            if (network != null) startX = network.GetWidthSpecial() + startX;
-            //GizmoGridDrawer.DrawGizmoGrid(gizmos, network.GetWidth(0) + startX, out mouseoverGizmo, customActivatorFunc, highlightFunc, lowlightFunc);
-            //return false;
+            var array = gizmos as Gizmo[] ?? gizmos.ToArray();
+            if (array.FirstOrFallback(g => g is Gizmo_NetworkOverview) is Gizmo_NetworkOverview network)
+            {
+                startX = network.GetWidthSpecial() + startX;
+            }
             return true;
         }
     }

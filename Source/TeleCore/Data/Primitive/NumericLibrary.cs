@@ -9,7 +9,7 @@ using Verse;
 namespace TeleCore.Primitive;
 
 [StaticConstructorOnStartup]
-public static class NumericLibrary<T> where T : struct
+public static class NumericLibrary<T> where T : unmanaged
 {
     public static readonly Func<T, T, T> Addition;
     public static readonly Func<T, T, T> Subtraction;

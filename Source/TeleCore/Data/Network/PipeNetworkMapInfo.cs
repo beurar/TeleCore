@@ -8,22 +8,22 @@ public class PipeNetworkMapInfo : MapInformation
     [TweakValue("Network")] public static int NetworkTickInterval = 50;
 
     //
-    private readonly Dictionary<NetworkDef, PipeSystem> _systemsByType;
+    private readonly Dictionary<NetworkDef, PipeNetworkManager> _systemsByType;
 
     public PipeNetworkMapInfo(Map map) : base(map)
     {
         //GlobalEventHandler.ThingSpawned += Notify_NewNetworkStructureSpawned;
-        _systemsByType = new Dictionary<NetworkDef, PipeSystem>();
+        _systemsByType = new Dictionary<NetworkDef, PipeNetworkManager>();
     }
 
-    public PipeSystem this[NetworkDef def] => _systemsByType.TryGetValue(def, out var value) ? value : null;
+    public PipeNetworkManager this[NetworkDef def] => _systemsByType.TryGetValue(def, out var value) ? value : null;
 
-    private PipeSystem GetOrCreateNewNetworkSystemFor(NetworkDef networkDef)
+    private PipeNetworkManager GetOrCreateNewNetworkSystemFor(NetworkDef networkDef)
     {
         if (_systemsByType.TryGetValue(networkDef, out var network))
             return network;
 
-        var networkMaster = new PipeSystem(Map, networkDef);
+        var networkMaster = new PipeNetworkManager(Map, networkDef);
         _systemsByType.Add(networkDef, networkMaster);
         return networkMaster;
     }
@@ -63,10 +63,11 @@ public class PipeNetworkMapInfo : MapInformation
     public override void TeleTick()
     {
         var tick = Find.TickManager.TicksAbs;
-        if (TFind.TickManager.CurrentMapTick % NetworkTickInterval == 0)
-            //TLog.Message($"Ticking all networks | {TFind.TickManager.CurrentTick}");
-            foreach (var system in _systemsByType)
-                system.Value.Tick(tick);
+        var shouldTick = TFind.TickManager.CurrentMapTick % NetworkTickInterval == 0;
+        foreach (var system in _systemsByType)
+        {
+            system.Value.Tick(shouldTick, tick);
+        }
     }
 
     public override void Update()

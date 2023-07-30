@@ -23,7 +23,7 @@ public class FlowVolume<T> : INotifyFlowEvent where T : FlowValueDef
         set => prevStack = value;
     }
     
-    public IList<T> AcceptedTypes => _config.allowedValues;
+    public IList<T> AllowedValues => _config.AllowedValues;
     
     public double FlowRate { get; set; }
     public double TotalValue => mainStack.TotalValue;

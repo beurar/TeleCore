@@ -45,7 +45,7 @@ public class NetworkPart : INetworkPart
 
     public NetworkPartSet AdjacentSet => _adjacentSet;
 
-    public NetworkVolume Volume => Network.NetworkSystem.Relations.TryGetValue(this) ?? null;
+    public NetworkVolume Volume => Network?.NetworkSystem?.Relations?.TryGetValue(this) ?? null;
 
     public bool IsController => (Config.roles | NetworkRole.Controller) == NetworkRole.Controller;
 
@@ -183,9 +183,19 @@ public class NetworkPart : INetworkPart
 
     public void Draw()
     {
-        //TODO: Draw stuff
+        if (Volume == null) return;
+        GenDraw.FillableBarRequest r = default(GenDraw.FillableBarRequest);
+        r.center = Parent.Thing.Position.ToVector3() + new Vector3(0.075f, AltitudeLayer.MetaOverlays.AltitudeFor(), 0.75f);
+        r.size = new Vector2(1.5f, 0.15f);
+        r.fillPercent = (float)(Volume?.FillPercent ?? 0f);
+        r.filledMat = SolidColorMaterials.SimpleSolidColorMaterial(Color.green);
+        r.unfilledMat =  SolidColorMaterials.SimpleSolidColorMaterial(Color.grey);
+        r.margin = 0f;
+        r.rotation = Rot4.East;
+        GenDraw.DrawFillableBar(r);
+
     }
-    
+
     public void Print(SectionLayer layer)
     {
         Config.networkDef.TransmitterGraphic?.Print(layer, Thing, 0, this);

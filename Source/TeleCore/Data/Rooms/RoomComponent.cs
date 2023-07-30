@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using RimWorld;
+using UnityEngine;
 using Verse;
 
 namespace TeleCore;
@@ -215,12 +216,16 @@ public abstract class RoomComponent
     public virtual void Draw()
     {
     }
+
+    public virtual void Draw_DebugExtra(Rect inRect)
+    {
+    }
     
     internal void DrawDebug()
     {
         _compNeighborSet.DrawDebug(this);
     }
-
+    
     public override string ToString()
     {
         return $"{GetType().Name}[{Room.ID}]";

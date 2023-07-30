@@ -15,7 +15,7 @@ public enum FlowState
 
 public struct FlowResult<TDef, TValue>
     where TDef : FlowValueDef
-    where TValue : struct
+    where TValue : unmanaged
 {
     public DefValueStack<TDef, TValue> Actual { get; private set; }
     public Numeric<TValue> Desired { get; private set; }

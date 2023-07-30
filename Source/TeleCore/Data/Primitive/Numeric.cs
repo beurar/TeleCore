@@ -1,7 +1,7 @@
 ﻿
 namespace TeleCore.Primitive;
 
-public struct Numeric<TValue> where TValue : struct
+public struct Numeric<TValue> where TValue : unmanaged
 {
     private TValue _number;
     

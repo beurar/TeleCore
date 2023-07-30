@@ -23,42 +23,42 @@ public class NetworkSystem : FlowSystem<NetworkPart, NetworkVolume, NetworkValue
         ClampWorker = new ClampWorker_Overcommit();
         PressureWorker = new PressureWorker_WaveEquationDamping3();
     }
+    
+    protected override NetworkVolume CreateVolume(NetworkPart part)
+    {
+        return new NetworkVolume(part.Config.volumeConfig);
+    }
 
     internal void Notify_Populate(NetGraph graph)
     {
-        foreach (var (node, adjacent) in graph.AdjacencyList)
+        foreach (var edge in graph.Edges)
         {
-            var flowBox = GenerateForOrGet(node);
-            var list = new List<FlowInterface<NetworkVolume, NetworkValueDef>>();
-            for (var i = 0; i < adjacent.Count; i++)
-            {
-                var nghb = adjacent[i];
-                var fb2 = GenerateForOrGet(nghb.Item2.Value);
-                var conn = new FlowInterface<NetworkVolume, NetworkValueDef>(flowBox, fb2);
-                list.Add(conn);
-            }
+            var fb1 = GenerateForOrGet(edge.From);
+            var fb2 = GenerateForOrGet(edge.To);
+            var mode = edge.BiDirectional ? InterfaceFlowMode.BiDirectional : InterfaceFlowMode.FromTo;
+            var iFace = new FlowInterface<NetworkVolume, NetworkValueDef>(fb1, fb2,mode);
+            Notify_CreateInterface((edge.From, edge.To), iFace);
 
-            Connections.Add(flowBox, list);
+            if (!Connections.TryGetValue(fb1, out var list1))
+            {
+                Connections.Add(fb1, new List<FlowInterface<NetworkVolume, NetworkValueDef>> { iFace });
+            }
+            else
+            {
+                list1.Add(iFace);
+            }
+            
+            if (!Connections.TryGetValue(fb2, out var list2))
+            {
+                Connections.Add(fb2, new List<FlowInterface<NetworkVolume, NetworkValueDef>> { iFace });
+            }
+            else
+            {
+                list2.Add(iFace);
+            }
         }
     }
     
-    private NetworkVolume GenerateForOrGet(NetworkPart part)
-    {
-        if (Relations.TryGetValue(part, out var fb))
-        {
-            return fb;
-        }
-        
-        fb = new NetworkVolume(part.Config.volumeConfig);
-        fb.FlowEvent += OnFlowBoxEvent;
-        Relations.Add(part, fb);
-        return fb;
-    }
-
-    private void OnFlowBoxEvent(object sender, FlowEventArgs e)
-    {
-    }
-
     public double TotalValueFor(NetworkValueDef def)
     {
         return TotalStack[def].Value;
@@ -98,13 +98,13 @@ public class NetworkSystem : FlowSystem<NetworkPart, NetworkVolume, NetworkValue
     {
     }
 
-    public override double FlowFunc(NetworkVolume from, NetworkVolume to, double flow)
+    public override double FlowFunc(FlowInterface<NetworkVolume, NetworkValueDef> iface, double flow)
     {
-        return PressureWorker.FlowFunction(from, to, flow);
+        return PressureWorker.FlowFunction(iface, flow);
     }
 
-    public override double ClampFunc(NetworkVolume from, NetworkVolume to, double flow, ClampType clampType)
+    public override double ClampFunc(FlowInterface<NetworkVolume, NetworkValueDef> iface, double flow, ClampType clampType)
     {
-        return ClampWorker.ClampFunction(from, to, flow, clampType);
+        return ClampWorker.ClampFunction(iface, flow, clampType);
     }
 }

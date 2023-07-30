@@ -27,7 +27,7 @@
         <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
         <Version>1.2.5</Version>
         <SignAssembly>False</SignAssembly>
-        <PackageVersion>1.8.6.9</PackageVersion>
+        <PackageVersion>1.8.7.4</PackageVersion>
         <Nullable>enable</Nullable>
     </PropertyGroup>
 
@@ -66,6 +66,9 @@
         <Reference Include="HotSwap">
             <HintPath>..\..\..\HotSwap\Assemblies\HotSwap.dll</HintPath>
             <Private>False</Private>
+        </Reference>
+        <Reference Include="System.Runtime.CompilerServices.Unsafe">
+          <HintPath>..\..\..\..\..\..\..\..\..\Users\maxim\Desktop\Unity Project\Derevnia\Library\PackageCache\com.unity.burst@1.8.2\.Runtime\System.Runtime.CompilerServices.Unsafe.dll</HintPath>
         </Reference>
     </ItemGroup>
     

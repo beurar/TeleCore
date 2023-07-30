@@ -1,4 +1,6 @@
-﻿namespace TeleCore.Network.Flow.Pressure;
+﻿using TeleCore.FlowCore;
+
+namespace TeleCore.Network.Flow.Pressure;
 
 public abstract class PressureWorker
 {
@@ -7,7 +9,7 @@ public abstract class PressureWorker
     public abstract double CSquared { get; }
     public abstract double Friction { get; }
 
-    public abstract double FlowFunction(NetworkVolume from, NetworkVolume to, double f);
+    public abstract double FlowFunction(FlowInterface<NetworkVolume, NetworkValueDef> iface, double f);
 
     public abstract double PressureFunction(NetworkVolume t);
     

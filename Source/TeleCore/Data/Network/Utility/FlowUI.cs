@@ -98,7 +98,7 @@ public static class FlowUI<T> where T : FlowValueDef
         
         if (tempList.Count == 0)
         {
-            var part = (int)(fv.MaxCapacity / fv.AcceptedTypes.Count);
+            var part = (int)(fv.MaxCapacity / fv.AllowedValues.Count);
             tempList.Add(new FloatMenuOption("Add ALL", delegate
             {
                 Debug_AddAll(fv, part);
@@ -106,7 +106,7 @@ public static class FlowUI<T> where T : FlowValueDef
 
             tempList.Add(new FloatMenuOption("Remove ALL", () => Debug_Clear(fv)));
 
-            foreach (var type in fv.AcceptedTypes)
+            foreach (var type in fv.AllowedValues)
             {
                 tempList.Add(new FloatMenuOption($"Add {type}", delegate { Debug_AddType(fv, type, part); }));
             }
@@ -118,7 +118,7 @@ public static class FlowUI<T> where T : FlowValueDef
     [SyncMethod]
     private static void Debug_AddAll(FlowVolume<T> fb, double part)
     {
-        foreach (var type in fb.AcceptedTypes)
+        foreach (var type in fb.AllowedValues)
             fb.TryAdd(type, part);
     }
 

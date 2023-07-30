@@ -71,9 +71,13 @@ public class PipeNetwork : IDisposable
     }
     */
 
-    internal void Tick(int tick)
+    public void TickSystem(int tick)
     {
         NetworkSystem.Tick(tick);
+    }
+    
+    internal void Tick(int tick)
+    {
         foreach (var part in _partSet.TickSet)
             part.Tick();
     }

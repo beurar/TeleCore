@@ -1,4 +1,6 @@
-﻿using HarmonyLib;
+﻿using System;
+using System.Runtime.CompilerServices;
+using HarmonyLib;
 using RimWorld;
 using TeleCore.Network.IO;
 using UnityEngine;

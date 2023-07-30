@@ -1,4 +1,6 @@
-﻿namespace TeleCore.Network.Flow.Clamping;
+﻿using TeleCore.FlowCore;
+
+namespace TeleCore.Network.Flow.Clamping;
 
 public abstract class ClampWorker
 {
@@ -29,7 +31,7 @@ public abstract class ClampWorker
     /// </summary>
     public abstract double MaxDivider { get; }
 
-    public abstract double ClampFunction(NetworkVolume t0, NetworkVolume t1, double f, ClampType type);
+    public abstract double ClampFunction(FlowInterface<NetworkVolume, NetworkValueDef> iface, double f, ClampType type);
 
     protected double ClampFlow(double content, double flow, double limit)
     {

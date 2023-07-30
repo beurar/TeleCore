@@ -8,7 +8,7 @@ namespace TeleCore;
 
 public class DefValueLoadable<TDef, TValue> : IExposable 
     where TDef : Def 
-    where TValue : struct
+    where TValue : unmanaged
 {
     private TDef def;
     private Numeric<TValue> value;

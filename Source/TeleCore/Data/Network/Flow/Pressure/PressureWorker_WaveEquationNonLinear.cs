@@ -1,4 +1,6 @@
-﻿namespace TeleCore.Network.Flow.Pressure;
+﻿using TeleCore.FlowCore;
+
+namespace TeleCore.Network.Flow.Pressure;
 
 public class PressureWorker_WaveEquationNonLinear : PressureWorker
 {
@@ -7,8 +9,11 @@ public class PressureWorker_WaveEquationNonLinear : PressureWorker
     public override double Friction => 0.001;
     public override double CSquared => 0.01;
 
-    public override double FlowFunction(NetworkVolume from, NetworkVolume to, double f)
+    public override double FlowFunction(FlowInterface<NetworkVolume, NetworkValueDef> iface, double f)
     {
+        NetworkVolume from = iface.From;
+        NetworkVolume to = iface.To;
+        
         f += (PressureFunction(from) - PressureFunction(to)) * CSquared;
         f *= 1 - Friction;
         return f;
