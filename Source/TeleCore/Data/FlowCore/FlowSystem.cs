@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using TeleCore.FlowCore.Events;
 using TeleCore.Network.Flow.Clamping;
 using TeleCore.Primitive;
@@ -100,6 +101,21 @@ where TVolume : FlowVolume<TValueDef>
     {
         _interfaces.Add(iface);
         _interfaceLookUp.Add(connectors, iface);
+    }
+    
+    public void Notify_RemoveInterfaces(Predicate<FlowInterface<TVolume, TValueDef>> predicate)
+    {
+        for (int i = _interfaces.Count - 1; i >= 0; i--)
+        {
+          var iFace = _interfaces[i];
+          if (predicate.Invoke(iFace))
+          {
+              _interfaces.RemoveAt(i);
+              
+              var item = _interfaceLookUp.FirstOrDefault(x => x.Value == iFace);
+              _interfaceLookUp.Remove(item.Key);
+          }
+        }
     }
     
     public void Tick(int tick)
