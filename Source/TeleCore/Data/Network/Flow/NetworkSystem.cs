@@ -37,28 +37,12 @@ public class NetworkSystem : FlowSystem<NetworkPart, NetworkVolume, NetworkValue
             var fb2 = GenerateForOrGet(edge.To);
             var mode = edge.BiDirectional ? InterfaceFlowMode.BiDirectional : InterfaceFlowMode.FromTo;
             var iFace = new FlowInterface<NetworkVolume, NetworkValueDef>(fb1, fb2,mode);
-            Notify_CreateInterface((edge.From, edge.To), iFace);
-
-            if (!Connections.TryGetValue(fb1, out var list1))
-            {
-                Connections.Add(fb1, new List<FlowInterface<NetworkVolume, NetworkValueDef>> { iFace });
-            }
-            else
-            {
-                list1.Add(iFace);
-            }
-            
-            if (!Connections.TryGetValue(fb2, out var list2))
-            {
-                Connections.Add(fb2, new List<FlowInterface<NetworkVolume, NetworkValueDef>> { iFace });
-            }
-            else
-            {
-                list2.Add(iFace);
-            }
+            AddInterface((edge.From, edge.To), iFace);
+            AddConnection(fb1, iFace);
+            AddConnection(fb2, iFace);
         }
     }
-    
+
     public double TotalValueFor(NetworkValueDef def)
     {
         return TotalStack[def].Value;

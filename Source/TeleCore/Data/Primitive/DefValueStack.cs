@@ -27,7 +27,6 @@ public unsafe struct UnsafeDefValue<TDef, TValue>
     public TDef Def => DefIDStack.ToDef<TDef>(defID);
 }
 
-
 public unsafe struct UnsafeValueStack<TDef, TValue>
     where TDef : Def
     where TValue : unmanaged

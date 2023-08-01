@@ -49,13 +49,15 @@ where TVolume : FlowVolume<TValueDef>
     private readonly Dictionary<TwoWayKey<TAttach>, FlowInterface<TVolume, TValueDef>> _interfaceLookUp;
     private DefValueStack<TValueDef, double> _totalStack;
     
-    public List<TVolume> Volumes => _volumes;
-    public List<FlowInterface<TVolume, TValueDef>> Interfaces => _interfaces;
-    public Dictionary<TAttach, TVolume> Relations => _relations;
-    public Dictionary<TVolume, List<FlowInterface<TVolume, TValueDef>>> Connections => _connections;
+    public IReadOnlyCollection<TVolume> Volumes => _volumes;
+    public IReadOnlyCollection<FlowInterface<TVolume, TValueDef>> Interfaces => _interfaces;
+    public IReadOnlyDictionary<TAttach, TVolume> Relations => _relations;
+    public IReadOnlyDictionary<TVolume, List<FlowInterface<TVolume, TValueDef>>> Connections => _connections;
+    public IReadOnlyDictionary<TwoWayKey<TAttach>, FlowInterface<TVolume, TValueDef>> InterfaceLookUp => _interfaceLookUp;
+    
     public DefValueStack<TValueDef, double> TotalStack => _totalStack;
     public double TotalValue => _totalStack.TotalValue;
-
+    
     public FlowSystem()
     {
         _volumes = new List<TVolume>();
@@ -68,24 +70,55 @@ where TVolume : FlowVolume<TValueDef>
     public void Dispose()
     {
         _volumes.Clear();
-        Relations.Clear();
-        Connections.Clear();
+        _relations.Clear();
+        _connections.Clear();
     }
-
-    protected TVolume GenerateForOrGet(TAttach part)
+    
+    public void AddConnection(TVolume forVolume, FlowInterface<TVolume, TValueDef> iFace)
     {
-        if (Relations.TryGetValue(part, out var volume))
+        if (_connections.TryGetValue(forVolume, out var list))
         {
-            return volume;
+            list.Add(iFace);
+            return;
         }
-        
-        volume = CreateVolume(part);
-        volume.FlowEvent += OnFlowBoxEvent;
-        Volumes.Add(volume);
-        Relations.Add(part, volume);
-        return volume;
+        _connections.Add(forVolume, new List<FlowInterface<TVolume, TValueDef>>(){iFace});
+    }
+    
+    public void AddVolume(TVolume volume)
+    {
+        _volumes.Add(volume);
+    }
+    
+    public void AddInterface(TwoWayKey<TAttach> connectors, FlowInterface<TVolume, TValueDef> iface)
+    {
+        _interfaces.Add(iface);
+        _interfaceLookUp.Add(connectors, iface);
     }
 
+    public void RemoveInterface(TwoWayKey<TAttach> connectors)
+    {
+        if (_interfaceLookUp.TryGetValue(connectors, out var iface))
+        {
+            _interfaces.Remove(iface);
+            _interfaceLookUp.Remove(connectors);
+        }
+    }
+    
+    public void RemoveInterfacesWhere(Predicate<FlowInterface<TVolume, TValueDef>> predicate)
+    {
+        for (int i = _interfaces.Count - 1; i >= 0; i--)
+        {
+            var iFace = _interfaces[i];
+            if (predicate.Invoke(iFace))
+            {
+                _interfaces.RemoveAt(i);
+
+                var item = _interfaceLookUp.FirstOrDefault(x => x.Value == iFace);
+                _interfaceLookUp.Remove(item.Key);
+            }
+        }
+    }
+    
     protected abstract TVolume CreateVolume(TAttach part);
 
     protected virtual void OnFlowBoxEvent(object sender, FlowEventArgs e)
@@ -95,27 +128,19 @@ where TVolume : FlowVolume<TValueDef>
     protected virtual void PreTickProcessor(int tick)
     {
     }
-
-    //TODO: Add in custom flowsystems
-    public void Notify_CreateInterface( TwoWayKey<TAttach> connectors, FlowInterface<TVolume, TValueDef> iface)
-    {
-        _interfaces.Add(iface);
-        _interfaceLookUp.Add(connectors, iface);
-    }
     
-    public void Notify_RemoveInterfaces(Predicate<FlowInterface<TVolume, TValueDef>> predicate)
+    protected TVolume GenerateForOrGet(TAttach part)
     {
-        for (int i = _interfaces.Count - 1; i >= 0; i--)
+        if (Relations.TryGetValue(part, out var volume))
         {
-          var iFace = _interfaces[i];
-          if (predicate.Invoke(iFace))
-          {
-              _interfaces.RemoveAt(i);
-              
-              var item = _interfaceLookUp.FirstOrDefault(x => x.Value == iFace);
-              _interfaceLookUp.Remove(item.Key);
-          }
+            return volume;
         }
+        
+        volume = CreateVolume(part);
+        volume.FlowEvent += OnFlowBoxEvent;
+        _volumes.Add(volume);
+        _relations.Add(part, volume);
+        return volume;
     }
     
     public void Tick(int tick)
