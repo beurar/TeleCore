@@ -74,16 +74,6 @@ where TVolume : FlowVolume<TValueDef>
         _connections.Clear();
     }
     
-    public void AddConnection(TVolume forVolume, FlowInterface<TVolume, TValueDef> iFace)
-    {
-        if (_connections.TryGetValue(forVolume, out var list))
-        {
-            list.Add(iFace);
-            return;
-        }
-        _connections.Add(forVolume, new List<FlowInterface<TVolume, TValueDef>>(){iFace});
-    }
-    
     public void AddVolume(TVolume volume)
     {
         _volumes.Add(volume);
@@ -93,6 +83,37 @@ where TVolume : FlowVolume<TValueDef>
     {
         _interfaces.Add(iface);
         _interfaceLookUp.Add(connectors, iface);
+    }
+
+    public bool AddRelation(TAttach key, TVolume volume)
+    {
+        if (_relations.TryAdd(key, volume))
+        {
+            return true;
+        }
+        TLog.Warning($"Tried to add a duplicate relation to a flow system: {key}:{volume}");
+        return false;
+    }
+    
+    public bool RemoveRelation(TAttach key)
+    {
+        if (_relations.Remove(key, out var volume))
+        {
+            _volumes.Remove(volume);
+            return true;
+        }
+        TLog.Warning($"Tried to remove a non-existent relation from a flow system: {key}");
+        return false;
+    }
+    
+    public void AddConnection(TVolume forVolume, FlowInterface<TVolume, TValueDef> iFace)
+    {
+        if (_connections.TryGetValue(forVolume, out var list))
+        {
+            list.Add(iFace);
+            return;
+        }
+        _connections.Add(forVolume, new List<FlowInterface<TVolume, TValueDef>>(){iFace});
     }
 
     public void RemoveInterface(TwoWayKey<TAttach> connectors)
@@ -138,8 +159,8 @@ where TVolume : FlowVolume<TValueDef>
         
         volume = CreateVolume(part);
         volume.FlowEvent += OnFlowBoxEvent;
-        _volumes.Add(volume);
-        _relations.Add(part, volume);
+        AddVolume(volume);
+        AddRelation(part, volume);
         return volume;
     }
     

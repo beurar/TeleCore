@@ -45,7 +45,7 @@ public class NetworkPart : INetworkPart
 
     public NetworkPartSet AdjacentSet => _adjacentSet;
 
-    public NetworkVolume Volume => Network?.NetworkSystem?.Relations?.TryGetValue(this) ?? null;
+    public NetworkVolume Volume => ((Network?.NetworkSystem?.Relations?.TryGetValue(this, out var vol) ?? false) ? vol : null)!;
 
     public bool IsController => (Config.roles | NetworkRole.Controller) == NetworkRole.Controller;
 
