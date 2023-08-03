@@ -27,7 +27,7 @@
         <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
         <Version>1.2.5</Version>
         <SignAssembly>False</SignAssembly>
-        <PackageVersion>1.8.8.2</PackageVersion>
+        <PackageVersion>1.8.8.3</PackageVersion>
         <Nullable>enable</Nullable>
     </PropertyGroup>
 
@@ -79,7 +79,7 @@
             <PrivateAssets>all</PrivateAssets>
         </PackageReference>
 
-        <PackageReference Include="OneOf" Version="3.0.243" >
+        <PackageReference Include="OneOf" Version="3.0.243">
             <PrivateAssets>all</PrivateAssets>
         </PackageReference>
         
@@ -112,19 +112,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <Folder Include="Data\AI\JobDrivers\"/>
-        <Folder Include="Data\FlowCore\Containers\Holder\" />
-        <Folder Include="Data\Generics\Container\Gizmos\" />
-        <Folder Include="Data\Generics\Container\Implemented\"/>
-        <Folder Include="Data\Research\"/>
-        <Folder Include="Data\World\Layers\"/>
-        <Folder Include="Rendering\Tools\DefEditor"/>
-        <Folder Include="Rendering\Tools\ModuleVisualizer\ModuleNodes"/>
-        <Folder Include="VFX\Particles"/>
-    </ItemGroup>
-
-    <ItemGroup>
-        <Compile Remove="NodeEditorFramework\**"/>
+        <Compile Remove="NodeEditorFramework\**" />
         <Compile Remove="Data\FlowCore\Containers\ContainerConfig.cs" />
         <Compile Remove="Data\FlowCore\Containers\Gizmo_ContainerStorage.cs" />
         <Compile Remove="Data\FlowCore\Containers\IContainerHolderInterfaces.cs" />
@@ -138,7 +126,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <EmbeddedResource Remove="NodeEditorFramework\**"/>
+        <EmbeddedResource Remove="NodeEditorFramework\**" />
     </ItemGroup>
 
     <Target Name="MyCode" BeforeTargets="UpdateReferences">

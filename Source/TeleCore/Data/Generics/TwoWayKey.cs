@@ -6,8 +6,8 @@ namespace TeleCore.Generics;
 /// </summary>
 public struct TwoWayKey<T>
 {
-    private T A { get; }
-    private T B { get; }
+    public T A { get; }
+    public T B { get; }
 
     public static implicit operator TwoWayKey<T>((T, T) tuple)
     {

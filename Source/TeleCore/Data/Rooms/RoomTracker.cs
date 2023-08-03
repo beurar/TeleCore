@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using RimWorld;
+using TeleCore.Static;
 using UnityEngine;
 using Verse;
 
@@ -14,6 +15,10 @@ public class RoomTracker
     private const char fail = '❌';
     internal static readonly List<Type> RoomComponentTypes;
 
+    //
+    internal bool DebugSelected;
+    internal bool DebugPortals;
+    
     //
     private bool _wasOutSide;
     private HashSet<IntVec3> borderCells = new();
@@ -91,7 +96,7 @@ public class RoomTracker
     public Vector3 ActualCenter { get; private set; }
 
     public Vector3 DrawPos { get; private set; }
-    
+
     #endregion
     
     
@@ -300,8 +305,29 @@ public class RoomTracker
 
     public void RoomDraw()
     {
+        //
         foreach (var comp in Comps) 
             comp.Draw();
+
+        if (!DebugSettings.godMode) return;
+        
+        //Debug
+        if (DebugSelected)
+        {
+            GenDraw.DrawFieldEdges(Room.Cells.ToList(), Color.cyan);
+            if (DebugPortals)
+            {
+                foreach (var attachedNghb in RoomNeighbors.AttachedNeighbors)
+                {
+                    GenDraw.DrawFieldEdges(attachedNghb.Room.Cells.ToList(), Color.magenta);
+                }
+                
+                foreach (var trueNghb in RoomNeighbors.TrueNeighbors)
+                {
+                    GenDraw.DrawFieldEdges(trueNghb.Room.Cells.ToList(), Color.green);
+                }
+            }
+        }
     }
 
     internal void DrawDebug()
@@ -468,5 +494,16 @@ public class RoomTracker
     public override string ToString()
     {
         return base.ToString();
+    }
+
+    internal void Debug_Select()
+    {
+        DebugSelected = true;
+    }
+    
+    internal void Debug_Deselect()
+    {
+        DebugSelected = false;
+        DebugPortals = false;
     }
 }

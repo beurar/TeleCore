@@ -27,6 +27,12 @@
                 If set on a projectile's def, on Impact, all of these effects will be created - if available.
             </summary>
         </member>
+        <member name="T:TeleCore.Generics.TwoWayKey`1">
+            <summary>
+            A key to define a two-way relationship between two objects.
+            Meant for tuples of two object of the same type, to ignore ordering of the tuple.
+            </summary>
+        </member>
         <member name="P:TeleCore.Network.Data.NetworkValueFilter.AllowedValuesByRole">
             <summary>
                 Provides sub-managed values by role, if set in the networkRole props.

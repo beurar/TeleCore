@@ -59,10 +59,15 @@ public abstract class FlowSystem<TAttach, TVolume, TValueDef> : IDisposable
         _volumes.Remove(volume);
     }
 
-    public void AddInterface(TwoWayKey<TAttach> connectors, FlowInterface<TVolume, TValueDef> iFace)
+    public bool AddInterface(TwoWayKey<TAttach> connectors, FlowInterface<TVolume, TValueDef> iFace)
     {
-        _interfaces.Add(iFace);
-        _interfaceLookUp.Add(connectors, iFace);
+        if (_interfaceLookUp.TryAdd(connectors, iFace))
+        {
+            _interfaces.Add(iFace);
+            return true;
+        }
+        TLog.Warning($"Tried to add existing key: {connectors.A} -> {connectors.B}: {iFace}");
+        return false;
     }
 
     public bool AddRelation(TAttach key, TVolume volume)

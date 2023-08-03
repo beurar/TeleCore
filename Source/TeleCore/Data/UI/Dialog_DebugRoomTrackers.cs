@@ -9,11 +9,23 @@ public class Dialog_DebugRoomTrackers : Window
 {
     private Vector2 _selScrollPos;
     private Vector2 _selScrollPos2;
-    
+    private RoomTracker _selTracker;
+
     private Map Map => Find.CurrentMap;
     private MapInformation_Rooms Rooms => Map?.GetMapInfo<MapInformation_Rooms>();
 
-    private RoomTracker SelTracker { get; set; }
+    private RoomTracker SelTracker
+    {
+        get => _selTracker;
+        set
+        {
+            _selTracker?.Debug_Deselect();
+            SelComponent = null;
+            _selTracker = value;
+            _selTracker.Debug_Select();
+        }
+    }
+
     private RoomComponent SelComponent { get; set; }
 
     public override Vector2 InitialSize => new Vector2(1200, 512);
@@ -23,7 +35,7 @@ public class Dialog_DebugRoomTrackers : Window
         this.doCloseX = true;
         this.draggable = true;
     }
-    
+
     public override void DoWindowContents(Rect inRect)
     {
         var compDebugRect = inRect.RightPartPixels(400).ContractedBy(5);
@@ -205,7 +217,9 @@ public class Dialog_DebugRoomTrackers : Window
             list.End();
             
             //
-            SelComponent.Draw_DebugExtra(compDebugRect);
+            GUI.BeginGroup(compDebugRect);
+            SelComponent.Draw_DebugExtra(compDebugRect.AtZero());
+            GUI.EndGroup();
         }
         
         Widgets.DrawMenuSection(debugRect);
@@ -217,9 +231,13 @@ public class Dialog_DebugRoomTrackers : Window
         var drawRoomLabels = TeleCoreDebugViewSettings.DrawRoomLabels;
         debugList.CheckboxLabeled("Show Room Labels", ref drawRoomLabels);
         TeleCoreDebugViewSettings.DrawRoomLabels = drawRoomLabels;
-        
+        if (SelTracker != null)
+        {
+            var drawPortals = SelTracker.DebugPortals;
+            debugList.CheckboxLabeled("Show Room Portals", ref drawPortals);
+            SelTracker.DebugPortals = drawPortals;
+        }
+
         debugList.End();
-
-
     }
 }

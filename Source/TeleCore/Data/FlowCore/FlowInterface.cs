@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using Verse;
 
 namespace TeleCore.FlowCore;
 
@@ -71,5 +72,11 @@ where TVolume : FlowVolume<TValueDef>
             percent = Mathf.Ceil(percent);
         }
         PassPercent = percent;
+    }
+
+    public override string ToString()
+    {
+        return $"{From.FillPercent} =[{Mode}][{PassPercent.ToStringPercent()}]=> {To.FillPercent} (Prev: {PrevFlow} Next: {NextFlow})";
+        return base.ToString();
     }
 }
