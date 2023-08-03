@@ -53,7 +53,10 @@ public class Comp_Network_Valve : Comp_Network
         base.Notify_SignalReceived(signal);
         if (signal.tag == KnownCompSignals.FlickedOn)
         {
-            
+            foreach (var part in NetworkParts)
+            {
+                part.Network.NetworkSystem.
+            }    
         }
 
         if (signal.tag == KnownCompSignals.FlickedOff)

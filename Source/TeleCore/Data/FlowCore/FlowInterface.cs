@@ -1,28 +1,12 @@
-﻿namespace TeleCore.FlowCore;
+﻿using UnityEngine;
+
+namespace TeleCore.FlowCore;
 
 public enum InterfaceFlowMode
 {
     FromTo,
     ToFrom, 
     BiDirectional
-}
-
-public interface IFlowInterface
-{
-    public double NextFlow { get; set; }
-    public double PrevFlow { get; set; }
-    public double Move { get; set; }
-    public double FlowRate { get; set; }
-}
-
-public class MultiFlowInterface<TVolumeOne, TVolumeTwo, TValueDefOne, TValueDefTwo>
-    where TValueDefOne : FlowValueDef
-    where TVolumeOne : FlowVolume<TValueDefOne>
-    where TValueDefTwo : FlowValueDef
-    where TVolumeTwo : FlowVolume<TValueDefTwo>
-{
-    public TVolumeOne From { get; private set; }
-    public TVolumeTwo To { get; private set; }
 }
 
 public class FlowInterface<TVolume, TValueDef>
@@ -38,8 +22,8 @@ where TVolume : FlowVolume<TValueDef>
     public TVolume From { get; private set; }
     public TVolume To { get; private set; }
     public InterfaceFlowMode Mode { get; private set; }
-    
-    public float PassPercent => 1f;
+
+    public float PassPercent { get; private set; } = 1f;
     
     public FlowInterface(TVolume from, TVolume to)
     {
@@ -77,5 +61,15 @@ where TVolume : FlowVolume<TValueDef>
     public TVolume Opposite(TVolume volume)
     {
         return From == volume ? To : From;
+    }
+
+    public void SetPassThrough(float percent)
+    {
+        if (percent is > 1f or < 0f)
+        {
+            TLog.Warning("Trying to set pass through percent to " + percent + " which is not in range [0, 1]");
+            percent = Mathf.Ceil(percent);
+        }
+        PassPercent = percent;
     }
 }
