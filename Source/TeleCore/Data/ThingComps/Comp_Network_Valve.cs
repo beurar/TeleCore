@@ -56,8 +56,7 @@ public class Comp_Network_Valve : Comp_Network
         {
             foreach (var part in NetworkParts)
             {
-                part.Network.NetworkSystem.Notify_PassThroughChanged(part,
-                    signal.tag is KnownCompSignals.FlickedOn ? 1.0f : 0.0f);
+                part.Network.NetworkSystem.Notify_PassThroughChanged(part, signal.tag is KnownCompSignals.FlickedOn ? 1.0f : 0.0f);
             }    
         }
     }

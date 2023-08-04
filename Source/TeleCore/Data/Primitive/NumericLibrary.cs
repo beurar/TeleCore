@@ -76,8 +76,8 @@ public static class NumericLibrary<T> where T : unmanaged
         var paramA = Expression.Parameter(typeof(T), "a");
         var paramB = Expression.Parameter(typeof(T), "b");
         var body = Expression.Subtract(paramA, paramB);
-        var add = Expression.Lambda<Func<T, T, T>>(body, paramA, paramB);
-        return add.Compile();
+        var sub = Expression.Lambda<Func<T, T, T>>(body, paramA, paramB);
+        return sub.Compile();
     }
 
     private static Func<T, T, T> CreateMultiplicationFunc()
@@ -85,8 +85,8 @@ public static class NumericLibrary<T> where T : unmanaged
         var paramA = Expression.Parameter(typeof(T), "a");
         var paramB = Expression.Parameter(typeof(T), "b");
         var body = Expression.Multiply(paramA, paramB);
-        var add = Expression.Lambda<Func<T, T, T>>(body, paramA, paramB);
-        return add.Compile();
+        var mult = Expression.Lambda<Func<T, T, T>>(body, paramA, paramB);
+        return mult.Compile();
     }
 
     private static Func<T, T, T> CreateDivisionFunc()
@@ -94,8 +94,8 @@ public static class NumericLibrary<T> where T : unmanaged
         var paramA = Expression.Parameter(typeof(T), "a");
         var paramB = Expression.Parameter(typeof(T), "b");
         var body = Expression.Divide(paramA, paramB);
-        var add = Expression.Lambda<Func<T, T, T>>(body, paramA, paramB);
-        return add.Compile();
+        var div = Expression.Lambda<Func<T, T, T>>(body, paramA, paramB);
+        return div.Compile();
     }
 
     private static Func<T, T, bool> CreateGreaterThan()
@@ -103,8 +103,8 @@ public static class NumericLibrary<T> where T : unmanaged
         var paramA = Expression.Parameter(typeof(T), "a");
         var paramB = Expression.Parameter(typeof(T), "b");
         var body = Expression.GreaterThan(paramA, paramB);
-        var add = Expression.Lambda<Func<T, T, bool>>(body, paramA, paramB);
-        return add.Compile();
+        var gt = Expression.Lambda<Func<T, T, bool>>(body, paramA, paramB);
+        return gt.Compile();
     }
 
     private static Func<T, T, bool> CreateLessThan()
@@ -112,8 +112,8 @@ public static class NumericLibrary<T> where T : unmanaged
         var paramA = Expression.Parameter(typeof(T), "a");
         var paramB = Expression.Parameter(typeof(T), "b");
         var body = Expression.LessThan(paramA, paramB);
-        var add = Expression.Lambda<Func<T, T, bool>>(body, paramA, paramB);
-        return add.Compile();
+        var lt = Expression.Lambda<Func<T, T, bool>>(body, paramA, paramB);
+        return lt.Compile();
     }
 
     private static Func<T, T, bool> CreateEqual()
@@ -121,8 +121,8 @@ public static class NumericLibrary<T> where T : unmanaged
         var paramA = Expression.Parameter(typeof(T), "a");
         var paramB = Expression.Parameter(typeof(T), "b");
         var body = Expression.Equal(paramA, paramB);
-        var add = Expression.Lambda<Func<T, T, bool>>(body, paramA, paramB);
-        return add.Compile();
+        var eq = Expression.Lambda<Func<T, T, bool>>(body, paramA, paramB);
+        return eq.Compile();
     }
 
     private static Func<T, T, bool> CreateNotEqual()
@@ -130,8 +130,8 @@ public static class NumericLibrary<T> where T : unmanaged
         var paramA = Expression.Parameter(typeof(T), "a");
         var paramB = Expression.Parameter(typeof(T), "b");
         var body = Expression.NotEqual(paramA, paramB);
-        var add = Expression.Lambda<Func<T, T, bool>>(body, paramA, paramB);
-        return add.Compile();
+        var neq = Expression.Lambda<Func<T, T, bool>>(body, paramA, paramB);
+        return neq.Compile();
     }
 
     private static Func<T, T, bool> CreateGreateThanOrEqual()
@@ -139,8 +139,8 @@ public static class NumericLibrary<T> where T : unmanaged
         var paramA = Expression.Parameter(typeof(T), "a");
         var paramB = Expression.Parameter(typeof(T), "b");
         var body = Expression.GreaterThanOrEqual(paramA, paramB);
-        var add = Expression.Lambda<Func<T, T, bool>>(body, paramA, paramB);
-        return add.Compile();
+        var gteq = Expression.Lambda<Func<T, T, bool>>(body, paramA, paramB);
+        return gteq.Compile();
     }
 
     private static Func<T, T, bool> CreateLessThanOrEqual()
@@ -148,8 +148,8 @@ public static class NumericLibrary<T> where T : unmanaged
         var paramA = Expression.Parameter(typeof(T), "a");
         var paramB = Expression.Parameter(typeof(T), "b");
         var body = Expression.LessThanOrEqual(paramA, paramB);
-        var add = Expression.Lambda<Func<T, T, bool>>(body, paramA, paramB);
-        return add.Compile();
+        var lteq = Expression.Lambda<Func<T, T, bool>>(body, paramA, paramB);
+        return lteq.Compile();
     }
 
     private static Func<T> CreateZeroGetter()
