@@ -32,7 +32,7 @@ public static class ImmutableArray
     /// <returns>A 1-element immutable array containing the specified item.</returns>
     public static ImmutableArray<T> Create<T>(T item)
     {
-        return new ImmutableArray<T>( new[] {item});
+        return new ImmutableArray<T>(new[] {item});
     }
 
     /// <summary>

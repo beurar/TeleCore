@@ -7,7 +7,7 @@ using System.Runtime.CompilerServices;
 namespace TeleCore.Primitive.Immutable;
 
 [DebuggerDisplay("{DebuggerDisplay,nq}")]
-public partial struct ImmutableArray<T> : IEnumerable<T>, IEquatable<ImmutableArray<T>>, IImmutableArray
+public partial struct ImmutableArray<T> : IEquatable<ImmutableArray<T>>, IImmutableArray
 {
     /// <summary>
     /// The backing field for this instance. References to this value should never be shared with outside code.
@@ -20,6 +20,7 @@ public partial struct ImmutableArray<T> : IEnumerable<T>, IEquatable<ImmutableAr
     /// </summary>
     // ReSharper disable once UseArrayEmptyMethod
     public static readonly ImmutableArray<T> Empty = new ImmutableArray<T>(new T[0]);
+    public static ImmutableArray<T> DefaultInit => new ImmutableArray<T>( new T[1] );
 
     #region Constructors
     
@@ -352,6 +353,7 @@ public partial struct ImmutableArray<T> : IEnumerable<T>, IEquatable<ImmutableAr
     IEnumerator IEnumerable.GetEnumerator()
     {
         var self = this;
+        
         self.ThrowInvalidOperationIfNotInitialized();
         return EnumeratorObject.Create(self.array!);
     }
@@ -371,7 +373,17 @@ public partial struct ImmutableArray<T> : IEnumerable<T>, IEquatable<ImmutableAr
         // extra expense.
         _ = this.array!.Length;
     }
-
+    
+    private bool AssertArrayNotDefault()
+    {
+        if (IsDefault)
+        {
+            TLog.Warning("Tried to use an uninitialized ImmutableArray.");
+            return false;
+        }
+        return true;
+    }
+    
     /// <summary>
     /// Throws an <see cref="InvalidOperationException"/> if the <see cref="array"/> field is null, i.e. the
     /// <see cref="IsDefault"/> property returns true.  The
@@ -382,8 +394,9 @@ public partial struct ImmutableArray<T> : IEnumerable<T>, IEquatable<ImmutableAr
     /// </summary>
     private void ThrowInvalidOperationIfNotInitialized()
     {
-        if (this.IsDefault)
+        if (IsDefault)
         {
+            TLog.Warning("Tried to use an uninitialized ImmutableArray.");
             throw new InvalidOperationException("SR.InvalidOperationOnDefaultArray");
         }
     }

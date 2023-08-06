@@ -23,7 +23,10 @@ public readonly partial struct ImmutableArray<T> : IList<T>, IList, IStructuralC
             self.ThrowInvalidOperationIfNotInitialized();
             return self[index];
         }
-        set { throw new NotSupportedException(); }
+        set
+        {
+            throw new NotSupportedException();
+        }
     }
 
     /// <summary>

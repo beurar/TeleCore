@@ -1,6 +1,10 @@
 ﻿
+using System.Runtime.InteropServices;
+using Verse;
+
 namespace TeleCore.Primitive;
 
+[StructLayout(LayoutKind.Sequential)]
 public struct Numeric<TValue> where TValue : unmanaged
 {
     private TValue _number;
@@ -24,6 +28,13 @@ public struct Numeric<TValue> where TValue : unmanaged
             };
         }
     }
+
+    public float AsPercent => _number switch
+    {
+        float f => f,
+        double d => (float) d,
+        _ => 0f
+    };
 
     public Numeric(TValue value)
     {
@@ -141,5 +152,10 @@ public struct Numeric<TValue> where TValue : unmanaged
     public override int GetHashCode()
     {
         return _number.GetHashCode();
+    }
+
+    public static TValue Clamp(TValue val, Numeric<TValue> min, TValue max)
+    {
+        return NumericLibrary<TValue>.Clamp(val, min, max);
     }
 }

@@ -21,3 +21,11 @@ internal interface IImmutableArray
     /// </summary>
     Array? Array { get; }
 }
+
+internal interface IImmutableArray<T>
+{
+    /// <summary>
+    /// Gets an untyped reference to the array.
+    /// </summary>
+    T[]? Array { get; }
+}

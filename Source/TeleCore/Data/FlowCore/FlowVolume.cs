@@ -48,6 +48,11 @@ public class FlowVolume<T> : INotifyFlowEvent where T : FlowValueDef
 
     public event FlowEventHandler? FlowEvent;
 
+    public FlowVolume()
+    {
+        
+    }
+    
     public FlowVolume(FlowVolumeConfig<T> config)
     {
         _config = config;
@@ -150,7 +155,7 @@ public class FlowVolume<T> : INotifyFlowEvent where T : FlowValueDef
     public FlowResult<T, double> TryRemove(T def, double value)
     {
         var result = FlowResult<T, double>.Init(value);   
-        if (value > mainStack.TotalValue)
+        if (value > mainStack[def].Value)
         {
             if(mainStack.IsEmpty) return result.Fail();
             var leftOver = value - mainStack.TotalValue;
@@ -174,4 +179,9 @@ public class FlowVolume<T> : INotifyFlowEvent where T : FlowValueDef
     }
 
     #endregion
+
+    public override string ToString()
+    {
+        return $"[{TotalValue}/{MaxCapacity}][{Stack.Values.Count}/{AllowedValues.Count}]";
+    }
 }

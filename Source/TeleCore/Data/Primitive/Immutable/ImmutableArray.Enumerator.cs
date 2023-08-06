@@ -72,8 +72,7 @@ public partial struct ImmutableArray<T>
         /// <summary>
         /// A shareable singleton for enumerating empty arrays.
         /// </summary>
-        private static readonly IEnumerator<T> s_EmptyEnumerator =
-            new EnumeratorObject(ImmutableArray<T>.Empty.array!);
+        private static readonly IEnumerator<T> s_EmptyEnumerator = new EnumeratorObject(ImmutableArray<T>.Empty.array!);
 
         /// <summary>
         /// The array being enumerated.

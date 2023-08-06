@@ -10,11 +10,12 @@ using UnityEngine;
 namespace TeleTests;
 
 [TestFixture]
+[SetUpFixture]
 public class FlowVolumeTests
 {
     private static List<FlowVolume<FlowValueDef>> volumes;
     
-    public static FlowValueDef[] defs = new FlowValueDef[2]
+    public static readonly FlowValueDef[] defs = new FlowValueDef[2]
     {
         new FlowValueDef
         {
@@ -38,16 +39,20 @@ public class FlowVolumeTests
 
     public static FlowVolumeConfig<FlowValueDef> Config => new FlowVolumeConfig<FlowValueDef>
     {
-        allowedValues = new List<FlowValueDef>() { defs[0], defs[1]},
+        //allowedValues = new List<FlowValueDef>() { defs[0], defs[1]},
         capacity = 500,
     };
+    
+    
 
-    [SetUp]
+    [OneTimeSetUp]
     public void Setup()
     {
-        volumes = new List<FlowVolume<FlowValueDef>>();
-        volumes.Add(new FlowVolume<FlowValueDef>(Config));
-        volumes.Add(new FlowVolume<FlowValueDef>(Config));
+        volumes = new List<FlowVolume<FlowValueDef>>
+        {
+            new FlowVolume<FlowValueDef>(Config),
+            new FlowVolume<FlowValueDef>(Config)
+        };
     }
 
     [Test]
@@ -74,7 +79,7 @@ public class FlowVolumeTests
     {
         var volume = new FlowVolume<FlowValueDef>(new FlowVolumeConfig<FlowValueDef>
         {
-            allowedValues = defs.ToList(),
+            //allowedValues = defs.ToList(),
             capacity = 250,
         });
         

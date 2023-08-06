@@ -38,7 +38,7 @@ public class Dialog_DebugRoomTrackers : Window
 
     public override void DoWindowContents(Rect inRect)
     {
-        var compDebugRect = inRect.RightPartPixels(400).ContractedBy(5);
+        var original = inRect;
         inRect = inRect.LeftPartPixels(800).ContractedBy(5);
         
         GridLayout layout = new GridLayout(inRect, 6, 6);
@@ -51,6 +51,8 @@ public class Dialog_DebugRoomTrackers : Window
         var dataRect = layout.GetCellRect(2, 0, 4, 5);
         var debugRect = layout.GetCellRect(0, 5, 6, 1);
 
+        var compDebugRect = new Rect(dataRect.xMax, dataRect.y, original.width-dataRect.xMax, original.height).ContractedBy(5);
+        
         TWidgets.DrawHighlightColor(metaRect, Color.blue);
         TWidgets.DrawHighlightColor(selRect, Color.red);
         TWidgets.DrawHighlightColor(trackerSelection, Color.magenta);
@@ -217,9 +219,7 @@ public class Dialog_DebugRoomTrackers : Window
             list.End();
             
             //
-            GUI.BeginGroup(compDebugRect);
-            SelComponent.Draw_DebugExtra(compDebugRect.AtZero());
-            GUI.EndGroup();
+            SelComponent.Draw_DebugExtra(compDebugRect);
         }
         
         Widgets.DrawMenuSection(debugRect);

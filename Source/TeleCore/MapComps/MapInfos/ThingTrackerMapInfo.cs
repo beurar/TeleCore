@@ -36,8 +36,7 @@ public class ThingTrackerMapInfo : MapInformation
 public abstract class ThingTrackerComp
 {
     protected ThingTrackerMapInfo parent;
-
-    //
+    
     protected ThingTrackerComp(ThingTrackerMapInfo parent)
     {
         this.parent = parent;

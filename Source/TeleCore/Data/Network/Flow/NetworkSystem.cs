@@ -35,11 +35,9 @@ public class NetworkSystem : FlowSystem<NetworkPart, NetworkVolume, NetworkValue
         {
             var fb1 = GenerateForOrGet(edge.From);
             var fb2 = GenerateForOrGet(edge.To);
-            var mode = edge.BiDirectional ? InterfaceFlowMode.BiDirectional : InterfaceFlowMode.FromTo;
-            var iFace = new FlowInterface<NetworkVolume, NetworkValueDef>(fb1, fb2,mode);
+            var mode = edge.BiDirectional ? InterfaceFlowMode.TwoWay : InterfaceFlowMode.FromTo;
+            var iFace = new FlowInterface<NetworkPart, NetworkVolume, NetworkValueDef>(edge.From, edge.To, fb1, fb2,mode);
             AddInterface((edge.From, edge.To), iFace);
-            AddConnection(fb1, iFace);
-            AddConnection(fb2, iFace);
         }
     }
 
@@ -82,12 +80,12 @@ public class NetworkSystem : FlowSystem<NetworkPart, NetworkVolume, NetworkValue
     {
     }
 
-    public override double FlowFunc(FlowInterface<NetworkVolume, NetworkValueDef> iface, double flow)
+    public override double FlowFunc(FlowInterface<NetworkPart, NetworkVolume, NetworkValueDef> iface, double flow)
     {
         return PressureWorker.FlowFunction(iface, flow);
     }
 
-    public override double ClampFunc(FlowInterface<NetworkVolume, NetworkValueDef> iface, double flow, ClampType clampType)
+    public override double ClampFunc(FlowInterface<NetworkPart, NetworkVolume, NetworkValueDef> iface, double flow, ClampType clampType)
     {
         return ClampWorker.ClampFunction(iface, flow, clampType);
     }

@@ -1,4 +1,5 @@
 ﻿using System.Runtime.InteropServices;
+using TeleCore.Radiation;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Verse;
@@ -13,13 +14,27 @@ public unsafe struct StaticValue<TDef, TValue>
     private ushort _defID = 0;
     private Numeric<TValue> _value;
     private Numeric<TValue> _overflow;
-
+    
+    public ushort DefID => _defID;
     public TDef Def => _defID.ToDef<TDef>();
-    public TValue Value => _value.Value;
+    
+    public Numeric<TValue> Value
+    {
+        get => _value;
+        set => _value = value;
+    }
+
+    public Numeric<TValue> Overflow
+    {
+        get => _overflow;
+        set => _overflow = value;
+    }
+
+    public static implicit operator TValue(StaticValue<TDef, TValue> val) => val.Value;
     
     public static StaticValue<TDef, TValue> Invalid => new (0, Numeric<TValue>.Zero, Numeric<TValue>.Zero);
     public static StaticValue<TDef, TValue> Empty => new (ushort.MaxValue, Numeric<TValue>.Zero, Numeric<TValue>.Zero);
-    
+
     public StaticValue(Def def, TValue value) : this(def.ToID(), value)
     {
     }
@@ -49,6 +64,36 @@ public unsafe struct StaticValue<TDef, TValue>
         }
     }
 
+    #region Maths
+
+    public static StaticValue<TDef, TValue> operator +(StaticValue<TDef, TValue> a, StaticValue<TDef, TValue> b)
+    {
+        a._value += b._value;
+        a._overflow += b._overflow;
+        return a;
+    }
+
+    public static StaticValue<TDef, TValue> operator -(StaticValue<TDef, TValue> a, StaticValue<TDef, TValue> b)
+    {
+        a._value -= b._value;
+        a._overflow -= b._overflow;
+        return a;
+    }
+
+    public static StaticValue<TDef, TValue> operator +(StaticValue<TDef, TValue> a, TValue b)
+    {
+        a._value += b;
+        return a;
+    }
+    
+    public static StaticValue<TDef, TValue> operator -(StaticValue<TDef, TValue> a, TValue b)
+    {
+        a._value -= b;
+        return a;
+    }
+    
+    #endregion
+    
     public static bool operator ==(StaticValue<TDef, TValue> left, StaticValue<TDef, TValue> right)
     {
         return left.Equals(right);
@@ -80,6 +125,8 @@ public unsafe struct StaticStack<TDef, TValue> where TValue : unmanaged where TD
     
     public bool HasAnyValue => totalValue > Numeric<TValue>.Zero;
     public int Length => stackData.Length;
+    
+    public StaticValue<TDef, TValue> this[TDef def] => this[def.ToID()];
     
     public StaticValue<TDef, TValue> this[int idx]
     {
@@ -122,6 +169,7 @@ public unsafe class StaticStackGrid<TDef, TValue>
     where TValue : unmanaged 
     where TDef : Def
 {
+    private Map _map;
     private int _gridSize;
     private TDef[] _defArray;
     private int _defCount;
@@ -131,6 +179,7 @@ public unsafe class StaticStackGrid<TDef, TValue>
     
     public StaticStackGrid(Map map)
     {
+        _map = map;
         _gridSize = map.cellIndices.NumGridCells;
         _grid = new NativeArray<StaticStack<TDef, TValue>>(_gridSize, Allocator.Persistent); // new GasCellStack[gridSize];
         _gridPtr = (StaticStack<TDef, TValue>*)_grid.GetUnsafePtr();
@@ -146,4 +195,108 @@ public unsafe class StaticStackGrid<TDef, TValue>
             _gridPtr[c] = new StaticStack<TDef, TValue>();
         }
     }
+    
+    #region Public Safe Accessors
+
+    public float DensityPercentAt(int index, ushort defID)
+    {
+        return (DensityAt(index, defID) / MaxDensityPerCellFor(defID.ToDef<TDef>())).AsPercent;
+    }
+    
+    private Numeric<TValue> DensityAt(int index, int defID)
+    {
+        return _gridPtr[index][defID].Value;
+    }
+    
+    public StaticStack<TDef, TValue> StackAt(int index)
+    {
+        return _gridPtr[index];
+    }
+    
+    public Numeric<TValue> OverflowAt(int index, int defID)
+    {
+        return _gridPtr[index][defID].Overflow;
+    }
+    
+    public bool AnyValueAt(IntVec3 cell)
+    {
+        return AnyGasAt(cell.Index(_map));
+    }
+    
+    public bool AnyGasAt(int index)
+    {
+        return _gridPtr[index].HasAnyValue;
+    }
+    
+    /// <summary>
+    /// Public accessor to spawn gas.
+    /// </summary>
+    public void Notify_AddValue(IntVec3 cell, TDef type, Numeric<TValue> amount)
+    {
+        TryAddValueAt_Internal(cell, type, amount);
+    }
+
+    #endregion
+    
+    #region Unsafe Data Manipulation
+
+    private void SetCellValueAt(int index, StaticValue<TDef,TValue> value)
+    {
+        //Set Value
+        var val = _gridPtr[index];
+        val[value.DefID] = value;
+        _gridPtr[index] = val;
+    }
+    
+    private void SetCellStackAt(int index, StaticStack<TDef,TValue> value)
+    {
+        for (var i = 0; i < _defCount; i++)
+        {
+            SetCellValueAt(index, value[i]);
+        }
+    }
+    
+    private void AdjustValue(ref StaticValue<TDef, TValue> cellValue, TDef def, Numeric<TValue> value, out Numeric<TValue> actualValue)
+    {
+        actualValue = value;
+        var val = cellValue + value;
+        cellValue.Value =  Numeric<TValue>.Clamp(val.Value, Numeric<TValue>.Zero, MaxDensityPerCellFor(def));
+        if (val < Numeric<TValue>.Zero)
+        {
+            actualValue = value + val;
+            return;
+        }
+
+        if (val < MaxDensityPerCellFor(def)) return;
+        var overFlow = val - MaxDensityPerCellFor(def);
+        actualValue = value - overFlow;
+        cellValue.Overflow = (cellValue.Overflow + overFlow);
+    }
+
+    #endregion
+
+    protected virtual Numeric<TValue> MaxDensityPerCellFor(TDef def)
+    {
+        return default;
+    }
+    
+    protected virtual bool CanHaveValueAt(int index, TDef type)
+    {
+        return true;
+    }
+    
+    private void TryAddValueAt_Internal(IntVec3 cell, TDef type, Numeric<TValue> amount, bool noOverflow = false)
+    {
+        if (!CanHaveValueAt(cell.Index(_map), type)) return;
+        
+        int index = CellIndicesUtility.CellToIndex(cell, _map.Size.x);
+        var cellValue = _gridPtr[index][type];
+        AdjustValue(ref cellValue, type, amount, out _);
+
+        if (noOverflow)
+            cellValue.Overflow = Numeric<TValue>.Zero;
+        
+        SetCellValueAt(index, cellValue);
+    }
+    
 }

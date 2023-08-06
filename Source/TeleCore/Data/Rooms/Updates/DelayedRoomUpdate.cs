@@ -1,24 +1,25 @@
 ﻿using System;
+using TeleCore.Events;
 using Verse;
 
 namespace TeleCore.Rooms.Updates;
 
 internal class DelayedRoomUpdate : IDisposable
 {
-    public DelayedRoomUpdate(DelayedRoomUpdateType type, Room room)
+    public DelayedRoomUpdate(RoomChangeType type, Room room)
     {
         Type = type;
         Room = room;
     }
 
-    public DelayedRoomUpdate(DelayedRoomUpdateType type, RoomTracker tracker)
+    public DelayedRoomUpdate(RoomChangeType type, RoomTracker tracker)
     {
         Type = type;
         Tracker = tracker;
         Room = tracker.Room;
     }
 
-    public DelayedRoomUpdateType Type { get; }
+    public RoomChangeType Type { get; }
     public RoomTracker Tracker { get; private set; }
     public RoomTracker?[] Previous { get; set; }
     public Room Room { get; private set; }

@@ -362,8 +362,7 @@ public class RoomTracker
         var sameCount = containedThing.Count(t => ListerThings.Contains(t));
         var sameRatio = sameCount / (float) containedThing.Count();
         var sameBool = sameRatio >= 1f;
-        var sameRatioString =
-            $"[{sameCount}/{containedThing.Count()}][{sameRatio}]{Icon(sameBool)}".Colorize(ColorSel(sameBool));
+        var sameRatioString = $"[{sameCount}/{containedThing.Count()}][{sameRatio}]{Icon(sameBool)}".Colorize(ColorSel(sameBool));
         TLog.Message($"ContainedThingRatio: {sameRatioString}");
         TLog.Message($"### Ending Validation [{Room.ID}]");
     }

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using TeleCore.FlowCore;
+using TeleCore.Network.Data;
 
 namespace TeleCore.Network.Flow.Clamping;
 
@@ -22,7 +23,7 @@ public class ClampWorker_ConnectionCountLimit : ClampWorker
     public override double MinDivider => 1;
     public override double MaxDivider => 1;
 
-    public override double ClampFunction(FlowInterface<NetworkVolume, NetworkValueDef> iface, double f, ClampType type)
+    public override double ClampFunction(FlowInterface<NetworkPart, NetworkVolume, NetworkValueDef> iface, double f, ClampType type)
     {
         var d0 = 1d / Math.Max(1, _parentSystem.Connections[iface.From].Count);
         var d1 = 1d / Math.Max(1, _parentSystem.Connections[iface.To].Count);

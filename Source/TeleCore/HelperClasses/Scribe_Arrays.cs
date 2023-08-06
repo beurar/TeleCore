@@ -10,6 +10,14 @@ namespace TeleCore;
 
 public class Scribe_Arrays
 {
+    public static void Look<T>(ref LightImmutableArray<T> immutArr, string label, LookMode lookMode = LookMode.Undefined,
+        params object[] ctorArgs)
+    {
+        var arr = immutArr.ToArray();
+        Look(ref arr, label, lookMode, ctorArgs);
+        immutArr = new LightImmutableArray<T>(arr);
+    }
+    
     public static void Look<T>(ref ImmutableArray<T> immutArr, string label, LookMode lookMode = LookMode.Undefined,
         params object[] ctorArgs)
     {

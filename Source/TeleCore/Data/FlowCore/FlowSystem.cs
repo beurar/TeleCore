@@ -5,6 +5,7 @@ using TeleCore.FlowCore.Events;
 using TeleCore.Generics;
 using TeleCore.Network.Flow.Clamping;
 using TeleCore.Primitive;
+using UnityEngine;
 using Verse;
 
 namespace TeleCore.FlowCore;
@@ -14,19 +15,19 @@ public abstract class FlowSystem<TAttach, TVolume, TValueDef> : IDisposable
     where TVolume : FlowVolume<TValueDef>
 {
     private readonly List<TVolume> _volumes;
-    private readonly List<FlowInterface<TVolume, TValueDef>> _interfaces;
+    private readonly List<FlowInterface<TAttach, TVolume, TValueDef>> _interfaces;
+
     private readonly Dictionary<TAttach, TVolume> _relations;
-    private readonly Dictionary<TVolume, List<FlowInterface<TVolume, TValueDef>>> _connections;
-    private readonly Dictionary<TwoWayKey<TAttach>, FlowInterface<TVolume, TValueDef>> _interfaceLookUp;
+    private readonly Dictionary<TVolume, HashSet<FlowInterface<TAttach, TVolume, TValueDef>>> _connections;
+    private readonly Dictionary<TwoWayKey<TAttach>, FlowInterface<TAttach, TVolume, TValueDef>> _interfaceLookUp;
     private DefValueStack<TValueDef, double> _totalStack;
 
     public IReadOnlyCollection<TVolume> Volumes => _volumes;
-    public IReadOnlyCollection<FlowInterface<TVolume, TValueDef>> Interfaces => _interfaces;
+    public IReadOnlyCollection<FlowInterface<TAttach, TVolume, TValueDef>> Interfaces => _interfaces;
     public IReadOnlyDictionary<TAttach, TVolume> Relations => _relations;
-    public IReadOnlyDictionary<TVolume, List<FlowInterface<TVolume, TValueDef>>> Connections => _connections;
+    public IReadOnlyDictionary<TVolume, HashSet<FlowInterface<TAttach, TVolume, TValueDef>>> Connections => _connections;
 
-    public IReadOnlyDictionary<TwoWayKey<TAttach>, FlowInterface<TVolume, TValueDef>> InterfaceLookUp =>
-        _interfaceLookUp;
+    public IReadOnlyDictionary<TwoWayKey<TAttach>, FlowInterface<TAttach, TVolume, TValueDef>> InterfaceLookUp => _interfaceLookUp;
 
     public DefValueStack<TValueDef, double> TotalStack => _totalStack;
     public double TotalValue => _totalStack.TotalValue;
@@ -34,9 +35,9 @@ public abstract class FlowSystem<TAttach, TVolume, TValueDef> : IDisposable
     public FlowSystem()
     {
         _volumes = new List<TVolume>();
-        _interfaces = new List<FlowInterface<TVolume, TValueDef>>();
+        _interfaces = new List<FlowInterface<TAttach, TVolume, TValueDef>>();
         _relations = new Dictionary<TAttach, TVolume>();
-        _connections = new Dictionary<TVolume, List<FlowInterface<TVolume, TValueDef>>>();
+        _connections = new Dictionary<TVolume, HashSet<FlowInterface<TAttach, TVolume, TValueDef>>>();
         _interfaceLookUp = new();
     }
 
@@ -49,39 +50,103 @@ public abstract class FlowSystem<TAttach, TVolume, TValueDef> : IDisposable
 
     #region System Data
 
-    public void AddVolume(TVolume volume)
+    #region Public Manipulators
+
+    protected abstract TVolume CreateVolume(TAttach part);
+
+    protected TVolume GenerateForOrGet(TAttach part)
     {
+        if (Relations.TryGetValue(part, out var volume))
+            return volume;
+
+        volume = CreateVolume(part);
+        volume.FlowEvent += OnFlowBoxEvent;
+        
         _volumes.Add(volume);
+        AddRelation(part, volume);
+        return volume;
     }
-
-    public void RemoveVolume(TVolume volume)
-    {
-        _volumes.Remove(volume);
-    }
-
-    public bool AddInterface(TwoWayKey<TAttach> connectors, FlowInterface<TVolume, TValueDef> iFace)
+    
+    public bool AddInterface(TwoWayKey<TAttach> connectors, FlowInterface<TAttach, TVolume, TValueDef> iFace)
     {
         if (_interfaceLookUp.TryAdd(connectors, iFace))
         {
+            TryAddConnection(iFace.From, iFace);
+            TryAddConnection(iFace.To, iFace);
             _interfaces.Add(iFace);
             return true;
         }
         TLog.Warning($"Tried to add existing key: {connectors.A} -> {connectors.B}: {iFace}");
         return false;
     }
+    
+    public void RemoveRelatedPart(TAttach attach)
+    {
+        var volume = _relations[attach];
+        RemoveRelation(attach);
+        _volumes.Remove(volume);
+        _connections.Remove(volume);
+        
+        RemoveInterfacesWhere(x => x.From == volume || x.To == volume);
+    }
 
-    public bool AddRelation(TAttach key, TVolume volume)
+    protected void RemoveInterface(TwoWayKey<TAttach> connectors)
+    {
+        if (_interfaceLookUp.TryGetValue(connectors, out var iFace))
+        {
+            _interfaces.Remove(iFace);
+            _interfaceLookUp.Remove(connectors);
+            if (_connections.TryGetValue(iFace.From, out var conns))
+            {
+                conns.Remove(iFace);
+            }
+        }
+    }
+
+    protected void RemoveInterfacesWhere(Predicate<FlowInterface<TAttach, TVolume, TValueDef>> predicate)
+    {
+        for (int i = _interfaces.Count - 1; i >= 0; i--)
+        {
+            var iFace = _interfaces[i];
+            if (predicate.Invoke(iFace))
+            {
+                _interfaces.RemoveAt(i);
+                _interfaceLookUp.RemoveAll(t => t.Value == iFace);
+                if (_connections.TryGetValue(iFace.From, out var conns))
+                {
+                    conns.Remove(iFace);
+                }
+                if (_connections.TryGetValue(iFace.To, out var conns2))
+                {
+                    conns2.Remove(iFace);
+                }
+            }
+        }
+    }
+    
+    #endregion
+
+    public void RegisterCustomVolume(TVolume volume)
+    {
+        _volumes.Add(volume);
+    }
+
+    public void RegisterCustomRelation(TAttach attach, TVolume volume)
+    {
+        AddRelation(attach, volume);
+    }
+
+    private bool AddRelation(TAttach key, TVolume volume)
     {
         if (_relations.TryAdd(key, volume))
         {
             return true;
         }
-
         TLog.Warning($"Tried to add a duplicate relation to a flow system: {key}:{volume}");
         return false;
     }
 
-    public bool RemoveRelation(TAttach key)
+    protected bool RemoveRelation(TAttach key)
     {
         if (_relations.Remove(key, out var volume))
         {
@@ -93,53 +158,18 @@ public abstract class FlowSystem<TAttach, TVolume, TValueDef> : IDisposable
         return false;
     }
 
-    public void AddConnection(TVolume forVolume, FlowInterface<TVolume, TValueDef> iFace)
+    private void TryAddConnection(TVolume forVolume, FlowInterface<TAttach, TVolume, TValueDef> iFace)
     {
         if (_connections.TryGetValue(forVolume, out var list))
         {
-            list.Add(iFace);
+            if (!list.Add(iFace))
+            {
+                TLog.Warning($"Added duplicate interface with volume: {forVolume}");
+            }
             return;
         }
 
-        _connections.Add(forVolume, new List<FlowInterface<TVolume, TValueDef>>() { iFace });
-    }
-
-    public void RemoveInterface(TwoWayKey<TAttach> connectors)
-    {
-        if (_interfaceLookUp.TryGetValue(connectors, out var iface))
-        {
-            _interfaces.Remove(iface);
-            _interfaceLookUp.Remove(connectors);
-        }
-    }
-
-    public void RemoveInterfacesWhere(Predicate<FlowInterface<TVolume, TValueDef>> predicate)
-    {
-        for (int i = _interfaces.Count - 1; i >= 0; i--)
-        {
-            var iFace = _interfaces[i];
-            if (predicate.Invoke(iFace))
-            {
-                _interfaces.RemoveAt(i);
-
-                var item = _interfaceLookUp.FirstOrDefault(x => x.Value == iFace);
-                _interfaceLookUp.Remove(item.Key);
-            }
-        }
-    }
-
-    protected abstract TVolume CreateVolume(TAttach part);
-
-    protected TVolume GenerateForOrGet(TAttach part)
-    {
-        if (Relations.TryGetValue(part, out var volume))
-            return volume;
-
-        volume = CreateVolume(part);
-        volume.FlowEvent += OnFlowBoxEvent;
-        AddVolume(volume);
-        AddRelation(part, volume);
-        return volume;
+        _connections.Add(forVolume, new HashSet<FlowInterface<TAttach, TVolume, TValueDef>>() { iFace });
     }
 
     public void Notify_PassThroughChanged(TAttach instigator, float passPct)
@@ -194,10 +224,10 @@ public abstract class FlowSystem<TAttach, TVolume, TValueDef> : IDisposable
         }
     }
 
-    public abstract double FlowFunc(FlowInterface<TVolume, TValueDef> connection, double flow);
-    public abstract double ClampFunc(FlowInterface<TVolume, TValueDef> connection, double flow, ClampType clampType);
+    public abstract double FlowFunc(FlowInterface<TAttach, TVolume, TValueDef> connection, double flow);
+    public abstract double ClampFunc(FlowInterface<TAttach, TVolume, TValueDef> connection, double flow, ClampType clampType);
 
-    public void UpdateFlow(FlowInterface<TVolume, TValueDef> iface)
+    public void UpdateFlow(FlowInterface<TAttach, TVolume, TValueDef> iface)
     {
         if (iface.PassPercent <= 0)
         {
@@ -208,14 +238,19 @@ public abstract class FlowSystem<TAttach, TVolume, TValueDef> : IDisposable
 
         var flow = iface.NextFlow;
 
-        flow = FlowFunc(iface, flow);
+        flow = FlowFunc(iface, flow) * iface.PassPercent;
         iface.UpdateBasedOnFlow(flow);
         flow = Math.Abs(flow);
         iface.NextFlow = ClampFunc(iface, flow, ClampType.FlowSpeed);
         iface.Move = ClampFunc(iface, flow, ClampType.FluidMove);
+
+        for (int i = 0; i < 512; i++)
+        {
+            var index = (3 * i) % 512;
+        }
     }
 
-    private void UpdateContent(FlowInterface<TVolume, TValueDef> conn)
+    private void UpdateContent(FlowInterface<TAttach, TVolume, TValueDef> conn)
     {
         DefValueStack<TValueDef, double> res = conn.From.RemoveContent(conn.Move);
         conn.To.AddContent(res);
@@ -243,6 +278,26 @@ public abstract class FlowSystem<TAttach, TVolume, TValueDef> : IDisposable
                 fn -= f;
         }
     }
+    
+    private List<Vector2> GetPointsOnCircle(float radius, int totalPoints)
+    {
+        var points = new List<Vector2>();
+        var angleStep = 360f / totalPoints;
+
+        for (var i = 0; i < totalPoints; i++)
+        {
+            var angleInDegrees = angleStep * i;
+            var angleInRadians = angleInDegrees * (Mathf.PI / 180f);
+
+            var x = radius * Mathf.Cos(angleInRadians);
+            var y = radius * Mathf.Sin(angleInRadians);
+
+            points.Add(new Vector2(x, y));
+        }
+
+        return points;
+    }
+
     
     #endregion
 }

@@ -346,6 +346,11 @@
             Gets an untyped reference to the array.
             </summary>
         </member>
+        <member name="P:TeleCore.Primitive.Immutable.IImmutableArray`1.Array">
+            <summary>
+            Gets an untyped reference to the array.
+            </summary>
+        </member>
         <member name="T:TeleCore.Primitive.Immutable.IImmutableList`1">
             <summary>
              A list of elements that can only be modified by creating a new instance of the list.
@@ -2539,6 +2544,105 @@
             Advances to the next element.
             </summary>
         </member>
+        <member name="T:TeleCore.Primitive.Immutable.LightImmutableArray`1.ImmutableArrayEnumerator">
+            <summary>
+                An array enumerator.
+            </summary>
+            <remarks>
+                It is important that this enumerator does NOT implement <see cref="T:System.IDisposable" />.
+                We want the iterator to inline when we do foreach and to not result in
+                a try/finally frame in the client.
+            </remarks>
+        </member>
+        <member name="F:TeleCore.Primitive.Immutable.LightImmutableArray`1.ImmutableArrayEnumerator._index">
+            <summary>
+                The currently enumerated position.
+            </summary>
+            <value>
+                -1 before the first call to <see cref="M:TeleCore.Primitive.Immutable.LightImmutableArray`1.ImmutableArrayEnumerator.MoveNext" />.
+                >= this.array.Length after <see cref="M:TeleCore.Primitive.Immutable.LightImmutableArray`1.ImmutableArrayEnumerator.MoveNext" /> returns false.
+            </value>
+        </member>
+        <member name="M:TeleCore.Primitive.Immutable.LightImmutableArray`1.ImmutableArrayEnumerator.#ctor(`0[])">
+            <summary>
+                Initializes a new instance of the <see cref="T:TeleCore.Primitive.Immutable.LightImmutableArray`1.ImmutableArrayEnumerator" /> struct.
+            </summary>
+            <param name="array">The array to enumerate.</param>
+        </member>
+        <member name="P:TeleCore.Primitive.Immutable.LightImmutableArray`1.ImmutableArrayEnumerator.Current">
+            <summary>
+                Gets the currently enumerated value.
+            </summary>
+        </member>
+        <member name="M:TeleCore.Primitive.Immutable.LightImmutableArray`1.ImmutableArrayEnumerator.MoveNext">
+            <summary>
+                Advances to the next value to be enumerated.
+            </summary>
+            <returns><c>true</c> if another item exists in the array; <c>false</c> otherwise.</returns>
+        </member>
+        <member name="T:TeleCore.Primitive.Immutable.LightImmutableArray`1.ImmutableArrayEnumeratorObject">
+            <summary>
+            An array enumerator that implements <see cref="T:System.Collections.Generic.IEnumerator`1"/> pattern (including <see cref="T:System.IDisposable"/>).
+            </summary>
+        </member>
+        <member name="F:TeleCore.Primitive.Immutable.LightImmutableArray`1.ImmutableArrayEnumeratorObject.s_EmptyEnumerator">
+            <summary>
+            A shareable singleton for enumerating empty arrays.
+            </summary>
+        </member>
+        <member name="F:TeleCore.Primitive.Immutable.LightImmutableArray`1.ImmutableArrayEnumeratorObject._array">
+            <summary>
+            The array being enumerated.
+            </summary>
+        </member>
+        <member name="F:TeleCore.Primitive.Immutable.LightImmutableArray`1.ImmutableArrayEnumeratorObject._index">
+            <summary>
+            The currently enumerated position.
+            </summary>
+            <value>
+            -1 before the first call to <see cref="M:TeleCore.Primitive.Immutable.LightImmutableArray`1.ImmutableArrayEnumeratorObject.MoveNext"/>.
+            this.array.Length - 1 after MoveNext returns false.
+            </value>
+        </member>
+        <member name="M:TeleCore.Primitive.Immutable.LightImmutableArray`1.ImmutableArrayEnumeratorObject.#ctor(`0[])">
+            <summary>
+            Initializes a new instance of the <see cref="!:Enumerator"/> class.
+            </summary>
+        </member>
+        <member name="P:TeleCore.Primitive.Immutable.LightImmutableArray`1.ImmutableArrayEnumeratorObject.Current">
+            <summary>
+            Gets the currently enumerated value.
+            </summary>
+        </member>
+        <member name="P:TeleCore.Primitive.Immutable.LightImmutableArray`1.ImmutableArrayEnumeratorObject.System#Collections#IEnumerator#Current">
+            <summary>
+            Gets the currently enumerated value.
+            </summary>
+        </member>
+        <member name="M:TeleCore.Primitive.Immutable.LightImmutableArray`1.ImmutableArrayEnumeratorObject.MoveNext">
+            <summary>
+            If another item exists in the array, advances to the next value to be enumerated.
+            </summary>
+            <returns><c>true</c> if another item exists in the array; <c>false</c> otherwise.</returns>
+        </member>
+        <member name="M:TeleCore.Primitive.Immutable.LightImmutableArray`1.ImmutableArrayEnumeratorObject.System#Collections#IEnumerator#Reset">
+            <summary>
+            Resets enumeration to the start of the array.
+            </summary>
+        </member>
+        <member name="M:TeleCore.Primitive.Immutable.LightImmutableArray`1.ImmutableArrayEnumeratorObject.Dispose">
+            <summary>
+            Disposes this enumerator.
+            </summary>
+            <remarks>
+            Currently has no action.
+            </remarks>
+        </member>
+        <member name="M:TeleCore.Primitive.Immutable.LightImmutableArray`1.ImmutableArrayEnumeratorObject.Create(`0[])">
+            <summary>
+            Creates an enumerator for the specified array.
+            </summary>
+        </member>
         <member name="T:TeleCore.Primitive.Immutable.ValidatedNotNullAttribute">
             <summary>
             Indicates to Code Analysis that a method validates a particular parameter.
@@ -2622,6 +2726,11 @@
         <member name="T:TeleCore.Primitive.OneOfLoadable">
             <summary>
                 Allows loading a simple <see cref="N:OneOf" /> for int and float.
+            </summary>
+        </member>
+        <member name="M:TeleCore.Primitive.StaticStackGrid`2.Notify_AddValue(Verse.IntVec3,`0,TeleCore.Primitive.Numeric{`1})">
+            <summary>
+            Public accessor to spawn gas.
             </summary>
         </member>
         <member name="M:TeleCore.RoomComponent.PostCreate(TeleCore.RoomTracker)">

@@ -136,18 +136,19 @@ public unsafe struct UnsafeValueStack<TDef, TValue>
 /// </summary>
 /// <typeparam name="TDef">The <see cref="Def" /> of the stack.</typeparam>
 /// <typeparam name="TValue">The numeric type of the stack.</typeparam>
+[StructLayout(LayoutKind.Sequential)]
 public struct DefValueStack<TDef, TValue> : IExposable
     where TDef : Def
     where TValue : unmanaged
 {
-    private ImmutableArray<DefValue<TDef, TValue>> _stack;
+    private LightImmutableArray<DefValue<TDef, TValue>> _stack;
     private Numeric<TValue> _totalValue;
     
     //States
     public int Length => _stack.Length;
     public Numeric<TValue> TotalValue => _totalValue;
-    public bool IsValid => _stack != null && !_stack.IsDefaultOrEmpty;
-    public bool Invalid => _stack == null || _stack.IsDefaultOrEmpty;
+    public bool IsValid => !_stack.IsNullOrEmpty;
+    public bool Invalid =>_stack.IsNullOrEmpty;
     
     public bool IsEmpty => _totalValue.IsZero;
     
@@ -169,7 +170,7 @@ public struct DefValueStack<TDef, TValue> : IExposable
 
     public DefValueStack()
     {
-        _stack = new ImmutableArray<DefValue<TDef, TValue>>(new DefValue<TDef, TValue>[]{});
+        _stack = LightImmutableArray<DefValue<TDef, TValue>>.Empty;
         _totalValue = Numeric<TValue>.Zero;
         
     }
@@ -193,7 +194,8 @@ public struct DefValueStack<TDef, TValue> : IExposable
             TLog.Warning($"[{GetType()}.ctor]Tried to create new FlowValueStack from null DefValue.");
             return;
         }
-        _stack = new ImmutableArray<DefValue<TDef, TValue>>().Add(value);
+
+        _stack = new LightImmutableArray<DefValue<TDef, TValue>>(value); //new ImmutableArray<DefValue<TDef, TValue>>().Add(value);
         _totalValue = value.Value;
     }
     
@@ -293,7 +295,7 @@ public struct DefValueStack<TDef, TValue> : IExposable
     {
         index = -1;
         var tmp = value = new DefValue<TDef, TValue>(key, Numeric<TValue>.Zero);
-        if(_stack.IsDefaultOrEmpty) return false;
+        if(_stack.IsNullOrEmpty) return false;
         for (var i = 0; i < _stack.Length; i++)
         {
             tmp = _stack[i];
@@ -317,9 +319,9 @@ public struct DefValueStack<TDef, TValue> : IExposable
         if (!TryGetValue(newValue.Def, out var index, out var previous))
         {
             //Add onto stack
-            if (_stack.IsDefaultOrEmpty)
+            if (_stack.IsNullOrEmpty)
             {
-                _stack = new ImmutableArray<DefValue<TDef, TValue>>(new[] {newValue});
+                _stack = new LightImmutableArray<DefValue<TDef, TValue>>(newValue);
             }
             else
             {
@@ -373,7 +375,7 @@ public struct DefValueStack<TDef, TValue> : IExposable
 
     public static DefValueStack<TDef, TValue> operator *(DefValueStack<TDef, TValue> a, TValue b)
     {
-        if (a._stack.IsDefaultOrEmpty) return a;
+        if (a._stack.IsNullOrEmpty) return a;
         foreach (var value in a.Values) 
             a[value.Def] *= b;
         return a;
@@ -381,7 +383,7 @@ public struct DefValueStack<TDef, TValue> : IExposable
 
     public static DefValueStack<TDef, TValue> operator /(DefValueStack<TDef, TValue> a, TValue b)
     {
-        if (a._stack.IsDefaultOrEmpty) return a;
+        if (a._stack.IsNullOrEmpty) return a;
         if (new Numeric<TValue>(b).IsZero)
         {
             return new DefValueStack<TDef, TValue>();
@@ -397,7 +399,7 @@ public struct DefValueStack<TDef, TValue> : IExposable
 
     public static DefValueStack<TDef, TValue> operator +(DefValueStack<TDef, TValue> a, DefValueStack<TDef, TValue> b)
     {
-        if (b._stack.IsDefaultOrEmpty) return a;
+        if (b._stack.IsNullOrEmpty) return a;
         foreach (var value in b.Values) 
             a[value.Def] += b[value.Def];
         return a;
@@ -405,7 +407,7 @@ public struct DefValueStack<TDef, TValue> : IExposable
 
     public static DefValueStack<TDef, TValue> operator -(DefValueStack<TDef, TValue> a, DefValueStack<TDef, TValue> b)
     {
-        if (b._stack.IsDefaultOrEmpty) return a;
+        if (b._stack.IsNullOrEmpty) return a;
         foreach (var value in b.Values) 
             a[value.Def] -= b[value.Def];
         return a;
@@ -413,7 +415,7 @@ public struct DefValueStack<TDef, TValue> : IExposable
 
     public static DefValueStack<TDef, TValue> operator *(DefValueStack<TDef, TValue> a, DefValueStack<TDef, TValue> b)
     {
-        if (a._stack.IsDefaultOrEmpty) return a;
+        if (a._stack.IsNullOrEmpty) return a;
         foreach (var value in a.Values) 
             a[value.Def] *= b[value.Def];
         return a;
@@ -421,7 +423,7 @@ public struct DefValueStack<TDef, TValue> : IExposable
 
     public static DefValueStack<TDef, TValue> operator /(DefValueStack<TDef, TValue> a, DefValueStack<TDef, TValue> b)
     {
-        if (a._stack.IsDefaultOrEmpty) return a;
+        if (a._stack.IsNullOrEmpty) return a;
         foreach (var value in a.Values)
         {
             if (b[value.Def].Value.IsZero)
@@ -453,14 +455,14 @@ public struct DefValueStack<TDef, TValue> : IExposable
 
     public static DefValueStack<TDef, TValue> operator *(DefValueStack<TDef, TValue> a, DefValue<TDef, TValue> value)
     {
-        if (a._stack.IsDefaultOrEmpty) return a;
+        if (a._stack.IsNullOrEmpty) return a;
         a[value.Def] *= value;
         return a;
     }
 
     public static DefValueStack<TDef, TValue> operator /(DefValueStack<TDef, TValue> a, DefValue<TDef, TValue> value)
     {
-        if (a._stack.IsDefaultOrEmpty) return a;
+        if (a._stack.IsNullOrEmpty) return a;
         if (value.Value.IsZero)
         {
             return new DefValueStack<TDef, TValue>();

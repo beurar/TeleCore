@@ -7,10 +7,10 @@ public enum InterfaceFlowMode
 {
     FromTo,
     ToFrom, 
-    BiDirectional
+    TwoWay
 }
 
-public class FlowInterface<TVolume, TValueDef>
+public class FlowInterface<TAttach, TVolume, TValueDef>
 where TValueDef : FlowValueDef
 where TVolume : FlowVolume<TValueDef>
 {
@@ -20,21 +20,28 @@ where TVolume : FlowVolume<TValueDef>
     
     public double FlowRate { get; set; }
 
+    public TAttach FromPart { get; private set; }
+    public TAttach ToPart { get; private set; }
+    
     public TVolume From { get; private set; }
     public TVolume To { get; private set; }
     public InterfaceFlowMode Mode { get; private set; }
 
     public float PassPercent { get; private set; } = 1f;
     
-    public FlowInterface(TVolume from, TVolume to)
+    public FlowInterface(TAttach fromPart, TAttach toPart, TVolume from, TVolume to)
     {
+        FromPart = fromPart;
+        ToPart = toPart;
         From = from;
         To = to;
-        Mode = InterfaceFlowMode.BiDirectional;
+        Mode = InterfaceFlowMode.TwoWay;
     }
 
-    public FlowInterface(TVolume from, TVolume to, InterfaceFlowMode mode)
+    public FlowInterface(TAttach fromPart, TAttach toPart, TVolume from, TVolume to, InterfaceFlowMode mode)
     {
+        FromPart = fromPart;
+        ToPart = toPart;
         From = from;
         To = to;
         Mode = mode;
@@ -52,7 +59,7 @@ where TVolume : FlowVolume<TValueDef>
     {
         return Mode switch
         {
-            InterfaceFlowMode.BiDirectional => true,
+            InterfaceFlowMode.TwoWay => true,
             InterfaceFlowMode.FromTo => from == From && to == To,
             InterfaceFlowMode.ToFrom => from == To && to == From,
             _ => false
@@ -76,7 +83,7 @@ where TVolume : FlowVolume<TValueDef>
 
     public override string ToString()
     {
-        return $"{From.FillPercent} =[{Mode}][{PassPercent.ToStringPercent()}]=> {To.FillPercent} (Prev: {PrevFlow} Next: {NextFlow})";
+        return $"{From.FillPercent:P2} =[{Mode}][{PassPercent:P2}]=> {To.FillPercent:P2} (Prev: {PrevFlow} Next: {NextFlow})";
         return base.ToString();
     }
 }

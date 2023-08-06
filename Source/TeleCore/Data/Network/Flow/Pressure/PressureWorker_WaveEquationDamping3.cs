@@ -1,5 +1,6 @@
 ﻿using System;
 using TeleCore.FlowCore;
+using TeleCore.Network.Data;
 
 namespace TeleCore.Network.Flow.Pressure;
 
@@ -12,7 +13,7 @@ public class PressureWorker_WaveEquationDamping3 : PressureWorker
     public override double CSquared => 0.03;
     public double DampFriction => 0.01;
 
-    public override double FlowFunction(FlowInterface<NetworkVolume, NetworkValueDef> iface, double f)
+    public override double FlowFunction(FlowInterface<NetworkPart, NetworkVolume, NetworkValueDef> iface, double f)
     {
         var from = iface.From;
         var to = iface.To;

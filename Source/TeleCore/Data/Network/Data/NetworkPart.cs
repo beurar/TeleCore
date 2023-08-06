@@ -50,7 +50,7 @@ public class NetworkPart : INetworkPart
     public bool IsController => (Config.roles | NetworkRole.Controller) == NetworkRole.Controller;
 
     public bool IsEdge => Config.roles == NetworkRole.Transmitter;
-    public bool IsNode => !IsEdge;
+    public bool IsNode => !IsEdge || IsJunction;
     public bool IsJunction => Config.roles == NetworkRole.Transmitter && _adjacentSet[NetworkRole.Transmitter]?.Count > 2;
     public bool HasConnection => _adjacentSet[NetworkRole.Transmitter]?.Count > 0;
 
