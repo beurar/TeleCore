@@ -31,7 +31,7 @@ public class Gizmo_NetworkOverview : Gizmo, IDisposable
     private float desiredExtendedPartX;
     private float desiredExtendedY;
     private FloatRange partSelRange;
-
+    
     public Gizmo_NetworkOverview(Comp_Network compParent)
     {
         order = -250f;
@@ -187,7 +187,7 @@ public class Gizmo_NetworkOverview : Gizmo, IDisposable
         Widgets.DrawWindowBackground(extendedButton);
         Text.Anchor = TextAnchor.MiddleCenter;
         var curY = extendedButton.y;
-        foreach (var setting in SelectedPart.ExtendoTabs)
+        foreach (var setting in SelectedPart.Tabs)
         {
             if (curY > extendedButton.yMax) continue;
             var labelRect = new Rect(extendedButton.x, curY, extendedButton.width,
@@ -204,7 +204,7 @@ public class Gizmo_NetworkOverview : Gizmo, IDisposable
 
     private void DrawExtendedTab(Rect mainRect)
     {
-        if (SelectedPart.ExtendedTab == null) return;
+        if (SelectedPart.CurrentTab == null) return;
 
         //Extend Rect
         var settingRect = new Rect(mainRect.x, mainRect.y - mainRect.height, mainRect.width, mainRect.height);
@@ -235,7 +235,7 @@ public class Gizmo_NetworkOverview : Gizmo, IDisposable
 
     private void Notify_ExtendHovered(bool isHovered)
     {
-        desiredExtendedY = isHovered ? SelectedPart.ExtendoRange.TrueMax : SelectedPart.ExtendoRange.TrueMin;
+        desiredExtendedY = isHovered ? SelectedPart.ExtendableRange.TrueMax : SelectedPart.ExtendableRange.TrueMin;
     }
 
     private void Notify_PartSelHovered(bool isHovered)
@@ -249,8 +249,8 @@ public class Gizmo_NetworkOverview : Gizmo, IDisposable
         if (Math.Abs(currentExtendedY - desiredExtendedY) > 0.01)
         {
             var val = desiredExtendedY > currentExtendedY ? 1.5f : -1.5f;
-            currentExtendedY = Mathf.Clamp(currentExtendedY + val * SelectedPart.ExtendoTabs.Count,
-                SelectedPart.ExtendoRange.TrueMin, SelectedPart.ExtendoRange.TrueMax);
+            currentExtendedY = Mathf.Clamp(currentExtendedY + val * SelectedPart.Tabs.Count,
+                SelectedPart.ExtendableRange.TrueMin, SelectedPart.ExtendableRange.TrueMax);
         }
 
         if (Math.Abs(curExtendedPartX - desiredExtendedPartX) > 0.01)

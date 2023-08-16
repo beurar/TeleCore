@@ -13,20 +13,24 @@ namespace TeleCore.Network.UI;
 
 public class NetworkInfoView
 {
-    //
     private readonly INetworkPart _part;
+    private Vector2 _filterScroller = Vector2.zero;
 
     //
-    private Vector2 filterScroller = Vector2.zero;
+    public NetworkVolume NetworkVolume => _part.Volume;
 
+    //Extendo Tabs
+    public Dictionary<string, Action<Rect>> Tabs { get; private set; }
+
+    public string CurrentTab { get; private set; }
+    public FloatRange ExtendableRange { get; private set; }
+    
     public NetworkInfoView(INetworkPart part)
     {
-        //
         _part = part;
-
-        //
+        
         SetExtensions();
-        ExtendoRange = new FloatRange(10, Gizmo_NetworkOverview.selSettingHeight * ExtendoTabs.Count);
+        ExtendableRange = new FloatRange(10, Gizmo_NetworkOverview.selSettingHeight * Tabs.Count);
     }
 
     #region MainContent
@@ -148,51 +152,51 @@ public class NetworkInfoView
         }
     }
 
-    //
-    public NetworkVolume NetworkVolume => _part.Volume;
-
-    //Extendo Tabs
-    public Dictionary<string, Action<Rect>> ExtendoTabs { get; private set; }
-
-    public string ExtendedTab { get; private set; }
-    public FloatRange ExtendoRange { get; private set; }
-
     #endregion
 
     #region Extendo Parts
 
     public void SetExtendoTab(string tabKey)
     {
-        ExtendedTab = tabKey;
+        CurrentTab = tabKey;
     }
 
     public void DrawExtendedTab(Rect rect)
     {
-        if (ExtendedTab == null) return;
+        if (CurrentTab == null) return;
         Find.WindowStack.ImmediateWindow(_part.GetHashCode(), rect, WindowLayer.GameUI, delegate
         {
-            if (ExtendedTab == null) return;
-            ExtendoTabs[ExtendedTab].Invoke(rect.AtZero());
+            if (CurrentTab == null) return;
+            Tabs[CurrentTab].Invoke(rect.AtZero());
         }, false, false, 0);
     }
 
-    //
     private void SetExtensions()
     {
-        ExtendoTabs = new Dictionary<string, Action<Rect>>();
+        Tabs = new Dictionary<string, Action<Rect>>();
+
+        //
         if ((_part.Config.roles & NetworkRole.Requester) == NetworkRole.Requester)
         {
-            ExtendoTabs.Add("Requester Settings", delegate
+            Tabs.Add("Requester Settings", delegate
             {
                 //TODO: Replace with extended filter settings (setting how much can be received/taken)
                 //_part.RequestWorker.DrawSettings(rect);
             });
         }
 
-        if (_part.HasContainer)
-            ExtendoTabs.Add("Container Settings", delegate(Rect rect)
+        if (_part.Config.volumeConfig != null)
+        {
+            Tabs.Add("Container Settings", delegate(Rect rect)
             {
                 Widgets.DrawWindowBackground(rect);
+                if (!_part.HasContainer)
+                {
+                    Widgets.Label(rect, "Container is not ready!");
+                    return;
+                }
+
+                //
                 FlowUI<NetworkValueDef>.DrawFlowBoxReadout(rect, _part.Volume);
 
                 //Right Click Input
@@ -202,114 +206,116 @@ public class NetworkInfoView
                     menu.vanishIfMouseDistant = true;
                     Find.WindowStack.Add(menu);
                 }
-                //
-                //TWidgets.AbsorbInput(rect);
             });
 
-        if (_part.Config.roles.HasFlag(NetworkRole.Storage))
-            ExtendoTabs.Add("Filter Settings", delegate(Rect rect)
+
+            if (_part.Config.roles.HasFlag(NetworkRole.Storage))
             {
-                var readoutRect = rect.LeftPart(0.75f).ContractedBy(5).Rounded();
-                var clipboardRect = new Rect(readoutRect.xMax + 5, readoutRect.y, 22f, 22f);
-                var clipboardInsertRect = new Rect(clipboardRect.xMax + 5, readoutRect.y, 22f, 22f);
-
-                var listingRect = readoutRect.ContractedBy(2).Rounded();
-
-                Widgets.DrawWindowBackground(rect);
-                TWidgets.DrawColoredBox(readoutRect, TColor.BlueHueBG, TColor.MenuSectionBGBorderColor, 1);
-
-                if (_part.Volume.AllowedValues.NullOrEmpty())
-                    return;
-
-                //
-                Listing_Standard listing = new();
-                listing.Begin(listingRect);
-                listing.Label("Filter");
-                listing.GapLine(4);
-                listing.End();
-
-                var scrollOutRect = new Rect(listingRect.x, listingRect.y + listing.curY, listingRect.width,
-                    listingRect.height - listing.curY);
-                var scrollViewRect = new Rect(listingRect.x, listingRect.y + listing.curY, listingRect.width,
-                    (_part.Volume.AllowedValues.Count + 1) * Text.LineHeight);
-
-                Widgets.DrawBoxSolid(scrollOutRect, TColor.BGDarker);
-                Widgets.BeginScrollView(scrollOutRect, ref filterScroller, scrollViewRect, false);
+                Tabs.Add("Filter Settings", delegate(Rect rect)
                 {
-                    Text.Font = GameFont.Tiny;
-                    var label1 = "Type";
-                    var label2 = "Receive";
-                    var label3 = "Store";
-                    var size1 = Text.CalcSize(label1);
-                    var size2 = Text.CalcSize(label2);
-                    var size3 = Text.CalcSize(label3);
+                    var readoutRect = rect.LeftPart(0.75f).ContractedBy(5).Rounded();
+                    var clipboardRect = new Rect(readoutRect.xMax + 5, readoutRect.y, 22f, 22f);
+                    var clipboardInsertRect = new Rect(clipboardRect.xMax + 5, readoutRect.y, 22f, 22f);
 
-                    var row = new WidgetRow(scrollViewRect.xMax, scrollViewRect.y, UIDirection.LeftThenDown);
-                    row.Label(label3, size3.x);
-                    row.Label(label2, size2.x);
-                    row.Label(label1, scrollViewRect.width - (row.curX + size1.x));
+                    var listingRect = readoutRect.ContractedBy(2).Rounded();
 
-                    //TODO: ADD FLOWBOX FILTER SETTINGS
-                    /*float curY = scrollViewRect.y + 24;
-                    foreach (var acceptedType in _part.FlowBox.AcceptedTypes)
+                    Widgets.DrawWindowBackground(rect);
+                    TWidgets.DrawColoredBox(readoutRect, TColor.BlueHueBG, TColor.MenuSectionBGBorderColor, 1);
+
+                    if (_part.Volume.AllowedValues.NullOrEmpty())
+                        return;
+
+                    //
+                    Listing_Standard listing = new();
+                    listing.Begin(listingRect);
+                    listing.Label("Filter");
+                    listing.GapLine(4);
+                    listing.End();
+
+                    var scrollOutRect = new Rect(listingRect.x, listingRect.y + listing.curY, listingRect.width,
+                        listingRect.height - listing.curY);
+                    var scrollViewRect = new Rect(listingRect.x, listingRect.y + listing.curY, listingRect.width,
+                        (_part.Volume.AllowedValues.Count + 1) * Text.LineHeight);
+
+                    Widgets.DrawBoxSolid(scrollOutRect, TColor.BGDarker);
+                    Widgets.BeginScrollView(scrollOutRect, ref _filterScroller, scrollViewRect, false);
                     {
-                        var settings = _part.Container.GetFilterFor(acceptedType);
-                        var canReceive = settings.canReceive;
-                        var canStore = settings.canStore;
+                        Text.Font = GameFont.Tiny;
+                        var label1 = "Type";
+                        var label2 = "Receive";
+                        var label3 = "Store";
+                        var size1 = Text.CalcSize(label1);
+                        var size2 = Text.CalcSize(label2);
+                        var size3 = Text.CalcSize(label3);
 
-                        WidgetRow itemRow = new WidgetRow(scrollViewRect.xMax, curY, UIDirection.LeftThenDown);
-                        itemRow.Checkbox(ref canStore, _part.Container.Filter.CanChange, size3.x);
-                        itemRow.Highlight(size3.x);
-                        itemRow.Checkbox(ref canReceive, _part.Container.Filter.CanChange);
-                        itemRow.Highlight(24);
-                        itemRow.Label($"{acceptedType.LabelCap.CapitalizeFirst().Colorize(acceptedType.valueColor)}: ",
-                            84);
-                        itemRow.Highlight(84);
+                        var row = new WidgetRow(scrollViewRect.xMax, scrollViewRect.y, UIDirection.LeftThenDown);
+                        row.Label(label3, size3.x);
+                        row.Label(label2, size2.x);
+                        row.Label(label1, scrollViewRect.width - (row.curX + size1.x));
 
-                        _part.Container.SetFilterFor(acceptedType, new FlowValueFilterSettings()
+                        //TODO: ADD FLOWBOX FILTER SETTINGS
+                        /*float curY = scrollViewRect.y + 24;
+                        foreach (var acceptedType in _part.FlowBox.AcceptedTypes)
                         {
-                            canReceive = canReceive,
-                            canStore = canStore
-                        });
+                            var settings = _part.Container.GetFilterFor(acceptedType);
+                            var canReceive = settings.canReceive;
+                            var canStore = settings.canStore;
 
-                        //
-                        curY += 24;
-                    }*/
-                    Text.Font = GameFont.Small;
-                }
-                Widgets.EndScrollView();
+                            WidgetRow itemRow = new WidgetRow(scrollViewRect.xMax, curY, UIDirection.LeftThenDown);
+                            itemRow.Checkbox(ref canStore, _part.Container.Filter.CanChange, size3.x);
+                            itemRow.Highlight(size3.x);
+                            itemRow.Checkbox(ref canReceive, _part.Container.Filter.CanChange);
+                            itemRow.Highlight(24);
+                            itemRow.Label($"{acceptedType.LabelCap.CapitalizeFirst().Colorize(acceptedType.valueColor)}: ",
+                                84);
+                            itemRow.Highlight(84);
 
-                //TODO: Add filter for flowbox
-                /*var filterClipboardID = StringCache.NetworkFilterClipBoard + $"_{Container.ParentThing.ThingID}";
-                //Copy
-                if (Widgets.ButtonImageFitted(clipboardRect, TeleContent.Copy, Color.white))
-                {
-                    ClipBoardUtility.TrySetClipBoard(filterClipboardID, Container.GetFilterCopy());
-                    SoundDefOf.Tick_High.PlayOneShotOnCamera(null);
-                }
+                            _part.Container.SetFilterFor(acceptedType, new FlowValueFilterSettings()
+                            {
+                                canReceive = canReceive,
+                                canStore = canStore
+                            });
 
-                //Paste Option
-                //TODO: DEBUG TEST VALUE
-                if (ClipBoardUtility.IsActive(filterClipboardID))
-                {
-                    GUI.color = Color.gray;
-                    if (Widgets.ButtonImage(clipboardInsertRect, TeleContent.Paste))
+                            //
+                            curY += 24;
+                        }*/
+                        Text.Font = GameFont.Small;
+                    }
+                    Widgets.EndScrollView();
+
+                    //TODO: Add filter for flowbox
+                    /*var filterClipboardID = StringCache.NetworkFilterClipBoard + $"_{Container.ParentThing.ThingID}";
+                    //Copy
+                    if (Widgets.ButtonImageFitted(clipboardRect, TeleContent.Copy, Color.white))
                     {
-                        var clipBoard =
-                            ClipBoardUtility.TryGetClipBoard<Dictionary<NetworkValueDef, FlowValueFilterSettings>>(
-                                filterClipboardID);
-                        foreach (var b in clipBoard)
+                        ClipBoardUtility.TrySetClipBoard(filterClipboardID, Container.GetFilterCopy());
+                        SoundDefOf.Tick_High.PlayOneShotOnCamera(null);
+                    }
+
+                    //Paste Option
+                    //TODO: DEBUG TEST VALUE
+                    if (ClipBoardUtility.IsActive(filterClipboardID))
+                    {
+                        GUI.color = Color.gray;
+                        if (Widgets.ButtonImage(clipboardInsertRect, TeleContent.Paste))
                         {
-                            Container.SetFilterFor(b.Key, b.Value);
+                            var clipBoard =
+                                ClipBoardUtility.TryGetClipBoard<Dictionary<NetworkValueDef, FlowValueFilterSettings>>(
+                                    filterClipboardID);
+                            foreach (var b in clipBoard)
+                            {
+                                Container.SetFilterFor(b.Key, b.Value);
+                            }
                         }
                     }
-                }
-                else
-                {
-                    Widgets.DrawTextureFitted(clipboardInsertRect, TeleContent.Paste, 1);
-                }*/
-                GUI.color = Color.white;
-            });
+                    else
+                    {
+                        Widgets.DrawTextureFitted(clipboardInsertRect, TeleContent.Paste, 1);
+                    }*/
+                    GUI.color = Color.white;
+                });
+            }
+        }
     }
 
     #endregion
