@@ -16,6 +16,8 @@ public struct Numeric<TValue> where TValue : unmanaged
     public static Numeric<TValue> Zero => new(NumericLibrary<TValue>.ZeroGetter());
     public static Numeric<TValue> One => new(NumericLibrary<TValue>.OneGetter());
     public static Numeric<TValue> NegativeOne => new(NumericLibrary<TValue>.NegativeOneGetter());
+    public static Numeric<TValue> NaN => new(NumericLibrary<TValue>.NaNGetter());
+    
     public bool IsNaN
     {
         get
@@ -152,10 +154,5 @@ public struct Numeric<TValue> where TValue : unmanaged
     public override int GetHashCode()
     {
         return _number.GetHashCode();
-    }
-
-    public static TValue Clamp(TValue val, Numeric<TValue> min, TValue max)
-    {
-        return NumericLibrary<TValue>.Clamp(val, min, max);
     }
 }

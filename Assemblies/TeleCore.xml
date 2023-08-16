@@ -27,10 +27,60 @@
                 If set on a projectile's def, on Impact, all of these effects will be created - if available.
             </summary>
         </member>
+        <member name="M:TeleCore.FlowCore.FlowVolume`1.OnContainerStateChanged(System.Double,System.Boolean)">
+            <summary>
+                Internal container state logic notifier.
+            </summary>
+        </member>
+        <member name="M:TeleCore.FlowCore.FlowVolume`1.Clear">
+            <summary>
+                Clears all values inside the container.
+            </summary>
+        </member>
+        <member name="M:TeleCore.FlowCore.FlowVolume`1.Fill(System.Int32)">
+            <summary>
+                Clears all values inside the container.
+            </summary>
+        </member>
+        <member name="M:TeleCore.FlowCore.FlowVolume`1.TryAdd(`0,System.Double)">
+            <summary>
+            Tries to add as much as possible from a value.
+            </summary>
+        </member>
+        <member name="M:TeleCore.FlowCore.FlowVolume`1.TryTransferOrFail(TeleCore.FlowCore.FlowVolume{`0},TeleCore.Primitive.DefValue{`0,System.Double})">
+            <summary>
+            Tries to transfer a fixed DefValue, fails when the full amount cannot be transfered.
+            </summary>
+        </member>
+        <member name="M:TeleCore.FlowCore.FlowVolume`1.TryTransfer(TeleCore.FlowCore.FlowVolume{`0},TeleCore.Primitive.DefValue{`0,System.Double})">
+            <summary>
+            Tries to transfer as much as possible.
+            </summary>
+        </member>
+        <member name="M:TeleCore.FlowCore.FlowVolume`1.TryConsumeOrFail(`0,System.Double)">
+            <summary>
+            Tries to consume a fixed amount, fails if there is not enough to consume.
+            </summary>
+        </member>
+        <member name="M:TeleCore.FlowCore.FlowVolume`1.TryConsume(`0,System.Double)">
+            <summary>
+            Tries to consume as much as possible of the required amount.
+            </summary>
+        </member>
         <member name="T:TeleCore.Generics.TwoWayKey`1">
             <summary>
             A key to define a two-way relationship between two objects.
             Meant for tuples of two object of the same type, to ignore ordering of the tuple.
+            </summary>
+        </member>
+        <member name="P:TeleCore.Network.Data.INetworkPart.IsReady">
+            <summary>
+            Determines whether this part has been assigned a <see cref="P:TeleCore.Network.Data.INetworkPart.Network"/>.
+            </summary>
+        </member>
+        <member name="P:TeleCore.Network.Data.INetworkPart.IsWorking">
+            <summary>
+            Determines whether the part is active.
             </summary>
         </member>
         <member name="P:TeleCore.Network.Data.NetworkValueFilter.AllowedValuesByRole">
@@ -101,14 +151,14 @@
             <summary>
             </summary>
         </member>
-        <member name="T:TeleCore.Network.PipeNetworkManager">
-            <summary>
-                Creates, Modifies and Destroys PipeNetworks of the same NetworkDef.
-            </summary>
-        </member>
         <member name="M:TeleCore.Network.PipeNetworkMapInfo.HasConnectionAtFor(Verse.Thing,Verse.IntVec3)">
             <summary>
                 This checks whether any directly connected parts exist for Linking Graphics.
+            </summary>
+        </member>
+        <member name="T:TeleCore.Network.PipeNetworkMaster">
+            <summary>
+                Creates, Modifies and Destroys PipeNetworks of the same NetworkDef.
             </summary>
         </member>
         <member name="M:TeleCore.Network.Utility.IOUtils.RotateIOCells(TeleCore.Network.IO.IOCell[],Verse.Rot4,Verse.IntVec2)">

@@ -24,7 +24,7 @@ public static class PipeNetworkFactory
     //  -If it is a pipe, search along pipe for next node, start with cell and mode
     //      +Once a viable node is found, try to connect IO with the previously started mode
 
-    public static void CreateNetwork(INetworkPart part, out PipeNetwork network)
+    public static void CreateNetwork(PipeNetworkMaster forMaster, INetworkPart part, out PipeNetwork network)
     {
         _curNetwork = new PipeNetwork(part.Config.networkDef);
         _curNetwork.PrepareForRegen(out _curGraph, out _curNetworkSystem);

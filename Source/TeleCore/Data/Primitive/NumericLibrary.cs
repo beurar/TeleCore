@@ -27,9 +27,11 @@ public static class NumericLibrary<T> where T : unmanaged
     public static readonly Func<T> ZeroGetter;
     public static readonly Func<T> OneGetter;
     public static readonly Func<T> NegativeOneGetter;
-    
+    public static readonly Func<T> NaNGetter;
+
     public static readonly Func<IEnumerable<T>, T> Sum;
     public static readonly Func<T, T, T, T> Clamp;
+    public static readonly Func<T, int, T> Round;
     public static readonly Func<T, T, T> Min;
     public static readonly Func<T, T, T> Max;
     public static readonly Func<T, T> Abs;
@@ -52,11 +54,13 @@ public static class NumericLibrary<T> where T : unmanaged
         ZeroGetter = CreateZeroGetter();
         OneGetter = CreateOneGetter();
         NegativeOneGetter = CreateNegativeOneGetter();
+        NaNGetter = CreateNaNGetter();
 
         Sum = CreateSumFunc();
         Min = CreateMinFunc();
         Max = CreateMaxFunc();
         Clamp = CreateClampFunc();
+        Round = CreateRoundFunc();
         Abs = CreateAbsFunc();
     }
 
@@ -175,6 +179,28 @@ public static class NumericLibrary<T> where T : unmanaged
         var lambda = Expression.Lambda<Func<T>>(one);
         return lambda.Compile();
     }
+
+    public static Func<T> CreateNaNGetter()
+    {
+        ConstantExpression constant;
+
+        if (typeof(T) == typeof(float))
+        {
+            constant = Expression.Constant(float.NaN);
+        }
+        else if (typeof(T) == typeof(double))
+        {
+            constant = Expression.Constant(double.NaN);
+        }
+        else
+        {
+            constant = Expression.Constant(0); // For integer types just use 0
+        }
+        
+        var nan = Expression.Convert(constant, typeof(T));
+        var lambda = Expression.Lambda<Func<T>>(nan);
+        return lambda.Compile();
+    }
     
     private static Func<IEnumerable<T>, T> CreateSumFunc()
     {
@@ -210,16 +236,43 @@ public static class NumericLibrary<T> where T : unmanaged
         var max = Expression.Parameter(typeof(T), "max");
 
         var body = Expression.Condition(
-            Expression.LessThan(value, min),
-            min,
+            Expression.LessThan(value, min),min,
             Expression.Condition(
-                Expression.GreaterThan(value, max),
-                max,
-                value));
+                Expression.GreaterThan(value, max),max,value));
 
         var clamp = Expression.Lambda<Func<T, T, T, T>>(body, value, min, max);
 
         return clamp.Compile();
+    }
+    
+    private static Func<T, int, T> CreateRoundFunc()
+    {
+        if (typeof(T) != typeof(double) && typeof(T) != typeof(float) && typeof(T) != typeof(decimal))
+        {
+            return (toRound, decimals) => toRound;
+        }
+
+        var value = Expression.Parameter(typeof(T), "value");
+        var decimals = Expression.Parameter(typeof(int), "decimals");
+
+        if (typeof(T) == typeof(float))
+        {
+            var converted = Expression.Convert(value, typeof(double));
+            var roundMethod = typeof(Math).GetMethod("Round", new[] { typeof(double), typeof(int)});
+            var body = Expression.Call(roundMethod, converted, decimals);
+            var roundConvert = Expression.Convert(body, typeof(float));
+            var round = Expression.Lambda<Func<T, int, T>>(roundConvert, value, decimals);
+
+            return round.Compile();
+        }
+        else
+        {
+            var roundMethod = typeof(Math).GetMethod("Round", new[] { typeof(T), typeof(int)});
+            var body = Expression.Call(roundMethod, value, decimals);
+            var round = Expression.Lambda<Func<T, int, T>>(body, value, decimals);
+
+            return round.Compile();
+        }
     }
     
     private static Func<T, T, T> CreateMinFunc()

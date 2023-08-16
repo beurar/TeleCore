@@ -27,7 +27,7 @@
         <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
         <Version>1.2.5</Version>
         <SignAssembly>False</SignAssembly>
-        <PackageVersion>1.8.9.3</PackageVersion>
+        <PackageVersion>1.9.3.3</PackageVersion>
         <Nullable>enable</Nullable>
     </PropertyGroup>
 
@@ -40,6 +40,7 @@
         <NoWarn>1701;1702;IL2121;1591;</NoWarn>
         <CheckForOverflowUnderflow>true</CheckForOverflowUnderflow>
         <DebugSymbols>true</DebugSymbols>
+        <OutputPath>..\..\Assemblies\</OutputPath>
     </PropertyGroup>
 
     <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
@@ -48,6 +49,7 @@
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <DebugType>full</DebugType>
         <NoWarn>1701;1702;IL2121;1591;</NoWarn>
+        <OutputPath>..\..\Assemblies\</OutputPath>
     </PropertyGroup>
 
     <PropertyGroup>
@@ -79,7 +81,7 @@
             <PrivateAssets>all</PrivateAssets>
         </PackageReference>
 
-        <PackageReference Include="OneOf" Version="3.0.243">
+        <PackageReference Include="OneOf" Version="3.0.255">
             <PrivateAssets>all</PrivateAssets>
         </PackageReference>
         

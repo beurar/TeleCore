@@ -109,6 +109,7 @@ public abstract class RoomComponent
                 var doorLink = new RoomComponentLink(thing, this, doorRoom);
                 Notify_AddLink(doorLink);
                 Notify_AddNeighbor(doorRoom);
+                
                 return;
             }
 
@@ -117,7 +118,7 @@ public abstract class RoomComponent
             Notify_AddNeighbor(roomLink.Opposite(this));
         }
     }
-
+    
     /// <summary>
     ///     Notifies the game when an object has been added to the border of the room.
     /// </summary>

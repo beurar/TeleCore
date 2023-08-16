@@ -4,6 +4,7 @@ using Multiplayer.API;
 using TeleCore.FlowCore;
 using TeleCore.Generics.Container;
 using TeleCore.Network.Flow;
+using TeleCore.Primitive;
 using TeleCore.Static;
 using UnityEngine;
 using Verse;
@@ -51,7 +52,46 @@ public static class FlowUI<T> where T : FlowValueDef
         return size;
     }
 
-    public static void DrawFlowBoxReadout(Rect rect, FlowVolume<T> fb)
+
+    public static float DrawFlowValueStackReadout<TDef, TValue>(Rect rect, DefValueStack<TDef, TValue> stack) 
+        where TDef : FlowValueDef
+        where TValue : unmanaged
+    {
+        float height = 5;
+        Widgets.DrawMenuSection(rect);
+        Widgets.BeginGroup(rect);
+        Text.Font = GameFont.Tiny;
+        Text.Anchor = TextAnchor.UpperLeft;
+        
+        if (stack.IsValid)
+        {
+            foreach (var fv in stack.Values)
+            {
+                var type = fv.Def;
+                var stored = MathG.Round(stack[type].Value,1);
+                var label = $"{type.labelShort}: {stored}";
+                var typeRect = new Rect(5, height, 10, 10);
+                var typeSize = Text.CalcSize(label);
+                var typeLabelRect = new Rect(20, height - 2, typeSize.x, typeSize.y);
+                Widgets.DrawBoxSolid(typeRect, type.valueColor);
+                Widgets.Label(typeLabelRect, label);
+                height += 10 + 2;
+            }
+        }
+        else
+        {
+            Widgets.Label(new Rect(5, height, rect.width - 10, rect.height - 10), "Invalid..");
+            height += 10 + 2;
+        }
+        
+        Text.Font = default;
+        Text.Anchor = default;
+        Widgets.EndGroup();
+        
+        return height;
+    }
+    
+    public static float DrawFlowBoxReadout(Rect rect, FlowVolume<T> fb)
     {
         float height = 5;
         Widgets.DrawMenuSection(rect);
@@ -75,6 +115,7 @@ public static class FlowUI<T> where T : FlowValueDef
         else
         {
             Widgets.Label(new Rect(5, height, rect.width - 10, rect.height - 10), "Invalid..");
+            height += 10 + 2;
         }
 
         Text.Font = default;
@@ -90,6 +131,8 @@ public static class FlowUI<T> where T : FlowValueDef
                 Find.WindowStack.Add(menu);
             }
         }
+
+        return height;
     }
 
     public static List<FloatMenuOption> DebugFloatMenuOptions(FlowVolume<T> fv)

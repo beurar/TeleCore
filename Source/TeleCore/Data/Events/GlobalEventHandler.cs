@@ -1,20 +1,63 @@
 ﻿using System;
 using TeleCore.Events;
+using TeleCore.FlowCore;
 
 namespace TeleCore.Data.Events;
 
 public static class GlobalEventHandler
 {
+    #region Things
+
     public static event ThingSpawnedEvent ThingSpawned;
     public static event ThingDespawnedEvent ThingDespawning;
     public static event ThingDespawnedEvent ThingDespawned;
     public static event ThingStateChangedEvent ThingSentSignal;
+
+    #endregion
+
+    
+    #region Pawns
+
     public static event PawnHediffChangedEvent PawnHediffChanged;
+    //TODO:
+    //public static event PawnEnteredRoomEvent PawnEnteredRoom;
+    //public static event PawnLeftRoomEvent PawnLeftRoom;
+
+    #endregion
+    
+    
+    #region Network
+
+    public static class NetworkEvents<T> where T : FlowValueDef
+    {
+        public static event NetworkVolumeStateChangedEvent<T> NetworkVolumeStateChanged;
+        
+        public static void OnVolumeStateChange (FlowVolume<T> flowVolume, VolumeChangedEventArgs<T>.ChangedAction action)
+        {
+            try
+            {
+                NetworkVolumeStateChanged?.Invoke(new VolumeChangedEventArgs<T>(action, flowVolume));
+            }
+            catch (Exception ex)
+            {
+                TLog.Error($"Error trying to register volume change: {flowVolume}\n{ex.Message}\n{ex.StackTrace}");
+            }
+        }
+    }
+
+    #endregion
+
+    
+    #region Rooms
+
+    public static event RoomCreatedEvent RoomCreated;
+    public static event RoomDisbandedEvent RoomDisbanded;
+
+    #endregion
+    
     public static event TerrainChangedEvent TerrainChanged;
     public static event CellChangedEvent CellChanged;
     
-    public static event RoomCreatedEvent RoomCreated;
-    public static event RoomDisbandedEvent RoomDisbanded;
 
     #region Terrain
 

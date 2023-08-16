@@ -87,7 +87,7 @@ public class NetworkCost
 
             var result = part.Volume.TryRemove(type, totalCost);
             if (result) 
-                totalCost -= result.Actual.TotalValue;
+                totalCost -= result.Actual;
         }
 
         if (totalCost > 0)
@@ -113,7 +113,7 @@ public class NetworkCost
             {
                 var result = storage.Volume.TryRemove(type, totalCost);
                 if (result) 
-                    totalCost -= result.Actual.TotalValue;
+                    totalCost -= result.Actual;
             }
         }
 

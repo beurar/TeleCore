@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using TeleCore.Primitive;
 using UnityEngine;
 
@@ -6,65 +8,81 @@ namespace TeleCore.FlowCore;
 
 public enum FlowState
 {
-    Incomplete,
+    Failed,
     Completed,
     CompletedWithExcess,
     CompletedWithShortage,
-    Failed
 }
 
-public struct FlowResult<TDef, TValue>
+public enum FlowFailureReason
+{    
+    None,
+    TransferOverflow,
+    TransferUnderflow,
+    TriedToAddToFull,
+    TriedToRemoveEmptyValue,
+    TriedToConsumeMoreThanExists,
+    UsedForbiddenValueDef,
+    IllegalState
+}
+
+public enum FlowOperation
+{
+    Add,
+    Remove,
+    Transfer
+}
+
+[DebuggerDisplay("{State}: '{Reason}' | [{Def}]{Actual}/{Actual}")]
+public readonly struct FlowResult<TDef, TValue>
     where TDef : FlowValueDef
     where TValue : unmanaged
 {
-    public DefValueStack<TDef, TValue> Actual { get; private set; }
-    public Numeric<TValue> Desired { get; private set; }
-    public FlowState State { get; private set; }
+    public TDef Def { get; }
+    public Numeric<TValue> Desired { get; }
+    public Numeric<TValue> Actual { get; }
+    public Numeric<TValue> Diff => Desired - Actual;
+    
+    public FlowFailureReason Reason { get; }
 
     public static implicit operator bool(FlowResult<TDef, TValue> result) => result.State != FlowState.Failed;
-
-    public FlowResult()
+    
+    public FlowState State
     {
-    }
-
-    public static FlowResult<TDef, TValue> Init(TValue desiredAmount)
-    {
-        return new FlowResult<TDef, TValue>
+        get
         {
-            State = FlowState.Incomplete,
-            Desired = desiredAmount,
-            Actual = new DefValueStack<TDef,TValue>(),
-        };
+            if (Reason != FlowFailureReason.None)
+                return FlowState.Failed;
+            
+            if (Diff <= Numeric<TValue>.Epsilon)
+                return FlowState.Completed;
+            if (Diff > Numeric<TValue>.Zero)
+                return FlowState.CompletedWithExcess;
+            if (Diff < Numeric<TValue>.Zero)
+                return FlowState.CompletedWithShortage;
+            
+            return FlowState.Failed;
+        }
     }
     
-    public FlowResult<TDef, TValue> Complete(DefValueStack<TDef, TValue> result)
+    private FlowResult(TDef def, TValue desired, FlowFailureReason reason)
     {
-        State = FlowState.Completed;
-        Actual = result;
-        return this;
+        Def = def;
+        Desired = desired;
+        Actual = Numeric<TValue>.Zero;
+        Reason = reason;
     }
     
-    public FlowResult<TDef, TValue> Complete(DefValue<TDef, TValue> result)
+    public FlowResult(TDef def, TValue desired, TValue actual)
     {
-        State = FlowState.Completed;
-        Actual += result;
-        return Resolve();
+        Def = def;
+        Desired = desired;
+        Actual = actual;
     }
     
-    public FlowResult<TDef, TValue> Fail()
+    public static FlowResult<TDef, TValue> InitFailed(TDef def, TValue desired, FlowFailureReason reason)
     {
-        State = FlowState.Failed;
-        return this;
-    }
-    
-    public FlowResult<TDef, TValue> Resolve()
-    {
-        if (MathG.Abs(Actual.TotalValue - Desired) < Numeric<TValue>.Epsilon)
-            State = FlowState.Completed;
-        if (Desired > Actual)
-            State = FlowState.CompletedWithExcess;
-        if (Desired < Actual)
-            State = FlowState.CompletedWithShortage;
-        return this;
+        //Default constructor is NaN failure.
+        return new FlowResult<TDef, TValue>(def, desired, reason);
     }
 }

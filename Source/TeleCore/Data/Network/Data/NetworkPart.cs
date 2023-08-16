@@ -10,14 +10,16 @@ using Verse;
 namespace TeleCore.Network.Data;
 
 [DebuggerDisplay("{Thing}")]
-public class NetworkPart : INetworkPart
+public class NetworkPart : INetworkPart, IExposable
 {
     private NetworkPartConfig _config;
     private INetworkStructure _parent;
     private PipeNetwork _network;
     private NetworkIO _networkIO;
     private NetworkPartSet _adjacentSet;
-    
+    private float _passThrough = 1; //Must be initalized with 100%
+    private bool _isReady;
+
     public NetworkPartConfig Config
     {
         get => _config;
@@ -31,13 +33,23 @@ public class NetworkPart : INetworkPart
     }
 
     public Thing Thing => Parent.Thing;
-    
-    public PipeNetwork Network 
-    { 
+
+    internal PipeNetwork Network
+    {
         get => _network;
-        set => _network = value; 
+        set
+        {
+            _isReady = value != null;
+            _network = value;
+        }
     }
-    
+
+    PipeNetwork INetworkPart.Network
+    {
+        get => Network;
+        set => Network = value;
+    }
+
     public NetworkIO PartIO
     {
         get => _networkIO ?? Parent.GeneralIO;
@@ -53,11 +65,13 @@ public class NetworkPart : INetworkPart
     public bool IsNode => !IsEdge || IsJunction;
     public bool IsJunction => Config.roles == NetworkRole.Transmitter && _adjacentSet[NetworkRole.Transmitter]?.Count > 2;
     public bool HasConnection => _adjacentSet[NetworkRole.Transmitter]?.Count > 0;
-
+    
+    public bool IsReady => _isReady;
     public bool IsWorking => true;
     public bool IsReceiving { get; }
     public bool HasContainer => Volume != null;
     public bool IsLeaking { get; }
+    public float PassThrough => _passThrough;
 
     #region Constructors
 
@@ -69,7 +83,7 @@ public class NetworkPart : INetworkPart
     {
         Parent = parent;
     }
-
+    
     //Main creation in Comp_Network with Activator.
     public NetworkPart(INetworkStructure parent, NetworkPartConfig config) : this(parent)
     {
@@ -78,8 +92,13 @@ public class NetworkPart : INetworkPart
         if (config.netIOConfig != null)
             _networkIO = new NetworkIO(config.netIOConfig, parent.Thing.Position, parent.Thing.Rotation);
     }
-
+    
     #endregion
+    
+    public void ExposeData()
+    {
+        Scribe_Values.Look(ref _passThrough, "passThrough");
+    }
     
     public void PartSetup(bool respawningAfterLoad)
     {
@@ -94,8 +113,17 @@ public class NetworkPart : INetworkPart
     {
     }
 
-    #region Helpers
+    #region Data
 
+    public void SetPassThrough(float f)
+    {
+        _passThrough = f;
+    }
+
+    #endregion
+
+    #region Helpers
+    
     private void GetDirectlyAdjacentNetworkParts()
     {
         for (var c = 0; c < PartIO.Connections.Count; c++)

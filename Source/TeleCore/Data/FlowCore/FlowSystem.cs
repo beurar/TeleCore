@@ -51,7 +51,8 @@ public abstract class FlowSystem<TAttach, TVolume, TValueDef> : IDisposable
     #region System Data
 
     #region Public Manipulators
-
+    
+    protected abstract float GetInterfacePassThrough(TwoWayKey<TAttach> connectors);
     protected abstract TVolume CreateVolume(TAttach part);
 
     protected TVolume GenerateForOrGet(TAttach part)
@@ -66,17 +67,19 @@ public abstract class FlowSystem<TAttach, TVolume, TValueDef> : IDisposable
         AddRelation(part, volume);
         return volume;
     }
+
     
     public bool AddInterface(TwoWayKey<TAttach> connectors, FlowInterface<TAttach, TVolume, TValueDef> iFace)
     {
         if (_interfaceLookUp.TryAdd(connectors, iFace))
         {
+            iFace.SetPassThrough(GetInterfacePassThrough(connectors));
             TryAddConnection(iFace.From, iFace);
             TryAddConnection(iFace.To, iFace);
             _interfaces.Add(iFace);
             return true;
         }
-        TLog.Warning($"Tried to add existing key: {connectors.A} -> {connectors.B}: {iFace}");
+        //TLog.Warning($"Tried to add existing key: {connectors.A} -> {connectors.B}: {iFace}");
         return false;
     }
     
@@ -164,7 +167,7 @@ public abstract class FlowSystem<TAttach, TVolume, TValueDef> : IDisposable
         {
             if (!list.Add(iFace))
             {
-                TLog.Warning($"Added duplicate interface with volume: {forVolume}");
+                //TLog.Warning($"Added duplicate interface between {iFace.FromPart} -> {iFace.ToPart}");
             }
             return;
         }
@@ -172,13 +175,13 @@ public abstract class FlowSystem<TAttach, TVolume, TValueDef> : IDisposable
         _connections.Add(forVolume, new HashSet<FlowInterface<TAttach, TVolume, TValueDef>>() { iFace });
     }
 
-    public void Notify_PassThroughChanged(TAttach instigator, float passPct)
+    public void Notify_PassThroughChanged(TAttach instigator)
     {
         if (_connections.TryGetValue(Relations[instigator], out var interfaces))
         {
             foreach (var iFace in interfaces)
             {
-                iFace.SetPassThrough(passPct);
+                iFace.SetPassThrough(GetInterfacePassThrough((iFace.FromPart, iFace.ToPart)));
             }
         }
     }

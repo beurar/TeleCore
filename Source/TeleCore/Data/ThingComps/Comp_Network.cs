@@ -19,14 +19,15 @@ public class Comp_Network : FXThingComp, INetworkStructure
     //Debug
     protected static bool DebugConnectionCells;
 
-    private List<NetworkPart> _allNetParts;
-
-    //
+    #region Fields
+    
     private PipeNetworkMapInfo _mapInfo;
+    private List<NetworkPart> _allNetParts;
     private Dictionary<NetworkDef, INetworkPart> _netPartByDef;
-    private IFXLayerProvider ifxHolderImplementation;
-
+    //private IFXLayerProvider? _fxProvider;
     private Gizmo_NetworkOverview networkInfoGizmo;
+
+    #endregion
 
     //
     public INetworkPart this[NetworkDef def] => _netPartByDef.TryGetValue(def, out var value) ? value : null;
@@ -279,14 +280,15 @@ public class Comp_Network : FXThingComp, INetworkStructure
         return null;
     }
 
-    public override bool? FX_ShouldDraw(FXLayerArgs args)
-    {
-        return args.index switch
-        {
-            1 => _allNetParts.Any(t => t?.HasConnection ?? false),
-            _ => true
-        };
-    }
+    //TODO: Only add this where necessary, shouldnt be base behaviour
+    // public override bool? FX_ShouldDraw(FXLayerArgs args)
+    // {
+    //     return args.index switch
+    //     {
+    //         1 => _allNetParts.Any(t => t?.HasConnection ?? false),
+    //         _ => true
+    //     };
+    // }
 
     public override float? FX_GetOpacity(FXLayerArgs args)
     {

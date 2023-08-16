@@ -7,7 +7,9 @@ public class RoomComponentLink
     private readonly Rot4[] _connectionDirections;
     private readonly RoomComponent[] _connections;
     private readonly Thing _connector;
-    
+
+    public RoomComponent A => _connections[0];
+    public RoomComponent B => _connections[1];
     public Thing Connector => _connector;
     
     public RoomComponentLink(Thing connector, RoomComponent roomA)

@@ -2,34 +2,40 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using TeleCore.Data.Events;
+using TeleCore.Events;
 using TeleCore.FlowCore.Events;
 using TeleCore.Generics.Container;
-using TeleCore.Network.Data;
 using TeleCore.Primitive;
+using UnityEngine;
+using Verse;
 
 namespace TeleCore.FlowCore;
 
 public class FlowVolume<T> : INotifyFlowEvent where T : FlowValueDef
 {
     private readonly FlowVolumeConfig<T> _config;
-    private DefValueStack<T, double> mainStack;
-    private DefValueStack<T, double> prevStack;
-    
-    public DefValueStack<T, double> Stack => mainStack;
-    
+    private DefValueStack<T, double> _mainStack;
+    private DefValueStack<T, double> _prevStack;
+    private Color _totalColor;
+
+    public Color Color => _totalColor;
+    public DefValueStack<T, double> Stack => _mainStack;
+
     public DefValueStack<T, double> PrevStack
     {
-        get => prevStack;
-        set => prevStack = value;
+        get => _prevStack;
+        set => _prevStack = value;
     }
-    
+
+    public T MainValueDef => _mainStack.Values.MaxBy(c => c.Value).Def;
     public IList<T> AllowedValues => _config.AllowedValues;
-    
+
     public double FlowRate { get; set; }
-    public double TotalValue => mainStack.TotalValue;
+    public double TotalValue => _mainStack.TotalValue;
     public virtual double MaxCapacity => _config.Volume;
-    public double FillPercent => TotalValue / MaxCapacity;
-    
+    public float FillPercent => (float) (TotalValue / MaxCapacity);
+
     public bool Full => TotalValue >= MaxCapacity;
     public bool Empty => TotalValue <= 0;
     
@@ -50,14 +56,14 @@ public class FlowVolume<T> : INotifyFlowEvent where T : FlowValueDef
 
     public FlowVolume()
     {
-        
+
     }
-    
+
     public FlowVolume(FlowVolumeConfig<T> config)
     {
         _config = config;
     }
-    
+
     #region EventHandling
 
     public void OnFlowEvent(FlowEventArgs e)
@@ -72,6 +78,7 @@ public class FlowVolume<T> : INotifyFlowEvent where T : FlowValueDef
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public double CapacityOf(T? def)
     {
+        //TODO: add def specific capacity
         return MaxCapacity;
     }
 
@@ -103,81 +110,335 @@ public class FlowVolume<T> : INotifyFlowEvent where T : FlowValueDef
 
     #endregion
 
+    #region State Change
+
+    public virtual void Notify_AddedValue(T valueType, double amount, double actual)
+    {
+        //Update stack state
+        var delta = amount - actual;
+        OnContainerStateChanged(delta);
+    }
+
+    public virtual void Notify_RemovedValue(T valueType, double amount, double actual)
+    {
+        //Update stack state
+        var delta = amount - actual;
+        OnContainerStateChanged(delta);
+    }
+
+    /// <summary>
+    ///     Internal container state logic notifier.
+    /// </summary>
+    private void OnContainerStateChanged(double delta, bool updateMetaData = false)
+    {
+        var newColor = Color.clear;
+        foreach (var value in _mainStack)
+        {
+            newColor += (float) (value.Value.Value / MaxCapacity) * value.Def.valueColor;
+        }
+
+        //Note: Instead of dividing by the count of values here, could accumulate percentages
+        newColor /= _mainStack.Length;
+        _totalColor += newColor;
+        _totalColor *= 0.5f;
+        _totalColor = SaturateColor(_totalColor);
+
+        //Resolve Action
+        VolumeChangedEventArgs<T>.ChangedAction action = VolumeChangedEventArgs<T>.ChangedAction.Invalid;
+        if(delta > 0)
+            action = VolumeChangedEventArgs<T>.ChangedAction.AddedValue;
+        else if(delta < 0)
+            action = VolumeChangedEventArgs<T>.ChangedAction.RemovedValue;
+        
+        if (Empty && delta < 0)
+            action = VolumeChangedEventArgs<T>.ChangedAction.Emptied;
+        if (Full && delta > 0)
+            action = VolumeChangedEventArgs<T>.ChangedAction.Filled;
+        
+        GlobalEventHandler.NetworkEvents<T>.OnVolumeStateChange(this, action);
+
+        // _totalColor = Color.clear;
+        // if (_mainStack is {IsValid: true, Length: > 0})
+        // {
+        //     foreach (var value in _mainStack)
+        //         _totalColor += (value.Def.valueColor) * (value.Value / MaxCapacity);
+        // }
+    }
+
+    private Color SaturateColor(Color color)
+    {
+        var max = Mathf.Max(color.r, Mathf.Max(color.g, color.b));
+        var min = Mathf.Min(color.r, Mathf.Min(color.g, color.b));
+        var avg = (color.r + color.g + color.b) / 3;
+
+        if (avg > max)
+        {
+            return new Color(color.r / max, color.g / max, color.b / max);
+        }
+        
+        var k = min != 0 ? avg / min : 0;
+        return new Color(color.r + ((color.r - avg) * k),
+            color.g + ((color.g - avg) * k),
+            color.b + ((color.b - avg) * k));
+    }
+    
+    #endregion
+
     #region Manipulation Helpers
+
+    #region FlowSystem
+
+    //This stack stuff is tricky and mainly just for the FlowSystem
     
     public DefValueStack<T, double> RemoveContent(double moveAmount)
     {
         moveAmount = Math.Abs(moveAmount);
         if (moveAmount == 0) return DefValueStack<T, double>.Empty;
-        if(mainStack.IsEmpty) return DefValueStack<T, double>.Empty;
-        
-        var total = mainStack.TotalValue;
+        if (_mainStack.IsEmpty) return DefValueStack<T, double>.Empty;
+
+        var total = _mainStack.TotalValue;
         var finalStack = new DefValueStack<T, double>();
-        foreach (var value in mainStack.Values)
+        foreach (var value in _mainStack.Values)
         {
             var rem = value.Value * moveAmount / total;
             finalStack += (value.Def, rem);
-            mainStack -= (value.Def, rem);
+            _mainStack -= (value.Def, rem);
         }
+
         return finalStack;
     }
-
+    
     public void AddContent(DefValueStack<T, double> fullDiff)
     {
-        mainStack += fullDiff;
+        foreach (var value in fullDiff)
+        {
+            var step = TryAdd(value.Def, value.Value);
+        }
     }
 
+    #endregion
+    
     public void LoadFromStack(DefValueStack<T, double> stack)
     {
-        mainStack = stack;
-    }
-    
-    public FlowResult<T, double>  TryAdd(T def, double value)
-    {
-        var result = FlowResult<T, double>.Init(value);
-
-        if (Full) return result.Fail();
-        
-        var expected = mainStack.TotalValue + value;
-        if (expected > MaxCapacity)
-        {
-            var abundance = expected - MaxCapacity;
-            var actual = value - abundance;
-            var actualDefVal = (def, actual);
-            mainStack += actualDefVal;
-            return result.Complete(actualDefVal);
-        }
-
-        mainStack += (def, value);
-        return FlowResult<T, double>.Init(value).Complete((def, value));
+        Clear();
+        foreach (var defVal in stack)
+            _ = TryAdd(defVal.Def, defVal.Value);
     }
 
-    public FlowResult<T, double> TryRemove(T def, double value)
-    {
-        var result = FlowResult<T, double>.Init(value);   
-        if (value > mainStack[def].Value)
-        {
-            if(mainStack.IsEmpty) return result.Fail();
-            var leftOver = value - mainStack.TotalValue;
-            var final = mainStack;
-            mainStack = DefValueStack<T, double>.Empty;
-            return result.Complete(final);
-        }
-        
-        mainStack -= (def, value);
-        return result.Complete((def, value));
-    }
-
-    public FlowResult<T, double>  TryConsume(T def, double value)
-    {
-        return TryRemove(def, value);
-    }
-    
+    /// <summary>
+    ///     Clears all values inside the container.
+    /// </summary>
     public void Clear()
     {
-        mainStack = new DefValueStack<T, double>();
+        _mainStack = DefValueStack<T, double>.Empty;
+        _totalColor = Color.white;
     }
 
+    /// <summary>
+    ///     Clears all values inside the container.
+    /// </summary>
+    public void Fill(int toCapacity)
+    {
+        var totalValue = toCapacity - TotalValue;
+        if (toCapacity <= 0) return;
+
+        var valuePerType = totalValue / AllowedValues.Count;
+        foreach (var def in AllowedValues)
+            _ = TryAdd(def, valuePerType);
+    }
+
+    #region Processor Methods
+
+    public bool AllowedByFilter(T def)
+    {
+        //TODO: re-add filter
+        return AllowedValues.Contains(def);
+        //return filter.CanReceive(valueType);
+    }
+    
+    private bool ValueOperationCheck(FlowOperation operation, DefValue<T, double> value, out FlowFailureReason reason)
+    {
+        reason = FlowFailureReason.None;
+        
+        if (!AllowedByFilter(value))
+        {
+            reason = FlowFailureReason.UsedForbiddenValueDef;
+            return false;
+        }
+        
+        if (operation == FlowOperation.Add)
+        {
+            if (IsFull(value))
+            {
+                reason = FlowFailureReason.TriedToAddToFull;
+                return false;
+            }
+        }
+        else if (operation == FlowOperation.Remove)
+        {
+            var stored = StoredValueOf(value);
+            if (stored <= 0)
+            {
+                reason = FlowFailureReason.TriedToRemoveEmptyValue;
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static bool CanTransferTo(FlowVolume<T> other, T def, double value, out FlowFailureReason flowFailureReason)
+    {
+        flowFailureReason = FlowFailureReason.None;
+        var total = other.TotalValue;
+        var max = other.MaxCapacity;
+        var expected = total + value;
+        if (expected > max)
+        {
+            flowFailureReason = FlowFailureReason.TransferOverflow;
+            return false;
+        }
+        if (expected < 0)
+        {
+            flowFailureReason = FlowFailureReason.TransferUnderflow;
+            return false;
+        }
+
+        if (other.AllowedValues.Contains(def))
+        {
+            return true;
+        }
+        flowFailureReason = FlowFailureReason.UsedForbiddenValueDef;
+        return false;
+    }
+    
+    public bool TryAdd(T def, double value, out FlowResult<T, double> result)
+    {
+        result = TryAdd(def, value);
+        return result;
+    }
+
+    // public FlowResult<T, double> TryAddOrFail(T def, double amount)
+    // {
+    //     
+    // }
+
+    /// <summary>
+    /// Tries to add as much as possible from a value.
+    /// </summary>
+    public FlowResult<T, double> TryAdd(T def, double amount)
+    {
+        //Lazy sanity checks for failure
+        if (!ValueOperationCheck(FlowOperation.Add, (def, amount), out var reason))
+            return FlowResult<T, double>.InitFailed(def, amount, reason);
+
+        var excessValue = Math.Max(TotalValue + amount - MaxCapacity, 0);
+        var actual = amount - excessValue;
+
+        //Note: Technically never possible as this implies a full container
+        if (actual <= 0) 
+            return FlowResult<T, double>.InitFailed(def, amount, FlowFailureReason.IllegalState);
+
+        //Otherwise continue to add the value
+        _mainStack += new DefValue<T, double>(def, actual);
+
+        Notify_AddedValue(def, amount, actual); //Notify internal logic updates
+
+        //On the result, set actual added value and resolve completion status
+        return new FlowResult<T, double>(def, amount, actual);
+    }
+
+    //##################################################################################################################
+    
+    public bool TryRemove(T def, double value, out FlowResult<T, double> result)
+    {
+        result = TryRemove(def, value);
+        return result;
+    }
+    
+    public FlowResult<T, double> TryRemove(T def, double amount) //TValue valueDef, int value
+    {
+        //Lazy sanity checks for failure
+        if (!ValueOperationCheck(FlowOperation.Remove, (def, amount), out var reason))
+            return FlowResult<T, double>.InitFailed(def, amount, reason);
+
+
+        var available = _mainStack[def];
+        //Calculate the actual removeable value
+        var actual = Math.Min(available.Value, amount);
+        
+        //Remove the value from the dictionary or update the value if there is still some left
+        _mainStack -= (def, actual);
+
+        //Notify internal cached data
+        Notify_RemovedValue(def, amount, actual);
+
+        //On the result, set actual removed value and resolve completion status
+        return new FlowResult<T, double>(def, amount, actual);
+    }
+    
+    /*public FlowResult<T, double> TryRemove(ICollection<DefValue<T, double>> values)
+    {
+    var result = new FlowResult<T, double>();
+    foreach (var value in values)
+    {
+        var tmp = TryRemove(value);
+        var val = tmp.FullDiff[0];
+        result.AddDiff(val.Def, val.ValueInt);
+    }
+
+    return result.Resolve().Complete();
+    }*/
+
+    /// <summary>
+    /// Tries to transfer a fixed DefValue, fails when the full amount cannot be transfered.
+    /// </summary>
+    public FlowResult<T, double> TryTransferOrFail(FlowVolume<T> other, DefValue<T, double> value) //ALL OR NOTHING
+    {
+        if (CanTransferTo(other, value.Def, value.Value, out FlowFailureReason reason))
+        {
+            //return TryTransfer(other, value);
+            var removeResult = this.TryRemove(value.Def, value.Value);
+            if (removeResult)
+            {
+                return other.TryAdd(removeResult.Def, removeResult.Actual);
+            }
+        }
+        return FlowResult<T, double>.InitFailed(value.Def, value.Value, reason);
+    }
+
+    /// <summary>
+    /// Tries to transfer as much as possible.
+    /// </summary>
+    public FlowResult<T, double> TryTransfer(FlowVolume<T> other, DefValue<T, double> value) //AS MUCH AS POSSIBLE
+    {
+        var remResult = TryRemove(value.Def, value.Value);
+        if (remResult)
+        {
+            return other.TryAdd(remResult.Def, remResult.Actual);
+        }
+        return remResult;
+    }
+
+    #endregion
+
+    /// <summary>
+    /// Tries to consume a fixed amount, fails if there is not enough to consume.
+    /// </summary>
+    public FlowResult<T, double> TryConsumeOrFail(T def, double amount) //ALL OR NOTHING
+    {
+        if (StoredValueOf(def) >= amount) 
+            return TryRemove(def, amount);
+        return FlowResult<T, double>.InitFailed(def, amount, FlowFailureReason.TriedToConsumeMoreThanExists); //value.Value
+    }
+    
+    /// <summary>
+    /// Tries to consume as much as possible of the required amount.
+    /// </summary>
+    public FlowResult<T, double> TryConsume(T def, double amount) //AS MUCH AS POSSIBLE
+    {
+        return TryRemove(def, amount);
+    }
+    
     #endregion
 
     public override string ToString()

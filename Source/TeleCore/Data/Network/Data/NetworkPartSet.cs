@@ -90,8 +90,7 @@ public class NetworkPartSet : IDisposable
     public ICollection<INetworkPart> FullSet => _fullSet;
     public int Size => _fullSet.Count;
 
-    public HashSet<INetworkPart>? this[NetworkRole role] =>
-        _partsByRole.TryGetValue(role, out var value) ? value : null;
+    public HashSet<INetworkPart>? this[NetworkRole role] => _partsByRole.TryGetValue(role, out var value) ? value : null;
 
     public virtual void Dispose()
     {
@@ -115,8 +114,10 @@ public class NetworkPartSet : IDisposable
 
         _fullSet.Add(part);
         foreach (var flag in part.Config.roles.AllFlags())
+        {
             if (!_partsByRole[flag].Add(part))
                 TLog.Warning($"Trying to add existing item: {part} for role {flag}.");
+        }
 
         OnPartAdded(part);
         return true;
@@ -126,7 +127,10 @@ public class NetworkPartSet : IDisposable
     {
         if (!_fullSet.Contains(part)) return;
 
-        foreach (var flag in part.Config.roles.AllFlags()) _partsByRole[flag].Remove(part);
+        foreach (var flag in part.Config.roles.AllFlags())
+        {
+            _partsByRole[flag].Remove(part);
+        }
 
         _fullSet.Remove(part);
         OnPartRemoved(part);

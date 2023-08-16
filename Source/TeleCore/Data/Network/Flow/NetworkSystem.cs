@@ -2,11 +2,13 @@
 using System.Collections.Generic;
 using TeleCore.FlowCore;
 using TeleCore.FlowCore.Events;
+using TeleCore.Generics;
 using TeleCore.Network.Data;
 using TeleCore.Network.Flow.Clamping;
 using TeleCore.Network.Flow.Pressure;
 using TeleCore.Network.Graph;
 using TeleCore.Primitive;
+using UnityEngine;
 
 namespace TeleCore.Network.Flow;
 
@@ -22,6 +24,11 @@ public class NetworkSystem : FlowSystem<NetworkPart, NetworkVolume, NetworkValue
     {
         ClampWorker = new ClampWorker_Overcommit();
         PressureWorker = new PressureWorker_WaveEquationDamping3();
+    }
+
+    protected override float GetInterfacePassThrough(TwoWayKey<NetworkPart> connectors)
+    {
+        return Mathf.Min(connectors.A.PassThrough, connectors.B.PassThrough);
     }
     
     protected override NetworkVolume CreateVolume(NetworkPart part)

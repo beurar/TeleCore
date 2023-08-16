@@ -1,30 +1,33 @@
 ﻿using System.Collections.Generic;
+using TeleCore.Static;
 using Verse;
 
 namespace TeleCore.Network;
 
+//Hierarchy
+//  NetworkMapInfo
+//      - NetworkManager
+//          - PipeNetwork
+
 public class PipeNetworkMapInfo : MapInformation
 {
-    [TweakValue("Network")] public static int NetworkTickInterval = 50;
-
-    //
-    private readonly Dictionary<NetworkDef, PipeNetworkManager> _systemsByType;
-
+    private readonly Dictionary<NetworkDef, PipeNetworkMaster>? _managers;
+    
+    public PipeNetworkMaster this[NetworkDef def] => _managers.TryGetValue(def, out var value) ? value : null;
+    
     public PipeNetworkMapInfo(Map map) : base(map)
     {
         //GlobalEventHandler.ThingSpawned += Notify_NewNetworkStructureSpawned;
-        _systemsByType = new Dictionary<NetworkDef, PipeNetworkManager>();
+        _managers = new Dictionary<NetworkDef, PipeNetworkMaster>();
     }
 
-    public PipeNetworkManager this[NetworkDef def] => _systemsByType.TryGetValue(def, out var value) ? value : null;
-
-    private PipeNetworkManager GetOrCreateNewNetworkSystemFor(NetworkDef networkDef)
+    private PipeNetworkMaster GetOrCreateNewNetworkSystemFor(NetworkDef networkDef)
     {
-        if (_systemsByType.TryGetValue(networkDef, out var network))
+        if (_managers.TryGetValue(networkDef, out var network))
             return network;
 
-        var networkMaster = new PipeNetworkManager(Map, networkDef);
-        _systemsByType.Add(networkDef, networkMaster);
+        var networkMaster = new PipeNetworkMaster(Map, networkDef);
+        _managers.Add(networkDef, networkMaster);
         return networkMaster;
     }
 
@@ -63,8 +66,8 @@ public class PipeNetworkMapInfo : MapInformation
     public override void TeleTick()
     {
         var tick = Find.TickManager.TicksAbs;
-        var shouldTick = TFind.TickManager.CurrentMapTick % NetworkTickInterval == 0;
-        foreach (var system in _systemsByType)
+        var shouldTick = TFind.TickManager.CurrentMapTick % TweakValues.NetworkTickInterval == 0;
+        foreach (var system in _managers)
         {
             system.Value.Tick(shouldTick, tick);
         }
@@ -72,11 +75,11 @@ public class PipeNetworkMapInfo : MapInformation
 
     public override void Update()
     {
-        foreach (var system in _systemsByType) system.Value.Draw();
+        foreach (var system in _managers) system.Value.Draw();
     }
 
     public override void UpdateOnGUI()
     {
-        foreach (var system in _systemsByType) system.Value.DrawOnGUI();
+        foreach (var system in _managers) system.Value.DrawOnGUI();
     }
 }

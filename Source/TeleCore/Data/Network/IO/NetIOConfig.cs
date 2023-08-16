@@ -1,5 +1,8 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Text.RegularExpressions;
 using TeleCore.Network.Utility;
+using UnityEngine;
 using Verse;
 
 namespace TeleCore.Network.IO;
@@ -10,6 +13,9 @@ namespace TeleCore.Network.IO;
 /// </summary>
 public class NetIOConfig : Editable
 {
+    [Unsaved(false)]
+    public IntVec2 patternSize = IntVec2.Invalid;
+    
     public List<IOCellPrototype> cellsEast;
     public List<IOCellPrototype> cellsNorth;
     public List<IOCellPrototype> cellsSouth;
@@ -18,7 +24,6 @@ public class NetIOConfig : Editable
     public List<IOCellPrototype> cellsVisual;
 
     //
-    public IntVec2? patternSize;
     public string pattern;
 
     public List<IOCellPrototype> CellsFor(Rot4 rot)
@@ -45,34 +50,98 @@ public class NetIOConfig : Editable
         return cellsWest;
     }
 
-    private static void Rotate(List<IOCellPrototype> reference, ref List<IOCellPrototype> toRotate, Rot4 rot)
+    private static void Rotate(List<IOCellPrototype> reference, ref List<IOCellPrototype> toRotate)
     {
         toRotate = new List<IOCellPrototype>();
         foreach (var cell in reference)
+        {
+            var asVec3 = cell.offset.ToVector3();
+            Quaternion rotation = Quaternion.AngleAxis(90, Vector3.up);
+            var rotated = rotation * asVec3;
+            rotated = new Vector3(Mathf.RoundToInt(rotated.x), 0, Mathf.RoundToInt(rotated.z));
+            
             toRotate.Add(new IOCellPrototype
             {
-                offset = cell.offset.RotatedBy(Rot4.North),
-                direction = Rot4.North,
+                offset = rotated.ToIntVec3(),
+                direction = cell.direction.Rotated(RotationDirection.Clockwise),
                 mode = cell.mode
             });
+        }
     }
 
     public void PostLoadCustom(ThingDef def)
     {
-        if (patternSize == null && def != null)
-            patternSize = def.size + new IntVec2(2, 2);
+        if (pattern != null)
+        {
+            pattern = Regex.Replace(pattern, @"[\s|]+", "");
+        }
         
-        if (pattern != null || (cellsNorth == null && cellsEast == null && cellsSouth == null & cellsWest == null)) 
-            cellsNorth = IOUtils.GenerateFromPattern(pattern, patternSize.Value);
+        if (patternSize.IsValid)
+        {
+            TLog.Warning("Pattern size should not be set manually.");
+        }
+        
+        if (patternSize.IsInvalid && def != null)
+        {
+            patternSize = def.size + new IntVec2(2, 2);
+            if (pattern != null && pattern.Length != patternSize.Area)
+            {
+                TLog.Warning($"Pattern is not the same size as the area of the thing ({pattern.Length} != {patternSize.Area}), this will cause an error.");
+            }
+        }
 
-        var cells = cellsNorth ?? cellsEast ?? cellsSouth ?? cellsWest;
+        if (pattern != null || (cellsNorth == null && cellsEast == null && cellsSouth == null && cellsWest == null))
+        {
+            cellsNorth = IOUtils.GenerateFromPattern(pattern, patternSize);
+        }
 
-        if (cellsNorth == null) Rotate(cells, ref cellsNorth, Rot4.North);
+        //var cells = cellsNorth ?? cellsEast ?? cellsSouth ?? cellsWest;
+        // if (cellsNorth == null) 
+        //     Rotate(cells, ref cellsNorth, Rot4.North);
 
-        if (cellsEast == null) Rotate(cells, ref cellsEast, Rot4.East);
+        if (cellsEast == null) 
+            Rotate(cellsNorth, ref cellsEast);
 
-        if (cellsSouth == null) Rotate(cells, ref cellsSouth, Rot4.South);
+        if (cellsSouth == null) 
+            Rotate(cellsEast, ref cellsSouth);
 
-        if (cellsWest == null) Rotate(cells, ref cellsWest, Rot4.West);
+        if (cellsWest == null) 
+            Rotate(cellsSouth, ref cellsWest);
+    }
+    
+    public static void DrawCells(List<IOCellPrototype> cells, IntVec2 size)
+    {
+        string text = "";
+
+        for (int x = 0; x < size.x; x++)
+        {
+            for (int y = 0; y < size.z; y++)
+            {
+                text += "#";
+            }
+        }
+        var center = new IntVec3(Math.Abs(0 - (size.x - 1) / 2),0, Math.Abs(0 - (size.z - 1) / 2));
+        foreach (var cell in cells)
+        {
+            var pos = center + cell.offset;
+            var index = pos.z * (size.x) + pos.x;
+            var arr = text.ToCharArray();
+            arr[index] = ForMode(cell.mode);
+            text = new string(arr);
+        }
+        
+        TLog.Message("Cells: \n" + text + "\n");
+    }
+    
+    public static char ForMode(NetworkIOMode mode)
+    {
+        return mode switch
+        {
+            NetworkIOMode.TwoWay => 'X',
+            NetworkIOMode.Input => 'I',
+            NetworkIOMode.Output => 'O',
+            NetworkIOMode.Visual => '+',
+            _ => '#'
+        };
     }
 }

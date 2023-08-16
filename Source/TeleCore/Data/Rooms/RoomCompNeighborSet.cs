@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using TeleCore.Generics;
 using UnityEngine;
 using Verse;
 
@@ -8,16 +9,21 @@ namespace TeleCore;
 
 public class RoomCompNeighborSet : IEnumerable<RoomComponent>
 {
-    private List<RoomComponent> _neighbors;
-    private List<RoomComponentLink> _links;
+    private readonly List<RoomComponent> _neighbors;
+    private readonly Dictionary<TwoWayKey<RoomComponent>, RoomComponentLink> _links;
     
     public IReadOnlyCollection<RoomComponent> Neighbors => _neighbors;
-    public IReadOnlyCollection<RoomComponentLink> Links => _links;
-
+    public IReadOnlyCollection<RoomComponentLink> Links => _links.Values;
+    
+    public RoomComponentLink LinkFor(TwoWayKey<RoomComponent> key)
+    {
+        return _links!.TryGetValue(key)!;
+    }
+    
     public RoomCompNeighborSet()
     {
         _neighbors = new List<RoomComponent>();
-        _links = new List<RoomComponentLink>();
+        _links = new();
     }
     
     public void Notify_AddNeighbor<T>(T neighbor) where T : RoomComponent
@@ -27,7 +33,8 @@ public class RoomCompNeighborSet : IEnumerable<RoomComponent>
 
     public void Notify_AddLink(RoomComponentLink link)
     {
-        _links.Add(link);
+        var key = (link.A, link.B);
+        _links.TryAdd(key, link);
     }
     
     public void Reset()
@@ -43,7 +50,7 @@ public class RoomCompNeighborSet : IEnumerable<RoomComponent>
     
     internal void DrawDebug(RoomComponent comp)
     {
-        foreach (var portal in this._links)
+        foreach (var portal in Links)
         {
             GenDraw.DrawFieldEdges(portal.Connector.Position.ToSingleItemList(), Color.red);
             GenDraw.DrawFieldEdges(portal.Opposite(comp).Room.Cells.ToList(), Color.green);

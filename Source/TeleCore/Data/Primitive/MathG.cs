@@ -30,4 +30,10 @@ public static class MathG
     {
         return NumericLibrary<T>.Abs(value);
     }
+    
+    public static T Round<T>(Numeric<T> value, int decimals) where T : unmanaged
+    {
+        return NumericLibrary<T>.Round(value, decimals);
+    }
+    
 }

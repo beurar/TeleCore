@@ -420,8 +420,8 @@ public class RoomTracker
 
     private void RegenerateListerThings()
     {
-        var watch = new Stopwatch();
-        watch.Start();
+        //var watch = new Stopwatch();
+        //watch.Start();
         
         ListerThings.Clear();
         BorderListerThings.Clear();
@@ -445,8 +445,8 @@ public class RoomTracker
             }
         }
         
-        watch.Stop();
-        TLog.Message($"RegenerateListerThings took {watch.ElapsedMilliseconds}ms");
+        //watch.Stop();
+        //TLog.Message($"RegenerateListerThings took {watch.ElapsedMilliseconds}ms");
     }
 
     private void GenerateCellData()

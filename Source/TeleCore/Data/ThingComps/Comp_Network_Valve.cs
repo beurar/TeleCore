@@ -48,15 +48,15 @@ public class Comp_Network_Valve : Comp_Network
         }
     }
 
-    public override void Notify_SignalReceived(Signal signal)
+    public override void ReceiveCompSignal(string signal)
     {
-        base.Notify_SignalReceived(signal);
-        var flicked = signal.tag is KnownCompSignals.FlickedOff or KnownCompSignals.FlickedOn;
+        var flicked = signal is KnownCompSignals.FlickedOff or KnownCompSignals.FlickedOn;
         if (flicked)
         {
             foreach (var part in NetworkParts)
             {
-                part.Network.NetworkSystem.Notify_PassThroughChanged(part, signal.tag is KnownCompSignals.FlickedOn ? 1.0f : 0.0f);
+                part.SetPassThrough(signal is KnownCompSignals.FlickedOff ? 0f : 1f);
+                part.Network.NetworkSystem.Notify_PassThroughChanged(part);
             }    
         }
     }

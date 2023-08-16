@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
+using RimWorld;
 using TeleCore.Network.IO;
 using TMPro;
 using Verse;
@@ -39,24 +40,23 @@ public static class IOUtils
             _ => throw new ArgumentException($"Invalid IO mode character: {c}")
         };
     }
-
-    public static Rot4 RelativeDir(IntVec3 center, IntVec3 position, IntVec2 size)
+    
+    public static Rot4 RelativeDir(CellRect rect, IntVec3 pos)
     {
-        var topLeft = center;
-        var bottomRight = center + new IntVec3(size.x / 2, 0, size.z / 2);
-
-        if (position.x < topLeft.x)
+        rect = rect.ContractedBy(1);
+        
+        if (pos.x < rect.minX)
             return Rot4.West;
-
-        if (position.x > bottomRight.x)
+        
+        if (pos.x > rect.maxX)
             return Rot4.East;
-
-        if (position.z > bottomRight.z)
+        
+        if (pos.z > rect.minZ)
             return Rot4.North;
-
-        if (position.z < topLeft.z)
+        
+        if (pos.z < rect.maxZ)
             return Rot4.South;
-
+        
         return Rot4.Invalid;
     }
 
@@ -74,32 +74,33 @@ public static class IOUtils
     public static List<IOCellPrototype> GenerateFromPattern(string ioPattern, IntVec2 patternSize)
     {
         var size = patternSize;
-        var width = size.x;
-        var height = size.z;
-
-        var rect = new CellRect(0, 0, width / 2, height / 2).ExpandedBy(1);
+        var width = size.x - 2;
+        var height = size.z - 2;
+        var rect = new CellRect(0 - (width - 1) / 2, 0 - (height - 1) / 2, width, height).ExpandedBy(1);
         var rectList = rect.ToArray();
         
-        ioPattern = DefaultFallbackIfNecessary(ioPattern, size);
-        var modeGrid = GetIOModeArrey(ioPattern);
+        ioPattern =DefaultFallbackIfNecessary(ioPattern, size);
+        var modeGrid = GetIOModeArray(ioPattern);
         
         var result = new List<IOCellPrototype>();
         for (var y = 0; y < rect.Height; y++)
-        for (var x = 0; x < rect.Width; x++)
         {
-            var actualIndex = y * rect.Width + x;
-            var ioMode = modeGrid[actualIndex];
-            var cell = rectList[actualIndex];
-
-            if (ioMode != NetworkIOMode.None)
+            for (var x = 0; x < rect.Width; x++)
             {
-                var rel = RelativeDir(IntVec3.Zero, cell, size / 2);
-                result.Add(new IOCellPrototype
+                var actualIndex = y * rect.Width + x;
+                var ioMode = modeGrid[actualIndex];
+                var cell = rectList[actualIndex];
+
+                if (ioMode != NetworkIOMode.None)
                 {
-                    offset = cell,
-                    direction = rel,
-                    mode = ioMode
-                });
+                    var rel = RelativeDir(rect, cell);
+                    result.Add(new IOCellPrototype
+                    {
+                        offset = cell,
+                        direction = rel,
+                        mode = ioMode
+                    });
+                }
             }
         }
 
@@ -120,9 +121,8 @@ public static class IOUtils
         return arr;
     }
 
-    internal static NetworkIOMode[] GetIOModeArrey(string input)
+    public static NetworkIOMode[] GetIOModeArray(string input)
     {
-        input = input.Replace("|", "");
         var matches = Regex.Matches(input, RegexPattern);
         var modeGrid = new NetworkIOMode[matches.Count];
         for (var i = 0; i < matches.Count; i++)

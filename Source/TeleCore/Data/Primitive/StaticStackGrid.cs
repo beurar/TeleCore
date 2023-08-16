@@ -260,7 +260,7 @@ public unsafe class StaticStackGrid<TDef, TValue>
     {
         actualValue = value;
         var val = cellValue + value;
-        cellValue.Value =  Numeric<TValue>.Clamp(val.Value, Numeric<TValue>.Zero, MaxDensityPerCellFor(def));
+        cellValue.Value = MathG.Clamp(val.Value, Numeric<TValue>.Zero, MaxDensityPerCellFor(def));
         if (val < Numeric<TValue>.Zero)
         {
             actualValue = value + val;

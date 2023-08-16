@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
+using TeleCore.Data.Events;
 using TeleCore.Network.Data;
 using TeleCore.Network.Utility;
+using UnityEngine;
 using Verse;
 
 namespace TeleCore.Network;
@@ -10,28 +12,29 @@ namespace TeleCore.Network;
 /// <summary>
 ///     Creates, Modifies and Destroys PipeNetworks of the same NetworkDef.
 /// </summary>
-public class PipeNetworkManager
+public class PipeNetworkMaster
 {
     //Debug
     internal static bool DEBUG_DrawNetwork = true;
-    
+
+    private readonly NetworkPartSet _totalPartSet;
     private readonly List<PipeNetwork> _allNetworks;
     private readonly NetworkDef _def;
     private readonly PipeNetwork?[] _lookUpGrid;
 
     private readonly Map _map;
-    //private readonly NetworkPartSet _allParts;
     
     private readonly List<DelayedNetworkAction> delayedActions = new();
 
-    public PipeNetworkManager(Map map, NetworkDef networkDef)
+    public NetworkPartSet TotalPartSet => _totalPartSet;
+    
+    public PipeNetworkMaster(Map map, NetworkDef networkDef)
     {
         _def = networkDef;
         _map = map;
         _allNetworks = new List<PipeNetwork>();
         _lookUpGrid = new PipeNetwork[map.cellIndices.NumGridCells];
-
-        //_allParts = new NetworkPartSet(networkDef, null);
+        _totalPartSet = new NetworkPartSet(networkDef);
         //_allParts.RegisterParentForEvents(this);
 
         //
@@ -61,11 +64,17 @@ public class PipeNetworkManager
     public void Notify_PartSpawned(INetworkPart part) //1.
     {
         delayedActions.Add(new DelayedNetworkAction(DelayedNetworkActionType.Register, part, part.Thing.Position));
+        
+        //Add Part
+        _totalPartSet.AddComponent(part);
     }
 
     public void Notify_PartDespawned(INetworkPart part)
     {
         delayedActions.Add(new DelayedNetworkAction(DelayedNetworkActionType.Deregister, part, part.Thing.Position));
+        
+        //Remove Part
+        _totalPartSet.RemoveComponent(part);
     }
 
     //Notify Spawned 1.
@@ -100,8 +109,7 @@ public class PipeNetworkManager
             }
 
             _lookUpGrid[num] = newNetwork;
-            _map.mapDrawer.MapMeshDirty(cell,
-                MapMeshFlag.Buildings | MapMeshFlag.Things | MapMeshFlag.PowerGrid | MapMeshFlag.Terrain);
+            _map.mapDrawer.MapMeshDirty(cell,MapMeshFlag.Buildings | MapMeshFlag.Things | MapMeshFlag.PowerGrid | MapMeshFlag.Terrain);
         }
     }
 
@@ -116,12 +124,12 @@ public class PipeNetworkManager
             if (_lookUpGrid[num] == deadNetwork)
                 _lookUpGrid[num] = null;
             else if (_lookUpGrid[num] != null)
-                TLog.Warning(
-                    $"Multiple networks on the same cell {list[i]}. This is probably a result of an earlier error.");
+                TLog.Warning($"Multiple networks on the same cell {list[i]}. This is probably a result of an earlier error.");
         }
 
         //OnNetworkDestroyed();
-        foreach (var networkSubPart in deadNetwork.PartSet.FullSet) networkSubPart.Network = null;
+        foreach (var networkSubPart in deadNetwork.PartSet.FullSet)
+            networkSubPart.Network = null;
 
         deadNetwork.Dispose();
     }
@@ -141,22 +149,22 @@ public class PipeNetworkManager
     private void TryCreateNetworkAt(IntVec3 cell, INetworkPart part) //3.
     {
         if (!cell.InBounds(_map)) return;
-        if (NetworkAt(cell, _map) == null)
-        {
-            PipeNetworkFactory.CreateNetwork(part, out var network);
-            RegisterNetwork(network);
-        }
+        if (NetworkAt(cell, _map) != null) return;
+        
+        PipeNetworkFactory.CreateNetwork(this, part, out var network);
+        RegisterNetwork(network);
     }
 
     private void TryCreateNetworkAtForDestruction(IntVec3 cell, INetworkPart destroyedPart)
     {
         if (!cell.InBounds(_map)) return;
-        if (NetworkAt(cell, _map) == null)
-            if (PipeNetworkFactory.Fits(cell.GetFirstBuilding(_map), destroyedPart.Config.networkDef, out var part))
-            {
-                PipeNetworkFactory.CreateNetwork(part, out var network);
-                RegisterNetwork(network);
-            }
+        if (NetworkAt(cell, _map) != null) return;
+        
+        if (PipeNetworkFactory.Fits(cell.GetFirstBuilding(_map), destroyedPart.Config.networkDef, out var part))
+        {
+            PipeNetworkFactory.CreateNetwork(this, part!, out var network);
+            RegisterNetwork(network);
+        }
     }
 
     private void TryDestroyNetworkAt(IntVec3 cell)

@@ -25,16 +25,25 @@ public interface INetworkPart
     public bool IsEdge { get; }
     public bool IsJunction { get; }
 
+    /// <summary>
+    /// Determines whether this part has been assigned a <see cref="Network"/>.
+    /// </summary>
+    public bool IsReady { get; }
+    
+    /// <summary>
+    /// Determines whether the part is active.
+    /// </summary>
     public bool IsWorking { get; }
 
-    [Obsolete(
-        "This has been basically replaced by the FlowSystem, if prevflow has a value it means there was value transfer")]
+    [Obsolete("This has been basically replaced by the FlowSystem, if prevflow has a value it means there was value transfer")]
     public bool IsReceiving { get; }
 
     public bool HasContainer { get; }
     public bool HasConnection { get; }
     public bool IsLeaking { get; }
 
+    public float PassThrough { get; }
+    
     public void PostDestroy(DestroyMode mode, Map map);
 
     void Tick();

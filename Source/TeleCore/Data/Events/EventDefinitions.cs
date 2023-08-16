@@ -2,6 +2,7 @@
 
 namespace TeleCore.Data.Events;
 
+//Things
 public delegate void ThingSpawnedEvent(ThingStateChangedEventArgs args);
 
 public delegate void ThingDespawnedEvent(ThingStateChangedEventArgs args);
@@ -11,6 +12,9 @@ public delegate void ThingStateChangedEvent(ThingStateChangedEventArgs args);
 public delegate void TerrainChangedEvent(TerrainChangedEventArgs args);
 
 public delegate void CellChangedEvent(CellChangedEventArgs args);
+
+//Network
+public delegate void NetworkVolumeStateChangedEvent<T>(VolumeChangedEventArgs<T> args) where T : FlowValueDef;
 
 //Hediffs
 public delegate void PawnHediffChangedEvent(PawnHediffChangedEventArgs args);

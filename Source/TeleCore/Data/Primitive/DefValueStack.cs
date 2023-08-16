@@ -163,7 +163,7 @@ public struct DefValueStack<TDef, TValue> : IExposable
     public DefValue<TDef, TValue> this[TDef def]
     {
         get => TryGetWithFallback(def, new DefValue<TDef, TValue>(def, Numeric<TValue>.Zero));
-        private set => TryAddOrSet(value);
+        set => TryAddOrSet(value);
     }
 
     public static DefValueStack<TDef, TValue> Empty => new();
