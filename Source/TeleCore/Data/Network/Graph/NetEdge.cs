@@ -38,6 +38,17 @@ public struct NetEdge : IEdge<NetworkPart>
 
     public NetEdge Reverse => new(To, From, ToPos, FromPos, FromIO, ToIO, Length);
 
+    public static NetEdge Invalid => new NetEdge
+    {
+        From = null,
+        To = null,
+        FromPos = IntVec3.Invalid,
+        ToPos = IntVec3.Invalid,
+        FromIO = NetworkIOMode.None,
+        ToIO = NetworkIOMode.None,
+        Length = -1
+    };
+
     public static implicit operator NetEdge((NetworkPart, NetworkPart) edge)
     {
         return new NetEdge(edge.Item1, edge.Item2);

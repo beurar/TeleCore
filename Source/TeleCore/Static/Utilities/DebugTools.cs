@@ -17,7 +17,7 @@ internal static class DebugTools
 
     #region Graph
 
-    internal static void Debug_DrawGraphOnUI(NetGraph graph)
+    internal static void Debug_DrawGraphOnUI(NetworkGraph graph)
     {
         var size = Find.CameraDriver.CellSizePixels / 4;
 
@@ -61,7 +61,7 @@ internal static class DebugTools
         }
     }
 
-    internal static void Debug_DrawOverlays(NetGraph graph)
+    internal static void Debug_DrawOverlays(NetworkGraph graph)
     {
         foreach (var node in graph.Nodes)
         {

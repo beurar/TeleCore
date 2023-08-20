@@ -29,7 +29,7 @@ public class PipeNetwork : IDisposable
 
     public NetworkDef NetworkDef { get; }
 
-    public NetGraph Graph { get; private set; }
+    public NetworkGraph Graph { get; private set; }
 
     public NetworkSystem NetworkSystem { get; private set; }
 
@@ -44,9 +44,15 @@ public class PipeNetwork : IDisposable
         _partSet.Dispose();
     }
 
-    internal void PrepareForRegen(out NetGraph graph, out NetworkSystem networkSystem)
+    internal void Prepare()
     {
-        graph = Graph = new NetGraph();
+        Graph = new NetworkGraph();
+        NetworkSystem = new NetworkSystem();
+    }
+
+    internal void PrepareForRegen(out NetworkGraph graph, out NetworkSystem networkSystem)
+    {
+        graph = Graph = new NetworkGraph();
         networkSystem = NetworkSystem = new NetworkSystem();
     }
 
@@ -86,7 +92,7 @@ public class PipeNetwork : IDisposable
     {
         NetworkSystem.Draw();
         Graph.Draw();
-
+        
         if (DEBUG_DrawFlowPressure)
             DebugTools.Debug_DrawPressure(NetworkSystem);
     }

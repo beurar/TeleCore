@@ -157,10 +157,12 @@ public class Comp_Network : FXThingComp, INetworkStructure
     public override void PostDestroy(DestroyMode mode, Map previousMap)
     {
         base.PostDestroy(mode, previousMap);
-        //Regen network after all data is set
         _mapInfo.Notify_NetworkStructureDespawned(this);
 
-        foreach (var networkPart in NetworkParts) networkPart.PostDestroy(mode, previousMap);
+        foreach (var networkPart in NetworkParts)
+        {
+            networkPart.PostDestroy(mode, previousMap);
+        }
     }
 
     public virtual void NetworkPostTick(NetworkPart networkSubPart, bool isPowered)

@@ -5,6 +5,7 @@ namespace TeleCore;
 
 public static class TeleCoreDebugViewSettings
 {
+    public static bool DrawNetwork = true;
     public static bool ShowNetworks = false;
     public static bool ShowNetworkParts = false;
     public static bool ShowNetworkPartLinks = false;

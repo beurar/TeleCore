@@ -2,31 +2,15 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using TeleCore.Network.Data;
+using UnityEngine;
 using Verse;
 
 namespace TeleCore.Network.Graph;
 
-public class DataGraph<TNode, TEdge> : IDisposable
-where TEdge : IEdge<TNode>
-{
-    public List<TNode> Nodes { get; private set; }
-
-    public List<TEdge> Edges { get; private set; }
-    
-    public Dictionary<TNode, List<(TEdge, TNode)>> AdjacencyList { get; private set; }
-
-    public Dictionary<(TNode, TNode), TEdge> EdgeLookUp { get; private set; }
-    
-    public void Dispose()
-    {
-        // TODO release managed resources here
-    }
-}
-
 [DebuggerDisplay("{Nodes.Count} | {Edges.Count}")]
-public class NetGraph : IDisposable
+public class NetworkGraph : IDisposable
 {
-    public NetGraph()
+    public NetworkGraph()
     {
         Nodes = new List<NetNode>();
         Edges = new List<NetEdge>();
@@ -57,6 +41,25 @@ public class NetGraph : IDisposable
         EdgeLookUp = null;
     }
 
+    public void DissolveNode(NetworkPart node)
+    {
+        Cells.RemoveAll(c => node.Thing.OccupiedRect().Contains(c));
+        if (Nodes.Contains(node))
+        {
+            Nodes.Remove(node);
+            if (AdjacencyList.TryGetValue(node, out var list))
+            {
+                foreach (var (edge, _) in list)
+                {
+                    Edges.Remove(edge);
+                    EdgeLookUp.Remove((edge.From, edge.To));
+                }
+
+                AdjacencyList.Remove(node);
+            }
+        }
+    }
+
     public List<(NetEdge, NetNode)>? GetAdjacencyList(INetworkPart forPart)
     {
         if (forPart is NetworkPart part)
@@ -67,6 +70,7 @@ public class NetGraph : IDisposable
 
         return null;
     }
+    
     internal void AddCells(INetworkPart netPart)
     {
         foreach (var cell in netPart.Thing.OccupiedRect())
@@ -84,7 +88,7 @@ public class NetGraph : IDisposable
         var key = (fromNode: (NetNode) edge.From, toNode: (NetNode) edge.To);
         if (EdgeLookUp.ContainsKey(key))
         {
-            TLog.Warning($"Key ({edge.From}, {edge.To}) already exists in graph!");
+            //TLog.Debug($"Key ({edge.From}, {edge.To}) already exists in graph!");
             return false;
         }
 
@@ -131,6 +135,7 @@ public class NetGraph : IDisposable
     
     internal void Draw()
     {
+        GenDraw.DrawFieldEdges(Cells, Color.cyan);
     }
 
     internal void OnGUI()

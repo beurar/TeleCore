@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Text;
+using TeleCore.Network.IO;
 using Verse;
 
 namespace TeleCore.Network.Data;
@@ -65,17 +67,50 @@ public class NetworkPartSetExtended : NetworkPartSet
     }
 }
 
-public class NetworkPartSet : IDisposable
+public class NetworkIOPartSet : NetworkPartSet
+{
+    private Dictionary<INetworkPart, IOConnectionResult> _connections;
+
+    public IReadOnlyDictionary<INetworkPart, IOConnectionResult> Connections => _connections;
+    
+    public NetworkIOPartSet(NetworkDef def) : base(def)
+    {
+        _connections = new Dictionary<INetworkPart, IOConnectionResult>();
+    }
+    
+    public bool TryGetResult(INetworkPart part, out IOConnectionResult result)
+    {
+        return _connections.TryGetValue(part, out result);
+    }
+    
+    public bool AddComponent(INetworkPart? part, IOConnectionResult result)
+    {
+        if (base.AddComponent(part))
+        {
+            _connections.Add(part, result);
+            return true;
+        }
+        return false;
+    }
+
+    public new void RemoveComponent(INetworkPart part)
+    {
+        base.RemoveComponent(part);
+        _connections.Remove(part);
+    }
+
+    public override void Dispose()
+    {
+        _connections.Clear();
+    }
+}
+
+public class NetworkPartSet : IDisposable, IEnumerable<INetworkPart>
 {
     protected readonly NetworkDef _def;
     protected readonly HashSet<INetworkPart> _fullSet;
     protected readonly Dictionary<NetworkRole, HashSet<INetworkPart>> _partsByRole;
-
-    // public INetworkPart? this[IntVec3 pos]
-    // {
-    //     get => structuresByPosition.TryGetValue(pos, out var value) ? value : null;
-    // }
-
+    
     public NetworkPartSet(NetworkDef def)
     {
         _def = def;
@@ -104,6 +139,16 @@ public class NetworkPartSet : IDisposable
         return _fullSet.FirstOrFallback(p => p.Thing.OccupiedRect().Contains(pos));
     }
 
+    public IEnumerator<INetworkPart> GetEnumerator()
+    {
+        return _fullSet.GetEnumerator();
+    }
+
+    IEnumerator IEnumerable.GetEnumerator()
+    {
+        return GetEnumerator();
+    }
+    
     #region Registration
 
     public bool AddComponent(INetworkPart? part)
@@ -145,4 +190,14 @@ public class NetworkPartSet : IDisposable
     }
 
     #endregion
+
+    public override string ToString()
+    {
+        StringBuilder sb = new StringBuilder();
+        foreach (var part in _fullSet)
+        {
+            sb.AppendLine($"    - {part.Thing}");
+        }
+        return sb.ToString();
+    }
 }

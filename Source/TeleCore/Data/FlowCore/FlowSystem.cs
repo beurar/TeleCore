@@ -41,11 +41,23 @@ public abstract class FlowSystem<TAttach, TVolume, TValueDef> : IDisposable
         _interfaceLookUp = new();
     }
 
+    public void Reset()
+    {   
+        _volumes.Clear();
+        _interfaces.Clear();
+        _relations.Clear();
+        _connections.Clear();
+        _interfaceLookUp.Clear();
+        _totalStack = new DefValueStack<TValueDef, double>();
+    }
+    
     public void Dispose()
     {
         _volumes.Clear();
+        _interfaces.Clear();
         _relations.Clear();
         _connections.Clear();
+        _interfaceLookUp.Clear();
     }
 
     #region System Data

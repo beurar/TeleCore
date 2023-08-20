@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Text;
 using TeleCore.Network.Flow;
 using TeleCore.Network.IO;
 using TeleCore.Network.Utility;
@@ -16,7 +17,7 @@ public class NetworkPart : INetworkPart, IExposable
     private INetworkStructure _parent;
     private PipeNetwork _network;
     private NetworkIO _networkIO;
-    private NetworkPartSet _adjacentSet;
+    private NetworkIOPartSet _adjacentSet;
     private float _passThrough = 1; //Must be initalized with 100%
     private bool _isReady;
 
@@ -55,14 +56,16 @@ public class NetworkPart : INetworkPart, IExposable
         get => _networkIO ?? Parent.GeneralIO;
     }
 
-    public NetworkPartSet AdjacentSet => _adjacentSet;
+    public NetworkIOPartSet AdjacentSet => _adjacentSet;
 
     public NetworkVolume Volume => ((Network?.NetworkSystem?.Relations?.TryGetValue(this, out var vol) ?? false) ? vol : null)!;
 
+    public bool CanBeNode => _config.volumeConfig != null;
+    
     public bool IsController => (Config.roles | NetworkRole.Controller) == NetworkRole.Controller;
 
     public bool IsEdge => Config.roles == NetworkRole.Transmitter;
-    public bool IsNode => !IsEdge || IsJunction;
+    public bool IsNode => (!IsEdge || IsJunction) && CanBeNode;
     public bool IsJunction => Config.roles == NetworkRole.Transmitter && _adjacentSet[NetworkRole.Transmitter]?.Count > 2;
     public bool HasConnection => _adjacentSet[NetworkRole.Transmitter]?.Count > 0;
     
@@ -88,7 +91,7 @@ public class NetworkPart : INetworkPart, IExposable
     public NetworkPart(INetworkStructure parent, NetworkPartConfig config) : this(parent)
     {
         Config = config;
-        _adjacentSet = new NetworkPartSet(config.networkDef);
+        _adjacentSet = new NetworkIOPartSet(config.networkDef);
         if (config.netIOConfig != null)
             _networkIO = new NetworkIO(config.netIOConfig, parent.Thing.Position, parent.Thing.Rotation);
     }
@@ -107,6 +110,11 @@ public class NetworkPart : INetworkPart, IExposable
     
     public void PostDestroy(DestroyMode mode, Map map)
     {
+        //Notify adjacent parts
+        foreach (var adjPart in _adjacentSet)
+        {
+            adjPart.AdjacentSet.RemoveComponent(this);
+        }
     }
 
     public void Tick()
@@ -130,14 +138,18 @@ public class NetworkPart : INetworkPart, IExposable
         {
             IntVec3 connectionCell = PartIO.Connections[c];
             List<Thing> thingList = connectionCell.GetThingList(Thing.Map);
-            for (int i = 0; i < thingList.Count; i++)
+            for (var i = 0; i < thingList.Count; i++)
             {
-                if (PipeNetworkFactory.Fits(thingList[i], _config.networkDef, out var subPart))
+                var thing = thingList[i];
+                if (thing is not ThingWithComps twc) continue;
+                if (PipeNetworkFactory.Fits(twc, _config.networkDef, out var subPart))
                 {
-                    if (HasIOConnectionTo(subPart))
+                    var result = HasIOConnectionTo(subPart);
+                    var resultReverse = subPart.HasIOConnectionTo(this);
+                    if (result && resultReverse)
                     {
-                        _adjacentSet.AddComponent(subPart);
-                        subPart.AdjacentSet.AddComponent(this);
+                        _adjacentSet.AddComponent(subPart, result);
+                        subPart.AdjacentSet.AddComponent(this, resultReverse);
                     }
                 }
             }
@@ -158,14 +170,34 @@ public class NetworkPart : INetworkPart, IExposable
 
     public string InspectString()
     {
-        //TODO: re-add inspection
-        return "";
+        StringBuilder sb = new StringBuilder();
+        if (DebugSettings.godMode)
+        {
+            sb.AppendLine($"IsController: {IsController}");
+            sb.AppendLine($"IsNode: {IsNode}");
+            sb.AppendLine($"IsEdge: {IsEdge}");
+            sb.AppendLine($"IsJunction: {IsJunction}");
+            sb.AppendLine($"IsReady: {IsReady}");
+            sb.AppendLine($"IsWorking: {IsWorking}");
+            sb.AppendLine($"HasContainer: {HasContainer}");
+            sb.AppendLine($"HasConnection: {HasConnection}");
+            sb.AppendLine($"IsLeaking: {IsLeaking}");
+            sb.AppendLine($"PassThrough: {PassThrough}");
+        }
+
+        return sb.ToString();
     }
 
     public virtual IEnumerable<Gizmo> GetPartGizmos()
     {
         if (DebugSettings.godMode)
         {
+            yield return new Command_Action
+            {
+                defaultLabel = "Adjancy Set",
+                defaultDesc = _adjacentSet.ToString(),
+                action = {}
+            };
             /*if (IsController)
             {
                 yield return new Command_Action()

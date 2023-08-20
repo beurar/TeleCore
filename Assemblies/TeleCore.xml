@@ -156,11 +156,6 @@
                 This checks whether any directly connected parts exist for Linking Graphics.
             </summary>
         </member>
-        <member name="T:TeleCore.Network.PipeNetworkMaster">
-            <summary>
-                Creates, Modifies and Destroys PipeNetworks of the same NetworkDef.
-            </summary>
-        </member>
         <member name="M:TeleCore.Network.Utility.IOUtils.RotateIOCells(TeleCore.Network.IO.IOCell[],Verse.Rot4,Verse.IntVec2)">
             <summary>
                 Rotates the pattern array to match the rotation of the thing.
@@ -168,7 +163,7 @@
         </member>
         <member name="M:TeleCore.Network.Utility.PipeNetworkFactory.Fits(Verse.Thing,TeleCore.NetworkDef,TeleCore.Network.Data.INetworkPart@)">
             <summary>
-                Checks whether or not a thing is part of a specific network.
+            Checks whether or not a thing is part of a specific network.
             </summary>
         </member>
         <member name="T:TeleCore.IFXBase">

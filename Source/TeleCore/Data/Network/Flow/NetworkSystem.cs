@@ -33,10 +33,15 @@ public class NetworkSystem : FlowSystem<NetworkPart, NetworkVolume, NetworkValue
     
     protected override NetworkVolume CreateVolume(NetworkPart part)
     {
+        if (part.Config.volumeConfig == null)
+        {
+            TLog.Error("Tried to create a NetworkVolume without a volumeConfig!");
+            return null;
+        }
         return new NetworkVolume(part.Config.volumeConfig);
     }
 
-    internal void Notify_Populate(NetGraph graph)
+    internal void Notify_Populate(NetworkGraph graph)
     {
         foreach (var edge in graph.Edges)
         {

@@ -11,22 +11,22 @@ namespace TeleCore.Network;
 
 public class PipeNetworkMapInfo : MapInformation
 {
-    private readonly Dictionary<NetworkDef, PipeNetworkMaster>? _managers;
+    private readonly Dictionary<NetworkDef, DynamicNetworkGraph>? _managers;
     
-    public PipeNetworkMaster this[NetworkDef def] => _managers.TryGetValue(def, out var value) ? value : null;
+    public DynamicNetworkGraph this[NetworkDef def] => _managers.TryGetValue(def, out var value) ? value : null;
     
     public PipeNetworkMapInfo(Map map) : base(map)
     {
         //GlobalEventHandler.ThingSpawned += Notify_NewNetworkStructureSpawned;
-        _managers = new Dictionary<NetworkDef, PipeNetworkMaster>();
+        _managers = new Dictionary<NetworkDef, DynamicNetworkGraph>();
     }
 
-    private PipeNetworkMaster GetOrCreateNewNetworkSystemFor(NetworkDef networkDef)
+    private DynamicNetworkGraph GetOrCreateNewNetworkSystemFor(NetworkDef networkDef)
     {
         if (_managers.TryGetValue(networkDef, out var network))
             return network;
 
-        var networkMaster = new PipeNetworkMaster(Map, networkDef);
+        var networkMaster = new DynamicNetworkGraph(networkDef, Map);
         _managers.Add(networkDef, networkMaster);
         return networkMaster;
     }
@@ -35,13 +35,17 @@ public class PipeNetworkMapInfo : MapInformation
     public void Notify_NewNetworkStructureSpawned(Comp_Network structure)
     {
         foreach (var part in structure.NetworkParts)
+        {
             GetOrCreateNewNetworkSystemFor(part.Config.networkDef).Notify_PartSpawned(part);
+        }
     }
 
     public void Notify_NetworkStructureDespawned(Comp_Network structure)
     {
         foreach (var part in structure.NetworkParts)
+        {
             GetOrCreateNewNetworkSystemFor(part.Config.networkDef).Notify_PartDespawned(part);
+        }
     }
 
     /// <summary>
@@ -75,7 +79,8 @@ public class PipeNetworkMapInfo : MapInformation
 
     public override void Update()
     {
-        foreach (var system in _managers) system.Value.Draw();
+        foreach (var system in _managers)
+            system.Value.Draw();
     }
 
     public override void UpdateOnGUI()

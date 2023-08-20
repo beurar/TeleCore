@@ -14,7 +14,7 @@ public interface INetworkPart
     public Thing Thing { get; }
     public PipeNetwork Network { get; internal set; }
     public NetworkIO PartIO { get; }
-    public NetworkPartSet AdjacentSet { get; }
+    public NetworkIOPartSet AdjacentSet { get; }
 
     public NetworkVolume Volume { get; }
     //public NetworkPartSet DirectPartSet { get; }

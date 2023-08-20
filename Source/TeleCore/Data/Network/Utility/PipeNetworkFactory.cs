@@ -14,7 +14,7 @@ public static class PipeNetworkFactory
     internal static int MasterNetworkID = 0;
 
     private static PipeNetwork _curNetwork;
-    private static NetGraph _curGraph;
+    private static NetworkGraph _curGraph;
     private static NetworkSystem _curNetworkSystem;
 
     //Graph Generation Steps
@@ -24,7 +24,7 @@ public static class PipeNetworkFactory
     //  -If it is a pipe, search along pipe for next node, start with cell and mode
     //      +Once a viable node is found, try to connect IO with the previously started mode
 
-    public static void CreateNetwork(PipeNetworkMaster forMaster, INetworkPart part, out PipeNetwork network)
+    /*public static void CreateNetwork(PipeNetworkMaster forMaster, INetworkPart part, out PipeNetwork network)
     {
         _curNetwork = new PipeNetwork(part.Config.networkDef);
         _curNetwork.PrepareForRegen(out _curGraph, out _curNetworkSystem);
@@ -39,7 +39,7 @@ public static class PipeNetworkFactory
         _curGraph = null;
         _curNetworkSystem = null;
         _curNetwork = null;
-    }
+    }*/
 
     private static void RegisterInNetwork(INetworkPart part)
     {
@@ -124,7 +124,6 @@ public static class PipeNetworkFactory
                 InternalEdgeSearch(directPart, directPos, rootNode.PartIO.IOModeAt(directPos), map, rootNode, rootNode);
             }
         }
-        
         _ClosedGlobalSet.Clear();
     }
 
@@ -253,17 +252,16 @@ public static class PipeNetworkFactory
     }
 
     /// <summary>
-    ///     Checks whether or not a thing is part of a specific network.
+    /// Checks whether or not a thing is part of a specific network.
     /// </summary>
-    internal static bool Fits(Thing thing, NetworkDef network, out INetworkPart? part)
+    internal static bool Fits(Thing thing, NetworkDef network, out INetworkPart part)
     {
         part = null;
         if (thing is not ThingWithComps compThing)
             return false;
 
         var networkComp = compThing.GetComp<Comp_Network>();
-        if (networkComp == null)
-            return false;
+        if (networkComp == null) return false;
 
         part = networkComp[network];
         return part != null;
