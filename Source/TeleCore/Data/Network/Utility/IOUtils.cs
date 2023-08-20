@@ -79,7 +79,7 @@ public static class IOUtils
         var rect = new CellRect(0 - (width - 1) / 2, 0 - (height - 1) / 2, width, height).ExpandedBy(1);
         var rectList = rect.ToArray();
         
-        ioPattern =DefaultFallbackIfNecessary(ioPattern, size);
+        ioPattern = DefaultFallbackIfNecessary(ioPattern, size);
         var modeGrid = GetIOModeArray(ioPattern);
         
         var result = new List<IOCellPrototype>();

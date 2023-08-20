@@ -11,6 +11,7 @@ public static class TeleCoreDebugViewSettings
     public static bool ShowNetworkPartLinks = false;
     public static bool ShowRoomtrackers = false;
     public static bool DrawRoomLabels { get; set; }
+    public static bool DrawGraphOnGUI { get; set; } = true;
 }
 
 public class DebugSettings_Telecore : DebugTabMenu

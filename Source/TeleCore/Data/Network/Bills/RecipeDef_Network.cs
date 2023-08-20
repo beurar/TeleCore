@@ -1,6 +1,7 @@
-﻿using Verse;
+﻿using TeleCore.Network.Bills;
+using Verse;
 
-namespace TeleCore.Network.Bills;
+namespace TeleCore;
 
 public class RecipeDef_Network : RecipeDef
 {

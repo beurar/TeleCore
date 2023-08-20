@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics;
 using System.Runtime.CompilerServices;
+using TeleCore.Generics;
 using TeleCore.Network.Data;
 using TeleCore.Network.IO;
 using Verse;
@@ -53,6 +54,11 @@ public struct NetEdge : IEdge<NetworkPart>
     {
         return new NetEdge(edge.Item1, edge.Item2);
     }
+    
+    public static implicit operator TwoWayKey<NetNode>(NetEdge edge)
+    {
+        return (edge.From, edge.To);
+    }
 
     public static implicit operator (NetworkPart, NetworkPart)(NetEdge edge)
     {
@@ -85,5 +91,16 @@ public struct NetEdge : IEdge<NetworkPart>
                 (FromPos, ToPos) = (ToPos, FromPos);
             }
         }
+    }
+
+    public bool Equals(NetEdge other)
+    {
+        return Equals(From, other.From)
+               && Equals(To, other.To)
+               && FromPos.Equals(other.FromPos)
+               && ToPos.Equals(other.ToPos)
+               && FromIO == other.FromIO
+               && ToIO == other.ToIO
+               && Length == other.Length;
     }
 }

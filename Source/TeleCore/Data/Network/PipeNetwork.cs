@@ -101,9 +101,6 @@ public class PipeNetwork : IDisposable
     {
         NetworkSystem.OnGUI();
         Graph.OnGUI();
-
-        if (DEBUG_DrawGraph)
-            DebugTools.Debug_DrawGraphOnUI(Graph);
     }
 
     internal IEnumerable<Gizmo> GetGizmos()

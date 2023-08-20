@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using TeleCore.Network.Data;
 
 namespace TeleCore.Generics;
 
@@ -30,7 +31,7 @@ public struct TwoWayKey<T>
             B = a;
         }
     }
-    
+
     public override int GetHashCode()
     {
         unchecked

@@ -24,8 +24,8 @@ internal static class DebugTools
         foreach (var netEdge in graph.EdgeLookUp)
         {
             var subParts = netEdge.Key;
-            var thingA = subParts.Item1.Value.Thing;
-            var thingB = subParts.Item2.Value.Thing;
+            var thingA = subParts.A.Value.Thing;
+            var thingB = subParts.B.Value.Thing;
 
             //TWidgets.DrawHalfArrow(ScreenPositionOf(thingA.TrueCenter()), ScreenPositionOf(thingB.TrueCenter()), Color.red, 8);
 

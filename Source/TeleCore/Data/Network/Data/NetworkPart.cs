@@ -10,7 +10,7 @@ using Verse;
 
 namespace TeleCore.Network.Data;
 
-[DebuggerDisplay("{Thing}")]
+[DebuggerDisplay("[{Thing.Spawned}]{Thing}")]
 public class NetworkPart : INetworkPart, IExposable
 {
     private NetworkPartConfig _config;
@@ -66,7 +66,10 @@ public class NetworkPart : INetworkPart, IExposable
 
     public bool IsEdge => Config.roles == NetworkRole.Transmitter;
     public bool IsNode => (!IsEdge || IsJunction) && CanBeNode;
-    public bool IsJunction => Config.roles == NetworkRole.Transmitter && _adjacentSet[NetworkRole.Transmitter]?.Count > 2;
+
+    public bool IsJunction => Config.roles == NetworkRole.Transmitter 
+                              && _adjacentSet.Size > 2 
+                              && _adjacentSet[NetworkRole.Transmitter]?.Count >= 2;
     public bool HasConnection => _adjacentSet[NetworkRole.Transmitter]?.Count > 0;
     
     public bool IsReady => _isReady;

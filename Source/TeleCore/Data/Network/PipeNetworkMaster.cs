@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using TeleCore.Data.Events;
 using TeleCore.Network.Data;
@@ -129,7 +130,16 @@ public class DynamicNetworkGraph
         //Only nodes can seek edges, otherwise we create invalid edges
         var start = part.IsNode ? part : FindNextNode(part);
         if (start == null) return;
-        var edges = StartAdjacentEdgeSearch(start);
+        var edges = StartAdjacentEdgeSearch(start).ToList();
+        foreach (var edge in edges)
+        {
+            var junction = edge.From.IsJunction ? edge.From : (edge.To.IsJunction ? edge.To : null);
+            if (junction != null)
+            {
+                var otherEdge = edges.Find(e => !e.Equals(edge) && (e.From == junction || e.To == junction));
+                Graph.DissolveEdge(edge.From == junction ? edge.To : edge.From, otherEdge.From == junction ? otherEdge.To : otherEdge.From);
+            }
+        }
         foreach (var edge in edges)
         {
             Graph.AddEdge(edge);
@@ -138,12 +148,25 @@ public class DynamicNetworkGraph
         //Note: Hacky quickfix
         System.Reset();
         System.Notify_Populate(Graph);
-
     }
 
     public void Notify_PartDespawned(NetworkPart part)
     {
-        Graph.DissolveNode(part);
+        if (part.IsEdge)
+        {
+            if (part.AdjacentSet.Size > 0)
+            {
+                var begin1 = part.AdjacentSet.FullSet.First();
+                var begin2 = part.AdjacentSet.FullSet.Last();
+                var from = (NetworkPart) FindNextNode(part, begin1);
+                var to = (NetworkPart) FindNextNode(part, begin2);
+                Graph.DissolveEdge(from, to);
+            }
+        }
+        if (part.IsNode)
+        {
+            Graph.DissolveNode(part);
+        }
 
         foreach (var cell in part.Thing.OccupiedRect())
         {
@@ -151,11 +174,44 @@ public class DynamicNetworkGraph
             _ioConnGrid.Set(cell, false);
         }
     }
-    
+
+    private static INetworkPart FindNextNode(NetworkPart origin, INetworkPart direction)
+    {
+        var currentSet = StaticListHolder<INetworkPart>.RequestSet($"CurrentSubSet3_{origin}", true);
+        var openSet = StaticListHolder<INetworkPart>.RequestSet($"OpenSubSet3_{origin}", true);
+        var closedSet = StaticListHolder<INetworkPart>.RequestSet($"ClosedSubSet3_{origin}", true);
+
+        openSet.Add(direction);
+        do
+        {
+            foreach (var item in openSet)
+            {
+                closedSet.Add(item);
+            }
+
+            (currentSet, openSet) = (openSet, currentSet);
+            openSet.Clear();
+
+            foreach (var part in currentSet)
+            {
+                foreach (var connPair in part.AdjacentSet.Connections)
+                {
+                    var newPart = connPair.Key;
+                    if (closedSet.Contains(newPart) || newPart == origin) continue;
+                    if (newPart.IsNode)
+                    {
+                        return newPart;
+                    }
+                    openSet.Add(newPart);
+                }
+            }
+
+        } while (openSet.Count > 0);
+        return null;
+    }
+
     private static IEnumerable<NetEdge> StartAdjacentEdgeSearch(INetworkPart rootNode)
     {
-        var map = rootNode.Parent.Thing.Map;
-        
         foreach (var directPart in rootNode.AdjacentSet.FullSet)
         {
             //All directly adjacent nodes get added as infinitely small edges
@@ -163,7 +219,7 @@ public class DynamicNetworkGraph
             {
                 if (directPart.IsJunction)
                 {
-                    
+                        TLog.Warning("Connected to direct junction");    
                 }
                 
                 var connResult = rootNode.HasIOConnectionTo(directPart);
@@ -184,7 +240,8 @@ public class DynamicNetworkGraph
             if (directPart.IsEdge)
             {
                 var directPos = directPart.Parent.Thing.Position;
-                var nextNode = FindNextNode(directPart, rootNode, directPos, rootNode.PartIO.IOModeAt(directPos), map);
+                var nextNode = FindNextNode(directPart, rootNode, directPos, rootNode.PartIO.IOModeAt(directPos));
+                if(!nextNode.IsValid) yield break;
                 yield return nextNode;
             }
         }
@@ -212,10 +269,7 @@ public class DynamicNetworkGraph
                 foreach (var connPair in part.AdjacentSet.Connections)
                 {
                     var newPart = connPair.Key;
-                    var io = connPair.Value;
                     if (closedSet.Contains(newPart)) continue;
-
-                    //Make Edge When Node Found
                     if (newPart.IsNode)
                     {
                         return newPart;
@@ -228,7 +282,7 @@ public class DynamicNetworkGraph
         return null;
     }
 
-    private static NetEdge FindNextNode(INetworkPart rootPart, INetworkPart spawnedPart, IntVec3 rootCell, NetworkIOMode rootMode, Map map)
+    private static NetEdge FindNextNode(INetworkPart rootPart, INetworkPart searcher, IntVec3 rootCell, NetworkIOMode rootMode)
     {
         var currentSet = StaticListHolder<INetworkPart>.RequestSet($"CurrentSubSet_{rootPart}", true);
         var openSet = StaticListHolder<INetworkPart>.RequestSet($"OpenSubSet_{rootPart}", true);
@@ -253,12 +307,12 @@ public class DynamicNetworkGraph
                 {
                     var newPart = connPair.Key;
                     var io = connPair.Value;
-                    if (closedSet.Contains(newPart)) continue;
+                    if (closedSet.Contains(newPart) || newPart == searcher) continue;
                     
                     //Make Edge When Node Found
                     if (newPart.IsNode)
                     {
-                        return new NetEdge(spawnedPart, newPart, rootCell, io.In, rootMode, io.InMode, curLength);
+                        return new NetEdge(searcher, newPart, rootCell, io.In, rootMode, io.InMode, curLength);
                     }
 
                     //If Edge, continue search

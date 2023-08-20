@@ -21,6 +21,10 @@ public static class TWidgets
 
         var rect = new Rect(v.x - sizeHalf, v.y - sizeHalf, size, size);
         DrawColoredBox(rect, new Color(1, 1, 1, 0.125f), Color.white, 1);
+        
+        Text.Anchor = TextAnchor.MiddleCenter;
+        Widgets.Label(rect.ExpandedBy(42,0), $"[{thing.Spawned}]{thing}");
+        Text.Anchor = default;
     }
 
     public static Vector2 ToScreenPos(this Vector3 vec)

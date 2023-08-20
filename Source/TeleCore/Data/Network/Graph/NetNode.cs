@@ -25,6 +25,6 @@ public struct NetNode
 
     public override int GetHashCode()
     {
-        return Value.GetHashCode();
+        return Value?.GetHashCode() ?? 0;
     }
 }

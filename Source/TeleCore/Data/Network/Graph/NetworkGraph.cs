@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using TeleCore.Generics;
 using TeleCore.Network.Data;
 using UnityEngine;
 using Verse;
@@ -12,38 +13,60 @@ public class NetworkGraph : IDisposable
 {
     public NetworkGraph()
     {
-        Nodes = new List<NetNode>();
-        Edges = new List<NetEdge>();
+        Nodes = new HashSet<NetNode>();
+        Edges = new HashSet<NetEdge>();
         AdjacencyList = new Dictionary<NetNode, List<(NetEdge, NetNode)>>();
-        EdgeLookUp = new Dictionary<(NetNode, NetNode), NetEdge>();
-        Cells = new List<IntVec3>();
+        EdgeLookUp = new Dictionary<TwoWayKey<NetNode>, NetEdge>();
+        //Cells = new List<IntVec3>();
     }
 
-    public List<NetNode> Nodes { get; private set; }
-    public List<NetEdge> Edges { get; private set; }
+    public HashSet<NetNode> Nodes { get; private set; }
+    public HashSet<NetEdge> Edges { get; private set; }
     public Dictionary<NetNode, List<(NetEdge, NetNode)>> AdjacencyList { get; private set; }
-    public Dictionary<(NetNode, NetNode), NetEdge> EdgeLookUp { get; private set; }
+    public Dictionary<TwoWayKey<NetNode>, NetEdge> EdgeLookUp { get; private set; }
 
-    public List<IntVec3> Cells { get; private set; }
+    //public List<IntVec3> Cells { get; private set; }
 
     public void Dispose()
     {
-        Cells.Clear();
+        //Cells.Clear();
         Nodes.Clear();
         Edges.Clear();
         AdjacencyList.Clear();
         EdgeLookUp.Clear();
 
-        Cells = null;
+        //Cells = null;
         Nodes = null;
         Edges = null;
         AdjacencyList = null;
         EdgeLookUp = null;
     }
 
+    public void DissolveEdge(NetworkPart from, NetworkPart to)
+    {
+        if (EdgeLookUp.TryGetValue((from, to), out var edge))
+        {        
+            Edges.Remove(edge);
+            EdgeLookUp.Remove(edge);
+            if (AdjacencyList.TryGetValue(edge.From, out var fromList))
+            {
+                fromList.RemoveAll(e => e.Item2.Value == edge.To);
+            }
+            if (AdjacencyList.TryGetValue(edge.To, out var toList))
+            {
+                toList.RemoveAll(e => e.Item2.Value == edge.From);
+            }
+        }
+    }
+
+    public void DissolveEdge(NetEdge edge)
+    {
+        DissolveEdge(edge.From, edge.To);
+    }
+
     public void DissolveNode(NetworkPart node)
     {
-        Cells.RemoveAll(c => node.Thing.OccupiedRect().Contains(c));
+        //Cells.RemoveAll(c => node.Thing.OccupiedRect().Contains(c));
         if (Nodes.Contains(node))
         {
             Nodes.Remove(node);
@@ -75,70 +98,55 @@ public class NetworkGraph : IDisposable
     {
         foreach (var cell in netPart.Thing.OccupiedRect())
         {
-            Cells.Add(cell);
+            //Cells.Add(cell);
         }
     }
-
+    
     internal bool AddEdge(NetEdge edge)
     {
         //Ignore invalid edges
         if (!edge.IsValid) return false;
 
-        //Check existing
-        var key = (fromNode: (NetNode) edge.From, toNode: (NetNode) edge.To);
-        if (EdgeLookUp.ContainsKey(key))
+        if (Edges.Add(edge))
         {
-            //TLog.Debug($"Key ({edge.From}, {edge.To}) already exists in graph!");
-            return false;
-        }
-
-        Edges.Add(edge);
-        EdgeLookUp.Add(key, edge);
-
-        //One Directional Edges have custom logic
-        if (!edge.BiDirectional)
-        {
-            Nodes.Add(edge.From);
-            Nodes.Add(edge.To);
-            if (!AdjacencyList.TryGetValue(edge.From, out var listSource))
+            if (EdgeLookUp.TryAdd((edge.From, edge.To), edge))
             {
-                listSource = new List<(NetEdge, NetNode)>()
-                {
-                    (edge, edge.To)
-                };
-                AdjacencyList.Add(edge.From, listSource);
-            }
-        }
-        else
-        {
-            Nodes.Add(edge.From);
-            
-            //Check if node exists to have any adj neighbors
-            if (!AdjacencyList.TryGetValue(edge.From, out var listSource))
-            {
-                listSource = new List<(NetEdge, NetNode)>()
-                {
-                    (edge, edge.To)
-                };
-                AdjacencyList.Add(edge.From, listSource);
-            }
+                Nodes.Add(edge.From);
+                Nodes.Add(edge.To);
 
-            //Check if edge is already int adjancy list for starting node (edge.From)
-            // if (!listSource.Contains((edge, edge.To)))
-            // {
-            //     listSource.Add((edge, edge.To));
-            //     //AdjacencyList[edge.From].Add((edge, edge.To));
-            // }
+                TryAddAdjacency(edge.From, edge.To, edge);
+                TryAddAdjacency(edge.To, edge.From, edge);
+            }
         }
         return true;
     }
-    
+
+    private void TryAddAdjacency(NetNode nodeFrom, NetNode nodeTo, NetEdge edge)
+    {
+        if (!AdjacencyList.TryGetValue(nodeFrom, out var listSource))
+        {
+            listSource = new List<(NetEdge, NetNode)>()
+            {
+                (edge, nodeTo)
+            };
+            AdjacencyList.Add(nodeFrom, listSource);
+        }
+        else
+        {
+            listSource.Add((edge, nodeTo));
+        }
+    }
+
     internal void Draw()
     {
-        GenDraw.DrawFieldEdges(Cells, Color.cyan);
+        //GenDraw.DrawFieldEdges(Cells, Color.cyan);
     }
 
     internal void OnGUI()
     {
+        if (TeleCoreDebugViewSettings.DrawGraphOnGUI)
+        {
+            Static.Utilities.DebugTools.Debug_DrawGraphOnUI(this);
+        }
     }
 }
