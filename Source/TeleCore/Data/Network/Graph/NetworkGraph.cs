@@ -108,10 +108,10 @@ public class NetworkGraph : IDisposable
         //Ignore invalid edges
         if (!edge.IsValid) return false;
 
-        if (Edges.Add(edge))
+        var key = new TwoWayKey<NetNode>(edge.From, edge.To);
+        if (EdgeLookUp.TryAdd(key, edge))
         {
-            var key = new TwoWayKey<NetNode>(edge.From, edge.To);
-            if (EdgeLookUp.TryAdd(key, edge))
+            if (Edges.Add(edge))
             {
                 Nodes.Add(edge.From);
                 Nodes.Add(edge.To);

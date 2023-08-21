@@ -281,12 +281,12 @@ public class DynamicNetworkGraph
                 {
                     if (connResult.IsBiDirectional)
                     {
-                        var edgeBi = new NetEdge(rootNode, directPart, connResult.Out, connResult.In,connResult.OutMode, connResult.InMode, 0);
+                        var edgeBi = new NetEdge(rootNode, directPart, connResult.OtherConnPos, connResult.SelfConnPos,connResult.OutMode, connResult.InMode, 0);
                         yield return edgeBi;
                         yield return edgeBi.Reverse;
                         continue;
                     }
-                    var edge = new NetEdge(rootNode, directPart, connResult.In, connResult.Out, connResult.InMode,connResult.OutMode, 0);
+                    var edge = new NetEdge(rootNode, directPart, connResult.SelfConnPos, connResult.OtherConnPos, connResult.InMode,connResult.OutMode, 0);
                     yield return edge;
                 }
             }
@@ -366,7 +366,7 @@ public class DynamicNetworkGraph
                     //Make Edge When Node Found
                     if (newPart.IsNode)
                     {
-                        return new NetEdge(searcher, newPart, rootCell, io.In, rootMode, io.InMode, curLength);
+                        return new NetEdge(searcher, newPart, rootCell, io.OtherConnPos, rootMode, io.OutMode, curLength);
                     }
 
                     //If Edge, continue search

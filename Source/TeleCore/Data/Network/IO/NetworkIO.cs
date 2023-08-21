@@ -55,21 +55,16 @@ public class NetworkIO
             if (cell.Pos != otherCell.Interface) continue;
 
             if (cell.Mode.Matches(otherCell.Mode))
+            {
+                var otherConn = cell.Pos + cell.Pos.Dir.Opposite.FacingCell;
                 return new IOConnectionResult
                 {
-                    In = cell.Pos,
-                    Out = cell.Pos + cell.Pos.Dir.Opposite.FacingCell,
+                    SelfConnPos = cell.Pos,
+                    OtherConnPos = otherConn,
                     InMode = cell.Mode,
-                    OutMode = otherCell.Mode
+                    OutMode = other.IOModeAt(otherConn)
                 };
-            if (otherCell.Mode.Matches(cell.Mode)) //Reverse
-                return new IOConnectionResult
-                {
-                    In = otherCell.Pos,
-                    Out = otherCell.Pos + otherCell.Pos.Dir.Opposite.FacingCell,
-                    InMode = otherCell.Mode,
-                    OutMode = cell.Mode
-                };
+            }
         }
 
         return IOConnectionResult.Invalid;

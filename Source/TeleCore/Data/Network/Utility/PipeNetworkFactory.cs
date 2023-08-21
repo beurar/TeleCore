@@ -106,14 +106,14 @@ public static class PipeNetworkFactory
                 {
                     if (connResult.IsBiDirectional)
                     {
-                        var edgeBi = new NetEdge(rootNode, directPart, connResult.Out, connResult.In,
+                        var edgeBi = new NetEdge(rootNode, directPart, connResult.OtherConnPos, connResult.SelfConnPos,
                             connResult.OutMode, connResult.InMode, 0);
                         Notify_FoundEdge(edgeBi);
                         Notify_FoundEdge(edgeBi.Reverse);
                         continue;
                     }
 
-                    var edge = new NetEdge(rootNode, directPart, connResult.In, connResult.Out, connResult.InMode,
+                    var edge = new NetEdge(rootNode, directPart, connResult.SelfConnPos, connResult.OtherConnPos, connResult.InMode,
                         connResult.OutMode, 0);
                     Notify_FoundEdge(edge);
                 }
@@ -170,7 +170,7 @@ public static class PipeNetworkFactory
                             //Make Edge When Node Found
                             if (newPart.IsNode)
                             {
-                                Notify_FoundEdge(new NetEdge(mainOriginPart, newPart, startCell, result.In, startMode, result.InMode, curLength));
+                                Notify_FoundEdge(new NetEdge(mainOriginPart, newPart, startCell, result.SelfConnPos, startMode, result.InMode, curLength));
                                 break;
                             }
 
