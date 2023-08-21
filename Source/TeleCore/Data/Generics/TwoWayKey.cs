@@ -18,9 +18,12 @@ public struct TwoWayKey<T>
         return new TwoWayKey<T>(tuple.Item1, tuple.Item2);
     }
     
-    private TwoWayKey(T a, T b)
+    public TwoWayKey(T a, T b)
     {
-        if (string.CompareOrdinal(a.ToString(), b.ToString()) > 0)
+        var stringA = a.ToString();
+        var stringB = b.ToString();
+        var compare = string.CompareOrdinal(stringA, stringB);
+        if (compare > 0)
         {
             A = a;
             B = b;

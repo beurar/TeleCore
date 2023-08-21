@@ -44,7 +44,8 @@ public class NetworkGraph : IDisposable
 
     public void DissolveEdge(NetworkPart from, NetworkPart to)
     {
-        if (EdgeLookUp.TryGetValue((from, to), out var edge))
+        var key = new TwoWayKey<NetNode>(from, to);
+        if (EdgeLookUp.TryGetValue(key, out var edge))
         {        
             Edges.Remove(edge);
             EdgeLookUp.Remove(edge);
@@ -64,23 +65,23 @@ public class NetworkGraph : IDisposable
         DissolveEdge(edge.From, edge.To);
     }
 
-    public void DissolveNode(NetworkPart node)
+    public bool TryDissolveNode(NetworkPart node)
     {
-        //Cells.RemoveAll(c => node.Thing.OccupiedRect().Contains(c));
-        if (Nodes.Contains(node))
+        if (!Nodes.Contains(node)) return false;
+        
+        Nodes.Remove(node);
+        if (AdjacencyList.TryGetValue(node, out var list))
         {
-            Nodes.Remove(node);
-            if (AdjacencyList.TryGetValue(node, out var list))
+            foreach (var (edge, _) in list)
             {
-                foreach (var (edge, _) in list)
-                {
-                    Edges.Remove(edge);
-                    EdgeLookUp.Remove((edge.From, edge.To));
-                }
-
-                AdjacencyList.Remove(node);
+                Edges.Remove(edge);
+                EdgeLookUp.Remove((edge.From, edge.To));
             }
+
+            AdjacencyList.Remove(node);
         }
+
+        return true;
     }
 
     public List<(NetEdge, NetNode)>? GetAdjacencyList(INetworkPart forPart)
@@ -109,7 +110,8 @@ public class NetworkGraph : IDisposable
 
         if (Edges.Add(edge))
         {
-            if (EdgeLookUp.TryAdd((edge.From, edge.To), edge))
+            var key = new TwoWayKey<NetNode>(edge.From, edge.To);
+            if (EdgeLookUp.TryAdd(key, edge))
             {
                 Nodes.Add(edge.From);
                 Nodes.Add(edge.To);

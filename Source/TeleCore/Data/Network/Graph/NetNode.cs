@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using System;
+using System.Diagnostics;
 using TeleCore.Network.Data;
 
 namespace TeleCore.Network.Graph;
@@ -26,5 +27,10 @@ public struct NetNode
     public override int GetHashCode()
     {
         return Value?.GetHashCode() ?? 0;
+    }
+
+    public override string ToString()
+    {
+        return Value?.ToString() ?? string.Empty;
     }
 }

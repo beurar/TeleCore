@@ -151,6 +151,12 @@ public class Comp_Network : FXThingComp, INetworkStructure
         //Check for neighbor intersections
         //Regen network after all data is set
         _mapInfo.Notify_NewNetworkStructureSpawned(this);
+
+        //Ensure that new nearby junctions add themselves to the network
+        foreach (var part in _allNetParts)
+        {
+            part.CheckNeighborJunctions();
+        }
     }
 
     //Deconstruction

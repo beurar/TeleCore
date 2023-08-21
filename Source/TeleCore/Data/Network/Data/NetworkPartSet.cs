@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Text;
 using TeleCore.Network.IO;
 using Verse;
@@ -111,6 +112,13 @@ public class NetworkPartSet : IDisposable, IEnumerable<INetworkPart>
     protected readonly HashSet<INetworkPart> _fullSet;
     protected readonly Dictionary<NetworkRole, HashSet<INetworkPart>> _partsByRole;
     
+    public ICollection<INetworkPart> FullSet => _fullSet;
+    public int Size => _fullSet.Count;
+
+    public HashSet<INetworkPart>? this[NetworkRole role] => _partsByRole.TryGetValue(role, out var value) ? value : null;
+
+    public event NotifyCollectionChangedEventHandler OnSetChanged;
+    
     public NetworkPartSet(NetworkDef def)
     {
         _def = def;
@@ -121,12 +129,7 @@ public class NetworkPartSet : IDisposable, IEnumerable<INetworkPart>
             _partsByRole.TryAdd(role, new HashSet<INetworkPart>());
         }
     }
-
-    public ICollection<INetworkPart> FullSet => _fullSet;
-    public int Size => _fullSet.Count;
-
-    public HashSet<INetworkPart>? this[NetworkRole role] => _partsByRole.TryGetValue(role, out var value) ? value : null;
-
+    
     public virtual void Dispose()
     {
         _fullSet.Clear();
@@ -165,6 +168,7 @@ public class NetworkPartSet : IDisposable, IEnumerable<INetworkPart>
         }
 
         OnPartAdded(part);
+        OnSetChanged?.Invoke(part, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Add, part));
         return true;
     }
 
@@ -176,9 +180,10 @@ public class NetworkPartSet : IDisposable, IEnumerable<INetworkPart>
         {
             _partsByRole[flag].Remove(part);
         }
-
+        
         _fullSet.Remove(part);
         OnPartRemoved(part);
+        OnSetChanged?.Invoke(part, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Remove, part));
     }
 
     protected virtual void OnPartAdded(INetworkPart part)

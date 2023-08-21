@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Diagnostics;
 using System.Text;
 using TeleCore.Network.Flow;
@@ -10,7 +11,7 @@ using Verse;
 
 namespace TeleCore.Network.Data;
 
-[DebuggerDisplay("[{Thing.Spawned}]{Thing}")]
+[DebuggerDisplay("{ToString()}")]
 public class NetworkPart : INetworkPart, IExposable
 {
     private NetworkPartConfig _config;
@@ -97,6 +98,28 @@ public class NetworkPart : INetworkPart, IExposable
         _adjacentSet = new NetworkIOPartSet(config.networkDef);
         if (config.netIOConfig != null)
             _networkIO = new NetworkIO(config.netIOConfig, parent.Thing.Position, parent.Thing.Rotation);
+    }
+
+    internal void CheckNeighborJunctions()
+    {
+        foreach (var adjPart in _adjacentSet)
+        {
+            if(adjPart is NetworkPart part)
+                part.CheckIsJunction();
+        }
+    }
+    
+    private void CheckIsJunction()
+    {
+        if (IsJunction)
+        {
+            Thing.Map.TeleCore().NetworkInfo[_config.networkDef].Notify_PartBecameJunction(this);
+        }
+    }
+
+    public override string ToString()
+    {
+        return $"{Thing}_{_config.networkDef}";
     }
     
     #endregion

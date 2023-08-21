@@ -111,6 +111,31 @@ public class DynamicNetworkGraph
     
     #endregion
 
+    public void Notify_PartBecameJunction(NetworkPart part)
+    {
+        /*var edges = StartAdjacentEdgeSearch(part).ToList();
+        foreach (var edge in edges)
+        {
+            var junction = edge.From.IsJunction ? edge.From : (edge.To.IsJunction ? edge.To : null);
+            if (junction != null)
+            {
+                var otherEdge = edges.Find(e => !e.Equals(edge) && (e.From == junction || e.To == junction));
+                if (otherEdge.IsValid)
+                {
+                    Graph.DissolveEdge(edge.From == junction ? edge.To : edge.From, otherEdge.From == junction ? otherEdge.To : otherEdge.From);
+                }
+            }
+        }
+        foreach (var edge in edges)
+        {
+            Graph.AddEdge(edge);
+        }
+
+        //Note: Hacky quickfix
+        System.Reset();
+        System.Notify_Populate(Graph);*/
+    }
+    
     public void Notify_PartSpawned(NetworkPart part)
     {
         //Basic data setup for each spawned part
@@ -127,20 +152,50 @@ public class DynamicNetworkGraph
             _ioConnGrid.Set(visualCell, true);
         }
 
+        List<NetEdge> preEdges = new List<NetEdge>();
+        
+        if (part.IsEdge)
+        {
+            foreach (var adjPart in part.AdjacentSet)
+            {
+                if (adjPart.IsNode)
+                {
+                    preEdges.AddRange(StartAdjacentEdgeSearch(adjPart));
+                }
+                else
+                if (adjPart.IsEdge)
+                {
+                    var node = FindNextNode(part, adjPart);
+                    if (node != null)
+                        preEdges.AddRange(StartAdjacentEdgeSearch(node));
+                }
+            }
+        }
+        else if (part.IsNode)
+        {
+            preEdges.AddRange(StartAdjacentEdgeSearch(part));
+        }
+        
         //Only nodes can seek edges, otherwise we create invalid edges
-        var start = part.IsNode ? part : FindNextNode(part);
+        /*var start = part.IsNode ? part : FindNextNode(part);
         if (start == null) return;
         var edges = StartAdjacentEdgeSearch(start).ToList();
-        foreach (var edge in edges)
+        */
+        
+        foreach (var edge in preEdges)
         {
             var junction = edge.From.IsJunction ? edge.From : (edge.To.IsJunction ? edge.To : null);
             if (junction != null)
             {
-                var otherEdge = edges.Find(e => !e.Equals(edge) && (e.From == junction || e.To == junction));
-                Graph.DissolveEdge(edge.From == junction ? edge.To : edge.From, otherEdge.From == junction ? otherEdge.To : otherEdge.From);
+                var otherEdge = preEdges.Find(e => !e.Equals(edge) && (e.From == junction || e.To == junction));
+                if (otherEdge.IsValid)
+                {
+                    Graph.DissolveEdge(edge.From == junction ? edge.To : edge.From, otherEdge.From == junction ? otherEdge.To : otherEdge.From);
+                }
             }
         }
-        foreach (var edge in edges)
+        
+        foreach (var edge in preEdges)
         {
             Graph.AddEdge(edge);
         }
@@ -152,20 +207,19 @@ public class DynamicNetworkGraph
 
     public void Notify_PartDespawned(NetworkPart part)
     {
-        if (part.IsEdge)
+        if (!Graph.TryDissolveNode(part))
         {
-            if (part.AdjacentSet.Size > 0)
+            if (part.IsEdge)
             {
-                var begin1 = part.AdjacentSet.FullSet.First();
-                var begin2 = part.AdjacentSet.FullSet.Last();
-                var from = (NetworkPart) FindNextNode(part, begin1);
-                var to = (NetworkPart) FindNextNode(part, begin2);
-                Graph.DissolveEdge(from, to);
+                if (part.AdjacentSet.Size > 0)
+                {
+                    var begin1 = part.AdjacentSet.FullSet.First();
+                    var begin2 = part.AdjacentSet.FullSet.Last();
+                    var from = (NetworkPart) FindNextNode(part, begin1);
+                    var to = (NetworkPart) FindNextNode(part, begin2);
+                    Graph.DissolveEdge(from, to);
+                }
             }
-        }
-        if (part.IsNode)
-        {
-            Graph.DissolveNode(part);
         }
 
         foreach (var cell in part.Thing.OccupiedRect())
@@ -241,7 +295,7 @@ public class DynamicNetworkGraph
             {
                 var directPos = directPart.Parent.Thing.Position;
                 var nextNode = FindNextNode(directPart, rootNode, directPos, rootNode.PartIO.IOModeAt(directPos));
-                if(!nextNode.IsValid) yield break;
+                if(!nextNode.IsValid) continue;
                 yield return nextNode;
             }
         }
