@@ -22,6 +22,7 @@ public readonly struct IntVec3Rot
     public IntVec3 Pos { get; }
 
     public IntVec3Rot Reverse => new(Pos + Dir.Opposite.FacingCell, Dir.Opposite);
+    public static IntVec3Rot Invalid => new(IntVec3.Invalid, Rot4.Invalid);
 
     public IntVec3Rot(IntVec3 pos, Rot4 dir)
     {

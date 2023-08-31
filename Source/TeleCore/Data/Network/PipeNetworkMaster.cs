@@ -113,27 +113,7 @@ public class DynamicNetworkGraph
 
     public void Notify_PartBecameJunction(NetworkPart part)
     {
-        /*var edges = StartAdjacentEdgeSearch(part).ToList();
-        foreach (var edge in edges)
-        {
-            var junction = edge.From.IsJunction ? edge.From : (edge.To.IsJunction ? edge.To : null);
-            if (junction != null)
-            {
-                var otherEdge = edges.Find(e => !e.Equals(edge) && (e.From == junction || e.To == junction));
-                if (otherEdge.IsValid)
-                {
-                    Graph.DissolveEdge(edge.From == junction ? edge.To : edge.From, otherEdge.From == junction ? otherEdge.To : otherEdge.From);
-                }
-            }
-        }
-        foreach (var edge in edges)
-        {
-            Graph.AddEdge(edge);
-        }
-
-        //Note: Hacky quickfix
-        System.Reset();
-        System.Notify_Populate(Graph);*/
+        TLog.Debug($"Part became junction: {part}");
     }
     
     public void Notify_PartSpawned(NetworkPart part)
@@ -151,58 +131,160 @@ public class DynamicNetworkGraph
         {
             _ioConnGrid.Set(visualCell, true);
         }
-
-        List<NetEdge> preEdges = new List<NetEdge>();
         
-        if (part.IsEdge)
+        //Graph Gen
+        var isEdge = part.IsEdge; //When node, search all connections to other nodes
+        var isNode = part.IsNode; //When edge, seek in two directions to find connected nodes, an edge can ALWAYS only find two connecting nodes
+        var isJunction = part.IsJunction;   //Junctions are a special case that act like nodes when spawned as one (spawned inbetween 3 different edges)
+                                            //Or are created when an edge is spawned next to another edge with two other previously existing edge neighbors
+        // 'S' = Spawned Part
+        // '|' = Array split
+        // '=' = Edge
+        // 'N' = Node
+        
+        //Edge Creation/Detection
+        var newEdges = new List<NetEdge>();
+        if (isNode)
         {
-            foreach (var adjPart in part.AdjacentSet)
+            //1. Directly adjacent - [S|N]
+            //2. Edge traversal - [S|=|=|N]
+            var allEdges = GetAllEdgesFor(part);
+            newEdges.AddRange(allEdges);
+        }
+        else if (isEdge)
+        {
+            if (part.AdjacentSet.Size > 2)
             {
-                if (adjPart.IsNode)
+                TLog.Warning("A pure edge cannot have more than 2 connections!");
+            }
+            
+            //Junctions are a special case, they are created when an edge is spawned next to another edge with two other previously existing edge neighbors
+            foreach (var conn in part.AdjacentSet.Connections)
+            {
+                var netPart = conn.Key;
+                if (netPart.IsJunction && netPart.AdjacentSet.Size == 3)
                 {
-                    preEdges.AddRange(StartAdjacentEdgeSearch(adjPart));
+                    var allEdges = GetAllEdgesFor((NetworkPart) netPart);
+                    newEdges.AddRange(allEdges);
                 }
-                else
-                if (adjPart.IsEdge)
+            }
+
+            INetworkPart firstNode;
+            INetworkPart secondNode;
+            //Directly adjacent
+            //For a single edge connecting two direct nodes there is a bit of trickery involved with the cached I/O data of the network structures
+            //We need to know the I/O of both nodes to determine whether the edge is valid or not, and to ensure flow is correct between both nodes
+            var foundEdge = false;
+            var (firstKey, firstConn) = part.AdjacentSet.Connections.FirstOrFallback(p => p.Key.IsNode);
+            if (firstKey != null) //Found a directly attached node, lets find its partner
+            {
+                firstNode = firstKey;
+                var (secondKey, secondConn) =
+                    part.AdjacentSet.Connections.FirstOrFallback(p => p.Key.IsNode && p.Key != firstNode);
+                if (secondKey != null) //Found another directly connected node, lets connect them
                 {
-                    var node = FindNextNode(part, adjPart);
+                    newEdges.Add(new NetEdge(firstConn, secondConn, 1));
+                    foundEdge = true;
+                }
+                else //Edge is not between two nodes
+                {
+                    //We simply search from the known adjacent node into the direction of the spawned edge
+                    var edge = FindNextNode(part, firstNode, firstNode.IOConnectionTo(part));
+                    if (edge.IsValid)
+                    {
+                        newEdges.Add(edge);
+                        foundEdge = true;
+                        //Case: [N|=|=|S|N] OR [N|S|=|=|N]
+                    }
+                }
+            }
+            //Search for next node along edge
+            if (!foundEdge)
+            {
+                //Case: [N|=|S|=|N]
+                //If no adjecent nodes exist, we search for a node
+                var anyEdge = part.AdjacentSet.FirstOrFallback(c => c.IsEdge && !c.IsNode);
+                if (anyEdge != null)
+                {
+                    var (lastEdge, node) = FindNextNode(part, anyEdge);
                     if (node != null)
-                        preEdges.AddRange(StartAdjacentEdgeSearch(node));
+                    {
+                        var edge = FindNextNode(lastEdge, node,
+                            node.IOConnectionTo(lastEdge)); //node.PartIO.IOModeAt(rootPos)
+                        if (edge.IsValid)
+                        {
+                            newEdges.Add(edge);
+                        }
+                    }
                 }
             }
         }
-        else if (part.IsNode)
-        {
-            preEdges.AddRange(StartAdjacentEdgeSearch(part));
-        }
-        
-        //Only nodes can seek edges, otherwise we create invalid edges
-        /*var start = part.IsNode ? part : FindNextNode(part);
-        if (start == null) return;
-        var edges = StartAdjacentEdgeSearch(start).ToList();
-        */
-        
-        foreach (var edge in preEdges)
+
+        //Junction Pruning
+        // Node ------ Node => Node --- Junction --- Node
+        foreach (var edge in newEdges)
         {
             var junction = edge.From.IsJunction ? edge.From : (edge.To.IsJunction ? edge.To : null);
-            if (junction != null)
+            if (junction == null) continue;
+            var edges = newEdges.Where(e => !e.Equals(edge) && (e.From == junction || e.To == junction));;
+            foreach (var otherEdge in edges)
             {
-                var otherEdge = preEdges.Find(e => !e.Equals(edge) && (e.From == junction || e.To == junction));
                 if (otherEdge.IsValid)
                 {
-                    Graph.DissolveEdge(edge.From == junction ? edge.To : edge.From, otherEdge.From == junction ? otherEdge.To : otherEdge.From);
+                    var fromAnchor = edge.From == junction ? edge.ToAnchor : edge.FromAnchor;
+                    var toAnchor = otherEdge.From == junction ? otherEdge.ToAnchor : otherEdge.FromAnchor;
+                    //Note: Not anymore. (obsolete)
+                    //FromAnchor must be reversed as it is also the ToAnchor of one of the edges of the junction split
+                    Graph.TryDissolveEdge(fromAnchor, toAnchor);
                 }
             }
         }
         
-        foreach (var edge in preEdges)
+        //
+        foreach (var edge in newEdges)
         {
+            if (!edge.IsValid)
+            {
+                TLog.Warning($"Tried to add invalid edge: {edge}");
+                continue;
+            }
             Graph.AddEdge(edge);
         }
-
+        
         //Note: Hacky quickfix
         System.Reset();
         System.Notify_Populate(Graph);
+    }
+    
+    private static IEnumerable<NetEdge> GetAllEdgesFor(NetworkPart rootNode)
+    {
+        //Directly adjacent - [S|N]
+        foreach (var conn in rootNode.AdjacentSet.Connections)
+        {
+            var directPart = conn.Key;
+            if (directPart.IsNode)
+            {
+                //All directly adjacent nodes get added as infinitely small edges
+                if (directPart.IsJunction)
+                {
+                    TLog.Warning("Connected to direct junction");
+                }
+                
+                //TODO: Anomalies with mono-directional connections (ie. Output to Input)
+                var connResult = rootNode.IOConnectionTo(directPart);
+                if (connResult)
+                {
+                    yield return new NetEdge(connResult, connResult, 0);
+                }
+            }
+            //Edge traversal - [S|=|=|N]
+            else if (directPart.IsEdge)
+            {
+                var nextNode = FindNextNode(directPart, rootNode, conn.Value); //rootNode.PartIO.IOModeAt(directPos)
+                if(!nextNode.IsValid) continue;
+                yield return nextNode;
+            }
+        }
     }
 
     public void Notify_PartDespawned(NetworkPart part)
@@ -211,13 +293,15 @@ public class DynamicNetworkGraph
         {
             if (part.IsEdge)
             {
+                //TODO: Ensure only biderictional 'duplicate' edges get cleared, unique one-directional edges (while technically not making much sense)
+                //TODO: Should not be removed 
                 if (part.AdjacentSet.Size > 0)
                 {
                     var begin1 = part.AdjacentSet.FullSet.First();
                     var begin2 = part.AdjacentSet.FullSet.Last();
-                    var from = (NetworkPart) FindNextNode(part, begin1);
-                    var to = (NetworkPart) FindNextNode(part, begin2);
-                    Graph.DissolveEdge(from, to);
+                    var from = (NetworkPart) FindNextNode(part, begin1).node;
+                    var to = (NetworkPart) FindNextNode(part, begin2).node;
+                    Graph.TryDissolveEdge(from, to);
                 }
             }
         }
@@ -229,7 +313,7 @@ public class DynamicNetworkGraph
         }
     }
 
-    private static INetworkPart FindNextNode(NetworkPart origin, INetworkPart direction)
+    private static (INetworkPart lastEdge, INetworkPart node) FindNextNode(NetworkPart origin, INetworkPart direction)
     {
         var currentSet = StaticListHolder<INetworkPart>.RequestSet($"CurrentSubSet3_{origin}", true);
         var openSet = StaticListHolder<INetworkPart>.RequestSet($"OpenSubSet3_{origin}", true);
@@ -254,51 +338,14 @@ public class DynamicNetworkGraph
                     if (closedSet.Contains(newPart) || newPart == origin) continue;
                     if (newPart.IsNode)
                     {
-                        return newPart;
+                        return (part, newPart);
                     }
                     openSet.Add(newPart);
                 }
             }
 
         } while (openSet.Count > 0);
-        return null;
-    }
-
-    private static IEnumerable<NetEdge> StartAdjacentEdgeSearch(INetworkPart rootNode)
-    {
-        foreach (var directPart in rootNode.AdjacentSet.FullSet)
-        {
-            //All directly adjacent nodes get added as infinitely small edges
-            if (directPart.IsNode)
-            {
-                if (directPart.IsJunction)
-                {
-                        TLog.Warning("Connected to direct junction");    
-                }
-                
-                var connResult = rootNode.HasIOConnectionTo(directPart);
-                if (connResult)
-                {
-                    if (connResult.IsBiDirectional)
-                    {
-                        var edgeBi = new NetEdge(rootNode, directPart, connResult.OtherConnPos, connResult.SelfConnPos,connResult.OutMode, connResult.InMode, 0);
-                        yield return edgeBi;
-                        yield return edgeBi.Reverse;
-                        continue;
-                    }
-                    var edge = new NetEdge(rootNode, directPart, connResult.SelfConnPos, connResult.OtherConnPos, connResult.InMode,connResult.OutMode, 0);
-                    yield return edge;
-                }
-            }
-            else
-            if (directPart.IsEdge)
-            {
-                var directPos = directPart.Parent.Thing.Position;
-                var nextNode = FindNextNode(directPart, rootNode, directPos, rootNode.PartIO.IOModeAt(directPos));
-                if(!nextNode.IsValid) continue;
-                yield return nextNode;
-            }
-        }
+        return (null, null)!;
     }
 
     private static INetworkPart FindNextNode(INetworkPart rootPart)
@@ -336,14 +383,26 @@ public class DynamicNetworkGraph
         return null;
     }
 
-    private static NetEdge FindNextNode(INetworkPart rootPart, INetworkPart searcher, IntVec3 rootCell, NetworkIOMode rootMode)
+    // [Node][Edge]=Search-Direction=>[...][...][OtherNode]
+    private static NetEdge FindNextNode(INetworkPart edgePart, INetworkPart firstNode, IOConnection rootIO)
     {
-        var currentSet = StaticListHolder<INetworkPart>.RequestSet($"CurrentSubSet_{rootPart}", true);
-        var openSet = StaticListHolder<INetworkPart>.RequestSet($"OpenSubSet_{rootPart}", true);
-        var closedSet = StaticListHolder<INetworkPart>.RequestSet($"ClosedSubSet_{rootPart}", true);
+        if (!edgePart.IsEdge)
+        {
+            TLog.Error($"Trying to search new node with edgePart not being an edge: {edgePart}");
+            return NetEdge.Invalid;
+        }
+        if (!firstNode.IsNode)
+        {
+            TLog.Error($"Trying to search new node with firstNode not being a node: {firstNode}");
+            return NetEdge.Invalid;
+        }
+        
+        var currentSet = StaticListHolder<INetworkPart>.RequestSet($"CurrentSubSet_{edgePart}", true);
+        var openSet = StaticListHolder<INetworkPart>.RequestSet($"OpenSubSet_{edgePart}", true);
+        var closedSet = StaticListHolder<INetworkPart>.RequestSet($"ClosedSubSet_{edgePart}", true);
         
         var curLength = 1;
-        openSet.Add(rootPart);
+        openSet.Add(edgePart);
         
         do
         {
@@ -361,12 +420,12 @@ public class DynamicNetworkGraph
                 {
                     var newPart = connPair.Key;
                     var io = connPair.Value;
-                    if (closedSet.Contains(newPart) || newPart == searcher) continue;
+                    if (closedSet.Contains(newPart) || newPart == firstNode) continue;
                     
                     //Make Edge When Node Found
                     if (newPart.IsNode)
                     {
-                        return new NetEdge(searcher, newPart, rootCell, io.OtherConnPos, rootMode, io.OutMode, curLength);
+                        return new NetEdge(rootIO, io, curLength);
                     }
 
                     //If Edge, continue search
@@ -379,293 +438,6 @@ public class DynamicNetworkGraph
         while (openSet.Count > 0);
 
         return NetEdge.Invalid;
+        
     }
-
 }
-
-/*public class PipeNetworkMaster
-{
-    //Debug
-    internal static bool DEBUG_DrawNetwork = true;
-
-    private readonly NetworkPartSet _totalPartSet;
-    private readonly List<PipeNetwork> _allNetworks;
-    private readonly NetworkDef _def;
-    private readonly PipeNetwork?[] _lookUpGrid;
-
-    private readonly Map _map;
-    
-    private readonly List<DelayedNetworkAction> delayedActions = new();
-
-    public NetworkPartSet TotalPartSet => _totalPartSet;
-    
-    public PipeNetworkMaster(Map map, NetworkDef networkDef)
-    {
-        _def = networkDef;
-        _map = map;
-        _allNetworks = new List<PipeNetwork>();
-        _lookUpGrid = new PipeNetwork[map.cellIndices.NumGridCells];
-        _totalPartSet = new NetworkPartSet(networkDef);
-        
-        //_allParts.RegisterParentForEvents(this);
-        
-        //
-        //TODO: Use event subscription
-        TFind.TickManager.RegisterMapUITickAction(TickUpdate);
-    }
-
-    #region Data Getters
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public PipeNetwork? NetworkAt(IntVec3 c, Map map)
-    {
-        return _lookUpGrid[c.Index(map)];
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public bool? HasNetworkConnectionAt(IntVec3 c, Map map)
-    {
-        return _lookUpGrid[c.Index(map)] != null;
-    }
-
-    #endregion
-
-    #region Generation
-
-    //Network Notifiers
-    public void Notify_PartSpawned(INetworkPart part) //1.
-    {
-        delayedActions.Add(new DelayedNetworkAction(DelayedNetworkActionType.Register, part, part.Thing.Position));
-        
-        //Add Part
-        _totalPartSet.AddComponent(part);
-    }
-
-    public void Notify_PartDespawned(INetworkPart part)
-    {
-        delayedActions.Add(new DelayedNetworkAction(DelayedNetworkActionType.Deregister, part, part.Thing.Position));
-        
-        //Remove Part
-        _totalPartSet.RemoveComponent(part);
-    }
-
-    //Notify Spawned 1.
-    //Delay 2.
-    //IF CREATE
-    //Destroy old and make new 3.
-    //Try create new 4.
-    //Register new
-    //Create new from factory with graph 
-    //Notify new network created and update a bunch of shit 5.
-
-    public void Notify_PipeNetCreated(PipeNetwork newNetwork) //5.
-    {
-        var graphCells = newNetwork.Graph.Cells;
-        if (graphCells.NullOrEmpty())
-        {
-            TLog.Warning("Tried to generate system from empty graph.");
-            return;
-        }
-        for (var i = 0; i < graphCells.Count; i++)
-        {
-            var cell = graphCells[i];
-            var num = _map.cellIndices.CellToIndex(cell);
-            if (_lookUpGrid[num] != null)
-            {
-                if (_lookUpGrid[num] == newNetwork)
-                    TLog.Warning($"Multiple identical cells in NetworkCells list of {newNetwork.NetworkDef}: {cell}");
-                else
-                    TLog.Warning($"Two Pipe nets on the same cell {cell}: {_lookUpGrid[num].NetworkDef}[{_lookUpGrid[num].ID}] instead of {newNetwork.NetworkDef}[{newNetwork.ID}]");
-            }
-
-            _lookUpGrid[num] = newNetwork;
-            _map.mapDrawer.MapMeshDirty(cell,MapMeshFlag.Buildings | MapMeshFlag.Things | MapMeshFlag.PowerGrid | MapMeshFlag.Terrain);
-        }
-    }
-
-    public void Notify_PipeNetDestroyed(PipeNetwork deadNetwork)
-    {
-        var list = deadNetwork.Graph.Cells;
-
-        for (var i = 0; i < list.Count; i++)
-        {
-            var num = _map.cellIndices.CellToIndex(list[i]);
-            if (_lookUpGrid[num] == deadNetwork)
-            {
-                _lookUpGrid[num] = null;
-            }
-            else if (_lookUpGrid[num] != null)
-            {
-                TLog.Warning(
-                    $"Multiple networks on the same cell {list[i]}. This is probably a result of an earlier error.");
-            }
-        }
-
-        //OnNetworkDestroyed();
-        foreach (var networkSubPart in deadNetwork.PartSet.FullSet)
-            networkSubPart.Network = null;
-
-        deadNetwork.Dispose();
-    }
-
-    private void RegisterNetwork(PipeNetwork newNet) //4.
-    {
-        _allNetworks.Add(newNet);
-        Notify_PipeNetCreated(newNet);
-    }
-
-    private void DeregisterNetwork(PipeNetwork oldNet)
-    {
-        _allNetworks.Remove(oldNet);
-        Notify_PipeNetDestroyed(oldNet);
-    }
-
-    private void TryCreateNetworkAt(IntVec3 cell, INetworkPart part) //3.
-    {
-        if (!cell.InBounds(_map)) return;
-        if (NetworkAt(cell, _map) != null) return;
-        
-        PipeNetworkFactory.CreateNetwork(this, part, out var network);
-        RegisterNetwork(network);
-    }
-
-    private void TryCreateNetworkAtForDestruction(IntVec3 cell, INetworkPart destroyedPart)
-    {
-        if (!cell.InBounds(_map)) return;
-        if (NetworkAt(cell, _map) != null) return;
-        
-        if (PipeNetworkFactory.Fits(cell.GetFirstBuilding(_map), destroyedPart.Config.networkDef, out var part))
-        {
-            PipeNetworkFactory.CreateNetwork(this, part!, out var network);
-            RegisterNetwork(network);
-        }
-    }
-
-    private void TryDestroyNetworkAt(IntVec3 cell)
-    {
-        if (!cell.InBounds(_map)) return;
-        var network = NetworkAt(cell, _map);
-        if (network != null) DeregisterNetwork(network);
-    }
-
-    //Update Delayed Actions
-    private void TickUpdate() //2.
-    {
-        //Update Actions
-        if (delayedActions.Count == 0) return;
-        var count = delayedActions.Count;
-
-        //Destroy Networks First
-        for (var i = 0; i < count; i++)
-        {
-            var delayedActionForDestruction = delayedActions[i];
-            try
-            {
-                switch (delayedActions[i].type)
-                {
-                    //Should always happen first
-                    //When registering a new part, first clear the network at the position
-                    case DelayedNetworkActionType.Register:
-                    {
-                        if (delayedActionForDestruction.pos != delayedActionForDestruction.Part.Thing.Position) break;
-
-                        var parent = delayedActionForDestruction.Part.Thing;
-                        if (NetworkAt(parent.Position, parent.Map) != null)
-                            TLog.Warning(
-                                $"Tried to register trasmitter {parent} at {parent.Position}, but there is already a power net here. There can't be two transmitters on the same cell.");
-
-                        //Ensure we only destroy network that we can also connect to
-                        foreach (var subPart in delayedActionForDestruction.Part.AdjacentSet.FullSet)
-                            TryDestroyNetworkAt(subPart.Parent.Thing.Position);
-
-                        break;
-                    }
-                    case DelayedNetworkActionType.Deregister:
-                    {
-                        TryDestroyNetworkAt(delayedActionForDestruction.pos);
-                        break;
-                    }
-                }
-            }
-            catch (Exception e)
-            {
-                TLog.Error(e.Message + "\n" + e.StackTrace);
-                delayedActions.RemoveAt(i);
-            }
-        }
-
-        //Create Networks 
-        for (var j = 0; j < count; j++)
-        {
-            var delayedActionForCreation = delayedActions[j];
-            var parentThing = delayedActionForCreation.Part.Thing;
-            try
-            {
-                switch (delayedActions[j].type)
-                {
-                    //Create On Newly Spawned Comp
-                    case DelayedNetworkActionType.Register:
-                    {
-                        TryCreateNetworkAt(delayedActionForCreation.pos, delayedActionForCreation.Part);
-                        break;
-                    }
-                    //Create By Checking Adjacent Cells Of Despawned Component
-                    case DelayedNetworkActionType.Deregister:
-                    {
-                        foreach (var adjPos in GenAdj.CellsAdjacentCardinal(delayedActionForCreation.pos, parentThing.Rotation, parentThing.def.size))
-                            TryCreateNetworkAtForDestruction(adjPos, delayedActionForCreation.Part);
-                        break;
-                    }
-                }
-            }           
-            catch (Exception e)
-            {
-                TLog.Error(e.Message + "\n" + e.StackTrace);
-                delayedActions.RemoveAt(j);
-            }
-        }
-        delayedActions.RemoveRange(0, count);
-    }
-
-    #endregion
-
-    #region TickUpdates
-    
-    public void Tick(bool shouldTick, int tick)
-    {
-        foreach (var network in _allNetworks)
-        {
-            network.TickSystem(tick);
-            if (shouldTick)
-            {
-                network.Tick(tick);
-            }
-        }
-    }
-
-    public void Draw()
-    {
-        foreach (var network in _allNetworks)
-        {
-            network.Draw();
-        }
-        
-        if (DEBUG_DrawNetwork)
-        {
-            for (var i = 0; i < _lookUpGrid.Length; i++)
-            {
-                var network = _lookUpGrid[i];
-                if (network == null) continue;
-                CellRenderer.RenderCell(_map.cellIndices.IndexToCell(i), network.GetHashCode()/10000f);
-            }
-        }
-    }
-
-    public void DrawOnGUI()
-    {
-        foreach (var network in _allNetworks) 
-            network.OnGUI();
-    }
-
-    #endregion
-}*/

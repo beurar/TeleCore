@@ -141,14 +141,9 @@
                 Implements the actual IO Cell of NetworkPart
             </summary>
         </member>
-        <member name="P:TeleCore.Network.IO.IOConnectionResult.SelfConnPos">
+        <member name="P:TeleCore.Network.IO.IOCell.Interface">
             <summary>
-            The position on the OTHER network part that this part connected to.
-            </summary>
-        </member>
-        <member name="P:TeleCore.Network.IO.IOConnectionResult.OtherConnPos">
-            <summary>
-            The position on THIS network part that the other part connected to.
+            The position INSIDE of the IO-Holder of the IO-Cell
             </summary>
         </member>
         <member name="T:TeleCore.Network.IO.NetIOConfig">

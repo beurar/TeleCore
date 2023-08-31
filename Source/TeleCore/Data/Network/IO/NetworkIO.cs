@@ -46,27 +46,4 @@ public class NetworkIO
                 return cell.Mode;
         return 0;
     }
-
-    public IOConnectionResult ConnectsTo(NetworkIO other)
-    {
-        foreach (var cell in Connections)
-        foreach (var otherCell in other.Connections)
-        {
-            if (cell.Pos != otherCell.Interface) continue;
-
-            if (cell.Mode.Matches(otherCell.Mode))
-            {
-                var otherConn = cell.Pos + cell.Pos.Dir.Opposite.FacingCell;
-                return new IOConnectionResult
-                {
-                    SelfConnPos = cell.Pos,
-                    OtherConnPos = otherConn,
-                    InMode = cell.Mode,
-                    OutMode = other.IOModeAt(otherConn)
-                };
-            }
-        }
-
-        return IOConnectionResult.Invalid;
-    }
 }

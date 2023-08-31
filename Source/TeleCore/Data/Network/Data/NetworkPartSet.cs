@@ -70,21 +70,21 @@ public class NetworkPartSetExtended : NetworkPartSet
 
 public class NetworkIOPartSet : NetworkPartSet
 {
-    private Dictionary<INetworkPart, IOConnectionResult> _connections;
+    private Dictionary<INetworkPart, IOConnection> _connections;
 
-    public IReadOnlyDictionary<INetworkPart, IOConnectionResult> Connections => _connections;
+    public IReadOnlyDictionary<INetworkPart, IOConnection> Connections => _connections;
     
     public NetworkIOPartSet(NetworkDef def) : base(def)
     {
-        _connections = new Dictionary<INetworkPart, IOConnectionResult>();
+        _connections = new Dictionary<INetworkPart, IOConnection>();
     }
     
-    public bool TryGetResult(INetworkPart part, out IOConnectionResult result)
+    public bool TryGetResult(INetworkPart part, out IOConnection result)
     {
         return _connections.TryGetValue(part, out result);
     }
     
-    public bool AddComponent(INetworkPart? part, IOConnectionResult result)
+    public bool AddComponent(INetworkPart? part, IOConnection result)
     {
         if (base.AddComponent(part))
         {

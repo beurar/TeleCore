@@ -65,6 +65,7 @@ public class NetworkPart : INetworkPart, IExposable
     
     public bool IsController => (Config.roles | NetworkRole.Controller) == NetworkRole.Controller;
 
+    public bool IsPureEdge => IsEdge && !IsJunction;
     public bool IsEdge => Config.roles == NetworkRole.Transmitter;
     public bool IsNode => (!IsEdge || IsJunction) && CanBeNode;
 
@@ -170,8 +171,8 @@ public class NetworkPart : INetworkPart, IExposable
                 if (thing is not ThingWithComps twc) continue;
                 if (PipeNetworkFactory.Fits(twc, _config.networkDef, out var subPart))
                 {
-                    var result = HasIOConnectionTo(subPart);
-                    var resultReverse = subPart.HasIOConnectionTo(this);
+                    var result = IOConnectionTo(subPart);
+                    var resultReverse = subPart.IOConnectionTo(this);
                     if (result && resultReverse)
                     {
                         _adjacentSet.AddComponent(subPart, result);
@@ -184,14 +185,14 @@ public class NetworkPart : INetworkPart, IExposable
 
     #endregion
 
-    public IOConnectionResult HasIOConnectionTo(INetworkPart other)
+    public IOConnection IOConnectionTo(INetworkPart other)
     {
-        if (other == this) return IOConnectionResult.Invalid;
+        if (other == this) return IOConnection.Invalid;
         if (!Config.networkDef.Equals(other.Config.networkDef)) 
-            return IOConnectionResult.Invalid;
+            return IOConnection.Invalid;
         if (!Parent.CanConnectToOther(other.Parent)) 
-            return IOConnectionResult.Invalid;
-        return PartIO.ConnectsTo(other.PartIO);
+            return IOConnection.Invalid;
+        return IOConnection.TryCreate(this, (NetworkPart)other);
     }
 
     public string InspectString()

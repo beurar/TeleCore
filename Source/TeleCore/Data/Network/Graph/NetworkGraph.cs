@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using TeleCore.Generics;
 using TeleCore.Network.Data;
+using TeleCore.Network.IO;
 using UnityEngine;
 using Verse;
 
@@ -14,16 +15,53 @@ public class NetworkGraph : IDisposable
     public NetworkGraph()
     {
         Nodes = new HashSet<NetNode>();
-        Edges = new HashSet<NetEdge>();
         AdjacencyList = new Dictionary<NetNode, List<(NetEdge, NetNode)>>();
-        EdgeLookUp = new Dictionary<TwoWayKey<NetNode>, NetEdge>();
+        UniqueEdges = new Dictionary<TwoWayKey<IOConnection>, NetEdge>();
+        EdgesByNodes = new Dictionary<TwoWayKey<NetworkPart>, List<NetEdge>>();
         //Cells = new List<IntVec3>();
     }
 
     public HashSet<NetNode> Nodes { get; private set; }
-    public HashSet<NetEdge> Edges { get; private set; }
+    //public HashSet<NetEdge> Edges { get; private set; }
     public Dictionary<NetNode, List<(NetEdge, NetNode)>> AdjacencyList { get; private set; }
-    public Dictionary<TwoWayKey<NetNode>, NetEdge> EdgeLookUp { get; private set; }
+    
+
+    public Dictionary<TwoWayKey<IOConnection>, NetEdge> UniqueEdges { get; private set; }
+    public Dictionary<TwoWayKey<NetworkPart>, List<NetEdge>> EdgesByNodes { get; set; }
+    
+    private bool RegisterEdge(NetEdge edge)
+    {
+        var edgeKey = (edge.FromAnchor, edge.ToAnchor);
+        if (UniqueEdges.TryAdd(edgeKey, edge))
+        {
+            var nodeKey = new TwoWayKey<NetworkPart>(edge.From, edge.To);
+            GetOrMakeEdgeBag(nodeKey, out var edges);
+            edges.Add(edge);
+            return true;
+        }
+        return false;
+    }
+
+    private void DeregisterEdge(NetEdge edge)
+    {
+        var edgeKey = (edge.FromAnchor, edge.ToAnchor);
+        if (UniqueEdges.Remove(edgeKey))
+        {
+            var nodeKey = new TwoWayKey<NetworkPart>(edge.From, edge.To);
+            EdgesByNodes.Remove(nodeKey);
+            // GetOrMakeEdgeBag(nodeKey, out var edges);
+            // edges.Clear();
+        }
+    }
+
+    private void GetOrMakeEdgeBag(TwoWayKey<NetworkPart> key, out List<NetEdge> edges)
+    {
+        if (!EdgesByNodes.TryGetValue(key, out edges))
+        {
+            edges = new List<NetEdge>();
+            EdgesByNodes.Add(key, edges);
+        }
+    }
 
     //public List<IntVec3> Cells { get; private set; }
 
@@ -31,38 +69,71 @@ public class NetworkGraph : IDisposable
     {
         //Cells.Clear();
         Nodes.Clear();
-        Edges.Clear();
         AdjacencyList.Clear();
-        EdgeLookUp.Clear();
+        EdgesByNodes.Clear();
+        UniqueEdges.Clear();
 
         //Cells = null;
         Nodes = null;
-        Edges = null;
         AdjacencyList = null;
-        EdgeLookUp = null;
+        EdgesByNodes = null;
+        UniqueEdges = null;
+    }
+    
+    public NetEdge GetBestEdgeFor(TwoWayKey<NetworkPart> nodes)
+    {
+        return EdgesByNodes.TryGetValue(nodes, out var edges) ? edges.FirstOrFallback() : NetEdge.Invalid;
     }
 
-    public void DissolveEdge(NetworkPart from, NetworkPart to)
+    public void TryDissolveEdge(IOConnection fromAnchor, IOConnection toAnchor)
     {
-        var key = new TwoWayKey<NetNode>(from, to);
-        if (EdgeLookUp.TryGetValue(key, out var edge))
-        {        
-            Edges.Remove(edge);
-            EdgeLookUp.Remove(edge);
-            if (AdjacencyList.TryGetValue(edge.From, out var fromList))
+        var key = new TwoWayKey<IOConnection>(fromAnchor, toAnchor);
+        if (UniqueEdges.TryGetValue(key, out var edge))
+        {
+            if (EdgeFits(edge, fromAnchor, toAnchor))
             {
-                fromList.RemoveAll(e => e.Item2.Value == edge.To);
-            }
-            if (AdjacencyList.TryGetValue(edge.To, out var toList))
-            {
-                toList.RemoveAll(e => e.Item2.Value == edge.From);
+                DeregisterEdge(edge);
+                if (AdjacencyList.TryGetValue(edge.From, out var fromList))
+                {
+                    fromList.RemoveAll(e => e.Item2.Value == edge.To);
+                }
+
+                if (AdjacencyList.TryGetValue(edge.To, out var toList))
+                {
+                    toList.RemoveAll(e => e.Item2.Value == edge.From);
+                }
             }
         }
     }
 
-    public void DissolveEdge(NetEdge edge)
+    private static bool EdgeFits(NetEdge edge, IOConnection fromAnchor, IOConnection toAnchor)
     {
-        DissolveEdge(edge.From, edge.To);
+        var from = edge.FromAnchor;
+        var to = edge.ToAnchor;
+        var preResult1 = from.Equals(fromAnchor) && to.Equals(toAnchor);
+        var preResult2 = from.Equals(toAnchor) && to.Equals(fromAnchor);
+        return preResult1 || preResult2;
+    }
+    
+    public void TryDissolveEdge(NetworkPart from, NetworkPart to)
+    {
+        var key = new TwoWayKey<NetworkPart>(from, to);
+        if (EdgesByNodes.TryGetValue(key, out var edges))
+        {
+            foreach (var edge in edges)
+            {
+                DeregisterEdge(edge);
+                if (AdjacencyList.TryGetValue(edge.From, out var fromList))
+                {
+                    fromList.RemoveAll(e => e.Item2.Value == edge.To);
+                }
+
+                if (AdjacencyList.TryGetValue(edge.To, out var toList))
+                {
+                    toList.RemoveAll(e => e.Item2.Value == edge.From);
+                }
+            }
+        }
     }
 
     public bool TryDissolveNode(NetworkPart node)
@@ -74,8 +145,7 @@ public class NetworkGraph : IDisposable
         {
             foreach (var (edge, _) in list)
             {
-                Edges.Remove(edge);
-                EdgeLookUp.Remove((edge.From, edge.To));
+                DeregisterEdge(edge);
             }
 
             AdjacencyList.Remove(node);
@@ -108,18 +178,15 @@ public class NetworkGraph : IDisposable
         //Ignore invalid edges
         if (!edge.IsValid) return false;
 
-        var key = new TwoWayKey<NetNode>(edge.From, edge.To);
-        if (EdgeLookUp.TryAdd(key, edge))
+        if (RegisterEdge(edge))
         {
-            if (Edges.Add(edge))
-            {
-                Nodes.Add(edge.From);
-                Nodes.Add(edge.To);
+            Nodes.Add(edge.From);
+            Nodes.Add(edge.To);
 
-                TryAddAdjacency(edge.From, edge.To, edge);
-                TryAddAdjacency(edge.To, edge.From, edge);
-            }
+            TryAddAdjacency(edge.From, edge.To, edge);
+            TryAddAdjacency(edge.To, edge.From, edge);
         }
+
         return true;
     }
 

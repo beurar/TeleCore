@@ -16,15 +16,14 @@ public static class TWidgets
         var v = ToScreenPos(thing.TrueCenter());
 
         var driver = Find.CameraDriver;
-        var size = 1 * driver.CellSizePixels;
+        var size = 0.5f * driver.CellSizePixels;
         var sizeHalf = size * 0.5f;
 
         var rect = new Rect(v.x - sizeHalf, v.y - sizeHalf, size, size);
-        DrawColoredBox(rect, new Color(1, 1, 1, 0.125f), Color.white, 1);
-        
-        Text.Anchor = TextAnchor.MiddleCenter;
-        Widgets.Label(rect.ExpandedBy(42,0), $"[{thing.Spawned}]{thing}");
-        Text.Anchor = default;
+        DrawColoredBox(rect, new Color(1, 1, 1, 0.1f), Color.white, 1);
+
+        if(UI.MousePositionOnUIInverted.DistanceToRect(rect) < 40)
+            GenMapUI.DrawThingLabel(rect.position + (rect.size / 2), thing.ToString(), Color.white);
     }
 
     public static Vector2 ToScreenPos(this Vector3 vec)

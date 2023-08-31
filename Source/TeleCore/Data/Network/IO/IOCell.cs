@@ -26,5 +26,8 @@ public struct IOCell
         return cell.Pos.Pos;
     }
 
+    /// <summary>
+    /// The position INSIDE of the IO-Holder of the IO-Cell
+    /// </summary>
     public IntVec3 Interface => Pos.Pos + Pos.Dir.Opposite.FacingCell;
 }

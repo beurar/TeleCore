@@ -1,8 +1,11 @@
 ﻿using System.Diagnostics;
 using System.Runtime.CompilerServices;
+using RimWorld;
 using TeleCore.Generics;
 using TeleCore.Network.Data;
 using TeleCore.Network.IO;
+using TeleCore.Network.Utility;
+using TeleCore.Primitive;
 using Verse;
 
 namespace TeleCore.Network.Graph;
@@ -13,6 +16,124 @@ public interface IEdge<T>
     public T To { get; set; }
 }
 
+//Node - Edge - Node
+//(Anchor < Edge > Anchor)
+// (Node<EdgePart < Edge > EdgePart>Node)
+
+
+[DebuggerDisplay("From: {From} To: {To}")]
+public struct NetEdge : IEdge<NetworkPart>
+{
+    public NetworkPart From { get; set; }
+    public NetworkPart To { get; set; }
+    
+    public IOConnection FromAnchor { get; }
+    public IOConnection ToAnchor { get; }
+    
+    public int Length { get; private set; }
+    
+    public bool BiDirectional => FromAnchor.FromMode == NetworkIOMode.TwoWay && ToAnchor.ToMode == NetworkIOMode.TwoWay;
+    public bool IsValid => From != null && To != null && 
+                           From.IsNode && To.IsNode &&
+                           (FromAnchor.FromMode & NetworkIOMode.Output) == NetworkIOMode.Output &&
+                           (ToAnchor.ToMode & NetworkIOMode.Input) == NetworkIOMode.Input;
+    
+    public static implicit operator TwoWayKey<NetNode>(NetEdge edge)
+    {
+        return (edge.From, edge.To);
+    }
+    
+    public static implicit operator (NetworkPart, NetworkPart)(NetEdge edge)
+    {
+        return (edge.From, edge.To);
+    }
+
+    public NetEdge(IOConnection from, IOConnection to, int length)
+    {
+        //TODO: Simply ignore outright invalid io connections
+
+        //Note: Special case between two direct nodes
+        if (from == to)
+        {
+            if (from.From.IsNode && from.To.IsNode)
+            {
+                //If we already have From:Output To:Input then we can just use that
+                if ((from.FromMode & NetworkIOMode.Output) == NetworkIOMode.Output && 
+                    (from.ToMode & NetworkIOMode.Input) == NetworkIOMode.Input)
+                {
+                    FromAnchor = from;
+                    ToAnchor = from;
+                    From = from.From;
+                    To = from.To;
+                    Length = length;
+                    return;
+                }
+                //Otherwise we reverse the connecting connections
+                else if ((from.ToMode & NetworkIOMode.Output) == NetworkIOMode.Output && 
+                         (from.FromMode & NetworkIOMode.Input) == NetworkIOMode.Input)
+                {
+                    FromAnchor = from.Reverse;
+                    ToAnchor = from.Reverse;
+                    From = FromAnchor.From;
+                    To = ToAnchor.To;
+                    Length = length;
+                    return;
+                }
+                return;
+            }
+        }
+        
+        //Resolve Input
+        FromAnchor = from.From.IsNode ? from : from.Reverse;
+        ToAnchor = to.To.IsNode ? to : to.Reverse;
+
+        //Swap if necessary
+        if ((FromAnchor.FromMode & NetworkIOMode.Output) != NetworkIOMode.Output)
+        {
+            var prevFrom = FromAnchor;
+            var prevTo = ToAnchor;
+            FromAnchor = prevTo;
+            ToAnchor = prevFrom;
+        }
+        else if ((ToAnchor.ToMode & NetworkIOMode.Input) != NetworkIOMode.Input)
+        {
+            var prevFrom = FromAnchor;
+            var prevTo = ToAnchor;
+            FromAnchor = prevTo;
+            ToAnchor = prevFrom;
+        }
+
+        //Adjust swapped
+        FromAnchor = FromAnchor.From.IsNode ? FromAnchor : FromAnchor.Reverse;
+        ToAnchor = ToAnchor.To.IsNode ? ToAnchor : ToAnchor.Reverse;
+
+        From = FromAnchor.From;
+        To = ToAnchor.To;
+
+        Length = length;
+    }
+
+    public NetEdge Reverse => new(ToAnchor.Reverse, FromAnchor.Reverse, Length);
+    
+    public static NetEdge Invalid => new NetEdge
+    {
+        From = null,
+        To = null,
+        Length = -1
+    };
+
+    public bool Equals(NetEdge other)
+    {
+        return From == other.From && To == other.To;
+    }
+
+    public override string ToString()
+    {
+        return $"{From} > {To}\n{FromAnchor} > {ToAnchor}";
+    }
+}
+
+/*
 [DebuggerDisplay("From: {From} To: {To}")]
 public struct NetEdge : IEdge<NetworkPart>
 {
@@ -65,6 +186,10 @@ public struct NetEdge : IEdge<NetworkPart>
         return (edge.From, edge.To);
     }
 
+    public NetEdge(IOConnection from, IOConnection to, int length)
+    {
+    }
+    
     public NetEdge(NetworkPart from, NetworkPart to)
     {
         From = from;
@@ -103,4 +228,4 @@ public struct NetEdge : IEdge<NetworkPart>
                && ToIO == other.ToIO
                && Length == other.Length;
     }
-}
+}*/

@@ -60,7 +60,7 @@ public static class IOUtils
         return Rot4.Invalid;
     }
 
-    public static bool Matches(this NetworkIOMode innerMode, NetworkIOMode outerMode)
+    public static bool MatchesIO(this NetworkIOMode innerMode, NetworkIOMode outerMode)
     {
         var innerInput = (innerMode & NetworkIOMode.Input) == NetworkIOMode.Input;
         var outerInput = (outerMode & NetworkIOMode.Input) == NetworkIOMode.Input;

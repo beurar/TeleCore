@@ -21,25 +21,24 @@ internal static class DebugTools
     {
         var size = Find.CameraDriver.CellSizePixels / 4;
 
-        foreach (var netEdge in graph.EdgeLookUp)
+        foreach (var (key, edge) in graph.UniqueEdges)
         {
-            var subParts = netEdge.Key;
-            var thingA = subParts.A.Value.Thing;
-            var thingB = subParts.B.Value.Thing;
+            var thingA = edge.From.Thing;
+            var thingB = edge.To.Thing;
 
             //TWidgets.DrawHalfArrow(ScreenPositionOf(thingA.TrueCenter()), ScreenPositionOf(thingB.TrueCenter()), Color.red, 8);
 
             //TODO: edge access only works for one version (node1, node2) - breaks two-way
             //TODO: some edges probably get setup broken (because only one edge is set)
-            if (netEdge.Value.IsValid)
+            if (edge.IsValid)
             {
-                TWidgets.DrawHalfArrow(netEdge.Value.From.Parent.Thing.TrueCenter().ToScreenPos(),
-                    netEdge.Value.To.Parent.Thing.TrueCenter().ToScreenPos(), Color.red, size);
-                if (netEdge.Value.BiDirectional)
-                    TWidgets.DrawHalfArrow(netEdge.Value.To.Parent.Thing.TrueCenter().ToScreenPos(),
-                        netEdge.Value.From.Parent.Thing.TrueCenter().ToScreenPos(), Color.blue, size);
+                TWidgets.DrawHalfArrow(edge.From.Parent.Thing.TrueCenter().ToScreenPos(),
+                    edge.To.Parent.Thing.TrueCenter().ToScreenPos(), Color.red, size);
+                if (edge.BiDirectional)
+                    TWidgets.DrawHalfArrow(edge.To.Parent.Thing.TrueCenter().ToScreenPos(),
+                    edge.From.Parent.Thing.TrueCenter().ToScreenPos(), Color.blue, size);
             }
-
+            
             TWidgets.DrawBoxOnThing(thingA);
             TWidgets.DrawBoxOnThing(thingB);
         }

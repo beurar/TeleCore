@@ -73,6 +73,8 @@ public abstract class FlowSystem<TAttach, TVolume, TValueDef> : IDisposable
             return volume;
 
         volume = CreateVolume(part);
+        if (volume == null) return null;
+        
         volume.FlowEvent += OnFlowBoxEvent;
         
         _volumes.Add(volume);

@@ -48,7 +48,7 @@ public interface INetworkPart
 
     void Tick();
 
-    IOConnectionResult HasIOConnectionTo(INetworkPart otherPart);
+    IOConnection IOConnectionTo(INetworkPart otherPart);
 
     public void Draw();
 

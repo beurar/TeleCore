@@ -43,10 +43,21 @@ public class NetworkSystem : FlowSystem<NetworkPart, NetworkVolume, NetworkValue
 
     internal void Notify_Populate(NetworkGraph graph)
     {
-        foreach (var edge in graph.Edges)
+        foreach (var edgePair in graph.EdgesByNodes)
         {
+            var edge = graph.GetBestEdgeFor(edgePair.Key);
+            if (!edge.IsValid)
+            {
+                TLog.Error($"Tried to populate net-system with invalid edge: {edge}");
+                continue;
+            }
             var fb1 = GenerateForOrGet(edge.From);
             var fb2 = GenerateForOrGet(edge.To);
+            if (fb1 == null || fb2 == null)
+            {
+                TLog.Warning("Null volume created!");
+                continue;
+            }
             var mode = edge.BiDirectional ? InterfaceFlowMode.TwoWay : InterfaceFlowMode.FromTo;
             var iFace = new FlowInterface<NetworkPart, NetworkVolume, NetworkValueDef>(edge.From, edge.To, fb1, fb2,mode);
             AddInterface((edge.From, edge.To), iFace);
