@@ -21,8 +21,8 @@ internal class Dialog_AnimationFileList : Dialog_FileList
         this.canvas = canvas;
 
         //
-        interactButLabel = TranslationUtil.AnimationStrings.LoadAnimFile;
-        deleteTipKey = TranslationUtil.AnimationStrings.DeleteAnimFile;
+        interactButLabel = Translations.AnimationStrings.LoadAnimFile;
+        deleteTipKey = Translations.AnimationStrings.DeleteAnimFile;
 
         //Window Props
         forcePause = true;

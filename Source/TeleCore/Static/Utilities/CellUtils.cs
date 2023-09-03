@@ -8,7 +8,27 @@ public static class CellUtils
     {
         return map.cellIndices.CellToIndex(vec);
     }
+    
+    public static Rot4 RelativeDir(CellRect rect, IntVec3 pos)
+    {
+        rect = rect.ContractedBy(1);
+        
+        if (pos.x < rect.minX)
+            return Rot4.West;
+        
+        if (pos.x > rect.maxX)
+            return Rot4.East;
+        
+        if (pos.z > rect.minZ)
+            return Rot4.North;
+        
+        if (pos.z < rect.maxZ)
+            return Rot4.South;
+        
+        return Rot4.Invalid;
+    }
 
+    
     /// <summary>
     ///     Compares two directly adjacent cells to determine the <see cref="Rot4" /> direction of <paramref name="other" />
     ///     relative of <paramref name="cell" />.

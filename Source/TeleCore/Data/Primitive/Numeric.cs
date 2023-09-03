@@ -1,11 +1,13 @@
 ﻿
+using System;
+using System.Collections;
 using System.Runtime.InteropServices;
 using Verse;
 
 namespace TeleCore.Primitive;
 
 [StructLayout(LayoutKind.Sequential)]
-public struct Numeric<TValue> where TValue : unmanaged
+public struct Numeric<TValue> : IComparable<TValue> where TValue : unmanaged
 {
     private TValue _number;
     
@@ -138,9 +140,16 @@ public struct Numeric<TValue> where TValue : unmanaged
 
     private bool Equals(Numeric<TValue> other)
     {
-        return _number.Equals(other._number);
+        return NumericLibrary<TValue>.Equal.Invoke(_number, other._number);
     }
-    
+
+    public int CompareTo(TValue other)
+    {
+        if (NumericLibrary<TValue>.GreaterThan(_number, other)) return 1;
+        if (NumericLibrary<TValue>.LessThan(_number, other)) return -1;
+        return 0;
+    }
+
     public override bool Equals(object? obj)
     {
         return obj is Numeric<TValue> other && Equals(other);
@@ -148,7 +157,7 @@ public struct Numeric<TValue> where TValue : unmanaged
     
     public override string ToString()
     {
-        return Value.ToString();
+        return _number.ToString();
     }
     
     public override int GetHashCode()

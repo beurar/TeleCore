@@ -6,8 +6,7 @@ public static class StaticListHolder<T>
 {
     internal static Dictionary<string, List<T>> NamedWorkerLists = new();
     internal static Dictionary<string, HashSet<T>> NamedWorkerSets = new();
-
-
+    
     public static List<T> RequestList(string uniqueID, bool clear = false)
     {
         if (!NamedWorkerLists.TryGetValue(uniqueID, out var list))

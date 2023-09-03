@@ -21,16 +21,16 @@ internal static class CanvasCursor
             switch (maniMode)
             {
                 case ManipulationMode.Move:
-                    cursorHotspot = new Vector2(TRContentDatabase.CustomCursor_Drag.width / 2f,
-                        TRContentDatabase.CustomCursor_Drag.height / 2f);
-                    Cursor.SetCursor(TRContentDatabase.CustomCursor_Drag, cursorHotspot, CursorMode.Auto);
+                    cursorHotspot = new Vector2(TeleContentDB.CustomCursor_Drag.width / 2f,
+                        TeleContentDB.CustomCursor_Drag.height / 2f);
+                    Cursor.SetCursor(TeleContentDB.CustomCursor_Drag, cursorHotspot, CursorMode.Auto);
                     break;
                 case ManipulationMode.Resize:
                     break;
                 case ManipulationMode.Rotate:
-                    cursorHotspot = new Vector2(TRContentDatabase.CustomCursor_Rotate.width / 2f,
-                        TRContentDatabase.CustomCursor_Rotate.height / 2f);
-                    Cursor.SetCursor(TRContentDatabase.CustomCursor_Rotate, cursorHotspot, CursorMode.Auto);
+                    cursorHotspot = new Vector2(TeleContentDB.CustomCursor_Rotate.width / 2f,
+                        TeleContentDB.CustomCursor_Rotate.height / 2f);
+                    Cursor.SetCursor(TeleContentDB.CustomCursor_Rotate, cursorHotspot, CursorMode.Auto);
                     break;
             }
 

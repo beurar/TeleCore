@@ -6,5 +6,5 @@ namespace TeleCore.Data.Vehicles;
 //A simple thing which can move along a pather
 public class MovingThing : ThingWithComps
 {
-    private Generic_PathFollower pather;
+    private Generic_PathFollower _pather;
 }

@@ -31,7 +31,7 @@ public class PipeNetwork : IDisposable
 
     public NetworkGraph Graph { get; private set; }
 
-    public NetworkSystem NetworkSystem { get; private set; }
+    public NetworkFlowSystem System { get; private set; }
 
     public NetworkPartSetExtended PartSet => _partSet;
 
@@ -40,20 +40,14 @@ public class PipeNetwork : IDisposable
     public void Dispose()
     {
         Graph.Dispose();
-        NetworkSystem.Dispose();
+        System.Dispose();
         _partSet.Dispose();
     }
 
     internal void Prepare()
     {
         Graph = new NetworkGraph();
-        NetworkSystem = new NetworkSystem();
-    }
-
-    internal void PrepareForRegen(out NetworkGraph graph, out NetworkSystem networkSystem)
-    {
-        graph = Graph = new NetworkGraph();
-        networkSystem = NetworkSystem = new NetworkSystem();
+        System = new NetworkFlowSystem();
     }
 
     internal bool Notify_AddPart(INetworkPart part)
@@ -79,7 +73,7 @@ public class PipeNetwork : IDisposable
 
     public void TickSystem(int tick)
     {
-        NetworkSystem.Tick(tick);
+        System.Tick(tick);
     }
     
     internal void Tick(int tick)
@@ -90,22 +84,23 @@ public class PipeNetwork : IDisposable
 
     internal void Draw()
     {
-        NetworkSystem.Draw();
+        System.Draw();
         Graph.Draw();
         
         if (DEBUG_DrawFlowPressure)
-            DebugTools.Debug_DrawPressure(NetworkSystem);
+            DebugTools.Debug_DrawPressure(System);
     }
 
     internal void OnGUI()
     {
-        NetworkSystem.OnGUI();
+        System.OnGUI();
         Graph.OnGUI();
     }
 
     internal IEnumerable<Gizmo> GetGizmos()
     {
         if (DebugSettings.godMode)
+        {
             yield return new Command_Action
             {
                 defaultLabel = "Draw Graph",
@@ -113,5 +108,6 @@ public class PipeNetwork : IDisposable
                 icon = BaseContent.WhiteTex,
                 action = delegate { DEBUG_DrawGraph = !DEBUG_DrawGraph; }
             };
+        }
     }
 }

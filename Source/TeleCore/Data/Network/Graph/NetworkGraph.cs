@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using TeleCore.Generics;
 using TeleCore.Network.Data;
 using TeleCore.Network.IO;
 using UnityEngine;
+using UnityEngine.Assertions;
 using Verse;
 
 namespace TeleCore.Network.Graph;
@@ -18,15 +20,14 @@ public class NetworkGraph : IDisposable
         AdjacencyList = new Dictionary<NetNode, List<(NetEdge, NetNode)>>();
         UniqueEdges = new Dictionary<TwoWayKey<IOConnection>, NetEdge>();
         EdgesByNodes = new Dictionary<TwoWayKey<NetworkPart>, List<NetEdge>>();
+        EdgesByIO = new Dictionary<(NetworkPart, IOCell), NetEdge>();
         //Cells = new List<IntVec3>();
     }
 
     public HashSet<NetNode> Nodes { get; private set; }
-    //public HashSet<NetEdge> Edges { get; private set; }
     public Dictionary<NetNode, List<(NetEdge, NetNode)>> AdjacencyList { get; private set; }
-    
-
     public Dictionary<TwoWayKey<IOConnection>, NetEdge> UniqueEdges { get; private set; }
+    public Dictionary<(NetworkPart, IOCell), NetEdge> EdgesByIO { get; private set; }
     public Dictionary<TwoWayKey<NetworkPart>, List<NetEdge>> EdgesByNodes { get; set; }
     
     private bool RegisterEdge(NetEdge edge)
@@ -34,8 +35,24 @@ public class NetworkGraph : IDisposable
         var edgeKey = (edge.FromAnchor, edge.ToAnchor);
         if (UniqueEdges.TryAdd(edgeKey, edge))
         {
+            if (EdgesByIO.TryAdd((edge.From, edge.FromIOCell), edge))
+            {
+                EdgesByIO.TryAdd((edge.To, edge.ToIOCell), edge);   
+            }
+            else
+            {
+                TLog.Warning($"Edge with key already exists: {(edge.From, edge.FromIOCell)}");
+            }
+            
             var nodeKey = new TwoWayKey<NetworkPart>(edge.From, edge.To);
-            GetOrMakeEdgeBag(nodeKey, out var edges);
+            
+            //GetOrMakeEdgeBag
+            if (!EdgesByNodes.TryGetValue(nodeKey, out var edges))
+            {
+                edges = new List<NetEdge>();
+                EdgesByNodes.Add(nodeKey, edges);
+            }
+            
             edges.Add(edge);
             return true;
         }
@@ -48,22 +65,63 @@ public class NetworkGraph : IDisposable
         if (UniqueEdges.Remove(edgeKey))
         {
             var nodeKey = new TwoWayKey<NetworkPart>(edge.From, edge.To);
+            EdgesByIO.Remove((edge.From, edge.FromIOCell));
+            EdgesByIO.Remove((edge.To, edge.ToIOCell));
             EdgesByNodes.Remove(nodeKey);
-            // GetOrMakeEdgeBag(nodeKey, out var edges);
-            // edges.Clear();
         }
     }
 
-    private void GetOrMakeEdgeBag(TwoWayKey<NetworkPart> key, out List<NetEdge> edges)
+    private void ValidateAdded(NetEdge edge)
     {
-        if (!EdgesByNodes.TryGetValue(key, out edges))
-        {
-            edges = new List<NetEdge>();
-            EdgesByNodes.Add(key, edges);
-        }
+        // Validate that edge's nodes are part of the graph
+        if (!Nodes.Contains(edge.From) || !Nodes.Contains(edge.To))
+            throw new InvalidOperationException("Nodes of edge have not been added correctly to the Graph.");
+
+        if (!AdjacencyList.ContainsKey(edge.From) || !AdjacencyList.ContainsKey(edge.To))
+            throw new InvalidOperationException("Nodes of edge have not been added correctly to the AdjacencyList. (Missing Keys)");
+
+        if (!AdjacencyList[edge.From].Exists(e => e.Item2.Value == edge.To) ||
+            !AdjacencyList[edge.To].Exists(e => e.Item2.Value == edge.From))
+            throw new InvalidOperationException("Nodes of edge have not been added correctly to the AdjacencyList. (Missing Values)");
+
+        var edgeKey = (edge.FromAnchor, edge.ToAnchor);
+
+        if (!UniqueEdges.ContainsKey(edgeKey))
+            throw new Exception("Edge was not added to UniqueEdges.");
+
+        if (!EdgesByIO.TryGetValue((edge.From, edge.FromIOCell), out var edgeFromIOCell) || !edgeFromIOCell.Equals(edge))
+            throw new Exception("Edge was not added to EdgesByIO from side");
+
+        if (!EdgesByIO.TryGetValue((edge.To, edge.ToIOCell), out var edgeToIOCell) || !edgeToIOCell.Equals(edge))
+            throw new Exception("Edge was not added to EdgesByIO to side");
+
+        var nodeKey = new TwoWayKey<NetworkPart>(edge.From, edge.To);
+        if (!EdgesByNodes.TryGetValue(nodeKey, out var edges) || !edges.Contains(edge))
+            throw new Exception("Edge was not added to EdgesByNodes.");
     }
 
-    //public List<IntVec3> Cells { get; private set; }
+    private void ValidateRemoved(NetEdge edge)
+    {
+        var edgeKey = (edge.FromAnchor, edge.ToAnchor);
+        if (UniqueEdges.ContainsKey(edgeKey) || UniqueEdges.ContainsValue(edge))
+            throw new Exception("Edge was not removed from UniqueEdges.");
+        
+        if (EdgesByIO.TryGetValue((edge.From, edge.FromIOCell), out var edgeFromIOCell) && edgeFromIOCell.Equals(edge))
+            throw new Exception("Edge was not removed from EdgesByIO from side");
+
+        if (EdgesByIO.TryGetValue((edge.To, edge.ToIOCell), out var edgeToIOCell) && !edgeToIOCell.Equals(edge))
+            throw new Exception("Edge was not removed from to side");
+        
+        var nodeKey = new TwoWayKey<NetworkPart>(edge.From, edge.To);
+        if(EdgesByNodes.ContainsKey(nodeKey) || EdgesByNodes.Values.Any(x => x.Contains(edge)))
+            throw new Exception("Edge was not removed from EdgesByNodes.");
+        
+        if(AdjacencyList.TryGetValue(edge.From, out var list) && list.Exists(e => e.Item2.Value == edge.To))
+            throw new Exception("Nodes between edge still exist in AdjacencyList. (From-To)");
+        
+        if(AdjacencyList.TryGetValue(edge.To, out list) && list.Exists(e => e.Item2.Value == edge.From))
+            throw new Exception("Nodes between edge still exist in AdjacencyList. (To-From)");
+    }
 
     public void Dispose()
     {
@@ -79,12 +137,26 @@ public class NetworkGraph : IDisposable
         EdgesByNodes = null;
         UniqueEdges = null;
     }
-    
+
+    public NetEdge GetEdgeOnCell(NetworkPart part, IOCell cell)
+    {
+        return EdgesByIO.TryGetValue((part, cell), out var edge) ? edge : NetEdge.Invalid;
+    }
+
     public NetEdge GetBestEdgeFor(TwoWayKey<NetworkPart> nodes)
     {
         return EdgesByNodes.TryGetValue(nodes, out var edges) ? edges.FirstOrFallback() : NetEdge.Invalid;
     }
 
+    private static bool EdgeFits(NetEdge edge, IOConnection fromAnchor, IOConnection toAnchor)
+    {
+        var from = edge.FromAnchor;
+        var to = edge.ToAnchor;
+        var preResult1 = from.Equals(fromAnchor) && to.Equals(toAnchor);
+        var preResult2 = from.Equals(toAnchor) && to.Equals(fromAnchor);
+        return preResult1 || preResult2;
+    }
+    
     public void TryDissolveEdge(IOConnection fromAnchor, IOConnection toAnchor)
     {
         var key = new TwoWayKey<IOConnection>(fromAnchor, toAnchor);
@@ -102,17 +174,11 @@ public class NetworkGraph : IDisposable
                 {
                     toList.RemoveAll(e => e.Item2.Value == edge.From);
                 }
+                
+                //
+                ValidateRemoved(edge);
             }
         }
-    }
-
-    private static bool EdgeFits(NetEdge edge, IOConnection fromAnchor, IOConnection toAnchor)
-    {
-        var from = edge.FromAnchor;
-        var to = edge.ToAnchor;
-        var preResult1 = from.Equals(fromAnchor) && to.Equals(toAnchor);
-        var preResult2 = from.Equals(toAnchor) && to.Equals(fromAnchor);
-        return preResult1 || preResult2;
     }
     
     public void TryDissolveEdge(NetworkPart from, NetworkPart to)
@@ -132,6 +198,9 @@ public class NetworkGraph : IDisposable
                 {
                     toList.RemoveAll(e => e.Item2.Value == edge.From);
                 }
+
+                //
+                ValidateRemoved(edge);
             }
         }
     }
@@ -185,6 +254,9 @@ public class NetworkGraph : IDisposable
 
             TryAddAdjacency(edge.From, edge.To, edge);
             TryAddAdjacency(edge.To, edge.From, edge);
+            
+            //
+            ValidateAdded(edge);
         }
 
         return true;

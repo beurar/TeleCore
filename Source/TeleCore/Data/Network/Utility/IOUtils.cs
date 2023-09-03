@@ -20,15 +20,16 @@ public static class IOUtils
     //  \\\XX\\\
     //  \\\\\\\\
 
-    internal const char Input = 'I';
-    internal const char Output = 'O';
-    internal const char TwoWay = 'X';
-    internal const char Empty = '#';
-    internal const char Visual = '+';
+    public const char Input = 'I';
+    public const char Output = 'O';
+    public const char TwoWay = 'X';
+    public const char Empty = '#';
+    public const char Visual = '+';
+    public const char Logical = 'L';
 
     internal const string RegexPattern = @"\[[^\]]*\]|.";
 
-    public static NetworkIOMode ParseIOMode(char c)
+    public static NetworkIOMode ModeFromChar(char c)
     {
         return c switch
         {
@@ -37,27 +38,23 @@ public static class IOUtils
             TwoWay => NetworkIOMode.TwoWay,
             Empty => NetworkIOMode.None,
             Visual => NetworkIOMode.Visual,
+            Logical => NetworkIOMode.Logical,
             _ => throw new ArgumentException($"Invalid IO mode character: {c}")
         };
     }
     
-    public static Rot4 RelativeDir(CellRect rect, IntVec3 pos)
+    public static char CharFromMode(NetworkIOMode mode)
     {
-        rect = rect.ContractedBy(1);
-        
-        if (pos.x < rect.minX)
-            return Rot4.West;
-        
-        if (pos.x > rect.maxX)
-            return Rot4.East;
-        
-        if (pos.z > rect.minZ)
-            return Rot4.North;
-        
-        if (pos.z < rect.maxZ)
-            return Rot4.South;
-        
-        return Rot4.Invalid;
+        return mode switch
+        {
+            NetworkIOMode.Input => Input,
+            NetworkIOMode.Output => Output,
+            NetworkIOMode.TwoWay => TwoWay,
+            NetworkIOMode.None => Empty,
+            NetworkIOMode.Visual => Visual,
+            NetworkIOMode.Logical => Logical,
+            _ => throw new ArgumentException($"Invalid IO mode: {mode}")
+        };
     }
 
     public static bool MatchesIO(this NetworkIOMode innerMode, NetworkIOMode outerMode)
@@ -70,7 +67,7 @@ public static class IOUtils
 
         return (innerInput && outerOutput) || (outerInput && innerOutput);
     }
-
+    
     public static List<IOCellPrototype> GenerateFromPattern(string ioPattern, IntVec2 patternSize)
     {
         var size = patternSize;
@@ -93,7 +90,7 @@ public static class IOUtils
 
                 if (ioMode != NetworkIOMode.None)
                 {
-                    var rel = RelativeDir(rect, cell);
+                    var rel = CellUtils.RelativeDir(rect, cell);
                     result.Add(new IOCellPrototype
                     {
                         offset = cell,
@@ -129,7 +126,7 @@ public static class IOUtils
         {
             var match = matches[i];
             if (match.Value.Length == 1)
-                modeGrid[i] = ParseIOMode(match.Value[0]);
+                modeGrid[i] = ModeFromChar(match.Value[0]);
         }
 
         return modeGrid;

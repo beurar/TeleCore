@@ -4,6 +4,7 @@ using RimWorld;
 using TeleCore.Network.Data;
 using TeleCore.Network.Utility;
 using TeleCore.Primitive;
+using TeleCore.Static;
 using UnityEngine;
 using Verse;
 using Verse.Sound;
@@ -277,8 +278,12 @@ public class CustomNetworkBill : IExposable
     {
         foreach (var netComp in billStack.ParentNetParts)
         {
-            var portableDef = netComp.Config.networkDef.portableContainerDefFallback;
-            if (portableDef == null) continue;
+            var portableDef = netComp.Config.networkDef.portableContainerDef;
+            if (portableDef == null)
+            {
+                Messages.Message(Translations.Messages.NoPortableContainer(netComp), MessageTypeDefOf.RejectInput, false);
+                continue;
+            }
             var newStack = StackFor(netComp);
             if (newStack.TotalValue > 0d)
                 TLog.Warning($"Stack not empty ({newStack.TotalValue}) after refunding... dropping container.");

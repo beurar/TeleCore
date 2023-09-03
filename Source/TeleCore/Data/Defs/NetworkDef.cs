@@ -23,7 +23,7 @@ public class NetworkDef : FlowValueCollectionDef
     public GraphicData overlayGraphic;
 
     //
-    public ThingDef portableContainerDefFallback = TeleDefOf.PortableContainer;
+    public ThingDef portableContainerDef = TeleDefOf.PortableContainer;
     public ThingDef transmitterDef;
 
     //

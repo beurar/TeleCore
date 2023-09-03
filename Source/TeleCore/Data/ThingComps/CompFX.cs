@@ -298,8 +298,11 @@ public class CompFX : TeleComp
     {
         base.PostDraw();
         foreach (var layer in FXLayers)
-            if (layer.data.fxMode != FXMode.Static && CanDraw(layer.Args))
+        {
+            var canDraw =  CanDraw(layer.Args);
+            if (layer.data.fxMode != FXMode.Static && canDraw)
                 layer.Draw();
+        }
     }
 
     public override void PostPrintOnto(SectionLayer layer)

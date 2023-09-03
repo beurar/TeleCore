@@ -18,7 +18,7 @@ public interface INetworkStructure
     public bool IsWorking { get; }
 
     //
-    void NetworkPostTick(INetworkPart networkSubPart, bool isPowered);
+    void NetworkPostTick(INetworkPart netPart, bool isPowered);
 
     //
     void Notify_ReceivedValue();

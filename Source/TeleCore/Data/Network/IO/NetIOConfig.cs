@@ -108,40 +108,4 @@ public class NetIOConfig : Editable
         if (cellsWest == null) 
             Rotate(cellsSouth, ref cellsWest);
     }
-    
-    public static void DrawCells(List<IOCellPrototype> cells, IntVec2 size)
-    {
-        string text = "";
-
-        for (int x = 0; x < size.x; x++)
-        {
-            for (int y = 0; y < size.z; y++)
-            {
-                text += "#";
-            }
-        }
-        var center = new IntVec3(Math.Abs(0 - (size.x - 1) / 2),0, Math.Abs(0 - (size.z - 1) / 2));
-        foreach (var cell in cells)
-        {
-            var pos = center + cell.offset;
-            var index = pos.z * (size.x) + pos.x;
-            var arr = text.ToCharArray();
-            arr[index] = ForMode(cell.mode);
-            text = new string(arr);
-        }
-        
-        TLog.Message("Cells: \n" + text + "\n");
-    }
-    
-    public static char ForMode(NetworkIOMode mode)
-    {
-        return mode switch
-        {
-            NetworkIOMode.TwoWay => 'X',
-            NetworkIOMode.Input => 'I',
-            NetworkIOMode.Output => 'O',
-            NetworkIOMode.Visual => '+',
-            _ => '#'
-        };
-    }
 }

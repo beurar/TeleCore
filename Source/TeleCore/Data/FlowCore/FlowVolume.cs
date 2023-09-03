@@ -37,7 +37,7 @@ public class FlowVolume<T> : INotifyFlowEvent where T : FlowValueDef
     public float FillPercent => (float) (TotalValue / MaxCapacity);
 
     public bool Full => TotalValue >= MaxCapacity;
-    public bool Empty => TotalValue <= 0;
+    public bool Empty => TotalValue <= Mathf.Epsilon;
     
     public ContainerFillState FillState
     {
@@ -309,6 +309,11 @@ public class FlowVolume<T> : INotifyFlowEvent where T : FlowValueDef
         }
         flowFailureReason = FlowFailureReason.UsedForbiddenValueDef;
         return false;
+    }
+    
+    public FlowResult<T, double> TryAdd(FlowResult<T, double> prevResult)
+    {
+        return TryAdd(prevResult.Def, prevResult.Actual);
     }
     
     public bool TryAdd(T def, double value, out FlowResult<T, double> result)

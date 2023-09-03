@@ -11,7 +11,7 @@ public class HediffComp_ExplodeOnPartDestroyed : HediffComp
     public HediffCompProperties_ExplodeOnPartDestroyed Props => (HediffCompProperties_ExplodeOnPartDestroyed) props;
 
     public override string? CompLabelInBracketsExtra => hasExploded
-        ? Props.labelWhenExploded ?? TranslationUtil.Hediffs.ExplodedHediffRuptured.Translate()
+        ? Props.labelWhenExploded ?? Translations.Hediffs.ExplodedHediffRuptured.Translate()
         : null;
 
     public override void CompExposeData()

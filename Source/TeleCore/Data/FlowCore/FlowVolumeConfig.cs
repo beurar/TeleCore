@@ -38,11 +38,14 @@ public class FlowVolumeConfig<T> where T : FlowValueDef
             //Prepare
             if(!values.allowedValues.NullOrEmpty())
                 _values.AddRange(values.allowedValues);
-            if (values.fromCollection == null) return _values;
-            foreach (var var in values.fromCollection.ValueDefs.Cast<T?>())
+            if (values.fromCollection != null)
             {
-                _values.Add(var);
+                foreach (var var in values.fromCollection.ValueDefs.Cast<T?>())
+                {
+                    _values.Add(var);
+                }
             }
+
             isReady = true;
             return _values;
         }

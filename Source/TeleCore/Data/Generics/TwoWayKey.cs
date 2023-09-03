@@ -24,8 +24,8 @@ public readonly record struct TwoWayKey<T>
 
     public TwoWayKey(T a, T b)
     {
-        var hashA = a.GetHashCode();
-        var hashB = b.GetHashCode();
+        var hashA = a?.GetHashCode() ?? 0;
+        var hashB = b?.GetHashCode() ?? 0;
         var compare = hashA.CompareTo(hashB);
         if (compare > 0)
         {

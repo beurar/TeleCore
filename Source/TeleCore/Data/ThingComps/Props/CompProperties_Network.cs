@@ -9,6 +9,7 @@ namespace TeleCore;
 /// </summary>
 public class CompProperties_Network : CompProperties
 {
+    //TODO: Alongside networks, add a list of network workers like "Valve" "Pump" etc, to have multi role functions
     public NetIOConfig generalIOConfig = new NetIOConfig();
     public List<NetworkPartConfig> networks;
 

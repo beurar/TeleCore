@@ -6,8 +6,8 @@ using System.Reflection.Emit;
 using System.Text;
 using HarmonyLib;
 using RimWorld;
+using TeleCore.Gizmos;
 using TeleCore.Network.Bills;
-using TeleCore.Network.UI;
 using UnityEngine;
 using Verse;
 

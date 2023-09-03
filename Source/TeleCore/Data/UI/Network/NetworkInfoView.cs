@@ -3,13 +3,14 @@ using System.Collections.Generic;
 using System.Linq;
 using Multiplayer.API;
 using RimWorld;
+using TeleCore.Gizmos;
 using TeleCore.Network.Data;
 using TeleCore.Network.Flow;
 using TeleCore.Network.Utility;
 using UnityEngine;
 using Verse;
 
-namespace TeleCore.Network.UI;
+namespace TeleCore.Network;
 
 public class NetworkInfoView
 {
@@ -198,14 +199,6 @@ public class NetworkInfoView
 
                 //
                 FlowUI<NetworkValueDef>.DrawFlowBoxReadout(rect, _part.Volume);
-
-                //Right Click Input
-                if (TWidgets.MouseClickIn(rect, 1) && DebugSettings.godMode)
-                {
-                    var menu = new FloatMenu(DebugOptions.ToList(), $"{_part.Config.roles}", true);
-                    menu.vanishIfMouseDistant = true;
-                    Find.WindowStack.Add(menu);
-                }
             });
 
 
@@ -321,47 +314,6 @@ public class NetworkInfoView
     #endregion
 
     #region Debug
-
-    private List<FloatMenuOption> _floatMenuOptions;
-
-    public List<FloatMenuOption> DebugOptions
-    {
-        get
-        {
-            if (_floatMenuOptions == null)
-            {
-                _floatMenuOptions = new List<FloatMenuOption>();
-                var part = (float) (_part.Volume.MaxCapacity / (float) _part.Volume.AllowedValues.Count);
-                _floatMenuOptions.Add(new FloatMenuOption("Add ALL", delegate { Debug_AddAll(part); }));
-
-                _floatMenuOptions.Add(new FloatMenuOption("Remove ALL", Debug_Clear));
-
-                foreach (var type in _part.Volume.AllowedValues)
-                    _floatMenuOptions.Add(new FloatMenuOption($"Add {type}", delegate { Debug_AddType(type, part); }));
-            }
-
-            return _floatMenuOptions;
-        }
-    }
-
-    [SyncMethod]
-    private void Debug_AddAll(double part)
-    {
-        foreach (var type in NetworkVolume.AllowedValues)
-            NetworkVolume.TryAdd(type, part);
-    }
-
-    [SyncMethod]
-    private void Debug_Clear()
-    {
-        NetworkVolume.Clear();
-    }
-
-    [SyncMethod]
-    private void Debug_AddType(NetworkValueDef type, float part)
-    {
-        NetworkVolume.TryAdd(type, part);
-    }
 
     #endregion
 }

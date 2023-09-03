@@ -43,8 +43,10 @@ public class NetworkPart : INetworkPart, IExposable
         {
             _isReady = value != null;
             _network = value;
+            _network?.Notify_AddPart(this);
         }
     }
+
 
     PipeNetwork INetworkPart.Network
     {
@@ -52,22 +54,19 @@ public class NetworkPart : INetworkPart, IExposable
         set => Network = value;
     }
 
-    public NetworkIO PartIO
-    {
-        get => _networkIO ?? Parent.GeneralIO;
-    }
+    public NetworkIO PartIO => _networkIO ?? Parent.GeneralIO;
 
     public NetworkIOPartSet AdjacentSet => _adjacentSet;
 
-    public NetworkVolume Volume => ((Network?.NetworkSystem?.Relations?.TryGetValue(this, out var vol) ?? false) ? vol : null)!;
+    public NetworkVolume Volume => ((Network?.System?.Relations?.TryGetValue(this, out var vol) ?? false) ? vol : null)!;
 
-    public bool CanBeNode => _config.volumeConfig != null;
+    public bool HasVolumeConfig => _config.volumeConfig != null;
     
     public bool IsController => (Config.roles | NetworkRole.Controller) == NetworkRole.Controller;
 
     public bool IsPureEdge => IsEdge && !IsJunction;
     public bool IsEdge => Config.roles == NetworkRole.Transmitter;
-    public bool IsNode => (!IsEdge || IsJunction) && CanBeNode;
+    public bool IsNode => (!IsEdge || IsJunction);
 
     public bool IsJunction => Config.roles == NetworkRole.Transmitter 
                               && _adjacentSet.Size > 2 
@@ -146,6 +145,15 @@ public class NetworkPart : INetworkPart, IExposable
 
     public void Tick()
     {
+        if (!IsReady) return;
+        if (IsEdge)
+        {
+            TLog.Warning("Edges should not be ticked!");
+            return;
+        }
+        
+        var isPowered = Parent.IsPowered;
+        Parent.NetworkPostTick(this, isPowered);
     }
 
     #region Data

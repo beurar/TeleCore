@@ -70,7 +70,7 @@ public class PipeNetworkMapInfo : MapInformation
     public override void TeleTick()
     {
         var tick = Find.TickManager.TicksAbs;
-        var shouldTick = TFind.TickManager.CurrentMapTick % TweakValues.NetworkTickInterval == 0;
+        var shouldTick = TFind.TickManager.CurrentMapTick % TweakValues.NetworkTickInterval == 2;
         foreach (var system in _managers)
         {
             system.Value.Tick(shouldTick, tick);
@@ -85,6 +85,7 @@ public class PipeNetworkMapInfo : MapInformation
 
     public override void UpdateOnGUI()
     {
-        foreach (var system in _managers) system.Value.DrawOnGUI();
+        foreach (var system in _managers) 
+            system.Value.DrawOnGUI();
     }
 }

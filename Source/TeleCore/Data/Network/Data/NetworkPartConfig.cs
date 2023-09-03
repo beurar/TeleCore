@@ -18,6 +18,12 @@ public class NetworkPartConfig : Editable
     public NetIOConfig? netIOConfig;
     public FlowVolumeConfig<NetworkValueDef> volumeConfig;
 
+    public override IEnumerable<string> ConfigErrors()
+    {
+        if(volumeConfig == null)
+            yield return $"A network part cannot have a null volume config! (NetworkDef: {networkDef})";
+    }
+
     public override void PostLoad()
     {
         volumeConfig?.PostLoad();

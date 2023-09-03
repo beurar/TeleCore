@@ -1,8 +1,9 @@
-﻿using Verse;
+﻿using TeleCore.Network.Data;
+using Verse;
 
 namespace TeleCore.Static;
 
-internal static class TranslationUtil
+internal static class Translations
 {
     //Animation Tool
     internal static class AnimationStrings
@@ -41,6 +42,14 @@ internal static class TranslationUtil
         public static TaggedString DiscoveryDesc(string discoveryDesc)
         {
             return "TELE.Discovery.Desc".Translate(discoveryDesc);
+        }
+    }
+
+    public class Messages
+    {
+        public static string NoPortableContainer(INetworkPart forComp)
+        {
+            return "TELE.Messages.NoPortableContainer".Translate(forComp.Config.networkDef);
         }
     }
 }

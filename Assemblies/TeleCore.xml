@@ -27,6 +27,11 @@
                 If set on a projectile's def, on Impact, all of these effects will be created - if available.
             </summary>
         </member>
+        <member name="P:TeleCore.FlowCore.FlowInterface`3.PullStrength">
+            <summary>
+            Defines the amount by which values from FromPart are pushed into ToPart, ignoring the pressure (Pump)
+            </summary>
+        </member>
         <member name="M:TeleCore.FlowCore.FlowVolume`1.OnContainerStateChanged(System.Double,System.Boolean)">
             <summary>
                 Internal container state logic notifier.
@@ -120,9 +125,9 @@
                 "Divider for remaining space [1..4]"
             </summary>
         </member>
-        <member name="T:TeleCore.Network.Flow.NetworkSystem">
+        <member name="T:TeleCore.Network.Flow.NetworkFlowSystem">
             <summary>
-                The main algorithm container for fluid flow.
+            The main algorithm for fluid flow.
             </summary>
         </member>
         <member name="T:TeleCore.Network.Flow.NetworkVolume">
@@ -3069,7 +3074,7 @@
             </summary>
         </member>
         <member name="M:TeleCore.GenData.RoomTracker(Verse.Room)">
-            <returns>The main <see cref="T:TeleCore.RoomTracker" /> object of the <paramref name="room" />.</returns>
+            <returns>The main <see cref="!:TeleCore.RoomTracker" /> object of the <paramref name="room" />.</returns>
         </member>
         <member name="M:TeleCore.GenData.GetRoomComp``1(Verse.Room)">
             <summary>

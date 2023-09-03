@@ -39,8 +39,8 @@ public class DiscoveryTable : IExposable
     {
         if (IsDiscovered(discovery)) return;
         Discoveries.Add(discovery, true);
-        Find.LetterStack.ReceiveLetter(TranslationUtil.Discovery.DiscoveryNew,
-            TranslationUtil.Discovery.DiscoveryDesc(discovery.description), TeleDefOf.DiscoveryLetter);
+        Find.LetterStack.ReceiveLetter(Translations.Discovery.DiscoveryNew,
+            Translations.Discovery.DiscoveryDesc(discovery.description), TeleDefOf.DiscoveryLetter);
     }
 
     // //Research Discovery

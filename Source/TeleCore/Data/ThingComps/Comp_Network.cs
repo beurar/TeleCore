@@ -3,10 +3,10 @@ using System.Collections.Generic;
 using System.Text;
 using RimWorld;
 using TeleCore.Data.Events;
+using TeleCore.Gizmos;
 using TeleCore.Network;
 using TeleCore.Network.Data;
 using TeleCore.Network.IO;
-using TeleCore.Network.UI;
 using UnityEngine;
 using Verse;
 
@@ -46,7 +46,8 @@ public class Comp_Network : FXThingComp, INetworkStructure
     //
     public Thing Thing => parent;
     public List<NetworkPart> NetworkParts => _allNetParts;
-
+    public NetworkPart SelectedPart => NetworkGizmo.SelectedPart;
+    
     public bool IsPowered => CompPower?.PowerOn ?? true;
     public bool IsWorking => IsWorkingOverride;
 
@@ -61,7 +62,7 @@ public class Comp_Network : FXThingComp, INetworkStructure
         return true;
     }
 
-    public void NetworkPostTick(INetworkPart networkSubPart, bool isPowered)
+    public virtual void NetworkPostTick(INetworkPart netPart, bool isPowered)
     {
     }
 
@@ -110,7 +111,6 @@ public class Comp_Network : FXThingComp, INetworkStructure
     //Init Construction
     public override void PostSpawnSetup(bool respawningAfterLoad)
     {
-        //
         base.PostSpawnSetup(respawningAfterLoad);
 
         //
@@ -147,16 +147,14 @@ public class Comp_Network : FXThingComp, INetworkStructure
             _netPartByDef.Add(partConfig.networkDef, part);
             part.PartSetup(respawningAfterLoad);
         }
-
-        //Check for neighbor intersections
-        //Regen network after all data is set
-        _mapInfo.Notify_NewNetworkStructureSpawned(this);
-
+        
         //Ensure that new nearby junctions add themselves to the network
         foreach (var part in _allNetParts)
         {
             part.CheckNeighborJunctions();
         }
+        
+        _mapInfo.Notify_NewNetworkStructureSpawned(this);
     }
 
     //Deconstruction
@@ -169,14 +167,6 @@ public class Comp_Network : FXThingComp, INetworkStructure
         {
             networkPart.PostDestroy(mode, previousMap);
         }
-    }
-
-    public virtual void NetworkPostTick(NetworkPart networkSubPart, bool isPowered)
-    {
-    }
-
-    public virtual void NetworkPartProcessorTick(INetworkPart netPart)
-    {
     }
 
     //

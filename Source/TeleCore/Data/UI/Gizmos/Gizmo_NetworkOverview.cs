@@ -1,17 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using Multiplayer.API;
 using RimWorld;
-using TeleCore.Generics.Container;
+using TeleCore.Network;
 using TeleCore.Network.Data;
-using TeleCore.Network.Flow;
 using TeleCore.Network.Utility;
 using UnityEngine;
 using Verse;
-using Verse.Sound;
 
-namespace TeleCore.Network.UI;
+namespace TeleCore.Gizmos;
 
 public class Gizmo_NetworkOverview : Gizmo, IDisposable
 {
@@ -19,7 +16,7 @@ public class Gizmo_NetworkOverview : Gizmo, IDisposable
     private const float mainWidth = 200f;
     private const int gizmoPadding = 5;
     internal const int selSettingHeight = 22;
-    private readonly Dictionary<INetworkPart, NetworkInfoView> _viewByPart;
+    private readonly Dictionary<NetworkPart, NetworkInfoView> _viewByPart;
     private readonly Comp_Network _compNetwork;
 
     //Part Extendo Consts
@@ -32,11 +29,15 @@ public class Gizmo_NetworkOverview : Gizmo, IDisposable
     private float desiredExtendedY;
     private FloatRange partSelRange;
     
+    //
+    public NetworkPart SelectedPart { get; private set; }
+    public NetworkInfoView SelectedView => _viewByPart[SelectedPart];
+    
     public Gizmo_NetworkOverview(Comp_Network compParent)
     {
         order = -250f;
         _compNetwork = compParent;
-        _viewByPart = new Dictionary<INetworkPart, NetworkInfoView>();
+        _viewByPart = new Dictionary<NetworkPart, NetworkInfoView>();
 
         //
         var maxTextSize = 50f;
@@ -47,7 +48,7 @@ public class Gizmo_NetworkOverview : Gizmo, IDisposable
         }
 
         //Set First Selection
-        SelectedPart = _viewByPart.First().Value;
+        SelectedPart = _compNetwork.NetworkParts[0];
 
         //
         partSelectionSize = new Vector2(maxTextSize, 25);
@@ -56,9 +57,6 @@ public class Gizmo_NetworkOverview : Gizmo, IDisposable
         //
         TFind.TickManager.RegisterMapUITickAction(Tick);
     }
-
-    //
-    public NetworkInfoView SelectedPart { get; private set; }
 
     public void Dispose()
     {
@@ -125,7 +123,7 @@ public class Gizmo_NetworkOverview : Gizmo, IDisposable
         DrawExtendedTab(mainRect);
 
         //Draw Main
-        SelectedPart.DrawMainContent(mainRect);
+        SelectedView.DrawMainContent(mainRect);
 
         //
         var firstEv = Mouse.IsOver(mainRect) ? GizmoState.Mouseover : GizmoState.Clear;
@@ -150,7 +148,7 @@ public class Gizmo_NetworkOverview : Gizmo, IDisposable
             var textRect = new Rect(new Vector2(curPos.x - (partSelRange.max - curExtendedPartX), curPos.y),
                 partSelectionSize);
 
-            var isSelected = SelectedPart == partView.Value;
+            var isSelected = SelectedView == partView.Value;
             var colorBG = isSelected ? TColor.OptionSelectedBGFillColor : TColor.WindowBGFillColor;
             var colorBorder = isSelected ? TColor.OptionSelectedBGBorderColor : TColor.WindowBGBorderColor;
 
@@ -162,7 +160,8 @@ public class Gizmo_NetworkOverview : Gizmo, IDisposable
             Widgets.Label(textRect.ContractedBy(5, 0), part.Config.networkDef.labelShort);
             Text.Anchor = default;
 
-            if (Widgets.ButtonInvisible(partRect)) SelectedPart = partView.Value;
+            if (Widgets.ButtonInvisible(partRect))
+                SelectedPart = partView.Key;
 
             //
             curPos.y += partSelectionSize.y;
@@ -176,7 +175,7 @@ public class Gizmo_NetworkOverview : Gizmo, IDisposable
 
     private void DrawExtendoTabs(Rect mainRect)
     {
-        if (!SelectedPart.HasExtensions) return;
+        if (!SelectedView.HasExtensions) return;
 
         var yMax = Math.Max(15, currentExtendedY) + 10;
         var extendTriggerArea = new Rect(mainRect.x, mainRect.y - (yMax - 5), mainRect.width, yMax);
@@ -187,14 +186,14 @@ public class Gizmo_NetworkOverview : Gizmo, IDisposable
         Widgets.DrawWindowBackground(extendedButton);
         Text.Anchor = TextAnchor.MiddleCenter;
         var curY = extendedButton.y;
-        foreach (var setting in SelectedPart.Tabs)
+        foreach (var setting in SelectedView.Tabs)
         {
             if (curY > extendedButton.yMax) continue;
             var labelRect = new Rect(extendedButton.x, curY, extendedButton.width,
                 Math.Min(extendedButton.height, selSettingHeight));
             Widgets.Label(labelRect, setting.Key);
             Widgets.DrawHighlightIfMouseover(labelRect);
-            if (Widgets.ButtonInvisible(labelRect)) SelectedPart.SetExtendoTab(setting.Key);
+            if (Widgets.ButtonInvisible(labelRect)) SelectedView.SetExtendoTab(setting.Key);
 
             curY += selSettingHeight;
         }
@@ -204,7 +203,7 @@ public class Gizmo_NetworkOverview : Gizmo, IDisposable
 
     private void DrawExtendedTab(Rect mainRect)
     {
-        if (SelectedPart.CurrentTab == null) return;
+        if (SelectedView.CurrentTab == null) return;
 
         //Extend Rect
         var settingRect = new Rect(mainRect.x, mainRect.y - mainRect.height, mainRect.width, mainRect.height);
@@ -225,17 +224,17 @@ public class Gizmo_NetworkOverview : Gizmo, IDisposable
 
         if (Widgets.ButtonInvisible(closeButtonRect))
         {
-            SelectedPart.SetExtendoTab(null);
+            SelectedView.SetExtendoTab(null);
             return;
         }
 
         //
-        SelectedPart.DrawExtendedTab(settingRect);
+        SelectedView.DrawExtendedTab(settingRect);
     }
 
     private void Notify_ExtendHovered(bool isHovered)
     {
-        desiredExtendedY = isHovered ? SelectedPart.ExtendableRange.TrueMax : SelectedPart.ExtendableRange.TrueMin;
+        desiredExtendedY = isHovered ? SelectedView.ExtendableRange.TrueMax : SelectedView.ExtendableRange.TrueMin;
     }
 
     private void Notify_PartSelHovered(bool isHovered)
@@ -249,8 +248,8 @@ public class Gizmo_NetworkOverview : Gizmo, IDisposable
         if (Math.Abs(currentExtendedY - desiredExtendedY) > 0.01)
         {
             var val = desiredExtendedY > currentExtendedY ? 1.5f : -1.5f;
-            currentExtendedY = Mathf.Clamp(currentExtendedY + val * SelectedPart.Tabs.Count,
-                SelectedPart.ExtendableRange.TrueMin, SelectedPart.ExtendableRange.TrueMax);
+            currentExtendedY = Mathf.Clamp(currentExtendedY + val * SelectedView.Tabs.Count,
+                SelectedView.ExtendableRange.TrueMin, SelectedView.ExtendableRange.TrueMax);
         }
 
         if (Math.Abs(curExtendedPartX - desiredExtendedPartX) > 0.01)

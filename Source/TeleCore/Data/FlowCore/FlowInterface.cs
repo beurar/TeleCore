@@ -27,6 +27,15 @@ where TVolume : FlowVolume<TValueDef>
     public TVolume To { get; private set; }
     public InterfaceFlowMode Mode { get; private set; }
 
+    #region TODO CONCEPT
+
+    /// <summary>
+    /// Defines the amount by which values from FromPart are pushed into ToPart, ignoring the pressure (Pump)
+    /// </summary>
+    public float PullStrength { get; private set; } = 0f;
+
+    #endregion
+    
     public float PassPercent { get; private set; } = 1f;
     
     public FlowInterface(TAttach fromPart, TAttach toPart, TVolume from, TVolume to)

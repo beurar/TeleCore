@@ -1,7 +1,11 @@
 ﻿using System.Collections.Generic;
+using System.IO;
 using System.Reflection;
+using System.Xml.Serialization;
 using HarmonyLib;
 using RimWorld;
+using RimWorld.IO;
+using TeleCore.Static.Utilities;
 using UnityEngine;
 using Verse;
 
@@ -29,8 +33,7 @@ internal static class InjectPatches
             __result = gizmos;
         }
     }
-
-    //
+    
     [HarmonyPatch(typeof(FloatMenuMakerMap))]
     [HarmonyPatch("AddDraftedOrders")]
     public static class Pawn_AddDraftedOrdersPatch
@@ -89,4 +92,49 @@ internal static class InjectPatches
             DefIDStack.RegisterNew(__instance);
         }
     }
+    
+    //Patching the vanilla shader def to allow custom shaders
+    [HarmonyPatch(typeof(ShaderTypeDef))]
+    [HarmonyPatch("Shader", MethodType.Getter)]
+    public static class ShaderPatch
+    {
+        public static bool Prefix(ShaderTypeDef __instance, ref Shader __result, ref Shader ___shaderInt)
+        {
+            if (__instance is not CustomShaderDef) return true;
+            
+            if (___shaderInt == null)
+            {
+                ___shaderInt = TeleContentDB.LoadShader(__instance.shaderPath);
+            }
+            __result = ___shaderInt;
+            return false;
+        }
+    }
+    
+    [HarmonyPatch(typeof(ModContentLoader<Texture2D>))]
+    [HarmonyPatch("LoadTexture")]
+    private static class LoadPNGPatch
+    {
+        static void Postfix(VirtualFile file, ref Texture2D __result)
+        {
+            if (__result != null)
+            {
+                var metaFile = Path.ChangeExtension(file.FullPath, ".xml");
+                if (File.Exists(metaFile))
+                {
+                    var serializer = new XmlSerializer(typeof(TextureMeta));
+                    using var stream = new FileStream(metaFile, FileMode.Open);
+                    var meta = (TextureMeta)serializer.Deserialize(stream);
+                    if (meta != null)
+                    {
+                        var copy = TextureUtils.CopyReadable(__result);
+                        copy.wrapMode = meta.WrapMode;
+                        copy.Apply(true, true);
+                        __result = copy;
+                    }
+                }
+            }
+        }
+    }
+    
 }

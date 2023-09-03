@@ -7,11 +7,11 @@ namespace TeleCore.Network.Flow.Clamping;
 
 public class ClampWorker_ConnectionCountLimit : ClampWorker
 {
-    private readonly NetworkSystem _parentSystem;
+    private readonly NetworkFlowSystem _parentFlowSystem;
 
-    public ClampWorker_ConnectionCountLimit(NetworkSystem parentSystem)
+    public ClampWorker_ConnectionCountLimit(NetworkFlowSystem parentFlowSystem)
     {
-        _parentSystem = parentSystem;
+        _parentFlowSystem = parentFlowSystem;
     }
 
     public override string Description =>
@@ -25,8 +25,8 @@ public class ClampWorker_ConnectionCountLimit : ClampWorker
 
     public override double ClampFunction(FlowInterface<NetworkPart, NetworkVolume, NetworkValueDef> iface, double f, ClampType type)
     {
-        var d0 = 1d / Math.Max(1, _parentSystem.Connections[iface.From].Count);
-        var d1 = 1d / Math.Max(1, _parentSystem.Connections[iface.To].Count);
+        var d0 = 1d / Math.Max(1, _parentFlowSystem.Connections[iface.From].Count);
+        var d1 = 1d / Math.Max(1, _parentFlowSystem.Connections[iface.To].Count);
         double c, r;
         if (EnforceMinPipe)
         {

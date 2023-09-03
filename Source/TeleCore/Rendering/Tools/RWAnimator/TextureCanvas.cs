@@ -162,7 +162,7 @@ internal class TextureCanvas : BaseCanvas
                 TWidgets.DrawColoredBox(workingRect, TColor.BGDarker, TColor.MenuSectionBGBorderColor, 1);
 
                 Text.Anchor = TextAnchor.MiddleCenter;
-                Widgets.Label(workingRect, TranslationUtil.AnimationStrings.MissingParts);
+                Widgets.Label(workingRect, Translations.AnimationStrings.MissingParts);
                 Text.Anchor = default;
                 return;
             }
@@ -175,12 +175,12 @@ internal class TextureCanvas : BaseCanvas
             var listing = new Listing_Standard();
             listing.Begin(workingRect);
 
-            listing.Label(TranslationUtil.AnimationStrings.NewAnimation);
+            listing.Label(Translations.AnimationStrings.NewAnimation);
             listing.GapLine();
-            listing.TextFieldLabeled(TranslationUtil.AnimationStrings.DefName + ": ", ref AnimationData.defName,
+            listing.TextFieldLabeled(Translations.AnimationStrings.DefName + ": ", ref AnimationData.defName,
                 TextAnchor.MiddleLeft);
 
-            if (listing.ButtonText(TranslationUtil.AnimationStrings.Init))
+            if (listing.ButtonText(Translations.AnimationStrings.Init))
             {
                 if (AnimationData.defName?.Length <= 0)
                     AnimationData.defName = "NewAnim";
@@ -247,11 +247,11 @@ internal class TextureCanvas : BaseCanvas
         var listing = new Listing_Standard();
         listing.Begin(leftContracted);
 
-        listing.Label(TranslationUtil.AnimationStrings.Settings);
+        listing.Label(Translations.AnimationStrings.Settings);
         listing.GapLine();
 
         Text.Anchor = TextAnchor.MiddleLeft;
-        listing.TextFieldLabeled($"{TranslationUtil.AnimationStrings.DefName}: ", ref AnimationData.defName,
+        listing.TextFieldLabeled($"{Translations.AnimationStrings.DefName}: ", ref AnimationData.defName,
             TextAnchor.MiddleLeft);
         Text.Anchor = default;
 
@@ -277,7 +277,7 @@ internal class TextureCanvas : BaseCanvas
             partListing.End();
         }
 
-        Widgets.Label(animationLabelRect, TranslationUtil.AnimationStrings.SettingsAnimations);
+        Widgets.Label(animationLabelRect, Translations.AnimationStrings.SettingsAnimations);
         var partsViewRect = new Rect(animationListingRect.x, animationListingRect.y, animationListingRect.width,
             AnimationData.CurrentAnimations.Count * 20);
         TWidgets.DrawColoredBox(animationListingRect, TColor.BlueHueBG, Color.gray, 1);
@@ -308,7 +308,7 @@ internal class TextureCanvas : BaseCanvas
         Widgets.EndScrollView();
 
         //Add Part
-        if (Widgets.ButtonText(animationButtonRect, TranslationUtil.AnimationStrings.SettingsAddPart))
+        if (Widgets.ButtonText(animationButtonRect, Translations.AnimationStrings.SettingsAddPart))
         {
             var animation = AnimationData.Notify_CreateNewAnimationPart("NewPart", 1);
             foreach (var element in ChildElements)
@@ -322,7 +322,7 @@ internal class TextureCanvas : BaseCanvas
             AnimationData.Notify_PostCreateAnimation();
         }
 
-        Widgets.Label(availableSetsLabelRect, TranslationUtil.AnimationStrings.SettingsSets);
+        Widgets.Label(availableSetsLabelRect, Translations.AnimationStrings.SettingsSets);
         TWidgets.DrawColoredBox(availableSetsListingRect, TColor.BlueHueBG, Color.gray, 1);
         var curYNew = availableSetsListingRect.y;
         for (var i = 0; i < 4; i++)
@@ -346,7 +346,7 @@ internal class TextureCanvas : BaseCanvas
             }
 
         //Add Side
-        if (Widgets.ButtonText(availableSetsButtonRect, TranslationUtil.AnimationStrings.SettingsAddSide))
+        if (Widgets.ButtonText(availableSetsButtonRect, Translations.AnimationStrings.SettingsAddSide))
             Find.WindowStack.Add(new FloatMenu(AddSideByRotationOptions().ToList()));
     }
 

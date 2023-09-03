@@ -5,13 +5,13 @@ namespace TeleCore;
 
 public static class TeleCoreDebugViewSettings
 {
-    public static bool DrawNetwork = true;
+    public static bool DrawNetwork = false;
     public static bool ShowNetworks = false;
     public static bool ShowNetworkParts = false;
     public static bool ShowNetworkPartLinks = false;
     public static bool ShowRoomtrackers = false;
-    public static bool DrawRoomLabels { get; set; }
-    public static bool DrawGraphOnGUI { get; set; } = true;
+    public static bool DrawRoomLabels = false;
+    public static bool DrawGraphOnGUI = false;
 }
 
 public class DebugSettings_Telecore : DebugTabMenu
@@ -22,13 +22,11 @@ public class DebugSettings_Telecore : DebugTabMenu
 
     public override DebugActionNode InitActions(DebugActionNode absRoot)
     {
-        myRoot = new DebugActionNode("TeleCore", DebugActionType.Action, null, null);
+        myRoot = new DebugActionNode("TeleCore");
         absRoot.AddChild(myRoot);
-        foreach (FieldInfo fi in typeof(TeleCoreDebugViewSettings).GetFields())
-        {
-            this.AddNode(fi, "IM DEBUGGGIINNNGGGGG");
-        }
-        return this.myRoot;
+        foreach (var fi in typeof(TeleCoreDebugViewSettings).GetFields()) 
+            AddNode(fi, "IM DEBUGGGIINNNGGGGG");
+        return myRoot;
     }
     
     private void AddNode(FieldInfo fi, string categoryLabel)

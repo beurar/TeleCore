@@ -19,6 +19,9 @@ public record struct IOConnection
     public IntVec3Rot FromPos { get; set; }
     public IntVec3Rot ToPos { get; set; }
     
+    public IOCell FromIOCell { get; set; }
+    public IOCell ToIOCell { get; set; }
+    
     public bool IsValid => FromPos.Pos.IsValid && ToPos.Pos.IsValid && FromMode != NetworkIOMode.None && ToMode != NetworkIOMode.None;    
    
     public static implicit operator bool(IOConnection result)
@@ -48,7 +51,9 @@ public record struct IOConnection
                         FromMode = fromConn.Mode,
                         ToMode = toConn.Mode,
                         FromPos = fromConn.Pos,
-                        ToPos = toConn.Pos
+                        ToPos = toConn.Pos,
+                        FromIOCell = fromConn,
+                        ToIOCell = toConn
                     };
                 }
             }
@@ -76,7 +81,9 @@ public record struct IOConnection
         FromMode = ToMode,
         ToMode = FromMode,
         FromPos = ToPos,
-        ToPos = FromPos
+        ToPos = FromPos,
+        FromIOCell = ToIOCell,
+        ToIOCell = FromIOCell
     };
 
 

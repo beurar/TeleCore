@@ -13,14 +13,14 @@ using UnityEngine;
 namespace TeleCore.Network.Flow;
 
 /// <summary>
-///     The main algorithm container for fluid flow.
+/// The main algorithm for fluid flow.
 /// </summary>
-public class NetworkSystem : FlowSystem<NetworkPart, NetworkVolume, NetworkValueDef>
+public class NetworkFlowSystem : FlowSystem<NetworkPart, NetworkVolume, NetworkValueDef>
 {
     public ClampWorker ClampWorker { get; set; }
     public PressureWorker PressureWorker { get; set; }
     
-    public NetworkSystem()
+    public NetworkFlowSystem()
     {
         ClampWorker = new ClampWorker_Overcommit();
         PressureWorker = new PressureWorker_WaveEquationDamping3();
@@ -51,6 +51,7 @@ public class NetworkSystem : FlowSystem<NetworkPart, NetworkVolume, NetworkValue
                 TLog.Error($"Tried to populate net-system with invalid edge: {edge}");
                 continue;
             }
+            if (edge.IsLogical) continue;
             var fb1 = GenerateForOrGet(edge.From);
             var fb2 = GenerateForOrGet(edge.To);
             if (fb1 == null || fb2 == null)
@@ -103,12 +104,12 @@ public class NetworkSystem : FlowSystem<NetworkPart, NetworkVolume, NetworkValue
     {
     }
 
-    public override double FlowFunc(FlowInterface<NetworkPart, NetworkVolume, NetworkValueDef> iface, double flow)
+    protected override double FlowFunc(FlowInterface<NetworkPart, NetworkVolume, NetworkValueDef> iface, double flow)
     {
         return PressureWorker.FlowFunction(iface, flow);
     }
 
-    public override double ClampFunc(FlowInterface<NetworkPart, NetworkVolume, NetworkValueDef> iface, double flow, ClampType clampType)
+    protected override double ClampFunc(FlowInterface<NetworkPart, NetworkVolume, NetworkValueDef> iface, double flow, ClampType clampType)
     {
         return ClampWorker.ClampFunction(iface, flow, clampType);
     }

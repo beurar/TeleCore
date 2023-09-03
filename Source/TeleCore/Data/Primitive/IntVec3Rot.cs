@@ -1,11 +1,12 @@
-﻿using Verse;
+﻿using System;
+using Verse;
 
 namespace TeleCore.Primitive;
 
 /// <summary>
 ///     An IntVec3 with a relative direction attached.
 /// </summary>
-public readonly struct IntVec3Rot
+public readonly struct IntVec3Rot : IEquatable<IntVec3Rot>
 {
     public static implicit operator IntVec3(IntVec3Rot vec)
     {
@@ -35,9 +36,8 @@ public readonly struct IntVec3Rot
         return $"{Pos}[{Dir}]";
     }
 
-    public override bool Equals(object obj)
+    public bool Equals(IntVec3Rot other)
     {
-        if (obj is IntVec3 otherVec) return Pos.Equals(otherVec);
-        return false;
+        return Pos.Equals(other.Pos) && Dir == other.Dir;
     }
 }

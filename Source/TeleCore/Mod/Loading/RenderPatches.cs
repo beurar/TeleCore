@@ -1,7 +1,9 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using HarmonyLib;
 using RimWorld;
+using TeleCore.Network.Data;
 using TeleCore.Network.IO;
 using UnityEngine;
 using Verse;
@@ -128,25 +130,113 @@ internal static class RenderPatches
         }
     }
 
+    [HarmonyPatch(typeof(Designator_Place))]
+    [HarmonyPatch(nameof(Designator_Place.DrawMouseAttachments))]
+    internal static class Designator_PlaceDrawMouseAttachmentsPatch
+    {
+        internal static readonly Dictionary<ThingDef, int> _indexes = new Dictionary<ThingDef, int>();
+        
+        public static void Postfix(Designator_Place __instance)
+        {
+            if (__instance.PlacingDef is ThingDef tDef)
+            {
+                var network = tDef.GetCompProperties<CompProperties_Network>();
+                if (network != null)
+                {
+                    var mousePos = Event.current.mousePosition + Designator_Place.PlaceMouseAttachmentDrawOffset;
+                    var optionSize = 24;
+                    var optionTotal = network.networks.Count * optionSize;
+                    var rect = new Rect(mousePos - new Vector2(0, optionTotal), new Vector2(128, optionTotal));
+
+                    TWidgets.DrawColoredBox(rect, TColor.White005, TColor.White025, 1);
+
+                    float curY = 0f;
+                    for (var i = 0; i < network.networks.Count; i++)
+                    {
+                        var part = network.networks[i];
+                        var partRect = new Rect(rect.x, rect.y + curY, rect.width, optionSize);
+                        DrawNetworkPartOption(partRect, tDef, part, i);
+                        curY += optionSize;
+                    }
+
+                    //Scroll Change
+                    var isScroll = Event.current.isScrollWheel;
+                    var deltaDown = isScroll && Event.current.delta.y < 0;
+                    var deltaUp = isScroll && Event.current.delta.y > 0;
+
+                    if (isScroll)
+                    {
+                        var change = deltaDown ? -1 : deltaUp ? 1 : 0;
+                        if (change != 0)
+                        {
+                            SetIndex(tDef, Mathf.Clamp(GetIndex(tDef) + change, 0, network.networks.Count - 1));
+                            Event.current.Use();
+                        }
+                    }
+                }
+            }
+        }
+
+        private static void DrawNetworkPartOption(Rect rect, ThingDef def, NetworkPartConfig config, int index)
+        {
+            var isSelected = GetIndex(def) == index;
+            
+            if(isSelected)
+                Widgets.DrawHighlight(rect);
+
+            Text.Anchor = TextAnchor.MiddleCenter;
+            Widgets.Label(rect, config.networkDef.label);
+            Text.Anchor = default;
+        }
+
+        internal static int GetIndex(ThingDef def)
+        {
+            return _indexes.TryGetValue(def, out var result) ? result : 0;
+        }
+
+        private static void SetIndex(ThingDef def, int index)
+        {
+            if (!_indexes.TryAdd(def, index))
+            {
+                _indexes[def] = index;
+            }
+        }
+    }
+    
     [HarmonyPatch(typeof(GenDraw))]
     [HarmonyPatch(nameof(GenDraw.DrawInteractionCells))]
-    public static class GenDrawDrawInteractionCellsPatch
+    internal static class GenDrawDrawInteractionCellsPatch
     {
         public static void Postfix(ThingDef tDef, IntVec3 center, Rot4 placingRot)
         {
+            var selThing = Find.Selector.SingleSelectedThing;
+            var placing = Find.DesignatorManager.SelectedDesignator is Designator_Place;
+            if (!placing && selThing != null && selThing.def == tDef && selThing.Spawned)
+            {
+                var comp = selThing.TryGetComp<Comp_Network>();
+                if (comp != null)
+                {
+                    var selPart = comp.SelectedPart;
+                    var partIO = selPart.PartIO;
+                    foreach (var ioConn in partIO.Connections)
+                    {
+                        var pos = ioConn.Pos;
+                        var drawPos = pos.Pos.ToVector3ShiftedWithAltitude(AltitudeLayer.MetaOverlays);
+                        DrawMode(drawPos, ioConn.Mode, pos.Dir);
+                    }
+                }
+                return;
+            }
+            
             //Draw Network IO
             var network = tDef.GetCompProperties<CompProperties_Network>();
             if (network != null)
             {
-                if (network.generalIOConfig != null)
+                var part = network.networks[Designator_PlaceDrawMouseAttachmentsPatch.GetIndex(tDef)];
+                if (part.netIOConfig != null)
                 {
-                    DrawNetIOConfig(network.generalIOConfig, center, tDef, placingRot);
-                    return;
+                    DrawNetIOConfig(part.netIOConfig, center, tDef, placingRot);
                 }
-
-                foreach (var part in network.networks)
-                    if (part.netIOConfig != null)
-                        DrawNetIOConfig(part.netIOConfig, center, tDef, placingRot);
             }
         }
         
@@ -158,18 +248,26 @@ internal static class RenderPatches
                 var cell = center + ioCell.offset;
                 var drawPos = cell.ToVector3ShiftedWithAltitude(AltitudeLayer.MetaOverlays);
 
-                switch (ioCell.mode)
-                {
-                    case NetworkIOMode.Input:
-                        Graphics.DrawMesh(MeshPool.plane10, drawPos, (ioCell.direction.AsAngle - 180).ToQuat(),TeleContent.IOArrow, 0);
-                        break;
-                    case NetworkIOMode.Output:
-                        Graphics.DrawMesh(MeshPool.plane10, drawPos, ioCell.direction.AsQuat, TeleContent.IOArrow,0);
-                        break;
-                    case NetworkIOMode.TwoWay:
-                        Graphics.DrawMesh(MeshPool.plane10, drawPos, ioCell.direction.AsQuat,TeleContent.IOArrowTwoWay, 0);
-                        break;
-                }
+                DrawMode(drawPos, ioCell.mode, ioCell.direction);
+            }
+        }
+
+        private static void DrawMode(Vector3 drawPos, NetworkIOMode ioMode, Rot4 dir)
+        {
+            switch (ioMode)
+            {
+                case NetworkIOMode.Input:
+                    Graphics.DrawMesh(MeshPool.plane10, drawPos, (dir.AsAngle - 180).ToQuat(),TeleContent.IOArrow, 0);
+                    break;
+                case NetworkIOMode.Output:
+                    Graphics.DrawMesh(MeshPool.plane10, drawPos, dir.AsQuat, TeleContent.IOArrow,0);
+                    break;
+                case NetworkIOMode.TwoWay:
+                    Graphics.DrawMesh(MeshPool.plane10, drawPos, dir.AsQuat,TeleContent.IOArrowTwoWay, 0);
+                    break;
+                case NetworkIOMode.Logical:
+                    Graphics.DrawMesh(MeshPool.plane10, drawPos, dir.AsQuat,TeleContent.IOArrowLogical, 0);
+                    break;
             }
         }
     }

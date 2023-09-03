@@ -40,7 +40,7 @@ public class NetworkCost
 
     private bool CanPayWith(PipeNetwork wholeNetwork)
     {
-        var totalNetworkValue = wholeNetwork.NetworkSystem.TotalValue;
+        var totalNetworkValue = wholeNetwork.System.TotalValue;
         var totalNeeded = Cost.TotalCost;
         if (totalNetworkValue < totalNeeded) return false;
         //Check For Specifics
@@ -48,13 +48,13 @@ public class NetworkCost
             foreach (var typeCost in Cost.SpecificCosts)
             {
                 var specCost = typeCost.value;
-                if (wholeNetwork.NetworkSystem.TotalValueFor(typeCost.valueDef) >= specCost)
+                if (wholeNetwork.System.TotalValueFor(typeCost.valueDef) >= specCost)
                     totalNeeded -= specCost;
             }
 
         //Check For Generic Cost Value
         if (Cost.mainCost > 0)
-            if (wholeNetwork.NetworkSystem.TotalValue >= Cost.mainCost)
+            if (wholeNetwork.System.TotalValue >= Cost.mainCost)
                 totalNeeded -= Cost.mainCost;
 
         return totalNeeded == 0;
@@ -77,7 +77,7 @@ public class NetworkCost
         foreach (var typeCost in Cost.SpecificCosts)
         {
             var part = structure[typeCost.valueDef.NetworkDef];
-            if (part.Network.NetworkSystem.TryConsume(part.Volume, typeCost.valueDef, typeCost.value))
+            if (part.Network.System.TryConsume(part.Volume, typeCost.valueDef, typeCost.value))
                 totalCost -= typeCost.value;
         }
 

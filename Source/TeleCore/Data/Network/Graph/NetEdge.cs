@@ -29,14 +29,22 @@ public struct NetEdge : IEdge<NetworkPart>
     
     public IOConnection FromAnchor { get; }
     public IOConnection ToAnchor { get; }
+
+    public NetworkIOMode FromMode => FromAnchor.FromMode;
+    public NetworkIOMode ToMode => ToAnchor.ToMode;
+    
+    public IOCell FromIOCell => FromAnchor.FromIOCell;
+    public IOCell ToIOCell => ToAnchor.ToIOCell;
     
     public int Length { get; private set; }
     
-    public bool BiDirectional => FromAnchor.FromMode == NetworkIOMode.TwoWay && ToAnchor.ToMode == NetworkIOMode.TwoWay;
+    public bool BiDirectional => FromMode == NetworkIOMode.TwoWay && ToMode == NetworkIOMode.TwoWay;
     public bool IsValid => From != null && To != null && 
                            From.IsNode && To.IsNode &&
-                           (FromAnchor.FromMode & NetworkIOMode.Output) == NetworkIOMode.Output &&
-                           (ToAnchor.ToMode & NetworkIOMode.Input) == NetworkIOMode.Input;
+                           (FromMode & NetworkIOMode.Output) == NetworkIOMode.Output &&
+                           (ToMode & NetworkIOMode.Input) == NetworkIOMode.Input;
+    
+    public bool IsLogical => IsValid && (FromMode == NetworkIOMode.Logical || ToMode == NetworkIOMode.Logical);
     
     public static implicit operator TwoWayKey<NetNode>(NetEdge edge)
     {

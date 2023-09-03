@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using TeleCore.FlowCore.Events;
 using TeleCore.Generics;
+using TeleCore.Network.Data;
 using TeleCore.Network.Flow.Clamping;
 using TeleCore.Primitive;
 using UnityEngine;
@@ -26,7 +27,6 @@ public abstract class FlowSystem<TAttach, TVolume, TValueDef> : IDisposable
     public IReadOnlyCollection<FlowInterface<TAttach, TVolume, TValueDef>> Interfaces => _interfaces;
     public IReadOnlyDictionary<TAttach, TVolume> Relations => _relations;
     public IReadOnlyDictionary<TVolume, HashSet<FlowInterface<TAttach, TVolume, TValueDef>>> Connections => _connections;
-
     public IReadOnlyDictionary<TwoWayKey<TAttach>, FlowInterface<TAttach, TVolume, TValueDef>> InterfaceLookUp => _interfaceLookUp;
 
     public DefValueStack<TValueDef, double> TotalStack => _totalStack;
@@ -163,7 +163,7 @@ public abstract class FlowSystem<TAttach, TVolume, TValueDef> : IDisposable
         return false;
     }
 
-    protected bool RemoveRelation(TAttach key)
+    private bool RemoveRelation(TAttach key)
     {
         if (_relations.Remove(key, out var volume))
         {
@@ -241,10 +241,10 @@ public abstract class FlowSystem<TAttach, TVolume, TValueDef> : IDisposable
         }
     }
 
-    public abstract double FlowFunc(FlowInterface<TAttach, TVolume, TValueDef> connection, double flow);
-    public abstract double ClampFunc(FlowInterface<TAttach, TVolume, TValueDef> connection, double flow, ClampType clampType);
+    protected abstract double FlowFunc(FlowInterface<TAttach, TVolume, TValueDef> connection, double flow);
+    protected abstract double ClampFunc(FlowInterface<TAttach, TVolume, TValueDef> connection, double flow, ClampType clampType);
 
-    public void UpdateFlow(FlowInterface<TAttach, TVolume, TValueDef> iface)
+    private void UpdateFlow(FlowInterface<TAttach, TVolume, TValueDef> iface)
     {
         if (iface.PassPercent <= 0)
         {
@@ -267,11 +267,10 @@ public abstract class FlowSystem<TAttach, TVolume, TValueDef> : IDisposable
         }
     }
 
-    private void UpdateContent(FlowInterface<TAttach, TVolume, TValueDef> conn)
+    private static void UpdateContent(FlowInterface<TAttach, TVolume, TValueDef> conn)
     {
         DefValueStack<TValueDef, double> res = conn.From.RemoveContent(conn.Move);
         conn.To.AddContent(res);
-        //Console.WriteLine($"Moved: " + conn.Move + $":\n{res}");
         //TODO: Structify for: _connections[fb][i] = conn;
     }
 
@@ -295,26 +294,25 @@ public abstract class FlowSystem<TAttach, TVolume, TValueDef> : IDisposable
                 fn -= f;
         }
     }
-    
-    private List<Vector2> GetPointsOnCircle(float radius, int totalPoints)
+
+    #region Manual Manipulation
+
+    public void TransferFromTo(TAttach from, TAttach to, double percent)
     {
-        var points = new List<Vector2>();
-        var angleStep = 360f / totalPoints;
-
-        for (var i = 0; i < totalPoints; i++)
-        {
-            var angleInDegrees = angleStep * i;
-            var angleInRadians = angleInDegrees * (Mathf.PI / 180f);
-
-            var x = radius * Mathf.Cos(angleInRadians);
-            var y = radius * Mathf.Sin(angleInRadians);
-
-            points.Add(new Vector2(x, y));
-        }
-
-        return points;
+        var volumeFrom = Relations[from];
+        var volumeTo = Relations[to];
+        var rem = volumeFrom.RemoveContent(volumeFrom.TotalValue * percent);
+        volumeTo.AddContent(rem);
+    }
+    
+    public FlowResult<TValueDef, double> TransferFromTo(TAttach from, TAttach to, TValueDef def, double amount)
+    {
+        var volumeFrom = Relations[from];
+        var volumeTo = Relations[to];
+        return volumeFrom.TryTransfer(volumeTo, (def, amount));
     }
 
+    #endregion
     
     #endregion
 }

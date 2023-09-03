@@ -10,6 +10,18 @@ namespace TeleCore;
 
 public static class TWidgets
 {
+    //
+    public static float PixelWidth(int cellWidth)
+    {
+        Vector3 point1 = new Vector3(cellWidth, 0, 0);
+        Vector3 point2 = Vector3.zero;
+        Vector3 point1_screen = Find.Camera.WorldToScreenPoint(point1) / Prefs.UIScale;
+        Vector3 point2_screen = Find.Camera.WorldToScreenPoint(point2) / Prefs.UIScale;
+        float pixelWidth = (point1_screen - point2_screen).magnitude;
+        return pixelWidth; 
+    }
+
+    
     //World To ScreenSpace
     public static void DrawBoxOnThing(Thing thing)
     {

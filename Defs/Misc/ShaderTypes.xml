@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Defs>
+
+	<TeleCore.CustomShaderDef> 
+		<defName>RenderMask</defName>
+		<shaderPath>RenderMask</shaderPath>
+	</TeleCore.CustomShaderDef>
+
+</Defs>

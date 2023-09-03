@@ -20,19 +20,11 @@ public class NetworkIO
             if (cell.mode == NetworkIOMode.None) continue;
             if ((cell.mode & NetworkIOMode.Visual) == NetworkIOMode.Visual)
             {
-                VisualCells.Add(new IOCell
-                {
-                    Pos = new IntVec3Rot(cell.offset + refPos, cell.direction),
-                    Mode = cell.mode
-                });
+                VisualCells.Add(new IOCell(new IntVec3Rot(cell.offset + refPos, cell.direction), cell.mode));
                 continue;
             }
 
-            Connections.Add(new IOCell
-            {
-                Pos = new IntVec3Rot(cell.offset + refPos, cell.direction),
-                Mode = cell.mode
-            });
+            Connections.Add(new IOCell(new IntVec3Rot(cell.offset + refPos, cell.direction), cell.mode));
         }
     }
 

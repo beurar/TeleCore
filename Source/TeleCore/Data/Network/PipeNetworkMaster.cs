@@ -39,7 +39,7 @@ public class DynamicNetworkGraph
     private Map _map;
 
     public NetworkGraph Graph => _network.Graph;
-    public NetworkSystem System => _network.NetworkSystem;
+    public NetworkFlowSystem FlowSystem => _network.System;
     public NetworkPartSet TotalPartSet => _totalPartSet;
     
     public DynamicNetworkGraph(NetworkDef def, Map map)
@@ -113,12 +113,13 @@ public class DynamicNetworkGraph
 
     public void Notify_PartBecameJunction(NetworkPart part)
     {
-        TLog.Debug($"Part became junction: {part}");
+        TLog.Debug($"Part became junction: {part} | Edge: {part.IsEdge} | Junction: {part.IsJunction} | Node: {part.IsNode}");
     }
     
     public void Notify_PartSpawned(NetworkPart part)
     {
         //Basic data setup for each spawned part
+        
         part.Network = _network;
         Graph.AddCells(part);
 
@@ -240,7 +241,6 @@ public class DynamicNetworkGraph
             }
         }
         
-        //
         foreach (var edge in newEdges)
         {
             if (!edge.IsValid)
@@ -252,8 +252,8 @@ public class DynamicNetworkGraph
         }
         
         //Note: Hacky quickfix
-        System.Reset();
-        System.Notify_Populate(Graph);
+        FlowSystem.Reset();
+        FlowSystem.Notify_Populate(Graph);
     }
     
     private static IEnumerable<NetEdge> GetAllEdgesFor(NetworkPart rootNode)
@@ -394,6 +394,8 @@ public class DynamicNetworkGraph
         if (!firstNode.IsNode)
         {
             TLog.Error($"Trying to search new node with firstNode not being a node: {firstNode}");
+            if(firstNode.IsJunction)
+                TLog.Warning(" ^ This error should not have happened!");
             return NetEdge.Invalid;
         }
         
