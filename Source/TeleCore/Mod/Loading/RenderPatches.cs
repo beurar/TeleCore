@@ -141,7 +141,7 @@ internal static class RenderPatches
             if (__instance.PlacingDef is ThingDef tDef)
             {
                 var network = tDef.GetCompProperties<CompProperties_Network>();
-                if (network != null)
+                if (network != null && network.networks.Count > 1)
                 {
                     var mousePos = Event.current.mousePosition + Designator_Place.PlaceMouseAttachmentDrawOffset;
                     var optionSize = 24;
@@ -233,10 +233,8 @@ internal static class RenderPatches
             if (network != null)
             {
                 var part = network.networks[Designator_PlaceDrawMouseAttachmentsPatch.GetIndex(tDef)];
-                if (part.netIOConfig != null)
-                {
-                    DrawNetIOConfig(part.netIOConfig, center, tDef, placingRot);
-                }
+                var ioConfig = part.netIOConfig ?? network.generalIOConfig;
+                DrawNetIOConfig(ioConfig, center, tDef, placingRot);
             }
         }
         

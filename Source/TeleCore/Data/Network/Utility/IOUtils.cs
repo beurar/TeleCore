@@ -80,24 +80,27 @@ public static class IOUtils
         var modeGrid = GetIOModeArray(ioPattern);
         
         var result = new List<IOCellPrototype>();
-        for (var y = 0; y < rect.Height; y++)
-        {
-            for (var x = 0; x < rect.Width; x++)
-            {
-                var actualIndex = y * rect.Width + x;
-                var ioMode = modeGrid[actualIndex];
-                var cell = rectList[actualIndex];
 
-                if (ioMode != NetworkIOMode.None)
+        for (int i = 0; i < rect.Area; i++)
+        {
+            int row = i / rect.Width;
+            int column = i % rect.Width;
+
+            var actualIndex = row * rect.Width + column;
+            int invertedIndex = (rect.Height - row - 1) * rect.Width + column;
+//TODO: SHIT WONT INVERT
+            var ioMode = modeGrid[actualIndex];
+            var cell = rectList[invertedIndex];
+
+            if (ioMode != NetworkIOMode.None)
+            {
+                var rel = CellUtils.RelativeDir(rect, cell);
+                result.Add(new IOCellPrototype
                 {
-                    var rel = CellUtils.RelativeDir(rect, cell);
-                    result.Add(new IOCellPrototype
-                    {
-                        offset = cell,
-                        direction = rel,
-                        mode = ioMode
-                    });
-                }
+                    offset = cell,
+                    direction = rel,
+                    mode = ioMode
+                });
             }
         }
 
