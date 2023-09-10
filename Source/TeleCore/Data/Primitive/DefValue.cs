@@ -8,7 +8,7 @@ namespace TeleCore.Primitive;
 /// </summary>
 /// <typeparam name="TDef">The <see cref="Def" /> Type of the value.</typeparam>
 /// <typeparam name="TValue">The numeric Type of the value.</typeparam>
-public struct DefValue<TDef, TValue>
+public struct DefValue<TDef, TValue> 
     where TDef : Def
     where TValue : unmanaged
 {
@@ -33,7 +33,7 @@ public struct DefValue<TDef, TValue>
         Def = def;
         Value = value;
     }
-
+    
     #region Math
 
     public static DefValue<TDef, TValue> operator +(DefValue<TDef, TValue> a, TValue b)
@@ -56,7 +56,6 @@ public struct DefValue<TDef, TValue>
         if (new Numeric<TValue>(b).IsZero) return new DefValue<TDef, TValue>(a.Def, Numeric<TValue>.Zero);
         return new DefValue<TDef, TValue>(a.Def, a.Value / b);
     }
-
 
     public static DefValue<TDef, TValue> operator +(DefValue<TDef, TValue> a, DefValue<TDef, TValue> b)
     {

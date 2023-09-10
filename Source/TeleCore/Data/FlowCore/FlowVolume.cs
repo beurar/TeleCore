@@ -12,9 +12,9 @@ using Verse;
 
 namespace TeleCore.FlowCore;
 
-public class FlowVolume<T> : INotifyFlowEvent where T : FlowValueDef
+public class FlowVolume<T> : IExposable, INotifyFlowEvent where T : FlowValueDef
 {
-    private readonly FlowVolumeConfig<T> _config;
+    private FlowVolumeConfig<T> _config;
     private DefValueStack<T, double> _mainStack;
     private DefValueStack<T, double> _prevStack;
     private Color _totalColor;
@@ -56,9 +56,20 @@ public class FlowVolume<T> : INotifyFlowEvent where T : FlowValueDef
 
     public FlowVolume()
     {
-
     }
 
+    public void ExposeData()
+    {
+        Scribe_Deep.Look(ref _prevStack, "previousStack");
+        Scribe_Deep.Look(ref _mainStack, "mainStack");
+    }
+    
+    public void PostLoadInit(FlowVolumeConfig<T> config)
+    {
+        _config = config;
+        RegenColorState();
+    }
+    
     public FlowVolume(FlowVolumeConfig<T> config)
     {
         _config = config;
@@ -126,10 +137,7 @@ public class FlowVolume<T> : INotifyFlowEvent where T : FlowValueDef
         OnContainerStateChanged(delta);
     }
 
-    /// <summary>
-    ///     Internal container state logic notifier.
-    /// </summary>
-    private void OnContainerStateChanged(double delta, bool updateMetaData = false)
+    public void RegenColorState()
     {
         var newColor = Color.clear;
         foreach (var value in _mainStack)
@@ -142,6 +150,15 @@ public class FlowVolume<T> : INotifyFlowEvent where T : FlowValueDef
         _totalColor += newColor;
         _totalColor *= 0.5f;
         _totalColor = SaturateColor(_totalColor);
+    }
+
+    /// <summary>
+    ///     Internal container state logic notifier.
+    /// </summary>
+    private void OnContainerStateChanged(double delta, bool updateMetaData = false)
+    {
+        //
+        RegenColorState();
 
         //Resolve Action
         VolumeChangedEventArgs<T>.ChangedAction action = VolumeChangedEventArgs<T>.ChangedAction.Invalid;
@@ -156,13 +173,6 @@ public class FlowVolume<T> : INotifyFlowEvent where T : FlowValueDef
             action = VolumeChangedEventArgs<T>.ChangedAction.Filled;
         
         GlobalEventHandler.NetworkEvents<T>.OnVolumeStateChange(this, action);
-
-        // _totalColor = Color.clear;
-        // if (_mainStack is {IsValid: true, Length: > 0})
-        // {
-        //     foreach (var value in _mainStack)
-        //         _totalColor += (value.Def.valueColor) * (value.Value / MaxCapacity);
-        // }
     }
 
     private Color SaturateColor(Color color)

@@ -4,13 +4,12 @@ using Verse;
 
 namespace TeleCore.FlowCore;
 
-public class FlowVolumeConfig<T> where T : FlowValueDef
+public class FlowVolumeConfig<T> : Editable where T : FlowValueDef
 {
     private readonly List<T> _values = new();
     private bool isReady;
     
-    private Values values;
-
+    public Values values;
     public int capacity;
     public int area = 1;
     public int elevation = 0;
@@ -20,23 +19,23 @@ public class FlowVolumeConfig<T> where T : FlowValueDef
     public bool leaveContainer;
     public bool dropContents;
     
-    private class Values
+    public class Values
     {
         public List<T> allowedValues;
         public FlowValueCollectionDef fromCollection;
     }
     
     public double Volume => capacity;
-    
+
     public List<T> AllowedValues
     {
         get
         {
             if (isReady) return _values;
             if (values == null) return _values;
-            
+
             //Prepare
-            if(!values.allowedValues.NullOrEmpty())
+            if (!values.allowedValues.NullOrEmpty())
                 _values.AddRange(values.allowedValues);
             if (values.fromCollection != null)
             {
@@ -49,11 +48,6 @@ public class FlowVolumeConfig<T> where T : FlowValueDef
             isReady = true;
             return _values;
         }
-        set => _values.AddRange(value);
-    }
-
-    public void PostLoad()
-    {
     }
 
     //Note:We dont need this approach for now

@@ -97,13 +97,20 @@ public class Comp_Network : FXThingComp, INetworkStructure
     {
         base.PostExposeData();
         Scribe_Collections.Look(ref _allNetParts, "networkParts", LookMode.Deep, this);
-
-        //
+        
         if (Scribe.mode == LoadSaveMode.PostLoadInit)
         {
             if (_allNetParts.NullOrEmpty())
             {
                 TLog.Warning($"Could not load network parts for {parent}... Correcting.");
+            }
+            else
+            {
+                for (var i = 0; i < _allNetParts.Count; i++)
+                {
+                    var netPart = _allNetParts[i];
+                    netPart.PostLoadInit(Props.networks[i]);
+                }
             }
         }
     }
@@ -112,38 +119,45 @@ public class Comp_Network : FXThingComp, INetworkStructure
     public override void PostSpawnSetup(bool respawningAfterLoad)
     {
         base.PostSpawnSetup(respawningAfterLoad);
-
-        //
+        
+        //Init Fields
+        _netPartByDef = new Dictionary<NetworkDef, INetworkPart>(Props.networks.Count);
+        
+        //Get Comps and other Infos
+        _mapInfo = parent.Map.TeleCore().NetworkInfo;
         CompPower = parent.TryGetComp<CompPowerTrader>();
         CompFlick = parent.TryGetComp<CompFlickable>();
         CompFX = parent.TryGetComp<CompFX>();
 
-        //
+        //Generate Instanced Data
         GeneralIO = new NetworkIO(Props.generalIOConfig, parent.Position, parent.Rotation);
-        _mapInfo = parent.Map.TeleCore().NetworkInfo;
 
-        //Create NetworkComponents
+        //Create NetworkParts
         if (respawningAfterLoad && _allNetParts.Count != Props.networks.Count)
+        {
             TLog.Warning($"Spawning {parent} after load with missing parts... Correcting.");
+        }
 
         //
         if (!respawningAfterLoad)
+        {
             _allNetParts = new List<NetworkPart>(Math.Max(1, Props.networks.Count));
-
-        _netPartByDef = new Dictionary<NetworkDef, INetworkPart>(Props.networks.Count);
+        }
+        
         for (var i = 0; i < Props.networks.Count; i++)
         {
             var partConfig = Props.networks[i];
-            NetworkPart part = null;
-            if (!_allNetParts.Any(p => p.Config.networkDef == partConfig.networkDef))
+            NetworkPart? part = null;
+            
+            //Create part if it doesnt exist
+            var exists = _allNetParts.Exists(p => p is { Config: not null } && p.Config.networkDef == partConfig.networkDef);
+            if (!exists)
             {
                 part = (NetworkPart) Activator.CreateInstance(partConfig.workerType, this, partConfig);
                 _allNetParts.Add(part);
             }
-
-            if (part == null)
-                part = _allNetParts[i];
-
+            
+            part ??= _allNetParts[i];
             _netPartByDef.Add(partConfig.networkDef, part);
             part.PartSetup(respawningAfterLoad);
         }

@@ -3,6 +3,8 @@ using System.Linq;
 using System.Reflection;
 using HarmonyLib;
 using TeleCore.Loading;
+using TeleCore.Primitive;
+using TeleCore.Static.Utilities;
 using UnityEngine;
 using Verse;
 using Verse.AI;
@@ -13,15 +15,12 @@ public class TeleCoreMod : Mod
 {
     //Static Data
     private static Harmony teleCore;
-
-    
     
     public TeleCoreMod(ModContentPack content) : base(content)
     {
         Mod = this;
         var assembly = Assembly.GetExecutingAssembly();
         var version = assembly.GetName().Version.ToString();
-
         
         //MethodInfo target = typeof(ToilFailConditions).GetNestedTypes(AccessTools.all).SelectMany(AccessTools.GetDeclaredMethods).First(mi => mi.Name.Contains("FailOnChildLearningConditions"));
         // TeleCore.Patch(
@@ -43,7 +42,7 @@ public class TeleCoreMod : Mod
         //
         TeleCore.PatchAll(assembly);
         
-        
+        TeleParseHelper.Init();
     }
 
     public static TeleCoreMod Mod { get; private set; }

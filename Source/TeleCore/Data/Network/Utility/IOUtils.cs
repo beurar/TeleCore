@@ -81,14 +81,13 @@ public static class IOUtils
         
         var result = new List<IOCellPrototype>();
 
-        for (int i = 0; i < rect.Area; i++)
+        for (var i = 0; i < rect.Area; i++)
         {
-            int row = i / rect.Width;
-            int column = i % rect.Width;
+            var row = i / rect.Width;
+            var column = i % rect.Width;
 
             var actualIndex = row * rect.Width + column;
-            int invertedIndex = (rect.Height - row - 1) * rect.Width + column;
-//TODO: SHIT WONT INVERT
+            var invertedIndex = (rect.Height - row - 1) * rect.Width + column; //Need inversion of cell getter because of weird indexing shit
             var ioMode = modeGrid[actualIndex];
             var cell = rectList[invertedIndex];
 

@@ -18,6 +18,11 @@ public class DefValueLoadable<TDef, TValue> : IExposable
     public bool IsValid => def != null!;
     
     public static implicit operator DefValue<TDef, TValue>(DefValueLoadable<TDef, TValue> refValue) => new(refValue.Def, refValue.Value);
+    public static implicit operator DefValueLoadable<TDef, TValue> (DefValue<TDef, TValue> structValue) => new()
+    {
+        def = structValue.Def,
+        value = structValue.Value
+    };
     
     public void ExposeData()
     {
