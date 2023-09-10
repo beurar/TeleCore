@@ -3,7 +3,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
-using Microsoft.Build.Utilities;
 using Verse;
 
 namespace TeleCore.Primitive.Immutable;

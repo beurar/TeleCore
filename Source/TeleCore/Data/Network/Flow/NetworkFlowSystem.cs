@@ -33,6 +33,10 @@ public class NetworkFlowSystem : FlowSystem<NetworkPart, NetworkVolume, NetworkV
     
     protected override NetworkVolume CreateVolume(NetworkPart part)
     {
+        if (part.CachedVolume != null)
+        {
+            return part.CachedVolume;
+        }
         if (part.Config.volumeConfig == null)
         {
             TLog.Error("Tried to create a NetworkVolume without a volumeConfig!");
@@ -41,6 +45,32 @@ public class NetworkFlowSystem : FlowSystem<NetworkPart, NetworkVolume, NetworkV
         return new NetworkVolume(part.Config.volumeConfig);
     }
 
+    internal void Notify_Populate(NetEdge newEdge)
+    {
+        var edge = newEdge;
+        if (!edge.IsValid)
+        {
+            TLog.Error($"Tried to populate net-system with invalid edge: {edge}");
+            return;
+        }
+        if (edge.IsLogical) return;
+        var fb1 = GenerateForOrGet(edge.From);
+        var fb2 = GenerateForOrGet(edge.To);
+        if (fb1 == null || fb2 == null)
+        {
+            TLog.Warning("Null volume created!");
+            return;
+        }
+        var mode = edge.BiDirectional ? InterfaceFlowMode.TwoWay : InterfaceFlowMode.FromTo;
+        var iFace = new FlowInterface<NetworkPart, NetworkVolume, NetworkValueDef>(edge.From, edge.To, fb1, fb2,mode);
+        AddInterface((edge.From, edge.To), iFace);
+    }
+
+    internal void Notify_NetNodeRemoved(NetworkPart part)
+    {
+        RemoveRelatedPart(part);
+    }
+    
     internal void Notify_Populate(NetworkGraph graph)
     {
         foreach (var edgePair in graph.EdgesByNodes)

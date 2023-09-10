@@ -124,7 +124,7 @@ public class Gizmo_NetworkOverview : Gizmo, IDisposable
 
         //Draw Main
         SelectedView.DrawMainContent(mainRect);
-
+        
         //
         var firstEv = Mouse.IsOver(mainRect) ? GizmoState.Mouseover : GizmoState.Clear;
         var eventRes = Event.current.isMouse && firstEv == GizmoState.Mouseover ? GizmoState.Interacted : firstEv;

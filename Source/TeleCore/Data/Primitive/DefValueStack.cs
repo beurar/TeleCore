@@ -168,6 +168,31 @@ public struct DefValueStack<TDef, TValue> : IExposable
 
     public static DefValueStack<TDef, TValue> Empty => new();
 
+    public void ExposeData()
+    {
+        var listTemp = new List<DefValueLoadable<TDef, TValue>>();
+        if (Scribe.mode == LoadSaveMode.Saving)
+        {
+            foreach (var val in _stack)
+            {
+                listTemp.Add(val);
+            }
+        }
+        
+        Scribe_Values.Look(ref _totalValue, "totalValue");
+        Scribe_Collections.Look(ref listTemp, "stack", LookMode.Deep);
+        //Scribe_Arrays.Look(ref _stack, "stack");
+        
+        if (Scribe.mode == LoadSaveMode.LoadingVars)
+        {
+            _stack = new LightImmutableArray<DefValue<TDef, TValue>>();
+            foreach (var val in listTemp)
+            {
+                _stack = _stack.Add(val);
+            }
+        }
+    }
+    
     public DefValueStack()
     {
         _stack = LightImmutableArray<DefValue<TDef, TValue>>.Empty;
@@ -270,13 +295,7 @@ public struct DefValueStack<TDef, TValue> : IExposable
         }
         _totalValue = other._totalValue;
     }*/
-
-    public void ExposeData()
-    {
-        Scribe_Values.Look(ref _totalValue, "totalValue");
-        Scribe_Arrays.Look(ref _stack, "stack");
-    }
-
+    
     private int IndexOf(TDef def)
     {
         for (var i = 0; i < _stack.Length; i++)

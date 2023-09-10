@@ -14,21 +14,29 @@ namespace TeleCore.Network.Data;
 [DebuggerDisplay("{ToString()}")]
 public class NetworkPart : INetworkPart, IExposable
 {
-    private NetworkPartConfig _config;
-    private INetworkStructure _parent;
-    private PipeNetwork _network;
-    private NetworkIO _networkIO;
-    private NetworkIOPartSet _adjacentSet;
-    private float _passThrough = 1; //Must be initalized with 100%
+    [Unsaved]
+    private NetworkPartConfig? _config;
+    [Unsaved]
+    private INetworkStructure? _parent;
+    [Unsaved]
+    private PipeNetwork? _network;
+    [Unsaved]
+    private NetworkIO? _networkIO;
+    [Unsaved]
+    private NetworkIOPartSet? _adjacentSet;
+    
+    private NetworkVolume? _cachedVolume;
+    
+    private float _passThrough = 1; //MUST be initalized with 100%
     private bool _isReady;
 
-    public NetworkPartConfig Config
+    public NetworkPartConfig? Config
     {
         get => _config;
         set => _config = value;
     }
 
-    public INetworkStructure Parent
+    public INetworkStructure? Parent
     {
         get => _parent;
         set => _parent = value;
@@ -58,6 +66,7 @@ public class NetworkPart : INetworkPart, IExposable
 
     public NetworkIOPartSet AdjacentSet => _adjacentSet;
 
+    internal NetworkVolume? CachedVolume => _cachedVolume;
     public NetworkVolume Volume => ((Network?.System?.Relations?.TryGetValue(this, out var vol) ?? false) ? vol : null)!;
 
     public bool HasVolumeConfig => _config.volumeConfig != null;
@@ -126,7 +135,24 @@ public class NetworkPart : INetworkPart, IExposable
     
     public void ExposeData()
     {
+        if (Scribe.mode == LoadSaveMode.Saving)
+        {
+            _cachedVolume = Volume;
+        }
+
         Scribe_Values.Look(ref _passThrough, "passThrough");
+        Scribe_Deep.Look(ref _cachedVolume, "cachedVolume");
+    }
+    
+    //Ran after ExposeData
+    public void PostLoadInit(NetworkPartConfig config)
+    {
+        Config = config;
+        _adjacentSet = new NetworkIOPartSet(config.networkDef);
+        if (config.netIOConfig != null)
+            _networkIO = new NetworkIO(config.netIOConfig, Parent.Thing.Position, Parent.Thing.Rotation);
+        if (_cachedVolume != null)
+            _cachedVolume.PostLoadInit(config.volumeConfig);
     }
     
     public void PartSetup(bool respawningAfterLoad)

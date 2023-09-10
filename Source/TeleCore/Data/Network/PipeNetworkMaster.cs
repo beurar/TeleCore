@@ -249,11 +249,12 @@ public class DynamicNetworkGraph
                 continue;
             }
             Graph.AddEdge(edge);
+            FlowSystem.Notify_Populate(edge);
         }
         
-        //Note: Hacky quickfix
-        FlowSystem.Reset();
-        FlowSystem.Notify_Populate(Graph);
+        // //Note: Hacky quickfix
+        // FlowSystem.Reset();
+        // FlowSystem.Notify_Populate(Graph);
     }
     
     private static IEnumerable<NetEdge> GetAllEdgesFor(NetworkPart rootNode)
@@ -289,6 +290,7 @@ public class DynamicNetworkGraph
 
     public void Notify_PartDespawned(NetworkPart part)
     {
+        FlowSystem.Notify_NetNodeRemoved(part);
         if (!Graph.TryDissolveNode(part))
         {
             if (part.IsEdge)

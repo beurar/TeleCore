@@ -82,6 +82,14 @@ public abstract class FlowSystem<TAttach, TVolume, TValueDef> : IDisposable
         return volume;
     }
 
+    public void RemoveRelatedPart(TAttach attach)
+    {
+        var volume = _relations[attach];
+        RemoveRelation(attach);
+        _volumes.Remove(volume);
+        _connections.Remove(volume);
+        RemoveInterfacesWhere(x => x.From == volume || x.To == volume);
+    }
     
     public bool AddInterface(TwoWayKey<TAttach> connectors, FlowInterface<TAttach, TVolume, TValueDef> iFace)
     {
@@ -95,16 +103,6 @@ public abstract class FlowSystem<TAttach, TVolume, TValueDef> : IDisposable
         }
         //TLog.Warning($"Tried to add existing key: {connectors.A} -> {connectors.B}: {iFace}");
         return false;
-    }
-    
-    public void RemoveRelatedPart(TAttach attach)
-    {
-        var volume = _relations[attach];
-        RemoveRelation(attach);
-        _volumes.Remove(volume);
-        _connections.Remove(volume);
-        
-        RemoveInterfacesWhere(x => x.From == volume || x.To == volume);
     }
 
     protected void RemoveInterface(TwoWayKey<TAttach> connectors)

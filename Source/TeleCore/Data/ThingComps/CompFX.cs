@@ -50,18 +50,14 @@ public class CompFX : TeleComp
 
     private IFXLayerProvider[] LayerProviderByLayerIndex;
     private bool spawnedOnce;
-
-    //Debug
-
-    //
+    
     public CompProperties_FX Props => (CompProperties_FX) props;
-
-    //
+    
     public CompPowerTrader ParentPowerComp { get; private set; }
     public FXDefExtension GraphicExtension { get; private set; }
     public List<FXLayer> FXLayers { get; private set; }
     public List<EffecterLayer> EffectLayers { get; private set; }
-
+    
     public override void PostSpawnSetup(bool respawningAfterLoad)
     {
         base.PostSpawnSetup(respawningAfterLoad);
@@ -75,7 +71,7 @@ public class CompFX : TeleComp
 
         //Setup Layers
         //Init Data On First Spawn
-        if (!spawnedOnce)
+        if (!spawnedOnce || respawningAfterLoad)
         {
             //Generate FXLayers
             if (!Props.fxLayers.NullOrEmpty())
@@ -103,10 +99,9 @@ public class CompFX : TeleComp
                 //
                 _hasEffecters = EffectLayers?.Count > 0;
             }
+            
+            spawnedOnce = true;
         }
-
-        //
-        spawnedOnce = true;
     }
 
     public override void PostExposeData()
@@ -297,6 +292,8 @@ public class CompFX : TeleComp
     public override void PostDraw()
     {
         base.PostDraw();
+        if (!_hasFXLayers) return;
+        
         foreach (var layer in FXLayers)
         {
             var canDraw =  CanDraw(layer.Args);
@@ -308,9 +305,12 @@ public class CompFX : TeleComp
     public override void PostPrintOnto(SectionLayer layer)
     {
         base.PostPrintOnto(layer);
+        if (!_hasFXLayers) return;
         foreach (var fxLayer in FXLayers)
+        {
             if (fxLayer.data.fxMode == FXMode.Static && CanDraw(fxLayer.Args))
                 fxLayer.Print(layer);
+        }
     }
 
     public override IEnumerable<Gizmo> CompGetGizmosExtra()
