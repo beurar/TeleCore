@@ -14,7 +14,7 @@ namespace TeleCore;
 /// </summary>
 public class FXBuilding : Building, IFXLayerProvider, IFXEffecterProvider
 {
-    public FXDefExtension Extension => def.FXExtension();
+    public FXDefExtension FXExtension => def.FXExtension();
     public CompFX FXComp => GetComp<CompFX>();
 
     //

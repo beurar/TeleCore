@@ -5,6 +5,8 @@ namespace TeleCore;
 
 public static class TeleCoreDebugViewSettings
 {
+    public static bool DrawAvoidGrid = false;
+    
     public static bool DrawNetwork = false;
     public static bool ShowNetworks = false;
     public static bool ShowNetworkParts = false;
@@ -12,6 +14,10 @@ public static class TeleCoreDebugViewSettings
     public static bool ShowRoomtrackers = false;
     public static bool DrawRoomLabels = false;
     public static bool DrawGraphOnGUI = false;
+}
+
+public static class TeleCoreDebugSettings
+{
 }
 
 public class DebugSettings_Telecore : DebugTabMenu
@@ -24,8 +30,17 @@ public class DebugSettings_Telecore : DebugTabMenu
     {
         myRoot = new DebugActionNode("TeleCore");
         absRoot.AddChild(myRoot);
-        foreach (var fi in typeof(TeleCoreDebugViewSettings).GetFields()) 
-            AddNode(fi, "IM DEBUGGGIINNNGGGGG");
+        
+        foreach (var fi in typeof(TeleCoreDebugSettings).GetFields())
+        {
+            AddNode(fi, "General");
+        }
+        
+        foreach (var fi in typeof(TeleCoreDebugViewSettings).GetFields())
+        {
+            AddNode(fi, "View");
+        }
+        
         return myRoot;
     }
     

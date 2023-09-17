@@ -9,17 +9,17 @@ public class TeleBuilding : FXBuilding, IDiscoverable
     public override string Label => Discovered ? DiscoveredLabel : UnknownLabel;
     public override string DescriptionFlavor => Discovered ? DiscoveredDescription : UnknownDescription;
 
-    public TeleDefExtension Extension { get; private set; }
-    public DiscoveryProperties Discovery => Extension?.discovery!;
+    public TeleDefExtension? TeleExtension { get; private set; }
+    public DiscoveryProperties? Discovery => TeleExtension?.discovery!;
 
     public bool IsDiscoverable => Discovery != null;
 
-    public DiscoveryDef DiscoveryDef => Discovery.discoveryDef;
+    public DiscoveryDef DiscoveryDef => Discovery!.discoveryDef;
     public string DiscoveredLabel => base.Label;
-    public string UnknownLabel => Discovery.UnknownLabelCap;
+    public string UnknownLabel => Discovery!.UnknownLabelCap;
     public string DiscoveredDescription => def.description;
-    public string UnknownDescription => Discovery.unknownDescription;
-    public string DescriptionExtra => Discovery.extraDescription;
+    public string UnknownDescription => Discovery!.unknownDescription;
+    public string DescriptionExtra => Discovery!.extraDescription;
     public bool Discovered => !IsDiscoverable || TFind.Discoveries[this];
 
     public override void SpawnSetup(Map map, bool respawningAfterLoad)
@@ -27,24 +27,35 @@ public class TeleBuilding : FXBuilding, IDiscoverable
         base.SpawnSetup(map, respawningAfterLoad);
         if (def.HasTeleExtension(out var textension))
         {
-            Extension = textension;
-            if (Extension.addCustomTick) TeleEventHandler.EntityTicked += TeleTick;
+            TeleExtension = textension;
+            if (TeleExtension.addCustomTick) 
+                TeleEventHandler.EntityTicked += TeleTickInternal;
         }
     }
 
     public override void DeSpawn(DestroyMode mode = DestroyMode.Vanish)
     {
         base.DeSpawn(mode);
-        if (Extension != null)
-            if (Extension.addCustomTick)
-                TeleEventHandler.EntityTicked -= TeleTick;
+        if (TeleExtension != null)
+            if (TeleExtension.addCustomTick)
+                TeleEventHandler.EntityTicked -= TeleTickInternal;
     }
 
-    protected virtual void TeleTick()
+    private void TeleTickInternal()
     {
         foreach (var comp in AllComps)
             if (comp is TeleComp teleComp)
                 teleComp.TeleTick();
+        
+        //
+        TeleTick();
+    }
+    
+    /// <summary>
+    /// Ticks after all comps have ticked.
+    /// </summary>
+    protected virtual void TeleTick()
+    {
     }
 
     public override string GetInspectString()

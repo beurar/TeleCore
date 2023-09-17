@@ -495,10 +495,10 @@ public class SubBuildMenu : Window, IExposable
 
     public static void ToggleOpen(SubBuildMenuDef subMenuDef, bool opening)
     {
-        if (!StaticData.windowsByDef.TryGetValue(subMenuDef, out var window))
+        if (!StaticData.BUILDMENU_BY_DEF.TryGetValue(subMenuDef, out var window))
         {
             window = new SubBuildMenu(subMenuDef);
-            StaticData.windowsByDef.Add(subMenuDef, window);
+            StaticData.BUILDMENU_BY_DEF.Add(subMenuDef, window);
         }
 
         if (window.IsOpen && !opening)
@@ -516,7 +516,7 @@ public class SubBuildMenu : Window, IExposable
     public static void ResetMenuWindow(SubBuildMenuDef subMenuDef)
     {
         TLog.Message($"Resetting: {subMenuDef}");
-        if (StaticData.windowsByDef.TryGetValue(subMenuDef, out var window))
+        if (StaticData.BUILDMENU_BY_DEF.TryGetValue(subMenuDef, out var window))
             window.windowRect.center = new Vector2(UI.screenWidth / 2f, UI.screenHeight / 2f);
     }
 

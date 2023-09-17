@@ -1,15 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Collections.Specialized;
+﻿using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text;
+using TeleCore.Network.Data;
 using TeleCore.Network.Flow;
 using TeleCore.Network.IO;
 using TeleCore.Network.Utility;
 using UnityEngine;
 using Verse;
 
-namespace TeleCore.Network.Data;
+namespace TeleCore.Network;
 
 [DebuggerDisplay("{ToString()}")]
 public class NetworkPart : INetworkPart, IExposable

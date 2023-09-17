@@ -67,7 +67,7 @@ public abstract class FlowSystem<TAttach, TVolume, TValueDef> : IDisposable
     protected abstract float GetInterfacePassThrough(TwoWayKey<TAttach> connectors);
     protected abstract TVolume CreateVolume(TAttach part);
 
-    protected TVolume GenerateForOrGet(TAttach part)
+    protected TVolume GenerateForOrGetVolume(TAttach part)
     {
         if (Relations.TryGetValue(part, out var volume))
             return volume;
@@ -82,13 +82,19 @@ public abstract class FlowSystem<TAttach, TVolume, TValueDef> : IDisposable
         return volume;
     }
 
-    public void RemoveRelatedPart(TAttach attach)
+    public void TryRemoveRelatedPart(TAttach attach)
     {
-        var volume = _relations[attach];
-        RemoveRelation(attach);
-        _volumes.Remove(volume);
-        _connections.Remove(volume);
-        RemoveInterfacesWhere(x => x.From == volume || x.To == volume);
+        if (_relations.TryGetValue(attach, out var volume))
+        {
+            RemoveRelation(attach);
+            _volumes.Remove(volume);
+            _connections.Remove(volume);
+            RemoveInterfacesWhere(x => x.From == volume || x.To == volume);
+        }
+        else
+        {
+            TLog.Warning($"Tried to remove node {attach} which was not registered.");
+        }
     }
     
     public bool AddInterface(TwoWayKey<TAttach> connectors, FlowInterface<TAttach, TVolume, TValueDef> iFace)

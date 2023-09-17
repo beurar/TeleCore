@@ -12,10 +12,14 @@ public static class StaticData
     public const float DeltaTime = 1f / 60f;
 
     //
-    internal static Dictionary<SubBuildMenuDef, SubBuildMenu> windowsByDef;
+    internal static Dictionary<BuildableDef, Designator> DESIGNATORS;
+    
+    //Build Menu
+    internal static Dictionary<SubBuildMenuDef, SubBuildMenu> BUILDMENU_BY_DEF;
 
-    internal static Dictionary<int, MapComponent_TeleCore> teleMapComps;
-    internal static Dictionary<BuildableDef, Designator> cachedDesignators;
+    //Tele Data Comps
+    internal static Dictionary<int, MapComponent_TeleCore> TELE_MAPCOMPS;
+    internal static Dictionary<string, WorldComp_TeleCore> TELE_WORLDCOMPS;
 
     //
     internal static List<PlaySettingsWorker> _playSettings;
@@ -27,26 +31,30 @@ public static class StaticData
     }
 
     //Static Props
-    public static WorldComp_TeleCore TeleCoreWorldComp { get; internal set; }
-
     internal static List<PlaySettingsWorker> PlaySettings => _playSettings;
 
     public static MapComponent_TeleCore TeleMapComp(int mapInt)
     {
-        return teleMapComps[mapInt];
+        return TELE_MAPCOMPS[mapInt];
     }
-
+    
+    public static WorldComp_TeleCore TeleWorldComp(string worldID)
+    {
+        return TELE_WORLDCOMPS[worldID];
+    }
+    
     internal static void ExposeStaticData()
     {
-        Scribe_Collections.Look(ref windowsByDef, "windowsByDef", LookMode.Def, LookMode.Deep);
+        Scribe_Collections.Look(ref BUILDMENU_BY_DEF, "windowsByDef", LookMode.Def, LookMode.Deep);
     }
 
     internal static void Notify_ClearData()
     {
-        //TLog.Message("Clearing StaticData!");
-        teleMapComps = new Dictionary<int, MapComponent_TeleCore>();
-        cachedDesignators = new Dictionary<BuildableDef, Designator>();
-        windowsByDef = new Dictionary<SubBuildMenuDef, SubBuildMenu>();
+        TELE_MAPCOMPS = new Dictionary<int, MapComponent_TeleCore>();
+        TELE_WORLDCOMPS = new Dictionary<string, WorldComp_TeleCore>();
+        
+        DESIGNATORS = new Dictionary<BuildableDef, Designator>();
+        BUILDMENU_BY_DEF = new Dictionary<SubBuildMenuDef, SubBuildMenu>();
         ActionComposition._ID = 0;
 
         ClipBoardUtility.Notify_ClearData();
@@ -67,18 +75,19 @@ public static class StaticData
 
     internal static void Notify_NewTeleMapComp(MapComponent_TeleCore mapComp)
     {
-        teleMapComps[mapComp.map.uniqueID] = mapComp;
+        TELE_MAPCOMPS[mapComp.map.uniqueID] = mapComp;
     }
 
     internal static void Notify_NewTeleWorldComp(WorldComp_TeleCore worldComp)
     {
-        TeleCoreWorldComp ??= worldComp;
+        TELE_WORLDCOMPS[worldComp.world.GetUniqueLoadID()] = worldComp;
     }
 
     //
     public static MapComponent_TeleCore TeleCore(this Map map)
     {
-        if (map != null) return teleMapComps[map.uniqueID];
+        if (map != null) 
+            return TELE_MAPCOMPS[map.uniqueID];
 
         TLog.Warning("Map is null for TeleCore MapComp getter");
         return null;

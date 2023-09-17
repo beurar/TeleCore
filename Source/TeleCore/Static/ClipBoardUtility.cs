@@ -26,13 +26,13 @@ public static class ClipBoardUtility
 
     public static T TryGetClipBoard<T>(string tag)
     {
-        TLog.Debug($"Getting from clip-board for {tag}");
         if (Clipboard.TryGetValue(tag, out var value)) return (T) value;
         return (T) (object) null;
     }
 
     public static void TrySetClipBoard<T>(string tag, T value)
     {
-        if (Clipboard.TryAdd(tag, value)) TLog.Debug($"Copied to clip-board for {tag}");
+        if (Clipboard.TryAdd(tag, value)) 
+            TLog.Debug($"Copied to clip-board for {tag}");
     }
 }

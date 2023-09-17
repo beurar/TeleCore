@@ -12,11 +12,13 @@ namespace TeleCore;
 public class PathHelperInfo : MapInformation
 {
     private static readonly int SampleNumCells = GenRadial.NumCellsInRadius(8.9f);
-    public readonly HashSet<AvoidGridWorker> workers;
+    private readonly HashSet<AvoidGridWorker> _avoidGrids;
 
+    public IEnumerable<AvoidGridWorker> AvoidGrids => _avoidGrids;
+        
     public PathHelperInfo(Map map) : base(map)
     {
-        workers = new HashSet<AvoidGridWorker>();
+        _avoidGrids = new HashSet<AvoidGridWorker>();
         GlobalEventHandler.CellChanged += Notify_CellChanged;
     }
 
@@ -26,19 +28,20 @@ public class PathHelperInfo : MapInformation
         foreach (var def in DefDatabase<AvoidGridDef>.AllDefsListForReading)
         {
             var worker = (AvoidGridWorker) Activator.CreateInstance(def.avoidGridClass, map, def);
-            workers.Add(worker);
+            _avoidGrids.Add(worker);
         }
     }
 
     private void Notify_CellChanged(CellChangedEventArgs args)
     {
-        foreach (var worker in workers) worker.Notify_CellChanged(args);
+        foreach (var worker in _avoidGrids) 
+            worker.Notify_CellChanged(args);
     }
 
     public override void UpdateOnGUI()
     {
         //Debug Rendering
-        if (!PlaySettingsAvoidGrid.DrawAvoidGridsAroundMouse) return;
+        if (!TeleCoreDebugViewSettings.DrawAvoidGrid) return;
 
         var root = Verse.UI.MouseCell();
         var map = Find.CurrentMap;
@@ -51,7 +54,7 @@ public class PathHelperInfo : MapInformation
                 var pathGrid = map.pathFinder.pathGrid.pathGrid[index];
                 var baseVal = map.avoidGrid.grid[index];
                 var newVal = 0;
-                foreach (var worker in workers) newVal += worker.Grid[index];
+                foreach (var worker in _avoidGrids) newVal += worker.Grid[index];
 
                 var pos = GenMapUI.LabelDrawPosFor(intVec);
                 GenMapUI.DrawThingLabel(pos + new Vector2(0, 32), newVal.ToString(), Color.cyan);

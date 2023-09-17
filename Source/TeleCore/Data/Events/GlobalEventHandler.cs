@@ -91,10 +91,25 @@ public static class GlobalEventHandler
 
     internal static void ClearData()
     {
+        // Things
         ThingSpawned = null;
         ThingDespawning = null;
+        ThingDespawned = null;
         ThingSentSignal = null;
+
+        // Pawns
         PawnHediffChanged = null;
+
+        // Network
+        //TODO:
+
+        // Rooms
+        RoomCreated = null;
+        RoomDisbanded = null;
+
+        // Cell and Terrain 
+        TerrainChanged = null;
+        CellChanged = null;
     }
 
 

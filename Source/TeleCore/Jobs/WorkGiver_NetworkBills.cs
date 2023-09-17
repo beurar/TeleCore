@@ -50,7 +50,7 @@ public class WorkGiver_NetworkBills : WorkGiver_Scanner
         var compTNW = t.TryGetComp<Comp_NetworkBillsCrafter>();
         if (compTNW == null) return false;
         if (compTNW.BillStack.Count == 0) return false;
-        if (compTNW.BillStack.ParentNetParts.Any(t => !t.Network.IsWorking)) return false;
+        if (compTNW.BillStack.CurrentBill.AvailableSourceParts.Any(t => !t.Network.IsWorking)) return false;
         if (compTNW.billStack.CurrentBill != null)
         {
             if (!compTNW.billStack.CurrentBill.ShouldDoNow()) return false;

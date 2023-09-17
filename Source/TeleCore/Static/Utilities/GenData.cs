@@ -6,6 +6,7 @@ using System.Runtime.CompilerServices;
 using System.Xml;
 using RimWorld;
 using TeleCore.Data.Events;
+using TeleCore.Network;
 using TeleCore.Network.Data;
 using TeleCore.RWExtended;
 using UnityEngine;
@@ -152,11 +153,11 @@ public static class GenData
     /// </summary>
     public static T GetDesignatorFor<T>(BuildableDef def) where T : Designator
     {
-        if (StaticData.cachedDesignators.TryGetValue(def, out var des)) return (T) des;
+        if (StaticData.DESIGNATORS.TryGetValue(def, out var des)) return (T) des;
 
         des = (Designator) Activator.CreateInstance(typeof(T), def);
         des.icon = def.uiIcon;
-        StaticData.cachedDesignators.Add(def, des);
+        StaticData.DESIGNATORS.Add(def, des);
         return (T) des;
     }
 

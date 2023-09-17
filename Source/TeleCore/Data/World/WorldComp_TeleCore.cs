@@ -6,7 +6,7 @@ namespace TeleCore;
 public class WorldComp_TeleCore : WorldComponent
 {
     //Discovery
-    internal DiscoveryTable _discoveries;
+    internal DiscoveryTable discoveries;
 
     public WorldComp_TeleCore(World world) : base(world)
     {
@@ -18,14 +18,15 @@ public class WorldComp_TeleCore : WorldComponent
     {
         base.ExposeData();
         StaticData.ExposeStaticData();
-        Scribe_Deep.Look(ref _discoveries, "DiscoveryTable");
+        Scribe_Deep.Look(ref discoveries, "DiscoveryTable");
 
-        if (Scribe.mode == LoadSaveMode.PostLoadInit) GenerateInfos();
+        if (Scribe.mode == LoadSaveMode.PostLoadInit) 
+            GenerateInfos();
     }
 
 
     private void GenerateInfos()
     {
-        _discoveries ??= new DiscoveryTable();
+        discoveries ??= new DiscoveryTable();
     }
 }

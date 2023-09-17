@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using Verse;
 
@@ -27,7 +28,7 @@ public class FlowVolumeConfig<T> : Editable where T : FlowValueDef
     
     public double Volume => capacity;
 
-    public List<T> AllowedValues
+    public IReadOnlyCollection<T> AllowedValues
     {
         get
         {

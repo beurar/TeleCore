@@ -25,7 +25,7 @@ public class NetworkGraph : IDisposable
     }
 
     public HashSet<NetNode> Nodes { get; private set; }
-    public Dictionary<NetNode, List<(NetEdge, NetNode)>> AdjacencyList { get; private set; }
+    public Dictionary<NetNode, List<(NetEdge Edge, NetNode Node)>> AdjacencyList { get; private set; }
     public Dictionary<TwoWayKey<IOConnection>, NetEdge> UniqueEdges { get; private set; }
     public Dictionary<(NetworkPart, IOCell), NetEdge> EdgesByIO { get; private set; }
     public Dictionary<TwoWayKey<NetworkPart>, List<NetEdge>> EdgesByNodes { get; set; }
@@ -223,15 +223,19 @@ public class NetworkGraph : IDisposable
         return true;
     }
 
-    public List<(NetEdge, NetNode)>? GetAdjacencyList(INetworkPart forPart)
+    /// <summary>
+    /// Returns a list of data tuples, containing the adjacent part and connecting edge.
+    /// Warning: The edges are not guaranteed to have the same order as the request. ie: From being the part having adjacency searched for.
+    /// </summary>
+    public bool TryGetAdjacencyList(INetworkPart forPart, out List<(NetEdge Edge, NetNode Node)> result)
     {
+        result = null!;
         if (forPart is NetworkPart part)
         {
-            if (AdjacencyList.TryGetValue(part, out var list))
-                return list;
+            if (AdjacencyList.TryGetValue(part, out result))
+                return true;
         }
-
-        return null;
+        return false;
     }
     
     internal void AddCells(INetworkPart netPart)

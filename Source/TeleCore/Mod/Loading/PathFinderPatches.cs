@@ -22,7 +22,8 @@ internal static class PathFinderPatches
         var thing = traverseParms.pawn ?? UsedGenericPather?.Thing;
         if (thing == null) return;
 
-        foreach (var avoidGrid in map.GetMapInfo<PathHelperInfo>().workers)
+        //TODO: Clean request of set?
+        foreach (var avoidGrid in map.GetMapInfo<PathHelperInfo>().AvoidGrids)
             if (avoidGrid.AffectsThing(thing))
                 _customAvoidGrids.Add(avoidGrid);
     }
@@ -31,7 +32,8 @@ internal static class PathFinderPatches
     {
         var extraVal = 0;
         if (_customAvoidGrids.Count == 0) return 0;
-        foreach (var avoidGrid in _customAvoidGrids) extraVal += avoidGrid.Grid[index];
+        foreach (var avoidGrid in _customAvoidGrids) 
+            extraVal += avoidGrid.Grid[index];
         return extraVal;
     }
 
