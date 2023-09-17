@@ -119,6 +119,10 @@ public class DynamicNetworkGraph
     public void Notify_PartSpawned(NetworkPart part)
     {
         //Basic data setup for each spawned part
+        if (part.IsNode)
+        {
+            FlowSystem.Notify_NewNode(part);
+        }
         
         part.Network = _network;
         Graph.AddCells(part);

@@ -29,7 +29,7 @@ public class FlowVolume<T> : IExposable, INotifyFlowEvent where T : FlowValueDef
     }
 
     public T MainValueDef => _mainStack.Values.MaxBy(c => c.Value).Def;
-    public IList<T> AllowedValues => _config.AllowedValues;
+    public IReadOnlyCollection<T> AllowedValues => _config.AllowedValues;
 
     public double FlowRate { get; set; }
     public double TotalValue => _mainStack.TotalValue;

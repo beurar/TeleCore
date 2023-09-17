@@ -215,7 +215,7 @@ public class NetworkInfoView
                     Widgets.DrawWindowBackground(rect);
                     TWidgets.DrawColoredBox(readoutRect, TColor.BlueHueBG, TColor.MenuSectionBGBorderColor, 1);
 
-                    if (_part.Volume.AllowedValues.NullOrEmpty())
+                    if (!_part.Volume.AllowedValues?.Any() ?? false)
                         return;
 
                     //

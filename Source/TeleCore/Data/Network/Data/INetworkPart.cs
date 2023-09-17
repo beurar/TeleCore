@@ -1,10 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using TeleCore.Network.Data;
 using TeleCore.Network.Flow;
 using TeleCore.Network.IO;
 using Verse;
 
-namespace TeleCore.Network.Data;
+namespace TeleCore.Network;
 
 public interface INetworkPart
 {

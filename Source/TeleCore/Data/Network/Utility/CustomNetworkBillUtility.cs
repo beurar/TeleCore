@@ -20,7 +20,11 @@ internal static class CustomNetworkBillUtility
         {
             var listing2 = listing.BeginSection(200);
             {
-                if (listing2.ButtonText(bill.RepeatMode.LabelCap)) bill.DoRepeatModeConfig();
+                if (listing2.ButtonText(bill.RepeatMode.LabelCap))
+                {
+                    //TODO: Move into utility class taking bill as param
+                    bill.DoRepeatModeConfig();
+                }
 
                 if (bill.RepeatMode == BillRepeatModeDefOf.RepeatCount)
                 {
@@ -68,7 +72,12 @@ internal static class CustomNetworkBillUtility
                     Text.Font = GameFont.Tiny;
                 }
 
-                if (listing3.ButtonText(text2)) bill.DoStoreModeConfig();
+                if (listing3.ButtonText(text2))
+                {
+                    //TODO: Move into utility class taking bill as param
+                    bill.DoStoreModeConfig();
+                }
+
                 Text.Font = GameFont.Small;
             }
             listing.EndSection(listing3);
@@ -87,7 +96,7 @@ internal static class CustomNetworkBillUtility
             payload = null
         };
         List<SlotGroup> groupList =
-            bill.billStack.ParentBuilding.Map.haulDestinationManager.AllGroupsListInPriorityOrder;
+            bill.Stack.ParentBuilding.Map.haulDestinationManager.AllGroupsListInPriorityOrder;
         var groupCount = groupList.Count;
         int num;
         for (var i = 0; i < groupCount; i = num)

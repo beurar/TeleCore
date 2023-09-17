@@ -6,20 +6,20 @@ namespace TeleCore;
 [StaticConstructorOnStartup]
 public static class TFind
 {
-    internal static GameObject teleRootHolder;
-    internal static TeleRoot mainRoot;
+    internal static readonly GameObject TeleRootHolder;
+    internal static readonly TeleRoot MainRoot;
 
     static TFind()
     {
-        teleRootHolder = new GameObject("TeleCoreHolder");
-        Object.DontDestroyOnLoad(teleRootHolder);
-        teleRootHolder.AddComponent<TeleRoot>();
+        TeleRootHolder = new GameObject("TeleCoreHolder");
+        Object.DontDestroyOnLoad(TeleRootHolder);
+        TeleRootHolder.AddComponent<TeleRoot>();
 
-        mainRoot = teleRootHolder.GetComponent<TeleRoot>();
+        MainRoot = TeleRootHolder.GetComponent<TeleRoot>();
         TLog.Message("TFind Ready!", TColor.Green);
     }
 
-    public static TeleRoot TeleRoot => mainRoot;
+    public static TeleRoot TeleRoot => MainRoot;
     public static TeleTickManager TickManager => TeleRoot.TickManager;
-    public static DiscoveryTable Discoveries => StaticData.TeleCoreWorldComp._discoveries;
+    public static DiscoveryTable Discoveries => StaticData.TeleWorldComp(Find.World.GetUniqueLoadID()).discoveries;
 }

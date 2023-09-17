@@ -10,27 +10,27 @@ namespace TeleCore.Network.Bills;
 
 public class NetworkBillStack : IExposable
 {
-    //
     public static readonly float MarketPriceFactor = 2.4f;
     public static readonly float WorkAmountFactor = 10;
 
-    //Temp Custom Bill
+    //Custom Bill Creation
     public int billID = 1;
     public string billName = "";
-    private List<CustomNetworkBill> bills = new();
-
-    //
-
-    //Details
-    private CustomNetworkBill detailsRequester;
     public Dictionary<CustomRecipeRatioDef, int> RequestedAmount = new();
     public string[] textBuffers;
+    
+    //Stack
+    private List<CustomNetworkBill> bills = new();
+
+    //Details
+    private CustomNetworkBill curDetailRequester;
 
     public NetworkBillStack(Comp_NetworkBillsCrafter parent)
     {
         ParentComp = parent;
         textBuffers = new string[Ratios.Count];
-        foreach (var recipe in Ratios) RequestedAmount.Add(recipe, 0);
+        foreach (var recipe in Ratios) 
+            RequestedAmount.Add(recipe, 0);
 
         ResetBillData();
     }
@@ -43,11 +43,6 @@ public class NetworkBillStack : IExposable
     //
     public Building ParentBuilding => ParentComp.parent;
     public Comp_NetworkBillsCrafter ParentComp { get; }
-
-    public IEnumerable<INetworkPart> ParentNetParts => UsedNetworks?.Select(n => ParentComp[n]) ?? null;
-
-    public IEnumerable<NetworkDef> UsedNetworks =>
-        CurrentBill?.networkCost.Values.Select(t => t.Def.NetworkDef)?.Distinct() ?? null;
 
     public List<CustomRecipeRatioDef> Ratios => ParentComp.Props.UsedRatioDefs;
 
@@ -74,10 +69,10 @@ public class NetworkBillStack : IExposable
         var totalCost = presetDefDef.desiredResources.Sum(t => (int) (t.Value * WorkAmountFactor));
         var customBill = new CustomNetworkBill(totalCost);
         customBill.billName = presetDefDef.defName;
-        customBill.networkCost = NetworkBillUtility.ConstructCustomCostStack(presetDefDef.desiredResources);
+        customBill.SetCost(NetworkBillUtility.ConstructCustomCostStack(presetDefDef.desiredResources));
         if (presetDefDef.HasByProducts)
             customBill.byProducts = NetworkBillUtility.ConstructCustomCostStack(presetDefDef.desiredResources, true);
-        customBill.billStack = this;
+        customBill.AssignToStack(this);
         customBill.results = presetDefDef.Results;
         bills.Add(customBill);
     }
@@ -88,12 +83,12 @@ public class NetworkBillStack : IExposable
 
         var customBill = new CustomNetworkBill(TotalWorkAmount);
         customBill.billName = billName;
-        customBill.networkCost = new DefValueStack<NetworkValueDef, double>(TotalCost);
+        customBill.SetCost(new DefValueStack<NetworkValueDef, double>(TotalCost));
 
         if (!ByProducts.IsEmpty)
             customBill.byProducts = new DefValueStack<NetworkValueDef, double>(ByProducts);
 
-        customBill.billStack = this;
+        customBill.AssignToStack(this);
         customBill.results = RequestedAmount.Where(m => m.Value > 0)
             .Select(m => new ThingDefCount(m.Key.result, m.Value)).ToList();
         bills.Add(customBill);
@@ -105,7 +100,7 @@ public class NetworkBillStack : IExposable
 
     public void PasteFromClipBoard(CustomNetworkBill clipBoardVal)
     {
-        clipBoardVal.billStack = this;
+        clipBoardVal.AssignToStack(this);
         bills.Add(clipBoardVal);
     }
 
@@ -130,23 +125,22 @@ public class NetworkBillStack : IExposable
     //Drawing
     public void TryDrawBillDetails(Rect detailRect)
     {
-        if (detailsRequester == null) return;
+        if (curDetailRequester == null) return;
         Find.WindowStack.ImmediateWindow(GetHashCode(), detailRect, WindowLayer.Dialog, () =>
         {
             detailRect = detailRect.AtZero();
             TWidgets.DrawColoredBox(detailRect, TColor.BGDarker, TColor.WindowBGBorderColor, 1);
-            CustomNetworkBillUtility.DrawDetails(detailRect.ContractedBy(5), detailsRequester);
+            CustomNetworkBillUtility.DrawDetails(detailRect.ContractedBy(5), curDetailRequester);
         }, false, false, 0);
     }
 
     public void RequestDetails(CustomNetworkBill customNetworkBill)
     {
-        if (detailsRequester == customNetworkBill)
+        if (curDetailRequester == customNetworkBill)
         {
-            detailsRequester = null;
+            curDetailRequester = null;
             return;
         }
-
-        detailsRequester = customNetworkBill;
+        curDetailRequester = customNetworkBill;
     }
 }

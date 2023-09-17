@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using RimWorld;
+using TeleCore.Network;
 using TeleCore.Network.Data;
 using UnityEngine;
 using Verse;
@@ -68,8 +69,7 @@ public class ITab_NetworkDebug : ITab
                 WidgetStackPanel.DrawDivider();
 
                 //
-                var adjacencyList = SelPart.Network.Graph.GetAdjacencyList(SelPart);
-                if (adjacencyList?.Count > 0)
+                if (SelPart.Network.Graph.TryGetAdjacencyList(SelPart, out var adjacencyList))
                 {
                     WidgetStackPanel.DrawRow("AdjacencyList: ", $"{adjacencyList?.Count}");
                     foreach (var part in adjacencyList) WidgetStackPanel.DrawRow("", $"{part}");

@@ -45,6 +45,14 @@ public class NetworkFlowSystem : FlowSystem<NetworkPart, NetworkVolume, NetworkV
         return new NetworkVolume(part.Config.volumeConfig);
     }
 
+    internal void Notify_NewNode(NetworkPart part)
+    {
+        if (part.Config.volumeConfig != null)
+        {
+            GenerateForOrGetVolume(part);
+        }
+    }
+    
     internal void Notify_Populate(NetEdge newEdge)
     {
         var edge = newEdge;
@@ -54,8 +62,8 @@ public class NetworkFlowSystem : FlowSystem<NetworkPart, NetworkVolume, NetworkV
             return;
         }
         if (edge.IsLogical) return;
-        var fb1 = GenerateForOrGet(edge.From);
-        var fb2 = GenerateForOrGet(edge.To);
+        var fb1 = GenerateForOrGetVolume(edge.From);
+        var fb2 = GenerateForOrGetVolume(edge.To);
         if (fb1 == null || fb2 == null)
         {
             TLog.Warning("Null volume created!");
@@ -68,7 +76,7 @@ public class NetworkFlowSystem : FlowSystem<NetworkPart, NetworkVolume, NetworkV
 
     internal void Notify_NetNodeRemoved(NetworkPart part)
     {
-        RemoveRelatedPart(part);
+        TryRemoveRelatedPart(part);
     }
     
     internal void Notify_Populate(NetworkGraph graph)
@@ -82,8 +90,8 @@ public class NetworkFlowSystem : FlowSystem<NetworkPart, NetworkVolume, NetworkV
                 continue;
             }
             if (edge.IsLogical) continue;
-            var fb1 = GenerateForOrGet(edge.From);
-            var fb2 = GenerateForOrGet(edge.To);
+            var fb1 = GenerateForOrGetVolume(edge.From);
+            var fb2 = GenerateForOrGetVolume(edge.To);
             if (fb1 == null || fb2 == null)
             {
                 TLog.Warning("Null volume created!");

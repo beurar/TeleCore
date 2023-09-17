@@ -9,16 +9,18 @@ namespace TeleCore;
 //Defines the logical ruleset for a network
 public class NetworkDef : FlowValueCollectionDef
 {
-    [Unsaved] private Graphic_Linked_NetworkStructureOverlay cachedOverlayGraphic;
+    [Unsaved] 
+    private Graphic_Linked_NetworkStructureOverlay cachedOverlayGraphic;
 
     //Cached Data
-    [Unsaved] private Graphic_LinkedNetworkStructure cachedTransmitterGraphic;
+    [Unsaved] 
+    private Graphic_LinkedNetworkStructure cachedTransmitterGraphic;
 
     //General Label
     public string containerLabel;
 
     //Structure Ruleset
-    public ThingDef controllerDef;
+    public ThingDef? controllerDef;
     public string labelShort;
     public GraphicData overlayGraphic;
 
