@@ -301,6 +301,15 @@ internal static class RenderPatches
         public static bool Prefix(ref Graphic __result, Graphic baseGraphic, ThingDef thingDef, Color ghostCol,
             ThingDef stuff = null)
         {
+            if (thingDef.HasModExtension<GraphicOverrideExtensions>())
+            {
+                var extension = thingDef.GetModExtension<GraphicOverrideExtensions>();
+                if (extension.ghostGraphic != null)
+                {
+                    __result = extension.ghostGraphic.Graphic;
+                    return false;
+                }
+            }
             //Network Pipe Ghost Graphic Fix
             if (baseGraphic.IsCustomLinked())
             {

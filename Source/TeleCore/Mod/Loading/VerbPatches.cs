@@ -10,7 +10,8 @@ internal static class VerbPatches
     {
         private static void Postfix(PawnRenderer __instance)
         {
-            if (__instance.pawn?.CurrentEffectiveVerb is Verb_Tele teleVerb) teleVerb.DrawVerb();
+            if (__instance.pawn?.CurrentEffectiveVerb is Verb_Tele teleVerb) 
+                teleVerb.DrawVerb();
         }
     }
 
