@@ -14,11 +14,11 @@ public class SubMenuCategoryDef : Def
 
 public class SubBuildMenu : Window, IExposable
 {
-    private static readonly Vector2 tabSize = new(118, 30);
-    private static readonly Vector2 searchBarSize = new(125, 25);
-    private static readonly float topBotMargin = 10f;
-    private static readonly float sideMargin = 3f;
-    private static readonly float iconSize = 30f;
+    private static readonly Vector2 Tab_Size = new(118, 30);
+    private static readonly Vector2 SeachBar_Size = new(125, 25);
+    private const float TB_Margin = 10f;
+    private const float LR_Margin = 3f;
+    private const float Icon_Size = 30f;
 
     //
     private readonly Dictionary<SubMenuGroupDef, SubMenuCategoryDef> cachedSelection = new();
@@ -116,8 +116,8 @@ public class SubBuildMenu : Window, IExposable
     public override void DoWindowContents(Rect inRect)
     {
         //
-        var searchBar = new Rect(new Vector2(inRect.xMax - searchBarSize.x, 0f), searchBarSize);
-        var favoritesRect = new Rect(searchBar.x - (searchBarSize.y + 4), searchBar.y, searchBarSize.y, searchBarSize.y)
+        var searchBar = new Rect(new Vector2(inRect.xMax - SeachBar_Size.x, 0f), SeachBar_Size);
+        var favoritesRect = new Rect(searchBar.x - (SeachBar_Size.y + 4), searchBar.y, SeachBar_Size.y, SeachBar_Size.y)
             .ContractedBy(2).Rounded();
         DoSearchBar(searchBar);
 
@@ -125,19 +125,19 @@ public class SubBuildMenu : Window, IExposable
         if (Widgets.ButtonImage(favoritesRect, TeleContent.Favorite_Filled)) favoriteMenuActive = !favoriteMenuActive;
 
         //SetupBG
-        var menuRect = new Rect(0f, searchBarSize.y, windowRect.width, 526f);
+        var menuRect = new Rect(0f, SeachBar_Size.y, windowRect.width, 526f);
         Widgets.DrawTextureRotated(menuRect, CurrentTexturePack.backGround, 0f);
         //Reduce Content Rect
-        menuRect = new Rect(sideMargin, menuRect.y + topBotMargin, menuRect.width - sideMargin,
-            menuRect.height - topBotMargin * 2);
+        menuRect = new Rect(LR_Margin, menuRect.y + TB_Margin, menuRect.width - LR_Margin,
+            menuRect.height - TB_Margin * 2);
         Widgets.BeginGroup(menuRect);
         {
             GroupSidebar(3);
-            var extraDes = new Rect(2, menuRect.height - 75, iconSize, iconSize);
+            var extraDes = new Rect(2, menuRect.height - 75, Icon_Size, Icon_Size);
             DrawDesignator(extraDes, DesignatorUtility.FindAllowedDesignator<Designator_Deconstruct>());
             extraDes.y = extraDes.yMax + 5;
             DrawDesignator(extraDes, DesignatorUtility.FindAllowedDesignator<Designator_Cancel>());
-            var DesignatorRect = new Rect(iconSize + sideMargin, 0f, menuRect.width - (iconSize + sideMargin),
+            var DesignatorRect = new Rect(Icon_Size + LR_Margin, 0f, menuRect.width - (Icon_Size + LR_Margin),
                 menuRect.height);
             Widgets.BeginGroup(DesignatorRect);
             {
@@ -175,7 +175,7 @@ public class SubBuildMenu : Window, IExposable
                     {
                         if (cat.isDevCategory && !DebugSettings.godMode) continue;
 
-                        var tabRect = new Rect(curXY, tabSize);
+                        var tabRect = new Rect(curXY, Tab_Size);
                         var clickRect = new Rect(tabRect.x + 5, tabRect.y, tabRect.width - 10, tabRect.height);
                         var tex = cat == SelectedCategoryDef || Mouse.IsOver(clickRect)
                             ? CurrentTexturePack.tabSelected
@@ -195,7 +195,7 @@ public class SubBuildMenu : Window, IExposable
                         Text.Font = GameFont.Tiny;
                         Text.Anchor = 0;
 
-                        AdjustXY(ref curXY, tabSize.x - 10f, tabSize.y, tabSize.x * 3);
+                        AdjustXY(ref curXY, Tab_Size.x - 10f, Tab_Size.y, Tab_Size.x * 3);
                         if (Widgets.ButtonInvisible(clickRect))
                         {
                             searchText = "";
@@ -204,7 +204,7 @@ public class SubBuildMenu : Window, IExposable
                     }
 
                     //
-                    XYEndCheck(ref curXY, tabSize.y, tabSize.x * 3, subCats.Count);
+                    XYEndCheck(ref curXY, Tab_Size.y, Tab_Size.x * 3, subCats.Count);
                     DrawSubThingGroup(new Rect(0f, curXY.y, DesignatorRect.width, DesignatorRect.height - curXY.y),
                         SelectedGroup, SelectedCategoryDef);
                 }
@@ -350,7 +350,7 @@ public class SubBuildMenu : Window, IExposable
             var groupDef = list[i];
             if (groupDef.isDevGroup && !DebugSettings.godMode) continue;
 
-            var partRect = new Rect(0f, yPos + (iconSize + 6) * i, iconSize, iconSize);
+            var partRect = new Rect(0f, yPos + (Icon_Size + 6) * i, Icon_Size, Icon_Size);
             var sel = Mouse.IsOver(partRect) || SelectedGroup == groupDef;
             GUI.color = sel ? Color.white : new Color(1f, 1f, 1f, 0.4f);
             Widgets.DrawTextureFitted(partRect, IconForGroup(groupDef), 1f);
@@ -493,7 +493,7 @@ public class SubBuildMenu : Window, IExposable
 
     #region Menu Toggle
 
-    public static void ToggleOpen(SubBuildMenuDef subMenuDef, bool opening)
+    public static void ToggleOpen(SubBuildMenuDef subMenuDef)
     {
         if (!StaticData.BUILDMENU_BY_DEF.TryGetValue(subMenuDef, out var window))
         {
@@ -501,7 +501,7 @@ public class SubBuildMenu : Window, IExposable
             StaticData.BUILDMENU_BY_DEF.Add(subMenuDef, window);
         }
 
-        if (window.IsOpen && !opening)
+        if (window.IsOpen)
         {
             window.lastPos = window.windowRect.center; // GUI.wind.center; //window.;
             window.Close();

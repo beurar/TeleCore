@@ -29,6 +29,7 @@ public class RoomNeighborSet
     
     public void Notify_AddAttachedNeighbor(RoomTracker neighbor)
     {
+        if(_attachedNghb.Contains(neighbor)) return;
         _attachedNghb.Add(neighbor);
     }
 

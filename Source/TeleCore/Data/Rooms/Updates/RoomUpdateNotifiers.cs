@@ -59,4 +59,17 @@ internal static class RoomUpdateNotifiers
             worker.Notify_ResetDirtyCell(cell);
         }
     }
+
+    public static void Notify_RoomUpdateGetCache(Room room, Map map)
+    {
+        if (CurrentWorker != null)
+        {
+            CurrentWorker.Notify_GetDirtyCache(room);
+        }
+        else
+        {
+            var worker = map.GetMapInfo<MapInformation_Rooms>().TrackerUpdater;
+            worker.Notify_GetDirtyCache(room);
+        }
+    }
 }

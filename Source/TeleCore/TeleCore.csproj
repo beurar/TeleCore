@@ -18,7 +18,7 @@
         <PackageIcon>TeleCore.jpg</PackageIcon>
         <Version>1.2.5</Version>
         <SignAssembly>false</SignAssembly>
-        <PackageVersion>1.9.4.4</PackageVersion>
+        <PackageVersion>1.9.5.6</PackageVersion>
         <Nullable>enable</Nullable>
         <Title>TeleCore</Title>
         <Copyright>Copyright © 2023 Maxim Switenko</Copyright>

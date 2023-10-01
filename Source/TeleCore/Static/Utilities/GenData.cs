@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
@@ -131,17 +132,45 @@ public static class GenData
     }
 
     /// <summary>
+    /// Get the first available room next to the thing.
     /// </summary>
     public static Room? GetRoomIndirect(this Thing thing)
     {
         var room = thing.GetRoom();
         if (room == null)
-            room = thing.CellsAdjacent8WayAndInside().Select(c => c.GetRoom(thing.Map)).First(r => r != null);
+        {
+            var cells = thing.CellsAdjacent8WayAndInside();
+            foreach (var c in cells)
+            {
+                room = c.GetRoom(thing.Map);
+                if (room != null)
+                {
+                    break;
+                }
+            }
+        }
         return room;
     }
 
     /// <summary>
-    ///     Get the desired <see cref="MapInformation" /> based on type of <typeparamref name="T" />.
+    /// Get all rooms around the thing.
+    /// </summary>
+    public static IEnumerable<Room> GetRoomsAround(this Thing thing)
+    {
+        var cells = thing.CellsAdjacent8WayAndInside();
+        foreach (var c in cells)
+        {
+            var room = c.GetRoom(thing.Map);
+            if (room != null)
+            {
+                yield return room;
+                break;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Get the desired <see cref="MapInformation" /> based on type of <typeparamref name="T" />.
     /// </summary>
     public static T GetMapInfo<T>(this Map map) where T : MapInformation
     {
@@ -178,7 +207,7 @@ public static class GenData
     
     public static RoomComponent GetRoomComp(this Room room, Type type)
     {
-        return room.RoomTracker()?.GetRoomComp(type);
+        return room.RoomTracker().GetRoomComp(type);
     }
 
     public static IEnumerable<Thing> OfType<T>(this ListerThings lister) where T : Thing
@@ -211,18 +240,18 @@ public static class GenData
         return def.category == ThingCategory.Building;
     }
 
+    public static bool IsRoomDivider(this ThingDef def)
+    {
+        return def.passability == Traversability.Impassable && def.Fillage == FillCategory.Full;
+    }
+    
     public static bool IsWall(this ThingDef def)
     {
         if (def.category != ThingCategory.Building) return false;
         if (!def.graphicData?.Linked ?? true) return false;
         return (def.graphicData.linkFlags & LinkFlags.Wall) != LinkFlags.None &&
                def.graphicData.linkType == LinkDrawerType.CornerFiller &&
-               def.fillPercent >= 1f &&
-               def.blockWind &&
-               def.coversFloor &&
-               def.castEdgeShadows &&
-               def.holdsRoof &&
-               def.blockLight;
+               def is { fillPercent: >= 1f, blockWind: true, coversFloor: true, castEdgeShadows: true, holdsRoof: true, blockLight: true };
     }
 
     public static bool TryGetComp<T>(this Thing thing, out T comp) where T : ThingComp
@@ -233,7 +262,6 @@ public static class GenData
             comp = thingWComps.GetComp<T>();
             return comp != null;
         }
-
         return false;
     }
 

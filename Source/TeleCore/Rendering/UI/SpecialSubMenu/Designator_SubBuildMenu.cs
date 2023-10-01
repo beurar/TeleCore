@@ -16,9 +16,9 @@ public class Designator_SubBuildMenu : Designator
     public override string Label => "Reset";
     public override string Desc => "Reset window position.";
 
-    public void Toggle_Menu(bool opening)
+    public void Toggle_Menu()
     {
-        SubBuildMenu.ToggleOpen(subMenuDef, opening);
+        SubBuildMenu.ToggleOpen(subMenuDef);
     }
 
     public override void ProcessInput(Event ev)

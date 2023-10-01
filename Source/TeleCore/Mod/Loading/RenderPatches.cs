@@ -298,15 +298,14 @@ internal static class RenderPatches
     [HarmonyPatch(nameof(GhostUtility.GhostGraphicFor))]
     public static class GhostUtilityGhostGraphicForPatch
     {
-        public static bool Prefix(ref Graphic __result, Graphic baseGraphic, ThingDef thingDef, Color ghostCol,
-            ThingDef stuff = null)
+        public static bool Prefix(ref Graphic __result, Graphic baseGraphic, ThingDef thingDef, Color ghostCol, ThingDef stuff = null)
         {
             if (thingDef.HasModExtension<GraphicOverrideExtensions>())
             {
                 var extension = thingDef.GetModExtension<GraphicOverrideExtensions>();
                 if (extension.ghostGraphic != null)
                 {
-                    __result = extension.ghostGraphic.Graphic;
+                    __result = GhostGraphicCopy(extension.ghostGraphic.Graphic, thingDef, ghostCol, stuff);
                     return false;
                 }
             }
@@ -336,6 +335,48 @@ internal static class RenderPatches
             }
 
             return true;
+        }
+
+        private static Graphic GhostGraphicCopy(Graphic? baseGraphic, ThingDef thingDef, Color ghostCol, ThingDef stuff = null)
+        {
+            var num = 0;
+            num = Gen.HashCombine(num, baseGraphic);
+            num = Gen.HashCombine(num, thingDef);
+            num = Gen.HashCombineStruct(num, ghostCol);
+            num = Gen.HashCombine(num, stuff);
+            if (!GhostUtility.ghostGraphics.TryGetValue(num, out var graphic))
+            {
+                if (thingDef.graphicData.Linked || thingDef.IsDoor)
+                {
+                    graphic = GraphicDatabase.Get<Graphic_Single>(thingDef.uiIconPath, ShaderTypeDefOf.EdgeDetect.Shader, thingDef.graphicData.drawSize, ghostCol);
+                }
+                else
+                {
+                    if (baseGraphic == null)
+                    {
+                        baseGraphic = thingDef.graphic;
+                    }
+                    GraphicData graphicData = null;
+                    if (baseGraphic.data != null)
+                    {
+                        graphicData = new GraphicData();
+                        graphicData.CopyFrom(baseGraphic.data);
+                        graphicData.shadowData = null;
+                    }
+                    string path = baseGraphic.path;
+                    Graphic_Appearances graphicAppearances;
+                    if ((graphicAppearances = (baseGraphic as Graphic_Appearances)) != null && stuff != null)
+                    {
+                        graphic = GraphicDatabase.Get<Graphic_Single>(graphicAppearances.SubGraphicFor(stuff).path, ShaderTypeDefOf.EdgeDetect.Shader, thingDef.graphicData.drawSize, ghostCol, Color.white, graphicData, null);
+                    }
+                    else
+                    {
+                        graphic = GraphicDatabase.Get(baseGraphic.GetType(), path, ShaderTypeDefOf.EdgeDetect.Shader, baseGraphic.drawSize, ghostCol, Color.white, graphicData, null, null);
+                    }
+                }
+                GhostUtility.ghostGraphics.Add(num, graphic);
+            }
+            return graphic;
         }
     }
 

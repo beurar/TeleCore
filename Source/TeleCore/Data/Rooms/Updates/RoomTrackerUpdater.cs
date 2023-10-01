@@ -9,13 +9,12 @@ namespace TeleCore.Rooms.Updates;
 public class RoomTrackerUpdater
 {
     private readonly RoomTracker?[] _trackerGrid;
-
-    //
+    
     private readonly List<DelayedRoomUpdate> delayedActions = new();
-    private readonly List<DelayedCacheAction> delayedCacheActions = new();
+    private readonly List<RegionStateChangedArgs> _delayedCacheReset = new();
+    private readonly List<RegionStateChangedArgs> _delayedCacheGet = new();
     private readonly MapInformation_Rooms parent;
-
-    //
+    
     private readonly List<Room> tempNewRooms = new();
     private readonly List<Room> tempReusedRooms = new();
     private int lastGameTick;
@@ -32,8 +31,7 @@ public class RoomTrackerUpdater
     {
         //Synchronize with game tick
         if ((!IsWorking || Find.TickManager.TicksGame <= lastGameTick) && !isManual) return;
-
-        //
+        
         for (var i = delayedActions.Count - 1; i >= 0; i--)
         {
             var action = delayedActions[i];
@@ -68,7 +66,8 @@ public class RoomTrackerUpdater
                 GlobalEventHandler.OnRoomReused(new RoomChangedArgs(RoomChangeType.Reused, action.Tracker));
             }
         }
-
+        
+        //Disbanded
         foreach (var action in delayedActions)
         {
             if (action.Type == RoomChangeType.Disbanded)
@@ -95,26 +94,53 @@ public class RoomTrackerUpdater
             }
         }
 
-        foreach (var action in delayedCacheActions)
+        foreach (var action in _delayedCacheGet)
         {
-            _trackerGrid[action.Index] = null;
+            //Ignore rooms added during delayed update scope
+            if(action.Room.Dereferenced) continue;
+            GlobalEventHandler.OnRegionStateGetRoomUpdate(action);
+        }
+        
+        foreach (var action in _delayedCacheReset)
+        {
+            _trackerGrid[action.Cell.Index(parent.Map)] = null;
+            GlobalEventHandler.OnRegionStateResetRoomUpdate(action);
         }
 
-        //
         IsWorking = false;
         delayedActions.Clear();
+        _delayedCacheReset.Clear();
+        _delayedCacheGet.Clear();
     }
 
     //Cache cells around recently spawned and despawned structures
     internal void Notify_CacheDirtyCell(IntVec3 cell, Region region)
     {
         _trackerGrid[parent.Map.cellIndices.CellToIndex(cell)] = parent[region.Room];
+        GlobalEventHandler.OnRegionStateCachedRoomUpdate(new RegionStateChangedArgs
+        {
+            Map = parent.Map,
+            Cell = cell,
+            Region = region
+        });
     }
 
     internal void Notify_ResetDirtyCell(IntVec3 cell)
     {
-        //_trackerGrid[parent.Map.cellIndices.CellToIndex(cell)] = null;
-        delayedCacheActions.Add(new DelayedCacheAction(cell, parent.Map.cellIndices.CellToIndex(cell)));
+        _delayedCacheReset.Add(new RegionStateChangedArgs
+        {
+            Map = parent.Map,
+            Cell = cell,
+        });
+    }
+
+    internal void Notify_GetDirtyCache(Room room)
+    {
+        _delayedCacheGet.Add(new RegionStateChangedArgs
+        {
+            Map = parent.Map,
+            Room = room,
+        });
     }
 
     internal void Notify_UpdateStarted()
@@ -154,13 +180,13 @@ public class RoomTrackerUpdater
             if (tracker.Room.Dereferenced)
                 delayedActions.Add(new DelayedRoomUpdate(RoomChangeType.Disbanded, tracker));
         }
-
-        //
+        
         lastGameTick = Find.TickManager.TicksGame;
         tempNewRooms.Clear();
         tempReusedRooms.Clear();
 
         //During map generation, update immediately
-        if (Current.ProgramState != ProgramState.Playing) Update(true);
+        if (Current.ProgramState != ProgramState.Playing) 
+            Update(true);
     }
 }

@@ -48,11 +48,19 @@ public static class GlobalEventHandler
     #endregion
 
     
-    #region Rooms
+    #region Rooms/Regions
 
     public static event RoomCreatedEvent RoomCreated;
     public static event RoomDisbandedEvent RoomDisbanded;
 
+    // public static event RegionStateEvent CachingRegionStateInfo;
+    // public static event RegionStateEvent ResettingRegionStateInfo;
+    // public static event RegionStateEvent GettingRegionStateInfo;
+    
+     public static event RegionStateEvent CachingRegionStateInfoRoomUpdate;
+    public static event RegionStateEvent ResettingRegionStateInfoRoomUpdate;
+    public static event RegionStateEvent GettingRegionStateInfoRoomUpdate;
+    
     #endregion
     
     public static event TerrainChangedEvent TerrainChanged;
@@ -191,7 +199,7 @@ public static class GlobalEventHandler
         }
         catch (Exception ex)
         {
-            TLog.Error($"Error trying to notify disbanded room.");
+            TLog.Error($"Error trying to notify disbanded room:\n{ex}");
         }
     }
     
@@ -203,10 +211,80 @@ public static class GlobalEventHandler
         }
         catch (Exception ex)
         {
-            TLog.Error($"Error trying to notify reused room.");
+            TLog.Error($"Error trying to notify reused room:\n{ex}");
+        }
+    }
+    
+    /*internal static void OnRegionStateCached(RegionStateChangedArgs args)
+    {
+        try
+        {
+            CachingRegionStateInfo?.Invoke(args);
+        }
+        catch (Exception ex)
+        {
+            TLog.Error($"Error trying to notify cached region state:\n{ex}");
+        }
+    }
+    
+    internal static void OnRegionStateReset(RegionStateChangedArgs args)
+    {
+        try
+        {
+            ResettingRegionStateInfo?.Invoke(args);
+        }
+        catch (Exception ex)
+        {
+            TLog.Error($"Error trying to notify reset region state:\n{ex}");
+        }
+    }
+    
+    internal static void OnRegionStateGet(RegionStateChangedArgs args)
+    {
+        try
+        {
+            GettingRegionStateInfo?.Invoke(args);
+        }
+        catch (Exception ex)
+        {
+            TLog.Error($"Error trying to notify get region state:\n{ex}");
+        }
+    }*/
+    internal static void OnRegionStateCachedRoomUpdate(RegionStateChangedArgs action)
+    {
+        try
+        {
+            CachingRegionStateInfoRoomUpdate?.Invoke(action);
+        }
+        catch (Exception ex)
+        {
+            TLog.Error($"Error trying to notify reset region state:\n{ex}");
         }
     }
 
-
+    internal static void OnRegionStateResetRoomUpdate(RegionStateChangedArgs action)
+    {
+        try
+        {
+            ResettingRegionStateInfoRoomUpdate?.Invoke(action);
+        }
+        catch (Exception ex)
+        {
+            TLog.Error($"Error trying to notify reset region state:\n{ex}");
+        }
+    }
+    
+    internal static void OnRegionStateGetRoomUpdate(RegionStateChangedArgs action)
+    {
+        try
+        {
+            GettingRegionStateInfoRoomUpdate?.Invoke(action);
+        }
+        catch (Exception ex)
+        {
+            TLog.Error($"Error trying to notify cached region state:\n{ex}");
+        }
+    }
+    
     #endregion
 }

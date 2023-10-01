@@ -1,5 +1,7 @@
 ﻿using System.Collections.Generic;
 using HarmonyLib;
+using TeleCore.Data.Events;
+using TeleCore.Events;
 using Verse;
 
 namespace TeleCore;
@@ -107,6 +109,12 @@ internal static class RoomUpdatePatches
         public static void Postfix(IntVec3 c, Region reg, Map ___map)
         {
             RoomUpdateNotifiers.Notify_RoomUpdateSetDirtyCell(c, reg, ___map);
+            // GlobalEventHandler.OnRegionStateCached(new RegionStateChangedArgs
+            // {
+            //     Map = ___map,
+            //     Cell = c,
+            //     Region = reg,
+            // });
         }
     }
 
@@ -117,14 +125,25 @@ internal static class RoomUpdatePatches
         public static void Postfix(IntVec3 c, Map ___map)
         {
             RoomUpdateNotifiers.Notify_RoomUpdateResetDirtyCell(c, ___map);
+            // GlobalEventHandler.OnRegionStateReset(new RegionStateChangedArgs
+            // {
+            //     Map = ___map,
+            //     Cell = c,
+            // });
         }
     }
 
     [HarmonyPatch(typeof(TemperatureCache), nameof(TemperatureCache.TryGetAverageCachedRoomTemp))]
     public static class TryGetAverageCachedRoomTempPatch
     {
-        public static void Postfix(Room r)
+        public static void Postfix(Room r, Map ___map)
         {
+            RoomUpdateNotifiers.Notify_RoomUpdateGetCache(r, ___map);
+            // GlobalEventHandler.OnRegionStateGet(new RegionStateChangedArgs
+            // {
+            //     Map = ___map,
+            //     Room = r,
+            // });
         }
     }
 

@@ -39,6 +39,7 @@ internal static class Translations
     internal static class Discovery
     {
         public static readonly string DiscoveryNew = "TELE.Discovery.New".Translate();
+        public static readonly string DiscoveryTab = "TELE.Discovery.Tab".Translate();
 
         public static TaggedString DiscoveryDesc(string discoveryDesc)
         {

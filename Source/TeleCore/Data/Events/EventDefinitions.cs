@@ -40,5 +40,8 @@ public delegate void MovedEventHandler(object sender, MovedEventArgs args);
 //Tele Specific
 public delegate void EntityTickedEvent();
 
+//Rooms/Regions
 public delegate void RoomCreatedEvent(RoomChangedArgs args);
 public delegate void RoomDisbandedEvent(RoomChangedArgs args);
+
+public delegate void RegionStateEvent(RegionStateChangedArgs args);
