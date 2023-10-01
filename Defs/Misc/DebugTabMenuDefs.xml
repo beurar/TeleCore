@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8" ?>
+<?xml version="1.0" encoding="utf-8" ?>
 <Defs>
 
 	<DebugTabMenuDef>
@@ -6,4 +6,5 @@
 		<label>Telecore</label>
 		<menuClass>TeleCore.DebugSettings_Telecore</menuClass>
 	</DebugTabMenuDef>
+	
 </Defs>

@@ -12,6 +12,24 @@ using Verse;
 
 namespace TeleCore.FlowCore;
 
+public abstract class FlowVolumeBase<T>
+{
+
+}
+
+public class FlowVolumeShared<T> : IExposable, INotifyFlowEvent where T : FlowValueDef
+{
+    public void ExposeData()
+    {
+    }
+
+    public event FlowEventHandler? FlowEvent;
+    public void OnFlowEvent(FlowEventArgs e)
+    {
+        
+    }
+}
+
 public class FlowVolume<T> : IExposable, INotifyFlowEvent where T : FlowValueDef
 {
     private FlowVolumeConfig<T> _config;
@@ -34,7 +52,7 @@ public class FlowVolume<T> : IExposable, INotifyFlowEvent where T : FlowValueDef
     public double FlowRate { get; set; }
     public double TotalValue => _mainStack.TotalValue;
     public virtual double MaxCapacity => _config.Volume;
-    public float FillPercent => (float) (TotalValue / MaxCapacity);
+    public float FillPercent => (float)(TotalValue / MaxCapacity);
 
     public bool Full => TotalValue >= MaxCapacity;
     public bool Empty => TotalValue <= Mathf.Epsilon;
