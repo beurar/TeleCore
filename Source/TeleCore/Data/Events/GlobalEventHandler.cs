@@ -32,7 +32,7 @@ public static class GlobalEventHandler
     {
         public static event NetworkVolumeStateChangedEvent<T> NetworkVolumeStateChanged;
         
-        public static void OnVolumeStateChange (FlowVolume<T> flowVolume, VolumeChangedEventArgs<T>.ChangedAction action)
+        public static void OnVolumeStateChange (FlowVolumeBase<T> flowVolume, VolumeChangedEventArgs<T>.ChangedAction action)
         {
             try
             {

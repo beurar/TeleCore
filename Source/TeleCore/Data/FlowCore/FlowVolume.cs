@@ -11,26 +11,7 @@ using UnityEngine;
 using Verse;
 
 namespace TeleCore.FlowCore;
-
-public abstract class FlowVolumeBase<T>
-{
-
-}
-
-public class FlowVolumeShared<T> : IExposable, INotifyFlowEvent where T : FlowValueDef
-{
-    public void ExposeData()
-    {
-    }
-
-    public event FlowEventHandler? FlowEvent;
-    public void OnFlowEvent(FlowEventArgs e)
-    {
-        
-    }
-}
-
-public class FlowVolume<T> : IExposable, INotifyFlowEvent where T : FlowValueDef
+public abstract class FlowVolumeBase<T> : IExposable, INotifyFlowEvent where T : FlowValueDef
 {
     private FlowVolumeConfig<T> _config;
     private DefValueStack<T, double> _mainStack;
@@ -51,11 +32,16 @@ public class FlowVolume<T> : IExposable, INotifyFlowEvent where T : FlowValueDef
 
     public double FlowRate { get; set; }
     public double TotalValue => _mainStack.TotalValue;
-    public virtual double MaxCapacity => _config.Volume;
     public float FillPercent => (float)(TotalValue / MaxCapacity);
 
     public bool Full => TotalValue >= MaxCapacity;
     public bool Empty => TotalValue <= Mathf.Epsilon;
+
+    #region Extendable
+
+    public virtual double MaxCapacity => _config.Volume;
+
+    #endregion
     
     public ContainerFillState FillState
     {
@@ -72,8 +58,13 @@ public class FlowVolume<T> : IExposable, INotifyFlowEvent where T : FlowValueDef
 
     public event FlowEventHandler? FlowEvent;
 
-    public FlowVolume()
+    public FlowVolumeBase()
     {
+    }
+    
+    public FlowVolumeBase(FlowVolumeConfig<T> config)
+    {
+        _config = config;
     }
 
     public void ExposeData()
@@ -86,11 +77,6 @@ public class FlowVolume<T> : IExposable, INotifyFlowEvent where T : FlowValueDef
     {
         _config = config;
         RegenColorState();
-    }
-    
-    public FlowVolume(FlowVolumeConfig<T> config)
-    {
-        _config = config;
     }
 
     #region EventHandling
@@ -105,7 +91,7 @@ public class FlowVolume<T> : IExposable, INotifyFlowEvent where T : FlowValueDef
     #region Data Getters
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public double CapacityOf(T? def)
+    public virtual double CapacityOf(T? def)
     {
         //TODO: add def specific capacity
         return MaxCapacity;
@@ -217,7 +203,6 @@ public class FlowVolume<T> : IExposable, INotifyFlowEvent where T : FlowValueDef
     #region FlowSystem
 
     //This stack stuff is tricky and mainly just for the FlowSystem
-    
     public DefValueStack<T, double> RemoveContent(double moveAmount)
     {
         moveAmount = Math.Abs(moveAmount);
@@ -478,4 +463,14 @@ public class FlowVolume<T> : IExposable, INotifyFlowEvent where T : FlowValueDef
     {
         return $"[{TotalValue}/{MaxCapacity}][{Stack.Values.Count}/{AllowedValues.Count}]";
     }
+}
+
+public class FlowVolume<T> : FlowVolumeBase<T> where T : FlowValueDef
+{
+    
+}
+
+public class FlowVolumeShared<T> : FlowVolumeBase<T> where T : FlowValueDef
+{
+    
 }

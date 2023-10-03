@@ -7,7 +7,7 @@ public class VolumeChangedEventArgs<TValue> : EventArgs
 where TValue : FlowValueDef
 {
     public ChangedAction Action { get; }
-    public FlowVolume<TValue> Volume { get; }
+    public FlowVolumeBase<TValue> Volume { get; }
     
     public enum ChangedAction
     {
@@ -18,7 +18,7 @@ where TValue : FlowValueDef
         Emptied
     }
 
-    public VolumeChangedEventArgs(ChangedAction action, FlowVolume<TValue> volume)
+    public VolumeChangedEventArgs(ChangedAction action, FlowVolumeBase<TValue> volume)
     {
         Action = action;
         Volume = volume;
