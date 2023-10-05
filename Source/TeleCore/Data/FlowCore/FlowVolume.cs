@@ -13,10 +13,10 @@ using Verse;
 namespace TeleCore.FlowCore;
 public abstract class FlowVolumeBase<T> : IExposable, INotifyFlowEvent where T : FlowValueDef
 {
-    private FlowVolumeConfig<T> _config;
-    private DefValueStack<T, double> _mainStack;
-    private DefValueStack<T, double> _prevStack;
-    private Color _totalColor;
+    protected FlowVolumeConfig<T> _config;
+    protected DefValueStack<T, double> _mainStack;
+    protected DefValueStack<T, double> _prevStack;
+    protected Color _totalColor;
 
     public Color Color => _totalColor;
     public DefValueStack<T, double> Stack => _mainStack;
@@ -57,10 +57,6 @@ public abstract class FlowVolumeBase<T> : IExposable, INotifyFlowEvent where T :
     }
 
     public event FlowEventHandler? FlowEvent;
-
-    public FlowVolumeBase()
-    {
-    }
     
     public FlowVolumeBase(FlowVolumeConfig<T> config)
     {
@@ -117,10 +113,15 @@ public abstract class FlowVolumeBase<T> : IExposable, INotifyFlowEvent where T :
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public bool IsFull(T def)
+    public virtual bool IsFull(T def)
     {
-        if (def.sharesCapacity) return StoredValueOf(def) >= CapacityOf(def);
         return FillState == ContainerFillState.Full;
+    }
+    
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    protected virtual double ExcessFor(T def, double amount)
+    {
+        return Math.Max(TotalValue + amount - MaxCapacity, 0);
     }
 
     #endregion
@@ -157,7 +158,7 @@ public abstract class FlowVolumeBase<T> : IExposable, INotifyFlowEvent where T :
     }
 
     /// <summary>
-    ///     Internal container state logic notifier.
+    /// Internal container state logic notifier.
     /// </summary>
     private void OnContainerStateChanged(double delta, bool updateMetaData = false)
     {
@@ -235,11 +236,13 @@ public abstract class FlowVolumeBase<T> : IExposable, INotifyFlowEvent where T :
     {
         Clear();
         foreach (var defVal in stack)
+        {
             _ = TryAdd(defVal.Def, defVal.Value);
+        }
     }
 
     /// <summary>
-    ///     Clears all values inside the container.
+    /// Clears all values inside the container.
     /// </summary>
     public void Clear()
     {
@@ -248,7 +251,7 @@ public abstract class FlowVolumeBase<T> : IExposable, INotifyFlowEvent where T :
     }
 
     /// <summary>
-    ///     Clears all values inside the container.
+    /// Clears all values inside the container.
     /// </summary>
     public void Fill(int toCapacity)
     {
@@ -334,12 +337,7 @@ public abstract class FlowVolumeBase<T> : IExposable, INotifyFlowEvent where T :
         result = TryAdd(def, value);
         return result;
     }
-
-    // public FlowResult<T, double> TryAddOrFail(T def, double amount)
-    // {
-    //     
-    // }
-
+    
     /// <summary>
     /// Tries to add as much as possible from a value.
     /// </summary>
@@ -349,8 +347,7 @@ public abstract class FlowVolumeBase<T> : IExposable, INotifyFlowEvent where T :
         if (!ValueOperationCheck(FlowOperation.Add, (def, amount), out var reason))
             return FlowResult<T, double>.InitFailed(def, amount, reason);
 
-        var excessValue = Math.Max(TotalValue + amount - MaxCapacity, 0);
-        var actual = amount - excessValue;
+        var actual = amount - ExcessFor(def, amount);
 
         //Note: Technically never possible as this implies a full container
         if (actual <= 0) 
@@ -393,19 +390,6 @@ public abstract class FlowVolumeBase<T> : IExposable, INotifyFlowEvent where T :
         //On the result, set actual removed value and resolve completion status
         return new FlowResult<T, double>(def, amount, actual);
     }
-    
-    /*public FlowResult<T, double> TryRemove(ICollection<DefValue<T, double>> values)
-    {
-    var result = new FlowResult<T, double>();
-    foreach (var value in values)
-    {
-        var tmp = TryRemove(value);
-        var val = tmp.FullDiff[0];
-        result.AddDiff(val.Def, val.ValueInt);
-    }
-
-    return result.Resolve().Complete();
-    }*/
 
     /// <summary>
     /// Tries to transfer a fixed DefValue, fails when the full amount cannot be transfered.
@@ -467,10 +451,31 @@ public abstract class FlowVolumeBase<T> : IExposable, INotifyFlowEvent where T :
 
 public class FlowVolume<T> : FlowVolumeBase<T> where T : FlowValueDef
 {
-    
+    public FlowVolume(FlowVolumeConfig<T> config) : base(config)
+    {
+    }
 }
 
 public class FlowVolumeShared<T> : FlowVolumeBase<T> where T : FlowValueDef
 {
+    public override double MaxCapacity => _config.capacity * AllowedValues.Count;
     
+    public override double CapacityOf(T? def)
+    {
+        return _config.capacity;
+    }
+    
+    public override bool IsFull(T def)
+    {
+        return StoredValueOf(def) >= CapacityOf(def);
+    }
+
+    protected override double ExcessFor(T def, double amount)
+    {
+        return Math.Max(StoredValueOf(def) + amount - CapacityOf(def), 0);;
+    }
+
+    public FlowVolumeShared(FlowVolumeConfig<T> config) : base(config)
+    {
+    }
 }
