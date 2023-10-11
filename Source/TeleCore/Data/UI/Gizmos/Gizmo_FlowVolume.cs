@@ -68,12 +68,14 @@ public class Gizmo_FlowVolume<T> : Gizmo where T : FlowValueDef
             //Right Click Input
             var curEvent = Event.current;
             if (Mouse.IsOver(rect) && curEvent.type == EventType.MouseDown && curEvent.button == 1)
+            {
                 if (DebugSettings.godMode)
                 {
                     var menu = new FloatMenu(RightClickFloatMenuOptions.ToList(), "Add NetworkValue", true);
                     menu.vanishIfMouseDistant = true;
                     Find.WindowStack.Add(menu);
                 }
+            }
         });
         return new GizmoResult(GizmoState.Clear);
     }

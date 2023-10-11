@@ -5,24 +5,24 @@ namespace TeleCore;
 
 public static class DefIDStack
 {
-    internal static ushort _MasterID;
-    internal static Dictionary<Def, ushort> _defToID;
-    internal static Dictionary<ushort, Def> _idToDef;
+    internal static int _MasterID;
+    internal static Dictionary<Def, int> _defToID;
+    internal static Dictionary<int, Def> _idToDef;
 
     static DefIDStack()
     {
-        _defToID = new Dictionary<Def, ushort>();
-        _idToDef = new Dictionary<ushort, Def>();
+        _defToID = new Dictionary<Def, int>();
+        _idToDef = new Dictionary<int, Def>();
     }
 
-    public static ushort ToID(Def def)
+    public static int ToID(Def def)
     {
         if (_defToID.TryGetValue(def, out var id)) return id;
         TLog.Warning($"Cannot find id for ({def.GetType()}){def}. Make sure to call base.PostLoad().");
         return def.index;
     }
 
-    public static TDef ToDef<TDef>(ushort id)
+    public static TDef ToDef<TDef>(int id)
         where TDef : Def
     {
         if (_idToDef.TryGetValue(id, out var def))
@@ -41,7 +41,9 @@ public static class DefIDStack
     {
         if (_defToID.ContainsKey(def))
         {
-            TLog.Warning($"{def} is already registered.");
+            //var trygetid = _defToID.TryGetValue(def);
+            //var trygetdef = _idToDef.TryGetValue(trygetid);
+            //TLog.Warning($"({def.GetType().FullName}){def} is already registered: {trygetdef?.defName}::{trygetid}.");
             return;
         }
 

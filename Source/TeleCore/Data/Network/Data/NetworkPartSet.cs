@@ -33,7 +33,7 @@ public class NetworkPartSetExtended : NetworkPartSet
     protected override void OnPartAdded(INetworkPart part)
     {
         //Controller
-        if ((part.Config.roles | NetworkRole.Controller) == NetworkRole.Controller) 
+        if ((part.Config.roles & NetworkRole.Controller) == NetworkRole.Controller) 
             Controller = part;
         if (!part.IsEdge)
             _tickSet.Add(part);

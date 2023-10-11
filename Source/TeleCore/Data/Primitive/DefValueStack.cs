@@ -14,8 +14,8 @@ public unsafe struct UnsafeDefValue<TDef, TValue>
     where TValue : unmanaged
 {
     [FieldOffset(0)] 
-    public ushort defID; //2 bytes
-    [FieldOffset(2)] 
+    public int defID; //4 bytes
+    [FieldOffset(4)] 
     public Numeric<TValue> _value; //Up to 8 bytes
 
     public UnsafeDefValue(Def def, Numeric<TValue> value)

@@ -20,6 +20,7 @@ public abstract class RoomComponent
     public Room Room => Parent.Room;
 
     public IReadOnlyCollection<Thing> ContainedPawns => Parent.ContainedPawns;
+    public virtual string ShortIdentifier => "Base";
     public bool Disbanded => Parent.IsDisbanded;
     public bool IsDoorway => Room.IsDoorway;
 
@@ -229,6 +230,8 @@ public abstract class RoomComponent
     
     public override string ToString()
     {
-        return $"{GetType().Name}[{Room.ID}]";
+        return $"{ShortIdentifier}[{Room.ID}][{OutOrInside}]";
     }
+    
+    private string OutOrInside => Parent.IsOutside ? "Outside" : "Inside";
 }

@@ -5,7 +5,7 @@ using Verse;
 
 namespace TeleCore.FlowCore;
 
-public class FlowVolumeConfig<T> : Editable where T : FlowValueDef
+public class FlowVolumeConfig<T> where T : FlowValueDef
 {
     private readonly List<T> _values = new();
     private bool isReady;

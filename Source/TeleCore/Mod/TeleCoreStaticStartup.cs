@@ -54,7 +54,7 @@ internal static class TeleCoreStaticStartup
         return duplicateTypes;
     }
     
-    private static void DefIDCheck()
+    private static void DefIDValidation()
     {
         var allDefs = LoadedModManager.RunningModsListForReading.SelectMany(pack => pack.AllDefs);
         //Runs ID check
@@ -70,7 +70,12 @@ internal static class TeleCoreStaticStartup
             }
         }
 
-        if (failed) TLog.Warning("Def ID check failed!");
+        if (failed) 
+            TLog.Warning("Def ID check failed!");
+        else
+        {
+            TLog.DebugSuccess("Successfully validated all Def IDs!");
+        }
     }
 
     private static void ApplyDefChangesPostLoad()
@@ -78,16 +83,20 @@ internal static class TeleCoreStaticStartup
         //Load Translation Libraries
         //LoadStaticTranslationLibraries();
 
-        DefIDCheck();
+        DefIDValidation();
 
         //
         var allInjectors = DefInjectors()?.ToArray();
-        TLog.Debug($"Injectors: {allInjectors.ToStringSafeEnumerable()}");
+        TLog.Debug("Executing Def Injectors...");
+        foreach (var injector in allInjectors)
+        {
+            TLog.Debug($"[Injector] {injector.GetType().Name}");
+        }
+        
         var skipInjectors = allInjectors is not {Length: > 0};
-
         var defs = LoadedModManager.RunningMods.SelectMany(s => s.AllDefs).ToArray();
-        TLog.Message(
-            $"Def ID Database check - Loaded IDs: {DefIDStack._MasterID} == {defs.Length}: {defs.Length - 1 == DefIDStack._MasterID}");
+        //TODO: Evaluate
+        //TLog.Message($"Def ID Database check - Loaded IDs: {DefIDStack._MasterID} == {defs.Length}: {defs.Length - 1 == DefIDStack._MasterID}");
         foreach (var def in defs)
         {
             var bDef = def as BuildableDef;
@@ -115,8 +124,7 @@ internal static class TeleCoreStaticStartup
                     injector.OnThingDefInject(tDef);
 
                     //Pawn Check
-                    if (tDef?.thingClass != null &&
-                        (tDef.thingClass == typeof(Pawn) || tDef.thingClass.IsSubclassOf(typeof(Pawn))))
+                    if (tDef?.thingClass != null && (tDef.thingClass == typeof(Pawn) || tDef.thingClass.IsSubclassOf(typeof(Pawn))))
                     {
                         tDef.comps ??= new List<CompProperties>();
                         injector.OnPawnInject(tDef);

@@ -74,17 +74,21 @@ internal static class InjectPatches
         [HarmonyTargetMethods]
         public static IEnumerable<MethodInfo> TargetMethods()
         {
-            yield return AccessTools.Method(typeof(Def), "PostLoad");
-            yield return AccessTools.Method(typeof(PawnKindDef), "PostLoad");
-            yield return AccessTools.Method(typeof(ThingStyleDef), "PostLoad");
-            yield return AccessTools.Method(typeof(BodyPartDef), "PostLoad");
-            yield return AccessTools.Method(typeof(FactionDef), "PostLoad");
-            yield return AccessTools.Method(typeof(ThingCategoryDef), "PostLoad");
-
-            yield return AccessTools.Method(typeof(SongDef), "PostLoad");
-            yield return AccessTools.Method(typeof(SkillDef), "PostLoad");
-            yield return AccessTools.Method(typeof(AbilityDef), "PostLoad");
-            yield return AccessTools.Method(typeof(MechWorkModeDef), "PostLoad");
+            // yield return AccessTools.Method(typeof(Def), "PostLoad");
+            // yield return AccessTools.Method(typeof(PawnKindDef), "PostLoad");
+            // yield return AccessTools.Method(typeof(ThingStyleDef), "PostLoad");
+            // yield return AccessTools.Method(typeof(BodyPartDef), "PostLoad");
+            // yield return AccessTools.Method(typeof(FactionDef), "PostLoad");
+            // yield return AccessTools.Method(typeof(ThingCategoryDef), "PostLoad");
+            //
+            // yield return AccessTools.Method(typeof(SkillDef), "PostLoad");
+            // yield return AccessTools.Method(typeof(AbilityDef), "PostLoad");
+            // yield return AccessTools.Method(typeof(MechWorkModeDef), "PostLoad");
+            
+            foreach (var type in typeof(Def).AllSubclasses().Concat(typeof(Def)))
+            {
+                yield return AccessTools.Method(type, nameof(Def.PostLoad));
+            }
         }
 
         public static void Postfix(Def __instance)

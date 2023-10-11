@@ -48,7 +48,7 @@ public static class TeleContentDB
                 return;
             }
             
-            TLog.Debug($"Successfully loaded AssetBundle: {Path.GetFileName(file)}");
+            TLog.DebugSuccess($"Successfully loaded AssetBundle: {Path.GetFileName(file)}");
             
             assetBundles.Add(bundle);
             foreach (var name in bundle.GetAllAssetNames())

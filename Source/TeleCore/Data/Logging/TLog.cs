@@ -35,6 +35,11 @@ internal static class TLog
         if (flag) Log.Message($"{"[TELE-Debug]".Colorize(TColor.Green)} {msg}");
     }
 
+    public static void DebugSuccess(string msg)
+    {
+        Log.Message($"{"[TELE-Debug]".Colorize(Color.green)} {msg}");
+    }
+
     public static void DebugOnce(string msg, int hash)
     {
         var obj = Log.logLock;

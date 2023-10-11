@@ -11,11 +11,11 @@ public unsafe struct StaticValue<TDef, TValue>
     where TDef : Def
     where TValue : unmanaged
 {
-    private ushort _defID = 0;
+    private int _defID = 0;
     private Numeric<TValue> _value;
     private Numeric<TValue> _overflow;
     
-    public ushort DefID => _defID;
+    public int DefID => _defID;
     public TDef Def => _defID.ToDef<TDef>();
     
     public Numeric<TValue> Value
@@ -39,13 +39,13 @@ public unsafe struct StaticValue<TDef, TValue>
     {
     }
     
-    public StaticValue(ushort defID, TValue value)
+    public StaticValue(int defID, TValue value)
     {
         this._defID = defID;
         this._value = value;
     }
     
-    public StaticValue(ushort defID, TValue value, TValue overflow)
+    public StaticValue(int defID, TValue value, TValue overflow)
     {
         this._defID = defID;
         this._value = value;
@@ -198,7 +198,7 @@ public unsafe class StaticStackGrid<TDef, TValue>
     
     #region Public Safe Accessors
 
-    public float DensityPercentAt(int index, ushort defID)
+    public float DensityPercentAt(int index, int defID)
     {
         return (DensityAt(index, defID) / MaxDensityPerCellFor(defID.ToDef<TDef>())).AsPercent;
     }
