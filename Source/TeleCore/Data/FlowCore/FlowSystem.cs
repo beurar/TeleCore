@@ -13,7 +13,7 @@ namespace TeleCore.FlowCore;
 
 public abstract class FlowSystem<TAttach, TVolume, TValueDef> : IDisposable
     where TValueDef : FlowValueDef
-    where TVolume : FlowVolume<TValueDef>
+    where TVolume : FlowVolumeBase<TValueDef>
 {
     private readonly List<TVolume> _volumes;
     private readonly List<FlowInterface<TAttach, TVolume, TValueDef>> _interfaces;

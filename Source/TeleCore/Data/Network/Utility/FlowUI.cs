@@ -31,7 +31,7 @@ public static class FlowUI<T> where T : FlowValueDef
         return size;
     }*/
 
-    public static Vector2 GetFlowBoxReadoutSize(FlowVolume<T> fb)
+    public static Vector2 GetFlowBoxReadoutSize(FlowVolumeBase<T> fb)
     {
         var size = new Vector2(10, 10);
         var stack = fb.Stack;
@@ -91,7 +91,7 @@ public static class FlowUI<T> where T : FlowValueDef
         return height;
     }
     
-    public static float DrawFlowBoxReadout(Rect rect, FlowVolume<T> fb)
+    public static float DrawFlowBoxReadout(Rect rect, FlowVolumeBase<T> fb)
     {
         float height = 5;
         Widgets.DrawMenuSection(rect);
@@ -135,7 +135,7 @@ public static class FlowUI<T> where T : FlowValueDef
         return height;
     }
 
-    public static List<FloatMenuOption> DebugFloatMenuOptions(FlowVolume<T> fv)
+    public static List<FloatMenuOption> DebugFloatMenuOptions(FlowVolumeBase<T> fv)
     {
         var tempList = StaticListHolder<FloatMenuOption>.RequestList($"FlowMenuOptions_{fv.GetHashCode()}");
         
@@ -159,20 +159,20 @@ public static class FlowUI<T> where T : FlowValueDef
     }
     
     [SyncMethod]
-    private static void Debug_AddAll(FlowVolume<T> fb, double part)
+    private static void Debug_AddAll(FlowVolumeBase<T> fb, double part)
     {
         foreach (var type in fb.AllowedValues)
             fb.TryAdd(type, part);
     }
 
     [SyncMethod]
-    private static void Debug_Clear(FlowVolume<T> fv)
+    private static void Debug_Clear(FlowVolumeBase<T> fv)
     {
         fv.Clear();
     }
 
     [SyncMethod]
-    private static void Debug_AddType(FlowVolume<T> fv, T type, double part)
+    private static void Debug_AddType(FlowVolumeBase<T> fv, T type, double part)
     {
         fv.TryAdd(type, part);
     }

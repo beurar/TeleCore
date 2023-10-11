@@ -12,7 +12,7 @@ public enum InterfaceFlowMode
 
 public class FlowInterface<TAttach, TVolume, TValueDef>
 where TValueDef : FlowValueDef
-where TVolume : FlowVolume<TValueDef>
+where TVolume : FlowVolumeBase<TValueDef>
 {
     public double NextFlow { get; set; } = 0;
     public double PrevFlow { get; set; } = 0;

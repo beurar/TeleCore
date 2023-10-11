@@ -13,9 +13,12 @@ Direct3D:
     Driver:   31.0.15.3179
 Begin MonoManager ReloadAssembly
 - Completed reload, in  2.188 seconds
-<RI> Initializing input.
-<RI> Input initialized.
-<RI> Initialized touch support.
+<RI> Initializing input.
+
+<RI> Input initialized.
+
+<RI> Initialized touch support.
+
 UnloadTime: 0.870600 ms
 RimWorld 1.4.3704 rev896
 Mod  is missing supported versions list in About.xml! (example: <supportedVersions><li>1.0</li></supportedVersions>) 
@@ -45,7 +48,7 @@ Fallback handler could not load library C:/Program Files (x86)/Steam/steamapps/c
 
 <color=#2BBDFFFF>[TELE]</color> ArchonexusVictorySong is already registered. 
 (Filename: C:\buildslave\unity\build\Runtime/Export/Debug/Debug.bindings.h Line: 39)
-
+TAC
 <color=#2BBDFFFF>[TELE]</color> Startup Init...
 <color=#2BBDFFFF>[TELE]</color> Multiplayer: Disabled
 <color=#29B573FF>[TELE-Debug]</color> Injectors: TAE.PawnCompInjection, NMO.Oxygen.OxygenDefInjection
@@ -65,12 +68,12 @@ Fallback handler could not load library C:/Program Files (x86)/Steam/steamapps/c
 <color=#2BBDFFFF>[TELE]</color> Could not load shader 'GasGridCompute' 
 (Filename: C:\buildslave\unity\build\Runtime/Export/Debug/Debug.bindings.h Line: 39)
 
-<color=#2BBDFFFF>[TELE]</color> Could not load shader 'GlowFlooder' 
-(Filename: C:\buildslave\unity\build\Runtime/Export/Debug/Debug.bindings.h Line: 39)
-
-<color=#0078C8FF>[TAE]</color> Loading AssetBundle
-<color=#0078C8FF>[TAE]</color> - [assets/atmospheric/customoverlayworld.mat]
-<color=#0078C8FF>[TAE]</color> - [assets/atmospheric/shaders/customoverlay.shader]
+<color=#2BBDFFFF>[TACE]</color> Could not load shader 'GlowFlooder' 
+(Filename: C:\builTACave\unity\build\Runtime/Export/Debug/Debug.bindings.h Line: 39)
+TAC
+<color=#0078C8FF>[TAC]</color> Loading AssetBundle
+<color=#0078C8FF>[TAC]</color> - [assets/atmospheric/customoverlayworld.mat]
+<color=#0078C8FF>[TAC]</color> - [assets/atmospheric/shaders/customoverlay.shader]
 <color=#0078C8FF>[TAE]</color> - [assets/atmospheric/shaders/instancedgas.shader]
 <color=#0078C8FF>[TAE]</color> - [assets/atmospheric/shaders/textureblend.shader]
 <color=#0078C8FF>[TAE]</color> Could not load shader 'GasGridCompute' 
@@ -99,7 +102,7 @@ Initializing new game with mods:
 <color=#2BBDFFFF>[TELE]</color> RegenerateListerThings took 3ms
 <color=#2BBDFFFF>[TELE]</color> RegenerateListerThings took 0ms
 <color=#2BBDFFFF>[TELE]</color> RegenerateListerThings took 0ms
-<color=#2BBDFFFF>[TELE]</color> RegenerateListerThings took 3ms
+<color=#2BBDFFFF>[TACE]</color> RegenerateListerThings took 3ms
 <color=#2BBDFFFF>[TELE]</color> RegenerateListerThings took 0ms
 <color=#2BBDFFFF>[TELE]</color> RegenerateListerThings took 0ms
 <color=#0078C8FF>[TAE]</color> Regenerating map info...

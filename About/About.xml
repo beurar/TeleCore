@@ -2,7 +2,7 @@
 <ModMetaData>
 	<name>TeleCore</name>
 	<author>Telefonmast</author>
-	<packageId>Telefonmast.TeleCore</packageId>
+	<packageId>telefonmast.core</packageId>
 	<supportedVersions>
 		<li>1.4</li>
 	</supportedVersions>

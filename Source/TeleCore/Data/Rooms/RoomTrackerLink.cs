@@ -5,7 +5,7 @@ using Verse;
 
 namespace TeleCore;
 
-//TODO: Implement Workers and replace AtmosphericPortal in TAE
+//TODO: Implement Workers and replace AtmosphericPortal in TAC
 public abstract class RoomPortalWorker
 {
     protected RoomTrackerLink parent;

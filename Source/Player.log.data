@@ -13,9 +13,12 @@ Direct3D:
     Driver:   31.0.15.2802
 Begin MonoManager ReloadAssembly
 - Completed reload, in  0.064 seconds
-<RI> Initializing input.
-<RI> Input initialized.
-<RI> Initialized touch support.
+<RI> Initializing input.
+
+<RI> Input initialized.
+
+<RI> Initialized touch support.
+
 UnloadTime: 0.903500 ms
 RimWorld 1.4.3662 rev604
 Mod  is missing supported versions list in About.xml! (example: <supportedVersions><li>1.0</li></supportedVersions>) 
@@ -576,12 +579,12 @@ Could not load shader 'FlowMapOnBlend'
 Could not load shader 'GasGridCompute' 
 (Filename: C:\buildslave\unity\build\Runtime/Export/Debug/Debug.bindings.h Line: 39)
 
-Could not load shader 'GlowFlooder' 
-(Filename: C:\buildslave\unity\build\Runtime/Export/Debug/Debug.bindings.h Line: 39)
-
-<color=#0078C8FF>[TAE]</color> Loading AssetBundle
-<color=#0078C8FF>[TAE]</color> - [assets/atmospheric/customoverlayworld.mat]
-<color=#0078C8FF>[TAE]</color> - [assets/atmospheric/shaders/customoverlay.shader]
+Could not load shaTAC 'GlowFlooder' 
+(Filename: C:\builTACave\unity\build\Runtime/Export/Debug/Debug.bindings.h Line: 39)
+TAC
+<color=#0078C8FF>[TAC]</color> Loading AssetBundle
+<color=#0078C8FF>[TAC]</color> - [assets/atmospheric/customoverlayworld.mat]
+<color=#0078C8FF>[TAC]</color> - [assets/atmospheric/shaders/customoverlay.shader]
 <color=#0078C8FF>[TAE]</color> - [assets/atmospheric/shaders/instancedgas.shader]
 <color=#0078C8FF>[TAE]</color> - [assets/atmospheric/shaders/textureblend.shader]
 <color=#0078C8FF>[TAE]</color> Could not load shader 'GasGridCompute' 

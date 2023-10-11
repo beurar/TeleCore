@@ -82,6 +82,18 @@ public class SubBuildMenu : Window, IExposable
     public override Vector2 InitialSize => new(400, 550);
     public override float Margin => 8;
 
+    public override void Close(bool doCloseSound = true)
+    {
+        this.lastPos = this.windowRect.center; // GUI.wind.center; //window.;
+        base.Close(doCloseSound);
+    }
+
+    public override void PostOpen()
+    {
+        this.windowRect.center = this.lastPos;
+        base.PostOpen();
+    }
+
     public void ExposeData()
     {
         //
@@ -503,13 +515,11 @@ public class SubBuildMenu : Window, IExposable
 
         if (window.IsOpen)
         {
-            window.lastPos = window.windowRect.center; // GUI.wind.center; //window.;
             window.Close();
         }
         else
         {
             Find.WindowStack.Add(window);
-            window.windowRect.center = window.lastPos;
         }
     }
 

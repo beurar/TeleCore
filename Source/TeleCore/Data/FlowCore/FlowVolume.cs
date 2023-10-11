@@ -40,6 +40,7 @@ public abstract class FlowVolumeBase<T> : IExposable, INotifyFlowEvent where T :
     #region Extendable
 
     public virtual double MaxCapacity => _config.Volume;
+    public virtual double CapacityPerType => _config.Volume;
 
     #endregion
     
@@ -57,6 +58,10 @@ public abstract class FlowVolumeBase<T> : IExposable, INotifyFlowEvent where T :
     }
 
     public event FlowEventHandler? FlowEvent;
+    
+    public FlowVolumeBase()
+    {
+    }
     
     public FlowVolumeBase(FlowVolumeConfig<T> config)
     {
@@ -90,7 +95,7 @@ public abstract class FlowVolumeBase<T> : IExposable, INotifyFlowEvent where T :
     public virtual double CapacityOf(T? def)
     {
         //TODO: add def specific capacity
-        return MaxCapacity;
+        return CapacityPerType;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -121,7 +126,7 @@ public abstract class FlowVolumeBase<T> : IExposable, INotifyFlowEvent where T :
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     protected virtual double ExcessFor(T def, double amount)
     {
-        return Math.Max(TotalValue + amount - MaxCapacity, 0);
+        return Math.Max(TotalValue + amount - CapacityPerType, 0);
     }
 
     #endregion
@@ -302,7 +307,7 @@ public abstract class FlowVolumeBase<T> : IExposable, INotifyFlowEvent where T :
         return true;
     }
 
-    private static bool CanTransferTo(FlowVolume<T> other, T def, double value, out FlowFailureReason flowFailureReason)
+    private static bool CanTransferTo(FlowVolumeBase<T> other, T def, double value, out FlowFailureReason flowFailureReason)
     {
         flowFailureReason = FlowFailureReason.None;
         var total = other.TotalValue;
@@ -394,7 +399,7 @@ public abstract class FlowVolumeBase<T> : IExposable, INotifyFlowEvent where T :
     /// <summary>
     /// Tries to transfer a fixed DefValue, fails when the full amount cannot be transfered.
     /// </summary>
-    public FlowResult<T, double> TryTransferOrFail(FlowVolume<T> other, DefValue<T, double> value) //ALL OR NOTHING
+    public FlowResult<T, double> TryTransferOrFail(FlowVolumeBase<T> other, DefValue<T, double> value) //ALL OR NOTHING
     {
         if (CanTransferTo(other, value.Def, value.Value, out FlowFailureReason reason))
         {
@@ -411,7 +416,7 @@ public abstract class FlowVolumeBase<T> : IExposable, INotifyFlowEvent where T :
     /// <summary>
     /// Tries to transfer as much as possible.
     /// </summary>
-    public FlowResult<T, double> TryTransfer(FlowVolume<T> other, DefValue<T, double> value) //AS MUCH AS POSSIBLE
+    public FlowResult<T, double> TryTransfer(FlowVolumeBase<T> other, DefValue<T, double> value) //AS MUCH AS POSSIBLE
     {
         var remResult = TryRemove(value.Def, value.Value);
         if (remResult)
@@ -451,6 +456,10 @@ public abstract class FlowVolumeBase<T> : IExposable, INotifyFlowEvent where T :
 
 public class FlowVolume<T> : FlowVolumeBase<T> where T : FlowValueDef
 {
+    public FlowVolume() : base()
+    {
+    }
+    
     public FlowVolume(FlowVolumeConfig<T> config) : base(config)
     {
     }
