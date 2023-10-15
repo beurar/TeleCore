@@ -26,6 +26,11 @@ public class FlowValueDef : Def
     //Runtime
     public float FlowRate => 1f / viscosity;
 
+    public string ToUnitString(double value)
+    {
+        return $"{value}{valueUnit}";
+    }
+    
     public override IEnumerable<string> ConfigErrors()
     {
         foreach (var error in base.ConfigErrors()) yield return error;
