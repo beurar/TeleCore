@@ -90,7 +90,8 @@ internal static class TeleCoreStaticStartup
         TLog.Debug("Executing Def Injectors...");
         foreach (var injector in allInjectors)
         {
-            TLog.Debug($"[Injector] {injector.GetType().Name}");
+            var type = injector.GetType();
+            TLog.Debug($"[Injector] {type.Assembly.FullName}.{type.Name}");
         }
         
         var skipInjectors = allInjectors is not {Length: > 0};

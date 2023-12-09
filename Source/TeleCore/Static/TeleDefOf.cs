@@ -21,10 +21,6 @@ public static class TeleDefOf
     //
     public static ThingDef PortableContainer;
 
-    //
-    public static TerrainDef ChromaKeyGreen;
-    public static TerrainDef ChromaKeyBlue;
-
     //Research
     public static LetterDef DiscoveryLetter;
 }

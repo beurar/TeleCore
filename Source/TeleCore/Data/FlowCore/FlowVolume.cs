@@ -28,6 +28,8 @@ public abstract class FlowVolumeBase<TValue> : IExposable, INotifyFlowEvent wher
         set => _prevStack = value;
     }
 
+    public FlowVolumeConfig<TValue> Config => _config;
+    
     public TValue MainValueDef => _mainStack.Values.MaxBy(c => (double)c.Value).Def;
     public IReadOnlyCollection<TValue> AllowedValues => _config.AllowedValues;
 
@@ -209,6 +211,34 @@ public abstract class FlowVolumeBase<TValue> : IExposable, INotifyFlowEvent wher
 
     #region FlowSystem
 
+    public FlowResultStack<TValue> TryTake(DefValueStack<TValue, double> stack)
+    {
+        var result = FlowResultStack<TValue>.Init(stack, FlowOperation.Remove);
+        foreach (var value in stack)
+        {
+            var subResult = TryRemove(value.Def, value.Value);
+            if (subResult)
+            {
+                result.AddResult(subResult);
+            }
+        }
+        return result;
+    }
+    
+    public FlowResultStack<TValue> TryInsert(DefValueStack<TValue, double> stack)
+    {
+        var result = FlowResultStack<TValue>.Init(stack, FlowOperation.Add);
+        foreach (var value in stack)
+        {
+            var subResult = TryAdd(value.Def, value.Value);
+            if (subResult)
+            {
+                result.AddResult(subResult);
+            }
+        }
+        return result;
+    }
+    
     //This stack stuff is tricky and mainly just for the FlowSystem
     public DefValueStack<TValue, double> RemoveContent(double moveAmount)
     {
@@ -237,6 +267,12 @@ public abstract class FlowVolumeBase<TValue> : IExposable, INotifyFlowEvent wher
     }
 
     #endregion
+
+    public void SetDirect(DefValueStack<TValue, double> stack)
+    {
+        _mainStack = stack;
+        RegenColorState();
+    }
     
     public void LoadFromStack(DefValueStack<TValue, double> stack)
     {
@@ -349,6 +385,9 @@ public abstract class FlowVolumeBase<TValue> : IExposable, INotifyFlowEvent wher
     /// </summary>
     public FlowResult<TValue, double> TryAdd(TValue def, double amount)
     {
+        if(_config.infiniteSource) 
+            return new FlowResult<TValue, double>(def, amount, amount);
+        
         //Lazy sanity checks for failure
         if (!ValueOperationCheck(FlowOperation.Add, (def, amount), out var reason))
             return FlowResult<TValue, double>.InitFailed(def, amount, reason);
@@ -378,6 +417,9 @@ public abstract class FlowVolumeBase<TValue> : IExposable, INotifyFlowEvent wher
     
     public FlowResult<TValue, double> TryRemove(TValue def, double amount) //TValue valueDef, int value
     {
+        if(_config.infiniteSource) 
+            return new FlowResult<TValue, double>(def, amount, Math.Min(amount, StoredValueOf(def)));
+        
         //Lazy sanity checks for failure
         if (!ValueOperationCheck(FlowOperation.Remove, (def, amount), out var reason))
             return FlowResult<TValue, double>.InitFailed(def, amount, reason);
@@ -463,6 +505,7 @@ public abstract class FlowVolumeBase<TValue> : IExposable, INotifyFlowEvent wher
 
 public class FlowVolume<T> : FlowVolumeBase<T> where T : FlowValueDef
 {
+    
     public FlowVolume() : base()
     {
     }

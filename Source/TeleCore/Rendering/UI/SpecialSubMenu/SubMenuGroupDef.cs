@@ -6,15 +6,25 @@ namespace TeleCore;
 public class SubMenuGroupDef : Def
 {
     public string groupIconPath;
-
     public bool isDevGroup = false;
-
     public List<SubMenuCategoryDef> subCategories;
+    public SubBuildMenuDef parentDef;
 
     //Pack Def | BuildMenu | Des | Des_Sel | Tab | Tab_Sel
     public string subPackPath;
 
-    [field: Unsaved] public DesignationTexturePack TexturePack { get; private set; }
+    [field: Unsaved] 
+    public DesignationTexturePack TexturePack { get; private set; }
+
+    public override void ResolveReferences()
+    {
+        base.ResolveReferences();
+        if (parentDef != null)
+        {
+            if(parentDef.subMenus!=null && parentDef.subMenus.Contains(this)) return;
+            parentDef.subMenus.Add(this);
+        }
+    }
 
     public override void PostLoad()
     {

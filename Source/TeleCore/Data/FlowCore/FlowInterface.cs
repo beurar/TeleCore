@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using TeleCore.Primitive;
+using UnityEngine;
 using Verse;
 
 namespace TeleCore.FlowCore;
@@ -14,9 +15,14 @@ public class FlowInterface<TAttach, TVolume, TValueDef>
 where TValueDef : FlowValueDef
 where TVolume : FlowVolumeBase<TValueDef>
 {
-    public double NextFlow { get; set; } = 0;
-    public double PrevFlow { get; set; } = 0;
-    public double Move { get; set; } = 0;
+    // public double NextFlow { get; set; } = 0;
+    // public double PrevFlow { get; set; } = 0;
+    // public double Move { get; set; } = 0;
+    
+    public DefValueStack<TValueDef, double> NextFlow { get; set; }
+    public DefValueStack<TValueDef, double> PrevFlow { get; set; }
+    public DefValueStack<TValueDef, double> Move { get; set; }
+    
     
     public double FlowRate { get; set; }
 
@@ -56,13 +62,13 @@ where TVolume : FlowVolumeBase<TValueDef>
         Mode = mode;
     }
 
-    public void UpdateBasedOnFlow(double flow)
-    {
-        if (flow < 0)
-        {
-            (From, To) = (To, From);
-        }
-    }
+    // public void SetDirectionBasedOnFlow(double flow)
+    // {
+    //     if (flow < 0)
+    //     {
+    //         (From, To) = (To, From);
+    //     }
+    // }
 
     public bool ShouldFlow(TVolume from, TVolume to)
     {

@@ -9,7 +9,7 @@ public class TurretBarrel
     private static readonly float deltaTime = 0.01666f;
 
     [TweakValue("TurretGunTop_BarrelOffset", -5f, 5f)]
-    private static readonly float barrelOffset = 0f;
+    private static float barrelOffset = 0f;
 
     private float currentRecoil;
     public float currentVelocity;

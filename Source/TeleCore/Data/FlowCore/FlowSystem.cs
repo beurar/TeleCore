@@ -245,36 +245,48 @@ public abstract class FlowSystem<TAttach, TVolume, TValueDef> : IDisposable
         }
     }
 
-    protected abstract double FlowFunc(FlowInterface<TAttach, TVolume, TValueDef> connection, double flow);
-    protected abstract double ClampFunc(FlowInterface<TAttach, TVolume, TValueDef> connection, double flow, ClampType clampType);
+    protected abstract DefValueStack<TValueDef, double> FlowFunc(FlowInterface<TAttach, TVolume, TValueDef> connection, DefValueStack<TValueDef, double> previous);
+    protected abstract DefValueStack<TValueDef, double> ClampFunc(FlowInterface<TAttach, TVolume, TValueDef> connection, DefValueStack<TValueDef, double> flow, ClampType clampType);
 
+    //protected abstract double FlowFunc(FlowInterface<TAttach, TVolume, TValueDef> connection, double previous);
+    //protected abstract double ClampFunc(FlowInterface<TAttach, TVolume, TValueDef> connection, double flow, ClampType clampType);
+    
     private void UpdateFlow(FlowInterface<TAttach, TVolume, TValueDef> iface)
     {
         if (iface.PassPercent <= 0)
         {
-            iface.NextFlow = 0;
-            iface.Move = 0;
+            iface.NextFlow = DefValueStack<TValueDef, double>.Empty;
+            iface.Move = DefValueStack<TValueDef, double>.Empty;
             return;
         }
 
         var flow = iface.NextFlow;
+        flow = FlowFunc(iface, flow); //* iface.PassPercent;
 
-        flow = FlowFunc(iface, flow) * iface.PassPercent;
-        iface.UpdateBasedOnFlow(flow);
-        flow = Math.Abs(flow);
-        iface.NextFlow = ClampFunc(iface, flow, ClampType.FlowSpeed);
-        iface.Move = ClampFunc(iface, flow, ClampType.FluidMove);
-
-        for (int i = 0; i < 512; i++)
-        {
-            var index = (3 * i) % 512;
-        }
+        iface.NextFlow = flow;//ClampFunc(iface, flow, ClampType.FlowSpeed);
+        iface.Move = flow;//ClampFunc(iface, flow, ClampType.FluidMove);
     }
 
     private static void UpdateContent(FlowInterface<TAttach, TVolume, TValueDef> conn)
     {
-        DefValueStack<TValueDef, double> res = conn.From.RemoveContent(conn.Move);
-        conn.To.AddContent(res);
+        foreach (var value in conn.Move)
+        {
+            var from = value > 0 ? conn.From : conn.To;
+            var to = value > 0 ? conn.To : conn.From;
+            var move = Math.Abs(value.Value);
+            
+            if (from.TryRemove(value.Def, move, out var result))
+            {
+                to.TryAdd(result.Def, result.Actual);
+            }
+        }
+        
+        //var result = conn.From.TryTake(conn.Move);
+        //conn.To.TryInsert(result.Actual);
+        
+        //DefValueStack<TValueDef, double> res = conn.From.RemoveContent(conn.Move);
+        //conn.To.AddContent(res);
+        
         //TODO: Structify for: _connections[fb][i] = conn;
     }
 
@@ -285,7 +297,9 @@ public abstract class FlowSystem<TAttach, TVolume, TValueDef> : IDisposable
 
         if (!_connections.TryGetValue(fb, out var conns)) return;
         foreach (var conn in conns)
-            Add(conn.Move);
+        {
+            Add(conn.Move.TotalValue);
+        }
 
         fb.FlowRate = Math.Max(fp, fn);
         return;

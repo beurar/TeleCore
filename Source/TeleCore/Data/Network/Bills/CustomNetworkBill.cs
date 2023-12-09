@@ -208,11 +208,6 @@ public partial class CustomNetworkBill
         }
         return stack;*/
     }
-
-    private void ClonePaymentOnto(CustomNetworkBill bill)
-    {
-        throw new NotImplementedException();
-    }
 }
 
 /// <summary>
@@ -491,8 +486,10 @@ public partial class CustomNetworkBill : IExposable
         bill.repeatCount = repeatCount;
         bill.billName = billName + "_Copy";
         bill.RepeatMode = RepeatMode;
-
-        ClonePaymentOnto(bill);
+        
+        bill._cost = new DefValueStack<NetworkValueDef, double>(_cost);
+        bill._hasBeenPaid = _hasBeenPaid;
+        
         bill.byProducts = new DefValueStack<NetworkValueDef, double>(byProducts);
         bill.results = new List<ThingDefCount>(results);
         return bill;

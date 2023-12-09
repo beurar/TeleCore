@@ -331,7 +331,7 @@ public struct DefValueStack<TDef, TValue> : IExposable
     {
         if (newValue.Value.IsNaN)
         {
-            TLog.Warning("Catched NaN!");
+            TLog.Warning("Caught NaN!");
             newValue = new DefValue<TDef, TValue>(newValue.Def, Numeric<TValue>.Zero);
         }
         

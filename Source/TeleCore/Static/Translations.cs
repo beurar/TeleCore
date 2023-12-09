@@ -29,6 +29,7 @@ internal static class Translations
     internal static class NetworkStrings
     {
         public static readonly string PortableContainer = "TELE.PortableContainer.Title".Translate();
+        public static readonly string NetworkBillsITab = "TELE.ITab.NetworkBills".Translate();
     }
 
     internal static class Hediffs
@@ -53,5 +54,10 @@ internal static class Translations
         {
             return "TELE.Messages.NoPortableContainer".Translate(forComp.Config.networkDef);
         }
+    }
+
+    public class PlaceWorker
+    {
+        public static string OnlyOutside => "TELE.PlaceWorker.OnlyOutside".Translate();
     }
 }

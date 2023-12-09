@@ -13,11 +13,12 @@ public class FlowValueCollectionDef : Def
         ValueDefs.Add(def);
     }
 
-    public override void ResolveReferences()
-    {
-        foreach (var valueDef in ValueDefs)
-        {
-            valueDef.collectionDef = this;
-        }
-    }
+    //Note: Obsolete?
+    // public override void ResolveReferences()
+    // {
+    //     foreach (var valueDef in ValueDefs)
+    //     {
+    //         valueDef.collectionDef = this;
+    //     }
+    // }
 }

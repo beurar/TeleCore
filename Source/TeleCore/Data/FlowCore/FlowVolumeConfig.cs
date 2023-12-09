@@ -16,6 +16,7 @@ public class FlowVolumeConfig<T> where T : FlowValueDef
     public int elevation = 0;
     public int height = 1;
 
+    public bool infiniteSource = false;
     public bool shareCapacity;
     public bool storeEvenly;
     public bool leaveContainer;

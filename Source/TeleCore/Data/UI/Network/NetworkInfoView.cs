@@ -109,7 +109,7 @@ public class NetworkInfoView
             Widgets.DrawBoxSolid(BarRect, TColor.White025);
             foreach (NetworkValueDef type in _part.Volume.Stack.Values)
             {
-                var percent = _part.Volume.StoredPercentOf(type);
+                var percent = (float)(_part.Volume.StoredValueOf(type) / _part.Volume.MaxCapacity);
                 var typeRect = new Rect(xPos, BarRect.y, BarRect.width * percent, BarRect.height);
                 var color = type.valueColor;
                 xPos += BarRect.width * percent;
@@ -117,7 +117,7 @@ public class NetworkInfoView
             }
 
             //Hover Readout
-            FlowUI<NetworkValueDef>.DrawFlowBoxReadout(containerRect, _part.Volume);
+            FlowUI<NetworkValueDef>.HoverFlowBoxReadout(containerRect, _part.Volume);
         }
 
         var padding = 5;
@@ -130,12 +130,19 @@ public class NetworkInfoView
 
         //Do network build options
         TWidgets.DrawBoxHighlight(buildOptionsRect);
-        var controllDesignator = GenData.GetDesignatorFor<Designator_Build>(_part.Config.networkDef.controllerDef);
-        var pipeDesignator = GenData.GetDesignatorFor<Designator_Build>(_part.Config.networkDef.transmitterDef);
-        if (Widgets.ButtonImage(controllerRect, controllDesignator.icon as Texture2D))
-            controllDesignator.ProcessInput(Event.current);
+        if (_part.Config.networkDef.controllerDef != null)
+        {
+            var controllDesignator = GenData.GetDesignatorFor<Designator_Build>(_part.Config.networkDef.controllerDef);  
+            if (Widgets.ButtonImage(controllerRect, controllDesignator.icon as Texture2D))
+                controllDesignator.ProcessInput(Event.current);
+        }
 
-        if (Widgets.ButtonImage(pipeRect, pipeDesignator.icon as Texture2D)) pipeDesignator.ProcessInput(Event.current);
+        if (_part.Config.networkDef.transmitterDef != null)
+        {
+            var pipeDesignator = GenData.GetDesignatorFor<Designator_Build>(_part.Config.networkDef.transmitterDef);
+            if (Widgets.ButtonImage(pipeRect, pipeDesignator.icon as Texture2D)) 
+                pipeDesignator.ProcessInput(Event.current);   
+        }
     }
 
     #endregion
