@@ -172,10 +172,11 @@ internal static class UIPatches
         public static void Postfix(WidgetRow row, bool worldView)
         {
             foreach (var setting in StaticData.PlaySettings)
+            {
                 if ((worldView && setting.ShowOnWorldView) || (!worldView && setting.ShowOnMapView))
                     if (row.ButtonIcon(setting.Icon))
                         setting.Toggle();
-            //  Find.WindowStack.Add(DefDatabase<DevToolDef>.GetNamed("ModuleVisualizerDef").GetWindow);
+            }
         }
     }
 

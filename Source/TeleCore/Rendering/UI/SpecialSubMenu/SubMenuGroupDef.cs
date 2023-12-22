@@ -21,7 +21,8 @@ public class SubMenuGroupDef : Def
         base.ResolveReferences();
         if (parentDef != null)
         {
-            if(parentDef.subMenus!=null && parentDef.subMenus.Contains(this)) return;
+            if (parentDef.subMenus.Contains(this)) 
+                return;
             parentDef.subMenus.Add(this);
         }
     }

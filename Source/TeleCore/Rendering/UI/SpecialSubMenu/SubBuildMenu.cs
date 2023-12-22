@@ -186,7 +186,8 @@ public class SubBuildMenu : Window, IExposable
                     foreach (var cat in subCats)
                     {
                         if (cat.isDevCategory && !DebugSettings.godMode) continue;
-
+                        if(SubMenuThingDefList.Categorized[SelectedGroup][cat].Count == 0) continue;
+                        
                         var tabRect = new Rect(curXY, Tab_Size);
                         var clickRect = new Rect(tabRect.x + 5, tabRect.y, tabRect.width - 10, tabRect.height);
                         var tex = cat == SelectedCategoryDef || Mouse.IsOver(clickRect)
@@ -291,7 +292,8 @@ public class SubBuildMenu : Window, IExposable
             Text.Font = GameFont.Small;
         }
 
-        if (HighLightOptions.Contains(def)) Widgets.DrawTextureFitted(rect, TeleContent.Undiscovered, 1);
+        if (HighLightOptions.Contains(def))
+            Widgets.DrawTextureFitted(rect, TeleContent.Undiscovered, 1);
 
         var optionDiscovered = OptionIsDiscovered(def);
         if (!optionDiscovered)

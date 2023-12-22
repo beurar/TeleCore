@@ -1,7 +1,63 @@
-﻿namespace TeleCore.Loading;
+﻿using HarmonyLib;
+using RimWorld;
+using UnityEngine;
+using Verse;
+
+namespace TeleCore.Loading;
 
 public static class XMLPatches
 {
+    [HarmonyPatch(typeof(ThingDefGenerator_Corpses), nameof(ThingDefGenerator_Corpses.CalculateMarketValue))]
+    public static class DefGeneratorInsight
+    {
+        public static bool Prefix(ThingDef raceDef, ref float __result)
+        {
+            __result = CalculateMarketValue(raceDef);
+            return false;
+        }
+    }
+    
+    private static float CalculateMarketValue(ThingDef raceDef)
+    {
+        float num = 0f;
+        if (raceDef == null)
+        {
+            TLog.Error("raceDef is null");
+            return 0;
+        }
+
+        if (raceDef.race == null)
+        {
+            TLog.Error($"raceDef.race is null on {raceDef}");
+            return 0;
+        }
+        
+        if (raceDef.race.meatDef != null)
+        {
+            int num2 = Mathf.RoundToInt(raceDef.GetStatValueAbstract(StatDefOf.MeatAmount, null));
+            num += (float)num2 * raceDef.race.meatDef.GetStatValueAbstract(StatDefOf.MarketValue, null);
+        }
+        if (raceDef.race.leatherDef != null)
+        {
+            int num3 = Mathf.RoundToInt(raceDef.GetStatValueAbstract(StatDefOf.LeatherAmount, null));
+            num += (float)num3 * raceDef.race.leatherDef.GetStatValueAbstract(StatDefOf.MarketValue, null);
+        }
+        if (raceDef.butcherProducts != null && raceDef.butcherProducts.Count > 0)
+        {
+            for (int i = 0; i < raceDef.butcherProducts.Count; i++)
+            {
+                var product = raceDef.butcherProducts[i];
+                if (product?.thingDef == null)
+                {
+                    TLog.Error($"{raceDef}.Product: {product} | Product.thingDef: {product?.thingDef}");
+                    continue;
+                }
+                num += product.thingDef.BaseMarketValue * (float)product.count;
+            }
+        }
+        return num * 0.6f;
+    }
+    
     /*
     [HarmonyPatch]
     internal static class MonoMethod_MakeGenericMethod
