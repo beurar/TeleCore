@@ -174,13 +174,12 @@ internal static class UIPatches
             foreach (var setting in StaticData.PlaySettings)
             {
                 if ((worldView && setting.ShowOnWorldView) || (!worldView && setting.ShowOnMapView))
-                    if (row.ButtonIcon(setting.Icon))
+                    if (row.ButtonIcon(setting.ActiveIcon))
                         setting.Toggle();
             }
         }
     }
-
-
+    
     [HarmonyPatch(typeof(GizmoGridDrawer))]
     [HarmonyPatch(nameof(GizmoGridDrawer.DrawGizmoGrid))]
     public static class GizmoGridDrawer_DrawGizmoGrid_Patch
