@@ -197,6 +197,7 @@ public class FXLayer
         }
 
         inoutPos += g.data.drawOffset; //exData?.drawOffset ?? Vector3.zero;
+        
         //DrawSize
         drawSize = g.drawSize;
         var drawRotated = exData?.drawRotatedOverride ?? g.ShouldDrawRotated;
@@ -234,7 +235,7 @@ public class FXLayer
         //
         var drawPos = drawLocOverride ?? DrawPos;
         GetDrawInfo(Graphic, parentInfo.ParentThing, parentInfo.ParentThing.def, ref drawPos, ParentRot4,
-            parentInfo.Extension, out drawSize, out _drawMat, out drawMesh, out var extraRotation, out flipUV);
+            parentInfo.Extension, out var drawSizeBase, out _drawMat, out drawMesh, out var extraRotation, out flipUV);
 
         //Colors
         var graphicColor = data.graphicData.color;
@@ -250,6 +251,9 @@ public class FXLayer
 
         PropertyBlock.SetColor(ShaderPropertyIDs.Color, graphicColor);
 
+        //Resize
+        var newSize = data.resize != null ? drawSize : drawSizeBase;
+        
         var rotationQuat = TrueRotation.ToQuat();
 
         if (data.PivotOffset != null)
@@ -275,8 +279,9 @@ public class FXLayer
         }
 
         //
-        Graphics.DrawMesh(drawMesh, new Vector3(drawPos.x, _altitude, drawPos.z), rotationQuat, _drawMat, 0, null, 0,
-            PropertyBlock);
+        var trs = Matrix4x4.TRS(drawPos, rotationQuat, newSize);
+        Graphics.DrawMesh(drawMesh,trs, _drawMat, 0, null, 0, PropertyBlock);
+        //Graphics.DrawMesh(drawMesh, new Vector3(drawPos.x, _altitude, drawPos.z), rotationQuat, _drawMat, 0, null, 0,PropertyBlock);
     }
 
     public void Print(SectionLayer layer)

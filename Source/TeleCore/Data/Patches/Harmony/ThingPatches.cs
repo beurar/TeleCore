@@ -218,4 +218,22 @@ internal static class ThingPatches
             Map = null;
         }
     }
+    
+    [HarmonyPatch(typeof(BuildCopyCommandUtility), nameof(BuildCopyCommandUtility.FindAllowedDesignator))] 
+    private static class BuildCopyCommandUtility_FindAllowedDesignator_Patch
+    {
+        private static bool Prefix(BuildableDef buildable, bool mustBeVisible, ref Designator_Build __result)
+        {
+            if (buildable.HasSubMenuExtension(out var ext))
+            {
+                var isActive = SubMenuThingDefList.IsActive(ext.ParentDef, buildable);
+                if (isActive)
+                {
+                    __result = GenData.GetDesignatorFor<Designator_Build>(buildable);
+                    return false;
+                }
+            }
+            return true;
+        }
+    }
 }

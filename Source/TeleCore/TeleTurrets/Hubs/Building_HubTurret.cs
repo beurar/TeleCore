@@ -39,6 +39,12 @@ public class Building_HubTurret : Building_TeleTurret
     public void ConnectToParent()
     {
         var hub = PlaceWorker_AtTurretHub.FindClosestTurretHub(def, Position, Map);
+        if (hub == null)
+        {
+            TLog.Error($"{this} failed to find a parent hub! Destroying...");
+            Destroy();
+            return;
+        }
         hub?.AddHubTurret(this);
     }
 

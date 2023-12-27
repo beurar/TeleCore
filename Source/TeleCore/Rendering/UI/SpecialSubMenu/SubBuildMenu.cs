@@ -32,13 +32,14 @@ public class SubBuildMenu : Window, IExposable
     private Vector2 lastPos;
 
     //
-    private SubBuildMenuDef menuDef;
+    private SubBuildMenuDef _menuDef;
     private Gizmo mouseOverGizmo;
 
     //SavedData
     private Dictionary<BuildableDefScribed, SubMenuOptionSettings> optionStates = new();
     private Vector2 scroller = Vector2.zero;
     private string searchText = "";
+    private SubMenuGroupDef _selectedGroup;
 
     public SubBuildMenu()
     {
@@ -55,7 +56,7 @@ public class SubBuildMenu : Window, IExposable
 
     public SubBuildMenu(SubBuildMenuDef menuDef)
     {
-        this.menuDef = menuDef;
+        this._menuDef = menuDef;
 
         //Window Settings
         draggable = true;
@@ -68,15 +69,20 @@ public class SubBuildMenu : Window, IExposable
         doCloseButton = false;
         doCloseX = false;
 
-        Setup(menuDef);
+        Setup(menuDef, false);
     }
 
-    private SubMenuGroupDef SelectedGroup { get; set; }
+    private SubMenuGroupDef SelectedGroup
+    {
+        get => _selectedGroup;
+        set => _selectedGroup = value;
+    }
+
     private SubMenuCategoryDef SelectedCategoryDef => cachedSelection[SelectedGroup];
     private Designator CurrentDesignator => (Designator) (mouseOverGizmo ?? Find.DesignatorManager.SelectedDesignator);
 
 
-    public DesignationTexturePack CurrentTexturePack => SelectedGroup.TexturePack ?? menuDef.TexturePack;
+    public DesignationTexturePack CurrentTexturePack => SelectedGroup.TexturePack ?? _menuDef.TexturePack;
 
     //
     public override Vector2 InitialSize => new(400, 550);
@@ -97,25 +103,29 @@ public class SubBuildMenu : Window, IExposable
     public void ExposeData()
     {
         //
-        Scribe_Defs.Look(ref menuDef, nameof(menuDef));
+        Scribe_Values.Look(ref lastPos, "lastPos");
+        Scribe_Defs.Look(ref _menuDef, "menuDef");
+        Scribe_Defs.Look(ref _selectedGroup, "selectedGroupDef");
         Scribe_Collections.Look(ref favoriteOptions, "favoriteOptions");
         Scribe_Collections.Look(ref optionStates, "optionStates", LookMode.Deep, LookMode.Deep);
 
-        if (Scribe.mode == LoadSaveMode.PostLoadInit) Setup(menuDef);
+        if (Scribe.mode == LoadSaveMode.PostLoadInit) 
+            Setup(_menuDef, true);
     }
 
-    private void Setup(SubBuildMenuDef menuDef)
+    private void Setup(SubBuildMenuDef menuDef, bool afterLoad)
     {
-        //Menu Settings
-        SelectedGroup = menuDef.subMenus.First();
-        
-        //
-        lastPos = new Vector2(UI.screenWidth / 2f, UI.screenHeight / 2f);
+        if (!afterLoad)
+        {
+            //Menu Settings
+            SelectedGroup = menuDef.subMenus.First();
+
+            //Default location
+            lastPos = new Vector2(UI.screenWidth / 2f, UI.screenHeight / 2f);
+        }
 
         //Generate
         foreach (var def in menuDef.subMenus)
-            //var path = (def.subPackPath ?? menuDef.superPackPath) ?? DefaultPackPath;
-            //texturePacks.Add(def, new DesignationTexturePack(path));
             cachedSelection.Add(def, def.subCategories[0]);
     }
 
@@ -129,8 +139,16 @@ public class SubBuildMenu : Window, IExposable
     {
         //
         var searchBar = new Rect(new Vector2(inRect.xMax - SeachBar_Size.x, 0f), SeachBar_Size);
+        var closeButton = new Rect(inRect.x, inRect.y, SeachBar_Size.y, SeachBar_Size.y);
         var favoritesRect = new Rect(searchBar.x - (SeachBar_Size.y + 4), searchBar.y, SeachBar_Size.y, SeachBar_Size.y)
             .ContractedBy(2).Rounded();
+
+        if (Widgets.CloseButtonFor(closeButton))
+        {
+            Close();
+            return;
+        }
+        
         DoSearchBar(searchBar);
 
         //Favorited
@@ -173,7 +191,7 @@ public class SubBuildMenu : Window, IExposable
                         var def = (BuildableDef) favoriteOptions[i];
                         if (!DebugSettings.godMode &&
                             def.HasSubMenuExtension(out var subMenu) && subMenu.isDevOption) continue;
-                        if (SubMenuThingDefList.IsActive(menuDef, def))
+                        if (SubMenuThingDefList.IsActive(_menuDef, def))
                             Designator(def, main, size, ref curXY);
                         else
                             InactiveDesignator(def, main, size, ref curXY);
@@ -194,7 +212,7 @@ public class SubBuildMenu : Window, IExposable
                             ? CurrentTexturePack.tabSelected
                             : CurrentTexturePack.tab;
                         Widgets.DrawTextureFitted(tabRect, tex, 1f);
-                        if (HasUnDiscovered(menuDef, SelectedGroup, cat))
+                        if (HasUnDiscovered(_menuDef, SelectedGroup, cat))
                             TWidgets.DrawTextureInCorner(tabRect, TeleContent.Undiscovered, 7,
                                 TextAnchor.UpperRight, new Vector2(-6, 3));
                         //DrawUndiscovered(tabRect, new Vector2(-6, 3));
@@ -250,7 +268,7 @@ public class SubBuildMenu : Window, IExposable
                     {
                         if (!DebugSettings.godMode && def.HasSubMenuExtension(out var subMenu) &&
                             subMenu.isDevOption) continue;
-                        if (SubMenuThingDefList.IsActive(menuDef, def))
+                        if (SubMenuThingDefList.IsActive(_menuDef, def))
                             Designator(def, main, size, ref curXY);
                         else
                             InactiveDesignator(def, main, size, ref curXY);
@@ -265,7 +283,7 @@ public class SubBuildMenu : Window, IExposable
     private List<BuildableDef> ItemsBySearch(string searchText)
     {
         return SubMenuThingDefList.Categorized[SelectedGroup].SelectMany(cat => cat.Value).Where(d =>
-            SubMenuThingDefList.IsActive(menuDef, d) && d.label.ToLower().Contains(searchText.ToLower())).ToList();
+            SubMenuThingDefList.IsActive(_menuDef, d) && d.label.ToLower().Contains(searchText.ToLower())).ToList();
     }
 
     private void Designator(BuildableDef def, Rect main, Vector2 size, ref Vector2 XY)
@@ -358,7 +376,7 @@ public class SubBuildMenu : Window, IExposable
 
     private void GroupSidebar(float yPos)
     {
-        var list = menuDef.subMenus;
+        var list = _menuDef.subMenus;
         for (var i = 0; i < list.Count; i++)
         {
             var groupDef = list[i];
@@ -369,7 +387,7 @@ public class SubBuildMenu : Window, IExposable
             GUI.color = sel ? Color.white : new Color(1f, 1f, 1f, 0.4f);
             Widgets.DrawTextureFitted(partRect, IconForGroup(groupDef), 1f);
             GUI.color = Color.white;
-            if (HasUnDiscovered(menuDef, groupDef))
+            if (HasUnDiscovered(_menuDef, groupDef))
                 TWidgets.DrawTextureInCorner(partRect, TeleContent.Undiscovered, 8, TextAnchor.UpperRight);
             //DrawUndiscovered(partRect);
             if (Widgets.ButtonInvisible(partRect))
