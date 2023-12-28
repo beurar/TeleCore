@@ -58,6 +58,8 @@ internal static class UIPatches
 
         private static void AdjustList(List<ListableOption> optList)
         {
+            if (!TeleCoreMod.Settings.showToolsInMainMenu) return;
+            
             try
             {
                 var label = "Options".Translate();

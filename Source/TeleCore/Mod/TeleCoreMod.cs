@@ -8,6 +8,7 @@ using TeleCore.Static.Utilities;
 using UnityEngine;
 using Verse;
 using Verse.AI;
+using WidgetRow = TeleCore.Rendering.WidgetRow;
 
 namespace TeleCore;
 
@@ -70,6 +71,11 @@ public class TeleCoreMod : Mod
 
     public override void DoSettingsWindowContents(Rect inRect)
     {
-        TWidgets.DoTinyLabel(inRect, "Hi :)");
+        Listing_Standard ls = new Listing_Standard(GameFont.Small);
+        ls.Begin(inRect);
+        ls.Label("Some Settings");
+        ls.CheckboxLabeled("Show Tele Tools in main menu", ref Settings.showToolsInMainMenu);
+        ls.NewColumn();
+        ls.End();
     }
 }

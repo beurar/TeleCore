@@ -5,8 +5,9 @@ namespace TeleCore;
 
 public class TeleCoreSettings : ModSettings
 {
-    internal bool enableProjectileGraphicRandomFix;
-
+    public bool enableProjectileGraphicRandomFix;
+    public bool showToolsInMainMenu;
+    
     //
     private List<string> keyList;
 
@@ -62,6 +63,7 @@ public class TeleCoreSettings : ModSettings
     {
         Scribe_Values.Look(ref enableProjectileGraphicRandomFix, "enableProjectileGraphicRandomFix");
         Scribe_Values.Look(ref userDefinedAnimationDefLocation, "userDefinedAnimationDefLocation");
+        Scribe_Values.Look(ref showToolsInMainMenu, "showToolsInMainMenu");
         //Scribe_Collections.Look(ref DataBrowserSettings, "DataBrowserSettings", LookMode.Value, LookMode.Deep);
 
         if (userDefinedAnimationDefLocation == null)

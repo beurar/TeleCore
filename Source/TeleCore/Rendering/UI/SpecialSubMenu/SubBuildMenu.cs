@@ -381,16 +381,22 @@ public class SubBuildMenu : Window, IExposable
         {
             var groupDef = list[i];
             if (groupDef.isDevGroup && !DebugSettings.godMode) continue;
-
+            var grActv = SubMenuThingDefList.IsActive(groupDef);
+            
             var partRect = new Rect(0f, yPos + (Icon_Size + 6) * i, Icon_Size, Icon_Size);
             var sel = Mouse.IsOver(partRect) || SelectedGroup == groupDef;
-            GUI.color = sel ? Color.white : new Color(1f, 1f, 1f, 0.4f);
+
+            var white = grActv ? Color.white : new Color(1f, 1f, 1f, 0.2f);
+            var mouseOver = grActv ? new Color(1f, 1f, 1f, 0.4f) : new Color(1f, 1f, 1f, 0.2f);
+            
+            GUI.color = sel ? white : mouseOver;
             Widgets.DrawTextureFitted(partRect, IconForGroup(groupDef), 1f);
-            GUI.color = Color.white;
+            GUI.color = white;
+            
             if (HasUnDiscovered(_menuDef, groupDef))
                 TWidgets.DrawTextureInCorner(partRect, TeleContent.Undiscovered, 8, TextAnchor.UpperRight);
             //DrawUndiscovered(partRect);
-            if (Widgets.ButtonInvisible(partRect))
+            if (Widgets.ButtonInvisible(partRect) && grActv)
             {
                 searchText = "";
                 SelectedGroup = groupDef;
