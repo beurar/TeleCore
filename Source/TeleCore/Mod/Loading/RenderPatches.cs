@@ -78,11 +78,18 @@ internal static class RenderPatches
         private static bool Prefix(Graphic_Random __instance, ref Graphic __result)
         {
             if (__instance is Graphic_RandomExtra extra)
+            {
                 if (Rand.Chance(extra.ParamRandChance))
                 {
+                    if (!UnityData.IsInMainThread)
+                    {
+                        __result = BaseContent.BadGraphic;
+                        return false;
+                    }
                     __result = TeleContent.ClearGraphic;
                     return false;
                 }
+            }
 
             return true;
         }

@@ -14,8 +14,7 @@ public static class TeleContent
     //
     public static readonly Texture2D ButtonBGAtlas = ContentFinder<Texture2D>.Get("UI/Buttons/ButtonBG");
 
-    public static readonly Texture2D ButtonBGAtlasMouseover =
-        ContentFinder<Texture2D>.Get("UI/Buttons/ButtonBGMouseover");
+    public static readonly Texture2D ButtonBGAtlasMouseover = ContentFinder<Texture2D>.Get("UI/Buttons/ButtonBGMouseover");
 
     public static readonly Texture2D ButtonBGAtlasClick = ContentFinder<Texture2D>.Get("UI/Buttons/ButtonBGClick");
 

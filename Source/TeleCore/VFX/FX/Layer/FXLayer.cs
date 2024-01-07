@@ -255,14 +255,14 @@ public class FXLayer
         var newSize = data.resize != null ? drawSize : drawSizeBase;
         
         var rotationQuat = TrueRotation.ToQuat();
-
+        
         if (data.PivotOffset != null)
         {
             var pivotPoint = drawPos + data.PivotOffset.Value;
             var relativePos = rotationQuat * (drawPos - pivotPoint);
             drawPos = pivotPoint + relativePos;
         }
-
+        
         //
         if (DrawFunction != null)
         {
