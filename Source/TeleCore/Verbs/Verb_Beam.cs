@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using RimWorld;
+using TeleCore.Static.Utilities;
 using UnityEngine;
 using Verse;
 using Verse.Sound;
@@ -19,7 +20,7 @@ public class Verb_Beam : Verb_Tele
     private Vector3 currentTargetTruePos;
 
     //Effects
-    private MoteDualAttached movingBeamMote;
+    private MoteBeam movingBeamMote;
     private Effecter movingEndEffecter;
     private float rotationSpeed;
     private Sustainer sustainer;
@@ -90,9 +91,9 @@ public class Verb_Beam : Verb_Tele
         return IsBeam;
     }
 
-    private MoteDualAttached MakeBeamMote(IntVec3 targetLoc)
+    private MoteBeam MakeBeamMote(IntVec3 targetLoc)
     {
-        return MoteMaker.MakeInteractionOverlay(verbProps.beamMoteDef, caster, new TargetInfo(targetLoc, caster.Map));
+        return TMoteMaker.MakeBeamEffect(verbProps.beamMoteDef, caster, new TargetInfo(targetLoc, caster.Map), BeamProps.VisualWidthRange.RandomInRange);
     }
 
     //Prepare Beam Hit Target Cells
@@ -271,7 +272,6 @@ public class Verb_Beam : Verb_Tele
         //Setup static mote on target
         if (BeamProps.spawnMotePerBeam)
         {
-            TLog.Message($"Index[{OffsetIndex}]: {curOff} => {startRealOffset}");
             var newBeam = MakeBeamMote(staticTarget);
             newBeam.UpdateTargets(new TargetInfo(caster.Position, caster.Map), new TargetInfo(staticTarget, caster.Map),
                 startRealOffset, targetCellToRealOffset);

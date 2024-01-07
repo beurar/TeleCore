@@ -241,12 +241,10 @@ public class CompFX : TeleComp
     //Drawing
     private bool CanDraw(FXLayerArgs args)
     {
-        if (args.data.skip)
-            return false;
-        if (!GetDrawBool(args) || GetOpacityFloat(args) <= 0)
-            return false;
-        if (!HasPower(args))
-            return false;
+        if (args.data.skip) return false;
+        if (!GetDrawBool(args)) return false;
+        if (GetOpacityFloat(args) <= 0) return false;
+        if (!HasPower(args)) return false;
         return true;
     }
 
@@ -315,6 +313,27 @@ public class CompFX : TeleComp
 
     public override IEnumerable<Gizmo> CompGetGizmosExtra()
     {
+        if (DebugSettings.godMode)
+        {
+            var states = "FX States:\n";
+            foreach (var layer in FXLayers)
+            {
+                states += $"Layer {layer.Args.index} '{layer.Args.layerTag}':\n";
+                states += $"  - Draw: {CanDraw(layer.Args)}\n";
+                states += $"  - Opacity: {GetOpacityFloat(layer.Args)}\n";
+                states += $"  - Rotation: {GetExtraRotation(layer.Args)}\n";
+                states += $"  - Animation Speed: {GetAnimationSpeedFactor(layer.Args)}\n";
+                states += $"  - Color: {GetColorOverride(layer.Args)}\n";
+                states += $"  - Draw Position: {GetDrawPositionOverride(layer.Args)}\n";
+                states += $"  - Action: {GetDrawFunction(layer.Args)}\n";
+            }
+            yield return new Command_Action
+            {
+                defaultLabel = "FX States",
+                defaultDesc = states,
+                action = delegate { },
+            };
+        }
         yield break;
     }
 

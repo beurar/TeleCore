@@ -11,24 +11,17 @@ namespace TeleCore;
 
 public class TurretGunSet : IExposable
 {
-    //
-
-    //
     private readonly ITurretHolder parent;
-
-    //
 
     public TurretGunSet(TurretDefExtension holderProps, ITurretHolder parent)
     {
-        TLog.Message($"Holder[{parent?.HolderThing}]: {holderProps != null} | {holderProps?.turrets?.Count}");
         this.parent = parent;
         Turrets = new List<TurretGun>(holderProps.turrets.Count);
-        var set = this;
         for (var i = 0; i < holderProps.turrets.Count; i++)
         {
             var props = holderProps.turrets[i];
             var turret = (TurretGun) Activator.CreateInstance(props.turretGunClass);
-            turret.Setup(props, i, set, parent);
+            turret.Setup(props, i, this, parent);
             Turrets.Add(turret);
             MainGun ??= turret;
         }
@@ -122,15 +115,21 @@ public class TurretGunSet : IExposable
         };
     }
 
+    static StringBuilder sb = new StringBuilder();
     public string InspectString()
     {
-        var sb = new StringBuilder();
-        sb.AppendLine($"Active turrets: {Turrets.Count}");
-        sb.AppendLine($"PlayerControlled: {this.parent.PlayerControlled}");
-        sb.AppendLine($"CanSetForcedTarget: {MainGun.CanSetForcedTarget}");
+        sb.Clear();
+
+        if (DebugSettings.godMode)
+        {
+            sb.AppendLine($"Active turrets: {Turrets.Count}");
+            sb.AppendLine($"PlayerControlled: {this.parent.PlayerControlled}");
+            sb.AppendLine($"CanSetForcedTarget: {MainGun.CanSetForcedTarget}");
+        }
+
         if (!Enumerable.Any(Turrets)) return sb.ToString().TrimEndNewlines();
 
-        sb.AppendLine("-- Main Turret --");
+        //sb.AppendLine("-- Main Turret --");
         if (AttackVerb.verbProps.minRange > 0f)
             sb.AppendLine("MinimumRange".Translate() + ": " + AttackVerb.verbProps.minRange.ToString("F0"));
         var parent = this.parent.HolderThing;

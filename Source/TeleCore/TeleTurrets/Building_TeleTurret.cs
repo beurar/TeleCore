@@ -16,6 +16,7 @@ namespace TeleCore;
 /// </summary>
 public class Building_TeleTurret : Building_Turret, ITurretHolder, IFXLayerProvider
 {
+    private bool hasTurret;
     private bool canForceTargetDefault;
 
     //
@@ -30,7 +31,15 @@ public class Building_TeleTurret : Building_Turret, ITurretHolder, IFXLayerProvi
     public TurretDefExtension Extension { get; private set; }
 
     //
-    public override LocalTargetInfo CurrentTarget => turretSet.KnownTargets.First();
+    public override LocalTargetInfo CurrentTarget
+    {
+        get
+        {
+            if (!hasTurret) return LocalTargetInfo.Invalid;
+            return turretSet.KnownTargets.First();
+        }
+    }
+
     public override Verb AttackVerb => turretSet.AttackVerb;
     public Verb_Tele TeleVerb => turretSet.AttackVerb as Verb_Tele;
     public TurretGun MainGun => turretSet.MainGun;
@@ -66,6 +75,7 @@ public class Building_TeleTurret : Building_Turret, ITurretHolder, IFXLayerProvi
 
     public new bool ThreatDisabled(IAttackTargetSearcher disabledFor)
     {
+        if (!hasTurret) return true;
         if (base.ThreatDisabled(disabledFor)) return true;
         if (PowerComp is {PowerOn: false}) return true;
         return MannableComp is {MannedNow: false};
@@ -79,6 +89,8 @@ public class Building_TeleTurret : Building_Turret, ITurretHolder, IFXLayerProvi
     public override void SpawnSetup(Map map, bool respawningAfterLoad)
     {
         base.SpawnSetup(map, respawningAfterLoad);
+        Extension = def.TurretExtension();
+        
         //
         powerComp = GetComp<CompPowerTrader>();
         dormantComp = GetComp<CompCanBeDormant>();
@@ -86,31 +98,35 @@ public class Building_TeleTurret : Building_Turret, ITurretHolder, IFXLayerProvi
         mannableComp = GetComp<CompMannable>();
         refuelComp = GetComp<CompRefuelable>();
         networkComp = GetComp<Comp_Network>();
-
-        Extension = def.TurretExtension();
-
-        turretSet = new TurretGunSet(Extension, this);
-
-        //
-        canForceTargetDefault = Extension.turrets.Any(t => t.canForceTarget);
+        
+        if (Extension.HasTurrets)
+        {
+            hasTurret = true;
+            turretSet = new TurretGunSet(Extension, this);
+            canForceTargetDefault = Extension.turrets.Any(t => t.canForceTarget);
+        }
     }
 
     public override void Tick()
     {
         base.Tick();
-        turretSet.TickTurrets();
+        if (hasTurret)
+        {
+            turretSet.TickTurrets();
+        }
     }
 
     //Basic Turret Functions
     [SyncMethod]
     public sealed override void OrderAttack(LocalTargetInfo targ)
     {
-        turretSet.TryOrderAttack(targ);
+        turretSet?.TryOrderAttack(targ);
     }
 
     [SyncMethod]
     public void ResetOrderedAttack()
     {
+        if (!hasTurret) return;
         forcedTarget = LocalTargetInfo.Invalid;
         turretSet.ResetOrderedAttack();
         OnResetOrderedAttack();
@@ -128,26 +144,35 @@ public class Building_TeleTurret : Building_Turret, ITurretHolder, IFXLayerProvi
     public override void Draw()
     {
         base.Draw();
+        if (!hasTurret) return;
         turretSet.Draw();
         TeleVerb?.DrawVerb();
     }
 
+    private static StringBuilder sb = new StringBuilder();
+    
     public override string GetInspectString()
     {
-        var sb = new StringBuilder();
+        sb.Clear();
         var inspectString = base.GetInspectString();
-        if (!inspectString.NullOrEmpty()) sb.AppendLine(inspectString);
+        if (!inspectString.NullOrEmpty())
+            sb.AppendLine(inspectString);
 
-        sb.AppendFormat(turretSet.InspectString());
+        if(hasTurret)
+            sb.AppendFormat(turretSet.InspectString());
         return sb.ToString().TrimEndNewlines();
     }
 
     //
     public override IEnumerable<Gizmo> GetGizmos()
     {
-        foreach (var gizmo in base.GetGizmos()) yield return gizmo;
+        foreach (var gizmo in base.GetGizmos()) 
+            yield return gizmo;
 
-        foreach (var turretGizmo in turretSet.TurretGizmos()) yield return turretGizmo;
+        if (!hasTurret) yield break;
+        
+        foreach (var turretGizmo in turretSet.TurretGizmos()) 
+            yield return turretGizmo;
 
         if (canForceTargetDefault)
         {
@@ -198,10 +223,6 @@ public class Building_TeleTurret : Building_Turret, ITurretHolder, IFXLayerProvi
             }
             */
             yield return targetCommand;
-        }
-
-        if (DebugSettings.godMode)
-        {
         }
 
         /*

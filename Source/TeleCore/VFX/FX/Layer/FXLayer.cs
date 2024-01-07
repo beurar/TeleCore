@@ -26,6 +26,7 @@ public class FXLayer
 
     //Dynamic Working Data
     private Vector2 drawSize = Vector2.one;
+    private float drawScale = 1f;
     private float exactRotation;
     private bool flipUV;
     private int ticksToBlink;
@@ -177,7 +178,7 @@ public class FXLayer
         if (resize.sizeRange.Average <= 0) return;
         var sizeVal = TMath.OscillateBetween(resize.sizeRange.min, resize.sizeRange.max, resize.sizeDuration,
             tick + parentInfo.TickOffset + resize.initialSizeOffset);
-        drawSize *= sizeVal;
+        drawScale = sizeVal;
     }
 
     internal static void GetDrawInfo(Graphic g, Thing thing, ThingDef def, ref Vector3 inoutPos, Rot4 rot,
@@ -232,7 +233,6 @@ public class FXLayer
 
     public void Draw(Vector3? drawLocOverride = null)
     {
-        //
         var drawPos = drawLocOverride ?? DrawPos;
         GetDrawInfo(Graphic, parentInfo.ParentThing, parentInfo.ParentThing.def, ref drawPos, ParentRot4,
             parentInfo.Extension, out var drawSizeBase, out _drawMat, out drawMesh, out var extraRotation, out flipUV);
@@ -279,9 +279,12 @@ public class FXLayer
         }
 
         //
-        var trs = Matrix4x4.TRS(drawPos, rotationQuat, newSize);
-        Graphics.DrawMesh(drawMesh,trs, _drawMat, 0, null, 0, PropertyBlock);
-        //Graphics.DrawMesh(drawMesh, new Vector3(drawPos.x, _altitude, drawPos.z), rotationQuat, _drawMat, 0, null, 0,PropertyBlock);
+        var s1 = newSize;
+        var s2 = data.graphicData.drawSize;
+        var v3 = new Vector3(s1.x / s2.x, 1, s1.y / s2.y);
+        var trs = Matrix4x4.TRS(drawPos, Quaternion.identity, Vector3.one * drawScale);
+        Graphics.DrawMesh(drawMesh, trs, _drawMat, 0, null, 0, PropertyBlock);
+        // Graphics.DrawMesh(drawMesh, new Vector3(drawPos.x, _altitude, drawPos.z), rotationQuat, _drawMat, 0, null, 0, PropertyBlock);
     }
 
     public void Print(SectionLayer layer)

@@ -1,4 +1,5 @@
-﻿using Verse;
+﻿using UnityEngine;
+using Verse;
 
 namespace TeleCore;
 
@@ -9,7 +10,8 @@ public class BeamProperties
 
     //
     public DamageDef damageDef;
-
+    public FloatRange visWidth = FloatRange.One;
+    
     //
     public EffecterDef impactEffecter;
     public ExplosionProperties impactExplosion;
@@ -27,6 +29,7 @@ public class BeamProperties
     public FleckDef BeamGroundFleckDef => parent.beamGroundFleckDef;
     public float BeamWidth => parent.beamWidth;
     public float BeamMaxDeviation => parent.beamMaxDeviation;
+    public FloatRange VisualWidthRange => visWidth;
 
 
     public void SetParent(VerbProperties_Extended verbprops)
