@@ -19,7 +19,7 @@ public static class TeleContent
     public static readonly Texture2D ButtonBGAtlasClick = ContentFinder<Texture2D>.Get("UI/Buttons/ButtonBGClick");
 
     //
-    public static readonly Texture2D EdgeArrow = ContentFinder<Texture2D>.Get("UI/Debug/EdgeArrow");
+    public static readonly Texture2D EdgeArrow = ContentFinder<Texture2D>.Get("UI/DebugIcons/EdgeArrow");
 
     //General
     public static readonly Texture2D HightlightInMenu = ContentFinder<Texture2D>.Get("UI/Icons/HighLight");
