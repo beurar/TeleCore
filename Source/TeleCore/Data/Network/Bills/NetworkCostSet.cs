@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using Verse;
 
 namespace TeleCore.Network.Bills;
 
@@ -17,7 +18,7 @@ public class NetworkCostSet
     private double? totalCost;
     private double? totalSpecificCost;
 
-    public bool HasSpecifics => SpecificCosts.Any();
+    public bool HasSpecifics => Enumerable.Any(SpecificCosts);
 
     public double TotalSpecificCost
     {
@@ -54,6 +55,9 @@ public class NetworkCostSet
             return totalCost.Value;
         }
     }
+
+    public bool Valid =>
+        (mainCost > 0 && !GenList.NullOrEmpty(specificCosts)) || !specificCostsWithValues.NullOrEmpty();
 
     public override string ToString()
     {

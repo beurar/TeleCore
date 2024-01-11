@@ -152,7 +152,7 @@ internal static class UIPatches
 
         private static void WriteNetworkCost(StringBuilder stringBuilder, Dialog_BillConfig instance)
         {
-            if (instance.bill is Bill_Production_Network tBill)
+            if (instance.bill is Bill_Production_Network tBill && tBill.def.networkCost.Valid)
             {
                 stringBuilder.AppendLine("Network Cost:");
                 foreach (var cost in tBill.def.networkCost.Cost.SpecificCosts)

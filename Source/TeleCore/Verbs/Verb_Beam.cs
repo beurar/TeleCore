@@ -29,7 +29,7 @@ public class Verb_Beam : Verb_Tele
     //
     public BeamProperties BeamProps => Props.beamProps;
     public bool IsStatic => BeamProps.isStatic;
-
+    
     //
     public override DamageDef DamageDef => BeamProps.damageDef ?? verbProps.beamDamageDef;
     protected override float ExplosionOnTargetSize => BeamProps.impactExplosion?.explosionRadius ?? 0;

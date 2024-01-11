@@ -6,11 +6,13 @@ namespace TeleCore.Network.Bills;
 
 public class NetworkCost
 {
-    public NetworkCostSet costSet;
+    public NetworkCostSet? costSet;
     public bool useDirectStorage = false;
 
     public NetworkCostSet Cost => costSet;
 
+    public bool Valid => costSet is { Valid: true };
+    
     //Validation
     public bool CanPayWith(Comp_Network networkComp)
     {

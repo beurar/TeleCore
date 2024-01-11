@@ -17,6 +17,13 @@ public class CompGlowerOffset : ThingComp
         Scribe_References.Look(ref glower, "glowerThing");
         if (Scribe.mode == LoadSaveMode.PostLoadInit)
         {
+            if (glower == null || !glower.Spawned)
+            {
+                TLog.Warning("Glower was not spawned after respawn!");
+                var existing = parent.Position.GetFirstThing(parent.Map, Props.glowerDef);
+                existing?.DeSpawn();
+                glower = (ThingWithComps) GenSpawn.Spawn(Props.glowerDef, parent.Position + parent.Rotation.FacingCell, parent.Map);
+            }
             Flickable ??= glower.GetComp<CompFlickable>();
         }
     }
