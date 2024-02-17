@@ -162,6 +162,38 @@ public class TurretGun : IAttackTarget, IAttackTargetSearcher
         ParentSet.Notify_NewTarget(CurrentTarget);
     }
 
+    public void DoAttackNow(LocalTargetInfo targ)
+    {
+        if (!targ.IsValid)
+        {
+            if (localForcedTarget.IsValid) ResetForcedTarget();
+            return;
+        }
+        
+        if ((targ.Cell - ParentThing.Position).LengthHorizontal < AttackVerb.verbProps.EffectiveMinRange(targ, Caster))
+        {
+            Messages.Message("MessageTargetBelowMinimumRange".Translate(), null, MessageTypeDefOf.RejectInput, false);
+            return;
+        }
+
+        if ((targ.Cell - ParentThing.Position).LengthHorizontal > AttackVerb.verbProps.range)
+        {
+            Messages.Message("MessageTargetBeyondMaximumRange".Translate(), null, MessageTypeDefOf.RejectInput, false);
+            return;
+        }
+
+        currentTargetInt = targ;
+        AttackVerb.TryStartCastOn(targ);
+        OnAttackedTarget(targ);
+        
+        if (HoldFire)
+        {
+            Messages.Message("MessageTurretWontFireBecauseHoldFire".Translate(ParentThing.def.label), ParentThing,
+                MessageTypeDefOf.RejectInput, false);
+            ResetForcedTarget();
+        }
+    }
+    
     public void TryOrderAttack(LocalTargetInfo targ)
     {
         if (!targ.IsValid)

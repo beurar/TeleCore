@@ -65,7 +65,8 @@ public class TurretGunSet : IExposable
     //
     public void TryOrderAttack(LocalTargetInfo targ)
     {
-        foreach (var turretGun in Turrets) turretGun.TryOrderAttack(targ);
+        foreach (var turretGun in Turrets) 
+            turretGun.TryOrderAttack(targ);
     }
 
     [SyncMethod]
@@ -148,5 +149,28 @@ public class TurretGunSet : IExposable
         }
 
         return sb.ToString();
+    }
+
+    public void DoAttackNow(LocalTargetInfo targ, int turretIndex)
+    {
+        if(turretIndex >= Turrets.Count) return;
+        if (turretIndex >= 0)
+        {
+            Turrets[turretIndex].DoAttackNow(targ);
+            return;
+        }
+        
+        foreach (var turret in Turrets)
+        {
+            turret.DoAttackNow(targ);
+        }
+    }
+
+    public void ClearAttack()
+    {
+        foreach (var turret in Turrets)
+        {
+            turret.ResetCurrentTarget();
+        }
     }
 }

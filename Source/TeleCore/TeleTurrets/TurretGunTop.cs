@@ -122,6 +122,7 @@ public class TurretGunTop
     public void DrawTurret()
     {
         TDrawing.Draw(parent.TurretGraphic, DrawPos, Rot4.North, CurRotation, null);
-        if (HasBarrels) Barrels.ForEach(b => b.Draw());
+        if (HasBarrels)
+            Barrels.ForEach(b => b.Draw());
     }
 }

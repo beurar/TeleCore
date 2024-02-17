@@ -36,7 +36,9 @@ public class Building_TeleTurret : Building_Turret, ITurretHolder, IFXLayerProvi
         get
         {
             if (!hasTurret) return LocalTargetInfo.Invalid;
-            return turretSet.KnownTargets.First();
+            if(turretSet.KnownTargets.Count > 0)
+                return turretSet.KnownTargets.First();
+            return LocalTargetInfo.Invalid;
         }
     }
 
@@ -114,6 +116,22 @@ public class Building_TeleTurret : Building_Turret, ITurretHolder, IFXLayerProvi
         {
             turretSet.TickTurrets();
         }
+    }
+
+    /// <summary>
+    /// This is a custom override to simple shoot at a target directly, no cooldown or other settings.
+    /// </summary>
+    public void DoAttackNow(LocalTargetInfo targ, int turretIndex = -1)
+    {
+        turretSet.DoAttackNow(targ, turretIndex);
+    }
+
+    /// <summary>
+    /// Should be called to fix the turret's rotation to the current target.
+    /// </summary>
+    public void ClearAttack()
+    {
+        turretSet.ClearAttack();
     }
 
     //Basic Turret Functions

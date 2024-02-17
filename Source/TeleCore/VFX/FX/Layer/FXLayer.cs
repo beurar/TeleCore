@@ -279,12 +279,12 @@ public class FXLayer
         }
 
         //
-        var s1 = newSize;
-        var s2 = data.graphicData.drawSize;
-        var v3 = new Vector3(s1.x / s2.x, 1, s1.y / s2.y);
-        var trs = Matrix4x4.TRS(drawPos, Quaternion.identity, Vector3.one * drawScale);
-        Graphics.DrawMesh(drawMesh, trs, _drawMat, 0, null, 0, PropertyBlock);
-        // Graphics.DrawMesh(drawMesh, new Vector3(drawPos.x, _altitude, drawPos.z), rotationQuat, _drawMat, 0, null, 0, PropertyBlock);
+        //var s1 = newSize;
+        //var s2 = data.graphicData.drawSize;
+        //var v3 = new Vector3(s1.x / s2.x, 1, s1.y / s2.y);
+        //var trs = Matrix4x4.TRS(drawPos, Quaternion.identity, Vector3.one * drawScale);
+        //Graphics.DrawMesh(drawMesh, trs, _drawMat, 0, null, 0, PropertyBlock);
+        Graphics.DrawMesh(drawMesh, new Vector3(drawPos.x, _altitude, drawPos.z), rotationQuat, _drawMat, 0, null, 0, PropertyBlock);
     }
 
     public void Print(SectionLayer layer)
