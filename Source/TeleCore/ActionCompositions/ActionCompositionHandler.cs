@@ -33,6 +33,7 @@ public class ActionCompositionHandler : IExposable
 
     public void TickActionComps()
     {
-        for (var i = currentCompositions.Count - 1; i >= 0; i--) currentCompositions[i].Tick();
+        for (var i = currentCompositions.Count - 1; i >= 0; i--) 
+            currentCompositions[i].Tick();
     }
 }

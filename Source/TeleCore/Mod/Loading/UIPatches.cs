@@ -175,13 +175,14 @@ internal static class UIPatches
         {
             foreach (var setting in StaticData.PlaySettings)
             {
-                if ((worldView && setting.ShowOnWorldView) || (!worldView && setting.ShowOnMapView))
-                    if (row.ButtonIcon(setting.ActiveIcon))
-                        setting.Toggle();
+                if (setting.Visible)
+                    if ((worldView && setting.ShowOnWorldView) || (!worldView && setting.ShowOnMapView))
+                        if (row.ButtonIcon(setting.ActiveIcon, tooltip: setting.Description))
+                            setting.Toggle();
             }
         }
     }
-    
+
     [HarmonyPatch(typeof(GizmoGridDrawer))]
     [HarmonyPatch(nameof(GizmoGridDrawer.DrawGizmoGrid))]
     public static class GizmoGridDrawer_DrawGizmoGrid_Patch
@@ -195,6 +196,19 @@ internal static class UIPatches
             {
                 startX = network.GetWidthSpecial() + startX;
             }
+            return true;
+        }
+    }
+    
+    
+    [HarmonyPatch(typeof(DesignatorManager))]
+    [HarmonyPatch("Deselect")]
+    public static class DeselectPatch
+    {
+        public static bool Prefix(DesignatorManager __instance)
+        {
+            if (__instance.SelectedDesignator is Designator_Extended { MustStaySelected: true })
+                return false;
             return true;
         }
     }

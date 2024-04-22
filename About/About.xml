@@ -4,7 +4,7 @@
 	<author>Telefonmast</author>
 	<packageId>telefonmast.core</packageId>
 	<supportedVersions>
-		<li>1.4</li>
+		<li>1.5</li>
 	</supportedVersions>
 	<modDependencies>
 		<li>

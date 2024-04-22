@@ -33,7 +33,7 @@ public class Graphic_Linked_NetworkStructureOverlay : Graphic_LinkedNetworkStruc
 
     public void Print(SectionLayer layer, Thing parent, float extraRotation, NetworkDef forNetwork)
     {
-        var comp = parent.TryGetComp<Comp_Network>();
+        var comp = parent.TryGetComp<CompNetwork>();
         foreach (IntVec3 cell in comp[forNetwork].PartIO.VisualCells)
         {
             var center = cell.ToVector3ShiftedWithAltitude(AltitudeLayer.MetaOverlays);

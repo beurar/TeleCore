@@ -6,7 +6,7 @@ namespace TeleCore;
 public class TurretTopProperties
 {
     public float aimSpeed = 20f;
-    public List<TurretBarrelProperties> barrels;
+    public List<TurretBarrelProperties>? barrels;
 
     public IntRange idleDuration = new(50, 200);
     public IntRange idleInterval = new(150, 350);

@@ -287,4 +287,22 @@ public static class GlobalEventHandler
     }
     
     #endregion
+
+    #region Verbs
+
+    public static event ProjectileLaunchedEvent ProjectileLaunched;
+    
+    internal static void OnProjectileLaunched(ProjectileLaunchedArgs args)
+    {
+        try
+        {
+            ProjectileLaunched?.Invoke(args);
+        }
+        catch (Exception ex)
+        {
+            TLog.Error($"Error trying to notify projectile launch: {args}\n{ex.Message}\n{ex.StackTrace}");
+        }
+    }
+
+    #endregion
 }

@@ -35,7 +35,7 @@ public class Graphic_LinkedNetworkStructure : Graphic_Linked
 
     public override void Print(SectionLayer layer, Thing thing, float extraRotation)
     {
-        var comp = thing.TryGetComp<Comp_Network>();
+        var comp = thing.TryGetComp<CompNetwork>();
         if (comp == null) return;
 
         foreach (var subPart in comp.NetworkParts)

@@ -13,6 +13,22 @@ namespace TeleCore;
 
 internal static class InjectPatches
 {
+    //Allows custom shaders to be loaded
+    [HarmonyPatch(typeof(ShaderDatabase), nameof(ShaderDatabase.LoadShader))]
+    internal static class LoadShaderPatch
+    {
+        private static bool Prefix(string shaderPath, ref Shader __result)
+        {
+            var vanilla = (Shader)Resources.Load("Materials/" + shaderPath, typeof(Shader));
+            if (vanilla == null)
+            {
+                __result = TeleContentDB.LoadShader(shaderPath);
+                return false;
+            }
+            return true;
+        }
+    }
+    
     //This adds gizmos to the pawn
     [HarmonyPatch(typeof(Pawn))]
     [HarmonyPatch("GetGizmos")]
@@ -98,7 +114,7 @@ internal static class InjectPatches
     }
     
     //Patching the vanilla shader def to allow custom shaders
-    [HarmonyPatch(typeof(ShaderTypeDef))]
+    /*[HarmonyPatch(typeof(ShaderTypeDef))]
     [HarmonyPatch("Shader", MethodType.Getter)]
     public static class ShaderPatch
     {
@@ -113,7 +129,7 @@ internal static class InjectPatches
             __result = ___shaderInt;
             return false;
         }
-    }
+    }*/
     
     [HarmonyPatch(typeof(ModContentLoader<Texture2D>))]
     [HarmonyPatch("LoadTexture")]
@@ -140,5 +156,4 @@ internal static class InjectPatches
             }
         }
     }
-    
 }

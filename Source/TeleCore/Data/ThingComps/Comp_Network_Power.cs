@@ -3,7 +3,7 @@ using Verse;
 
 namespace TeleCore;
 
-public class Comp_Network_Power : Comp_Network
+public class Comp_Network_Power : CompNetwork
 {
     private CompPowerPlant_Network _powerComp;
 

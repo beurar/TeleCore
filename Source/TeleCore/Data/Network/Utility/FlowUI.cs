@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using Multiplayer.API;
+//using Multiplayer.API;
 using TeleCore.FlowCore;
 using TeleCore.Generics.Container;
 using TeleCore.Network.Flow;
@@ -158,20 +158,20 @@ public static class FlowUI<T> where T : FlowValueDef
         return tempList;
     }
     
-    [SyncMethod]
+    //[SyncMethod]
     private static void Debug_AddAll(FlowVolumeBase<T> fb, double part)
     {
         foreach (var type in fb.AllowedValues)
             fb.TryAdd(type, part);
     }
 
-    [SyncMethod]
+    //[SyncMethod]
     private static void Debug_Clear(FlowVolumeBase<T> fv)
     {
         fv.Clear();
     }
 
-    [SyncMethod]
+    //[SyncMethod]
     private static void Debug_AddType(FlowVolumeBase<T> fv, T type, double part)
     {
         fv.TryAdd(type, part);

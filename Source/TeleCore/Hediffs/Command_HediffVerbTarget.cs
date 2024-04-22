@@ -18,7 +18,8 @@ public class Command_HediffVerbTarget : Command
     {
         get
         {
-            foreach (var verb in RangedHediff.AllVerbs) yield return new FloatMenuOption("place link", null);
+            foreach (var verb in RangedHediff.AllVerbs)
+                yield return new FloatMenuOption("place link", null);
         }
     }
 
@@ -35,9 +36,11 @@ public class Command_HediffVerbTarget : Command
         base.MergeWith(other);
         var command = other as Command_HediffVerbTarget;
         if (command == null) return;
-        if (groupedVerbs == null) groupedVerbs = new List<Verb>();
+        if (groupedVerbs == null) 
+            groupedVerbs = new List<Verb>();
         groupedVerbs.Add(command.verb);
-        if (command.groupedVerbs != null) groupedVerbs.AddRange(command.groupedVerbs);
+        if (command.groupedVerbs != null) 
+            groupedVerbs.AddRange(command.groupedVerbs);
     }
 
     public override void ProcessInput(Event ev)

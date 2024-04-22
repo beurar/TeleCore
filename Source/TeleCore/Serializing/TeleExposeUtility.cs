@@ -22,7 +22,7 @@ public static class TeleExposeUtility
     {
         byte[] arr = null;
         if (Scribe.mode == LoadSaveMode.Saving) arr = SerializeUInt(map, uintReader);
-        DataExposeUtility.ByteArray(ref arr, label);
+        DataExposeUtility.LookByteArray(ref arr, label);
         if (Scribe.mode == LoadSaveMode.LoadingVars) LoadUInt(arr, map, uintWriter);
     }
 }

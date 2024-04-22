@@ -46,7 +46,7 @@ public class ScribeDelegate<TDelegate> : IExposable where TDelegate : Delegate
         {
             //Save delegate MethodInfo into serialized bytes
             _TempBytes = MethodConstructor.Serialize(@delegate);
-            DataExposeUtility.ByteArray(ref _TempBytes, "delegateBytes");
+            DataExposeUtility.LookByteArray(ref _TempBytes, "delegateBytes");
 
             //
             scribeTimeMethod = @delegate.Method;
@@ -55,7 +55,7 @@ public class ScribeDelegate<TDelegate> : IExposable where TDelegate : Delegate
         if (isLoading)
         {
             //
-            DataExposeUtility.ByteArray(ref _TempBytes, "delegateBytes");
+            DataExposeUtility.LookByteArray(ref _TempBytes, "delegateBytes");
             scribeTimeMethod = loadedMethod = MethodConstructor.Deserialize(_TempBytes);
         }
 

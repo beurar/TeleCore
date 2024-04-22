@@ -164,7 +164,7 @@ public class Verb_Beam : Verb_Tele
             var finalStaticShotTarget = currentTargetTruePos;
             if (verbProps.canGoWild && !Rand.Chance(shotReport.AimOnTargetChance_IgnoringPosture))
             {
-                shootLine.ChangeDestToMissWild(shotReport.AimOnTargetChance_StandardTarget);
+                shootLine.ChangeDestToMissWild(shotReport.AimOnTargetChance_StandardTarget, caster.Map);
                 finalStaticShotTarget = shootLine.Dest.ToVector3Shifted().Yto0();
             }
 
@@ -258,8 +258,7 @@ public class Verb_Beam : Verb_Tele
         }
     }
 
-    private void
-        StaticTargetEffects(Vector3 startPos, Vector3 staticVec3,
+    private void StaticTargetEffects(Vector3 startPos, Vector3 staticVec3,
             IntVec3 staticTarget) //, Vector3 rangeDiff, Vector3 normalVec
     {
         var rangeDiff = staticVec3 - startPos;
@@ -345,7 +344,8 @@ public class Verb_Beam : Verb_Tele
         var finalPos = rangePos.IsValid ? rangePos : desiredRange;
 
         //
-        if (IsStatic) StaticTargetEffects(CurrentStartPos, finalPos.ToVector3Shifted(), finalPos);
+        if (IsStatic) 
+            StaticTargetEffects(CurrentStartPos, finalPos.ToVector3Shifted(), finalPos);
 
         HitCell(finalPos);
         return true;
@@ -394,11 +394,11 @@ public class Verb_Beam : Verb_Tele
         if (thing.CanEverAttachFire())
         {
             if (Rand.Chance(verbProps.beamChanceToAttachFire))
-                thing.TryAttachFire(verbProps.beamFireSizeRange.RandomInRange);
+                thing.TryAttachFire(verbProps.beamFireSizeRange.RandomInRange, caster);
         }
         else if (Rand.Chance(verbProps.beamChanceToStartFire))
         {
-            FireUtility.TryStartFireIn(intVec, caster.Map, verbProps.beamFireSizeRange.RandomInRange);
+            FireUtility.TryStartFireIn(intVec, caster.Map, verbProps.beamFireSizeRange.RandomInRange, caster);
         }
     }
 

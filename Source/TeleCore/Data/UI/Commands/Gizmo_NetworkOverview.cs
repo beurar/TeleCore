@@ -17,7 +17,7 @@ public class Gizmo_NetworkOverview : Gizmo, IDisposable
     private const int gizmoPadding = 5;
     internal const int selSettingHeight = 22;
     private readonly Dictionary<NetworkPart, NetworkInfoView> _viewByPart;
-    private readonly Comp_Network _compNetwork;
+    private readonly CompNetwork _compNetwork;
 
     //Part Extendo Consts
     private readonly Vector2 partSelectionSize;
@@ -33,7 +33,7 @@ public class Gizmo_NetworkOverview : Gizmo, IDisposable
     public NetworkPart SelectedPart { get; private set; }
     public NetworkInfoView SelectedView => _viewByPart[SelectedPart];
     
-    public Gizmo_NetworkOverview(Comp_Network compParent)
+    public Gizmo_NetworkOverview(CompNetwork compParent)
     {
         order = -250f;
         _compNetwork = compParent;

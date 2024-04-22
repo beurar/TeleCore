@@ -264,7 +264,7 @@ public partial class CustomNetworkBill
             //Controls
             var removeRect = new Rect(rect.width - 20f, 0f, 22f, 22f);
             var copyRect = new Rect(removeRect.x - 20, 0f, 22f, 22f);
-            if (Widgets.ButtonImage(removeRect, TexButton.DeleteX, Color.white, Color.white * GenUI.SubtleMouseoverColor))
+            if (Widgets.ButtonImage(removeRect, TexButton.Delete, Color.white, Color.white * GenUI.SubtleMouseoverColor))
             {
                 Destroy();
             }

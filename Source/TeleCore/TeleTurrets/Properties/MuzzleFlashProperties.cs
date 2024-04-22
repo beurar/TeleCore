@@ -1,17 +1,11 @@
-﻿using Verse;
+﻿using UnityEngine;
+using Verse;
 
 namespace TeleCore;
 
-public class MuzzleFlashProperties
+public class MuzzleFlashProperties : Editable
 {
-    public float fadeInTime = 0f;
-    public float fadeOutTime = 0f;
-
-    public GraphicData flashGraphicData;
-    private Graphic graphicInt;
-
+    public FleckDef? fleck;
     public float scale = 1;
-    public float solidTime = 0.25f;
-
-    public Graphic Graphic => graphicInt ??= flashGraphicData.Graphic;
+    public Vector3 offset = Vector3.zero;
 }

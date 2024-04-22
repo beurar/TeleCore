@@ -60,4 +60,9 @@ internal static class Translations
     {
         public static string OnlyOutside => "TELE.PlaceWorker.OnlyOutside".Translate();
     }
+
+    public static class Buildings
+    {
+        public static string TurretHubAnticipated(int count) => "TELE.Buildings.TurretHub.Anticipated".Translate(count);
+    }
 }

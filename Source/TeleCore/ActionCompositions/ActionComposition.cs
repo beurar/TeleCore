@@ -87,7 +87,7 @@ public class ActionComposition : IExposable, ILoadReferenceable
     {
         startTick = actionParts.First().StartTick;
         endTick = actionParts.Last().EndTick;
-        TLog.Message($"Init ActionComposition: {startTick} -> {endTick}");
+        TLog.Message($"Init ActionComposition (\"{compositionName}\"): {startTick} -> {endTick}");
         ActionCompositionHandler.InitComposition(this);
     }
 
@@ -105,14 +105,15 @@ public class ActionComposition : IExposable, ILoadReferenceable
             return;
         }
 
-        if (curTick >= endTick)
+        if (curTick > endTick)
         {
-            TLog.Warning("Force completing...");
+            TLog.Warning($"Force completing \"{compositionName}\" at {curTick.TicksToSeconds()}s");
             FinalizeComposition();
             return;
         }
 
-        for (var i = 0; i < actionParts.Count; i++) actionParts[i].Tick(curTick, i);
+        for (var i = 0; i < actionParts.Count; i++)
+            actionParts[i].Tick(curTick, i);
         curTick++;
     }
 

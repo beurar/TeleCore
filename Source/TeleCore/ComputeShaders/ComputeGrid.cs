@@ -12,11 +12,15 @@ namespace TeleCore;
 
 public unsafe class ComputeGrid<T> : IExposable, IDisposable where T : unmanaged
 {
-    private NativeArray<T> gridArray;
-    private T* gridPtr;
+    private Map _map;
+    
+    private ComputeBuffer _buffer;
+    private NativeArray<T> _arr;
+    private T* _ptr;
 
-    private Map map;
-
+    //
+    private int _changesMade;
+    
     public ComputeGrid(Map map)
     {
         Constructor(map, _ => default);
@@ -27,24 +31,31 @@ public unsafe class ComputeGrid<T> : IExposable, IDisposable where T : unmanaged
         Constructor(map, factory);
     }
 
-    public NativeArray<T> Grid => gridArray;
-
-    public int Length => gridArray.Length;
     public bool IsReady { get; private set; }
-
-    //public Array DataArray => gridArray.ToArray(;
-    public ComputeBuffer DataBuffer { get; private set; }
+    
+    public ComputeBuffer DataBuffer => _buffer;
+    
+    public NativeArray<T> Grid => _arr;
+    public int Length => _arr.Length;
 
     public T this[int i]
     {
-        get => gridArray[i];
-        private set => gridArray[i] = value;
+        get => _arr[i];
+        private set
+        {
+            _changesMade++;
+            _arr[i] = value;
+        }
     }
 
     public T this[IntVec3 c]
     {
-        get => gridArray[c.Index(map)];
-        private set => gridArray[c.Index(map)] = value;
+        get => _arr[c.Index(_map)];
+        private set
+        {
+            _changesMade++;
+            _arr[c.Index(_map)] = value;
+        }
     }
 
     /// <summary>
@@ -73,7 +84,7 @@ public unsafe class ComputeGrid<T> : IExposable, IDisposable where T : unmanaged
 
     public T GetValueByPtr(int idx)
     {
-        return gridPtr[idx];
+        return _ptr[idx];
     }
 
     //
@@ -86,7 +97,7 @@ public unsafe class ComputeGrid<T> : IExposable, IDisposable where T : unmanaged
         }
 
         IsReady = true;
-        DataBuffer = new ComputeBuffer(Length, Marshal.SizeOf(typeof(T)));
+        _buffer = new ComputeBuffer(Length, Marshal.SizeOf(typeof(T)));
         UpdateBuffer();
     }
 
@@ -96,20 +107,20 @@ public unsafe class ComputeGrid<T> : IExposable, IDisposable where T : unmanaged
         ApplicationQuitUtility.RegisterQuitEvent(delegate { DataBuffer.Dispose(); });
 
         //
-        this.map = map;
+        this._map = map;
 
         //
-        gridArray = new NativeArray<T>(map.cellIndices.NumGridCells, Allocator.Persistent);
-        gridPtr = (T*) gridArray.GetUnsafePtr();
+        _arr = new NativeArray<T>(map.cellIndices.NumGridCells, Allocator.Persistent);
+        _ptr = (T*) _arr.GetUnsafePtr();
 
-        for (var i = 0; i < gridArray.Length; i++) gridPtr[i] = factory.Invoke(i);
+        for (var i = 0; i < _arr.Length; i++) _ptr[i] = factory.Invoke(i);
     }
 
     public void PullBufferFromGPU()
     {
         if (CheckReadyState(ReadyStateMode.UpdateCPU)) return;
         TLog.Debug("Requesting GPU Data---");
-        AsyncGPUReadback.RequestIntoNativeArray(ref gridArray, DataBuffer, UpdateInternalCallBack);
+        AsyncGPUReadback.RequestIntoNativeArray(ref _arr, DataBuffer, UpdateInternalCallBack);
 
         //TFind.TeleRoot.StartCoroutine(UpdateData_Internal());
     }
@@ -117,7 +128,8 @@ public unsafe class ComputeGrid<T> : IExposable, IDisposable where T : unmanaged
     public void UpdateBuffer()
     {
         if (CheckReadyState(ReadyStateMode.UpdateBuffer)) return;
-        DataBuffer.SetData(gridArray);
+        DataBuffer.SetData(_arr);
+        _changesMade = 0;
     }
 
     private IEnumerator UpdateData_Internal()
@@ -128,7 +140,7 @@ public unsafe class ComputeGrid<T> : IExposable, IDisposable where T : unmanaged
 
     private void GetPtr()
     {
-        AsyncGPUReadback.RequestIntoNativeArray(ref gridArray, DataBuffer, UpdateInternalCallBack);
+        AsyncGPUReadback.RequestIntoNativeArray(ref _arr, DataBuffer, UpdateInternalCallBack);
         //(T*) DataBuffer.GetNativeBufferPtr();
         //DataBuffer.GetData(gridArray);
         //gridPtr = (T*) DataBuffer.GetNativeBufferPtr();
@@ -144,8 +156,8 @@ public unsafe class ComputeGrid<T> : IExposable, IDisposable where T : unmanaged
         if (CheckReadyState(ReadyStateMode.Setter)) return;
 
         //
-        foreach (var c in positions) gridPtr[c.Index(map)] = valueGetter.Invoke(c);
-        DataBuffer.SetData(gridArray);
+        foreach (var c in positions) _ptr[c.Index(_map)] = valueGetter.Invoke(c);
+        DataBuffer.SetData(_arr);
     }
 
     public void SetValue(IntVec3 c, T t)
@@ -153,8 +165,8 @@ public unsafe class ComputeGrid<T> : IExposable, IDisposable where T : unmanaged
         if (CheckReadyState(ReadyStateMode.Setter)) return;
 
         //
-        gridPtr[c.Index(map)] = t;
-        DataBuffer.SetData(gridArray);
+        _ptr[c.Index(_map)] = t;
+        DataBuffer.SetData(_arr);
     }
 
     /// <summary>
@@ -162,7 +174,7 @@ public unsafe class ComputeGrid<T> : IExposable, IDisposable where T : unmanaged
     /// </summary>
     public void SetValues_Array(IEnumerable<IntVec3> positions, Func<IntVec3, T> valueGetter)
     {
-        foreach (var c in positions) gridPtr[c.Index(map)] = valueGetter.Invoke(c);
+        foreach (var c in positions) _ptr[c.Index(_map)] = valueGetter.Invoke(c);
     }
 
     /// <summary>
@@ -170,24 +182,24 @@ public unsafe class ComputeGrid<T> : IExposable, IDisposable where T : unmanaged
     /// </summary>
     public void SetValue_Array(IntVec3 c, T t)
     {
-        gridPtr[c.Index(map)] = t;
+        _ptr[c.Index(_map)] = t;
     }
 
     public void ResetValues(IEnumerable<IntVec3> positions, T toVal = default)
     {
         if (CheckReadyState(ReadyStateMode.Setter)) return;
 
-        foreach (var c in positions) gridPtr[c.Index(map)] = toVal;
-        DataBuffer.SetData(gridArray);
+        foreach (var c in positions) _ptr[c.Index(_map)] = toVal;
+        DataBuffer.SetData(_arr);
     }
 
     public void ResetValue(IntVec3 c, T toVal = default)
     {
         if (CheckReadyState(ReadyStateMode.Setter)) return;
 
-        gridPtr[c.Index(map)] = toVal;
+        _ptr[c.Index(_map)] = toVal;
         if (!IsReady) return;
-        DataBuffer.SetData(gridArray);
+        DataBuffer.SetData(_arr);
     }
 
     private bool CheckReadyState(ReadyStateMode mode)

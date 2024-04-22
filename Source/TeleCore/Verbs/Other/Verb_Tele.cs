@@ -8,7 +8,7 @@ namespace TeleCore;
 
 public abstract class Verb_Tele : Verb
 {
-    private readonly List<Vector3> drawOffsets = new();
+    private readonly List<Vector3>? _drawOffsets = [];
 
     private int currentOffsetIndex;
 
@@ -21,7 +21,7 @@ public abstract class Verb_Tele : Verb
 
     //
     public VerbProperties_Extended Props => (VerbProperties_Extended) verbProps;
-    public Comp_Network NetworkComp => caster.TryGetComp<Comp_Network>();
+    public CompNetwork NetworkComp => caster.TryGetComp<CompNetwork>();
     public CompPowerTrader PowerComp => caster.TryGetComp<CompPowerTrader>();
 
     public ThingDef GunDef
@@ -102,27 +102,27 @@ public abstract class Verb_Tele : Verb
 
     public Vector3 BaseDrawOffsetRotated => BaseDrawOffset.RotatedBy(CurrentAimAngle);
 
-    public List<Vector3> RelativeDrawOffsets
+    public List<Vector3>? RelativeDrawOffsets
     {
         get
         {
-            drawOffsets.Clear();
+            _drawOffsets!.Clear();
             var baseOff = BaseDrawOffset;
             if (Props.originOffsetPerShot != null)
                 foreach (var vector3 in Props.originOffsetPerShot)
-                    drawOffsets.Add(baseOff + vector3.RotatedBy(CurrentAimAngle));
+                    _drawOffsets.Add(baseOff + vector3.RotatedBy(CurrentAimAngle));
             else
-                drawOffsets.Add(baseOff);
-            return drawOffsets;
+                return null;
+            return _drawOffsets;
         }
     }
 
-    public Vector3 CurrentDrawOffset => RelativeDrawOffsets[OffsetIndex];
+    public Vector3 CurrentDrawOffset => RelativeDrawOffsets?[OffsetIndex] ?? BaseDrawOffset;
     public Vector3 CurrentStartPos => DrawPos + CurrentDrawOffset;
 
     protected virtual Vector3 ShotOriginLOS => CurrentStartPos + new Vector3(0, Props.shootHeightOffset, 0);
 
-    public virtual void DrawVerb()
+    public virtual void DrawVerb(Vector3 drawPos)
     {
         var altOff = new Vector3(0, AltitudeLayer.Projectile.AltitudeFor(), 0);
 
@@ -253,11 +253,14 @@ public abstract class Verb_Tele : Verb
         {
             var comp = EquipmentSource.GetComp<CompChangeableProjectile>();
             if (comp != null) comp.Notify_ProjectileLaunched();
-            var comp2 = EquipmentSource.GetComp<CompReloadable>();
-            if (comp2 != null) comp2.UsedOnce();
+            // 1.5 fucked this
+            // var comp2 = EquipmentSource.GetComp<CompReloadable>();
+            // var comp = EquipmentSource.GetComp<CompEquippableAbilityReloadable>()
+            // if (comp2 != null) comp2.UsedOnce();
         }
 
-        if (verbProps.consumeFuelPerShot > 0f) turretGun?.RefuelComp?.ConsumeFuel(verbProps.consumeFuelPerShot);
+        if (verbProps.consumeFuelPerShot > 0f) 
+            turretGun?.Parent.RefuelComp?.ConsumeFuel(verbProps.consumeFuelPerShot);
 
         //TODO: Add power consumption
         if (Props.powerConsumptionPerShot > 0)
@@ -370,7 +373,7 @@ public abstract class Verb_Tele : Verb
         {
             if (Rand.Chance(0.5f) && canHitNonTargetPawnsNow)
                 flags |= ProjectileHitFlags.NonTargetPawns;
-            shootLine.ChangeDestToMissWild(shotReport.AimOnTargetChance_StandardTarget);
+            shootLine.ChangeDestToMissWild(shotReport.AimOnTargetChance_StandardTarget, caster.Map);
             return GetTargetFromPos(shootLine.Dest, caster.Map);
         }
 

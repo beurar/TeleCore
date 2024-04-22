@@ -13,7 +13,7 @@ public class PlaceWorker_Pipe : PlaceWorker
     public override AcceptanceReport AllowsPlacing(BuildableDef checkingDef, IntVec3 loc, Rot4 rot, Map map,
         Thing thingToIgnore = null, Thing thing = null)
     {
-        var comp = loc.GetThingList(map).Select(t => t.TryGetComp<Comp_Network>()).FirstOrDefault();
+        var comp = loc.GetThingList(map).Select(t => t.TryGetComp<CompNetwork>()).FirstOrDefault();
         if (comp is null) return true;
 
         var networks =

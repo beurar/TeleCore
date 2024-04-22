@@ -14,7 +14,7 @@ namespace TeleCore;
 
 //TODO: Add leaking functionality, broken transmitters losing values
 //TODO: Cleanup / Revise
-public class Comp_Network : FXThingComp, INetworkStructure
+public class CompNetwork : FXThingComp, INetworkStructure
 {
     //Debug
     protected static bool DebugConnectionCells;

@@ -84,7 +84,7 @@ public static class StaticData
     }
 
     //
-    public static MapComponent_TeleCore TeleCore(this Map map)
+    public static MapComponent_TeleCore TeleCore(this Map? map)
     {
         if (map != null) 
             return TELE_MAPCOMPS[map.uniqueID];

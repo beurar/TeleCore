@@ -25,11 +25,12 @@ public class MoteBeam : TeleMote
     {
         this.width = width;
     }
-    
-    public override void Draw()
+
+
+    public override void DrawAt(Vector3 drawLoc, bool flip = false)
     {
         UpdatePositionAndRotation();
-        base.Draw();
+        base.DrawAt(drawLoc, flip);
     }
 
     public void UpdateTargets(TargetInfo a, TargetInfo b, Vector3 offsetA, Vector3 offsetB)
@@ -50,7 +51,7 @@ public class MoteBeam : TeleMote
                 if (def.mote.rotateTowardsTarget)
                     exactRotation = link1.LastDrawPos.AngleToFlat(link2.LastDrawPos) + 90f;
                 if (def.mote.scaleToConnectTargets)
-                    exactScale = new Vector3(width, 1, (link2.LastDrawPos - link1.LastDrawPos).MagnitudeHorizontal());
+                    linearScale = new Vector3(width, 1, (link2.LastDrawPos - link1.LastDrawPos).MagnitudeHorizontal());
             }
             else
             {

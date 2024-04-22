@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using Multiplayer.API;
+//using Multiplayer.API;
 using TeleCore.FlowCore;
 using UnityEngine;
 using Verse;
@@ -110,20 +110,20 @@ public class Gizmo_FlowVolume<T> : Gizmo where T : FlowValueDef
 //This needs to be done because otherwise sync methods wont work due to generic class BS
 public class Gizmo_NetworkVolume : Gizmo_FlowVolume<NetworkValueDef>
 {
-    [SyncMethod]
+    //[SyncMethod]
     protected override void Debug_AddAll(int part)
     {
         foreach (var type in _volume.AllowedValues) 
             _volume.TryAdd(type, part);
     }
 
-    [SyncMethod]
+    //[SyncMethod]
     protected override void Debug_Clear()
     {
         _volume.Clear();
     }
 
-    [SyncMethod]
+    //[SyncMethod]
     protected override void Debug_AddType(NetworkValueDef type, int part)
     {
         _volume.TryAdd(type, part);

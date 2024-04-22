@@ -1,4 +1,4 @@
-﻿using Multiplayer.API;
+﻿//using Multiplayer.API;
 using RimWorld;
 using Verse;
 
@@ -12,7 +12,7 @@ public class Designator_BuildGodMode : Designator_Build
     {
     }
 
-    [SyncWorker]
+    /*[SyncWorker]
     private static void SyncBuildGodMode(SyncWorker sync, ref Designator_BuildGodMode type)
     {
         if (sync.isWriting)
@@ -24,9 +24,9 @@ public class Designator_BuildGodMode : Designator_Build
             var entDef = sync.Read<BuildableDef>();
             type = new Designator_BuildGodMode(entDef);
         }
-    }
+    }*/
 
-    [SyncMethod]
+    //[SyncMethod]
     public override void DesignateSingleCell(IntVec3 c)
     {
         var thing = ThingMaker.MakeThing((ThingDef) entDef, stuffDef);

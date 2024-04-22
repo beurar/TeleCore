@@ -11,7 +11,7 @@ namespace TeleCore;
 
 public class CompPowerPlant_Network : CompPowerPlant
 {
-    private Comp_Network _comp;
+    private CompNetwork _comp;
     private INetworkPart _netPart;
     private float internalPowerOutput;
     private int powerTicksRemaining;
@@ -33,7 +33,7 @@ public class CompPowerPlant_Network : CompPowerPlant
     public override void PostSpawnSetup(bool respawningAfterLoad)
     {
         base.PostSpawnSetup(respawningAfterLoad);
-        _comp = parent.GetComp<Comp_Network>();
+        _comp = parent.GetComp<CompNetwork>();
         _netPart = _comp[Props.fromNetwork];
     }
 

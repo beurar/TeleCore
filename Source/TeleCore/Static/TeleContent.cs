@@ -80,7 +80,7 @@ public static class TeleContent
     public static readonly Texture NodeIn_Closed = ContentFinder<Texture2D>.Get("UI/Icons/NodeIn_Closed");
 
     //Internal RW Crap /FROM TexButton
-    public static readonly Texture2D DeleteX = TexButton.DeleteX;
+    public static readonly Texture2D DeleteX = TexButton.Delete;
     public static readonly Texture2D Plus = TexButton.Plus;
     public static readonly Texture2D Minus = TexButton.Minus;
     public static readonly Texture2D Infinity = TexButton.Infinity;

@@ -19,10 +19,12 @@ public class VerbProperties_Extended : VerbProperties
 
     //Functional
     public bool isProjectile = true;
+    public bool playShotOnceOnBurst = false;
     public float minHitHeight = 0;
 
     //Graphical
     public MuzzleFlashProperties muzzleFlash;
+    public FleckDef muzzleFlashFleck;
     public NetworkCost networkCostPerShot;
 
     //Effects

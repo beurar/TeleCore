@@ -166,9 +166,9 @@ public class FXLayer
         if (data.fade == null) return;
         var fade = data.fade;
         if (fade.opacityRange.Average <= 0) return;
-        var opaVal = TMath.OscillateBetween(fade.opacityRange.min, fade.opacityRange.max, fade.opacityDuration,
-            tick + parentInfo.TickOffset + fade.initialOpacityOffset);
+        var opaVal = TMath.OscillateBetween(fade.opacityRange.min, fade.opacityRange.max, fade.duration, tick + parentInfo.TickOffset + fade.initialOpacityOffset);
         drawColor.a = opaVal;
+        TLog.Debug($"[{parentInfo.ParentThing}, {Index}]Opacity: {opaVal}");
     }
 
     private void TryTickSize(int tick)
@@ -197,7 +197,7 @@ public class FXLayer
             inoutPos.z += diff / 2;
         }
 
-        inoutPos += g.data.drawOffset; //exData?.drawOffset ?? Vector3.zero;
+        inoutPos += g.data.DrawOffsetForRot(rot); //exData?.drawOffset ?? Vector3.zero;
         
         //DrawSize
         drawSize = g.drawSize;
@@ -284,6 +284,7 @@ public class FXLayer
         //var v3 = new Vector3(s1.x / s2.x, 1, s1.y / s2.y);
         //var trs = Matrix4x4.TRS(drawPos, Quaternion.identity, Vector3.one * drawScale);
         //Graphics.DrawMesh(drawMesh, trs, _drawMat, 0, null, 0, PropertyBlock);
+        //Graphics.DrawMesh(mesh, loc, quat, mat, 0);
         Graphics.DrawMesh(drawMesh, new Vector3(drawPos.x, _altitude, drawPos.z), rotationQuat, _drawMat, 0, null, 0, PropertyBlock);
     }
 

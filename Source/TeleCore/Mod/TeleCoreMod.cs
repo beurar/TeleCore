@@ -12,7 +12,7 @@ using WidgetRow = TeleCore.Rendering.WidgetRow;
 
 namespace TeleCore;
 
-public class TeleCoreMod : Mod
+public class TeleCoreMod : Verse.Mod
 {
     //Static Data
     private static Harmony teleCore;
@@ -37,7 +37,7 @@ public class TeleCoreMod : Mod
         // TeleCore.Patch(originalMethod, prefix: prefixMethod);
         
         //
-        TLog.Message($"[{version}] - Init", Color.cyan);
+        TLog.Message($"[TeleCore] - Init", Color.cyan);
         modSettings = GetSettings<TeleCoreSettings>();
 
         //

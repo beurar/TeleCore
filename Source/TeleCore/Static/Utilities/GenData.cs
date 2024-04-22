@@ -268,7 +268,7 @@ public static class GenData
     public static bool TryGetNetworkPart(this Thing thing, NetworkDef def, out INetworkPart part)
     {
         part = null;
-        var networkComp = thing.TryGetComp<Comp_Network>();
+        var networkComp = thing.TryGetComp<CompNetwork>();
         if (networkComp == null) return false;
         part = networkComp[def];
         return part != null;
@@ -285,11 +285,13 @@ public static class GenData
     {
         return new FXLayerArgs
         {
+            categoryTag = layer.data.categoryTag,
             index = layer.Index,
             renderPriority = layer.RenderPriority,
             layerTag = layer.data.layerTag,
             needsPower = layer.data.needsPower,
-            data = layer.data
+            data = layer.data,
+
         };
     }
 }

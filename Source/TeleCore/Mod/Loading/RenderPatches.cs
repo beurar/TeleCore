@@ -71,7 +71,25 @@ internal static class RenderPatches
         }
     }
     */
-
+    
+    [HarmonyPatch(typeof(Designator_Build), MethodType.Constructor)]
+    [HarmonyPatch(new Type[] { typeof(BuildableDef) })]
+    internal static class Designator_Build_IconPatch
+    {
+        public static void Postfix(BuildableDef entDef, ref Designator_Build __instance)
+        {
+            var extension = entDef.GetModExtension<GraphicDataExtension>();
+            if (extension != null)
+            {
+                if(extension.iconProportions.HasValue)
+                    __instance.iconProportions = extension.iconProportions.Value;
+                
+                if(extension.iconDrawScale.HasValue)
+                    __instance.iconDrawScale = extension.iconDrawScale.Value;
+            }
+        }
+    }
+    
     [HarmonyPatch(typeof(Graphic_Random), nameof(Graphic_Random.SubGraphicFor))]
     public static class SubGraphcForPatch
     {
@@ -221,7 +239,7 @@ internal static class RenderPatches
             var placing = Find.DesignatorManager.SelectedDesignator is Designator_Place;
             if (!placing && selThing != null && selThing.def == tDef && selThing.Spawned)
             {
-                var comp = selThing.TryGetComp<Comp_Network>();
+                var comp = selThing.TryGetComp<CompNetwork>();
                 if (comp != null)
                 {
                     var selPart = comp.SelectedPart;

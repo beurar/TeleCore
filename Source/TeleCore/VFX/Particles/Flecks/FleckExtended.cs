@@ -1,15 +1,22 @@
-﻿using Verse;
+﻿using UnityEngine;
+using Verse;
 
 namespace TeleCore;
 
-//TODO: Make new fleck based on thrown which has speed falloff and flight curves
-public struct FleckExtended : IFleck
+public struct FleckMuzzleFlash : IFleck
 {
-    public FleckThrown baseData;
-    public float speedFalloff;
-
+    public FleckDef def;
+    public FleckDrawPosition position;
+    public int setupTick;
+    public Vector3 spawnPosition;
+    
     public void Setup(FleckCreationData creationData)
     {
+    }
+
+    public FleckMuzzleFlash(Graphic graphic)
+    {
+        
     }
 
     public bool TimeInterval(float deltaTime, Map map)

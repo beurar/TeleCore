@@ -5,7 +5,8 @@ using Verse.AI;
 
 namespace TeleCore;
 
-public class Comp_TeleTurret : ThingComp, ITurretHolder, IAttackTarget, IAttackTargetSearcher
+//TODO: Adjust to new Verse.CompTurretGun
+/*public class Comp_TeleTurret : ThingComp, ITurretHolder, IAttackTarget, IAttackTargetSearcher
 {
     //
     private TurretGunSet turretSet;
@@ -17,6 +18,22 @@ public class Comp_TeleTurret : ThingComp, ITurretHolder, IAttackTarget, IAttackT
     private bool MannedByColonist => ManningPawn?.Faction == Faction.OfPlayer;
     private bool MannedByNonColonist => ManningPawn?.Faction != Faction.OfPlayer;
 
+    public bool IsStunned => false;
+
+    public bool Spawned => parent.Spawned;
+    /*{
+        get
+        {
+            if (!this.triedGettingStunner)
+            {
+                CompStunnable comp = base.GetComp<CompStunnable>();
+                this.stunner = ((comp != null) ? comp.StunHandler : null);
+                this.triedGettingStunner = true;
+            }
+            return this.stunner != null && this.stunner.Stunned;
+        }
+    }#1#
+    
     //
     public Thing Thing => parent;
     public LocalTargetInfo TargetCurrentlyAimingAt { get; }
@@ -34,7 +51,7 @@ public class Comp_TeleTurret : ThingComp, ITurretHolder, IAttackTarget, IAttackT
     //TurretHolder
     public LocalTargetInfo TargetOverride => LocalTargetInfo.Invalid;
 
-    public bool IsActive => parent.Spawned && (PowerComp == null || PowerComp.PowerOn) &&
+    public bool Active => parent.Spawned && (PowerComp == null || PowerComp.PowerOn) &&
                             (MannableComp == null || MannableComp.MannedNow);
 
     public bool PlayerControlled => (Faction == Faction.OfPlayer || MannedByColonist) && !MannedByNonColonist;
@@ -52,7 +69,7 @@ public class Comp_TeleTurret : ThingComp, ITurretHolder, IAttackTarget, IAttackT
 
     public CompRefuelable RefuelComp { get; private set; }
 
-    public Comp_Network NetworkComp { get; private set; }
+    public CompNetwork NetworkComp { get; private set; }
 
     public StunHandler Stunner { get; private set; }
 
@@ -76,7 +93,7 @@ public class Comp_TeleTurret : ThingComp, ITurretHolder, IAttackTarget, IAttackT
         InitiatableComp = parent.GetComp<CompInitiatable>();
         MannableComp = parent.GetComp<CompMannable>();
         RefuelComp = parent.GetComp<CompRefuelable>();
-        NetworkComp = parent.GetComp<Comp_Network>();
+        NetworkComp = parent.GetComp<CompNetwork>();
 
         //
         Stunner = new StunHandler(parent);
@@ -107,4 +124,4 @@ public class CompProperties_Turret : CompProperties
     {
         compClass = typeof(Comp_TeleTurret);
     }
-}
+}*/

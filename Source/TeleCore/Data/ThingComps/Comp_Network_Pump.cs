@@ -9,7 +9,7 @@ using Verse;
 
 namespace TeleCore;
 
-public class Comp_Network_Pump : Comp_Network
+public class Comp_Network_Pump : CompNetwork
 {
     //TODO: Handle multi in-output
     //Multi Steps:

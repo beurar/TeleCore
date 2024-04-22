@@ -23,7 +23,7 @@ public class CompProperties_Network : CompProperties
     
     public CompProperties_Network()
     {
-        compClass = typeof(Comp_Network);
+        compClass = typeof(CompNetwork);
     }
 
     public override IEnumerable<string> ConfigErrors(ThingDef parentDef)

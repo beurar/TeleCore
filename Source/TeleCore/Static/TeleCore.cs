@@ -4,7 +4,7 @@ namespace TeleCore;
 
 public static class TeleCore
 {
-    public static void RegisterAssetBundleSource(Mod mod)
+    public static void RegisterAssetBundleSource(Verse.Mod mod)
     {
         
     }

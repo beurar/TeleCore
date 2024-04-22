@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using Multiplayer.API;
+//using Multiplayer.API;
 using RimWorld;
 using UnityEngine;
 using Verse;
@@ -27,7 +27,7 @@ public class TurretGunSet : IExposable
         }
     }
 
-    public TurretGunSet(List<TurretProperties> turretProps, ITurretHolder parent)
+    public TurretGunSet(IReadOnlyList<TurretProperties> turretProps, ITurretHolder parent)
     {
         this.parent = parent;
         Turrets = new List<TurretGun>(turretProps.Count);
@@ -59,7 +59,10 @@ public class TurretGunSet : IExposable
 
     public void TickTurrets()
     {
-        foreach (var turret in Turrets) turret.TurretTick();
+        foreach (var turret in Turrets)
+        {
+            turret.TickGun();
+        }
     }
 
     //
@@ -69,7 +72,7 @@ public class TurretGunSet : IExposable
             turretGun.TryOrderAttack(targ);
     }
 
-    [SyncMethod]
+    //[SyncMethod]
     public void CommandHoldFire()
     {
         HoldingFire = !HoldingFire;
@@ -99,9 +102,10 @@ public class TurretGunSet : IExposable
     }
 
     //Drawing
-    public void Draw()
+    public void Draw(Vector3 drawLoc)
     {
-        foreach (var gun in Turrets) gun.Draw();
+        foreach (var gun in Turrets) 
+            gun.Draw(drawLoc);
     }
 
     public IEnumerable<Gizmo> TurretGizmos()
@@ -134,9 +138,9 @@ public class TurretGunSet : IExposable
         if (AttackVerb.verbProps.minRange > 0f)
             sb.AppendLine("MinimumRange".Translate() + ": " + AttackVerb.verbProps.minRange.ToString("F0"));
         var parent = this.parent.HolderThing;
-        if (parent.Spawned && MainGun.NeedsRoof && parent.Position.Roofed(parent.Map))
+        if (parent.Spawned && (MainGun.NeedsRoofless && parent.Position.Roofed(parent.Map)))
             sb.AppendLine("CannotFire".Translate() + ": " + "Roofed".Translate().CapitalizeFirst());
-        else if (parent.Spawned && MainGun.BurstCoolDownTicksLeft > 0 && MainGun.BurstCooldownTime() > 5f)
+        else if (parent.Spawned && MainGun is { BurstCoolDownTicksLeft: > 0, BurstCooldownTime: > 5f })
             sb.AppendLine("CanFireIn".Translate() + ": " + MainGun.BurstCoolDownTicksLeft.ToStringSecondsFromTicks());
         var compChangeableProjectile = MainGun.Gun.TryGetComp<CompChangeableProjectile>();
         if (compChangeableProjectile != null)
@@ -156,13 +160,13 @@ public class TurretGunSet : IExposable
         if(turretIndex >= Turrets.Count) return;
         if (turretIndex >= 0)
         {
-            Turrets[turretIndex].DoAttackNow(targ);
+            Turrets[turretIndex].ForceOrderAttack(targ);
             return;
         }
         
         foreach (var turret in Turrets)
         {
-            turret.DoAttackNow(targ);
+            turret.ForceOrderAttack(targ);
         }
     }
 
