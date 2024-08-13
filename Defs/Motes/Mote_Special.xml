@@ -13,16 +13,6 @@
 	</ThingDef>
 	
 	<ThingDef ParentName="MoteBase_Tele">
-		<defName>Mote_MuzzleFlash</defName>
-		<thingClass>TeleCore.Mote_MuzzleFlash</thingClass>
-		<graphicData>
-			<texPath>Blank</texPath>
-		</graphicData>
-		<altitudeLayer>MoteOverhead</altitudeLayer>
-		<drawOffscreen>true</drawOffscreen>
-	</ThingDef>
-	
-	<ThingDef ParentName="MoteBase_Tele">
 		<defName>Mote_Arc</defName>
 		<thingClass>TeleCore.Mote_Arc</thingClass>
 		<graphicData>

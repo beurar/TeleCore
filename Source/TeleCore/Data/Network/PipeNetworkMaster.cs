@@ -175,7 +175,6 @@ public class DynamicNetworkGraph
             }
 
             INetworkPart firstNode;
-            INetworkPart secondNode;
             //Directly adjacent
             //For a single edge connecting two direct nodes there is a bit of trickery involved with the cached I/O data of the network structures
             //We need to know the I/O of both nodes to determine whether the edge is valid or not, and to ensure flow is correct between both nodes

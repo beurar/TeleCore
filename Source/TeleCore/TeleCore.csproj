@@ -59,7 +59,7 @@
          <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
        </PackageReference>
         
-       <PackageReference Include="Krafs.Rimworld.Ref" Version="1.5.4035-beta" GeneratePathProperty="true" ExcludeAssets="runtime">
+       <PackageReference Include="Krafs.Rimworld.Ref" Version="1.5.*" GeneratePathProperty="true" ExcludeAssets="runtime">
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>compile; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
@@ -68,7 +68,7 @@
             <PrivateAssets>all</PrivateAssets>
         </PackageReference>
         
-        <PackageReference Include="Lib.Harmony" Version="2.2.2">
+        <PackageReference Include="Lib.Harmony" Version="2.3.*">
             <PrivateAssets>all</PrivateAssets>
             <ExcludeAssets>runtime</ExcludeAssets>
             <IncludeAssets>compile; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>

@@ -151,7 +151,7 @@ public class ScribeDelegate<TDelegate> : IExposable where TDelegate : Delegate
                 }
                 else
                 {
-                    @delegate = scribeTimeMethod.CreateDelegate<TDelegate>(loadReferencable);
+                    @delegate = (TDelegate) scribeTimeMethod.CreateDelegate(typeof(TDelegate), loadReferencable as TDelegate);
                 }
             }
         }
