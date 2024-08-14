@@ -33,11 +33,7 @@ public class TurretGunTop
     }
 
     public TurretTopProperties Props { get; }
-
     public List<TurretBarrel> Barrels { get; }
-
-    public Vector3 DrawPos => new(parent.DrawPos.x, AltitudeLayer.BuildingOnTop.AltitudeFor(), parent.DrawPos.z);
-
     public bool HasBarrels => Props.barrels != null;
 
     public bool OnTarget
@@ -68,7 +64,8 @@ public class TurretGunTop
     //
     public void Notify_TurretShot(int index)
     {
-        if (HasBarrels && Barrels.Count > index) Barrels[index].Notify_TurretShot();
+        if (HasBarrels && Barrels.Count > index) 
+            Barrels[index].Notify_TurretShot();
     }
 
     public void Notify_AimAngleChanged(float? angle)
@@ -119,9 +116,11 @@ public class TurretGunTop
         }
     }
 
-    public void DrawTurret()
+    public void DrawTurret(Vector3 drawPos)
     {
-        TDrawing.Draw(parent.TurretGraphic, DrawPos, Rot4.North, CurRotation, null);
-        if (HasBarrels) Barrels.ForEach(b => b.Draw());
+        drawPos = new Vector3(drawPos.x, AltitudeLayer.BuildingOnTop.AltitudeFor(), drawPos.z);
+        TDrawing.Draw(Props.topGraphic.Graphic, drawPos, Rot4.North, CurRotation, null);
+        if (HasBarrels)
+            Barrels.ForEach(b => b.Draw(drawPos));
     }
 }

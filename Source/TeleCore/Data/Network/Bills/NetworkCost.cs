@@ -6,13 +6,15 @@ namespace TeleCore.Network.Bills;
 
 public class NetworkCost
 {
-    public NetworkCostSet costSet;
+    public NetworkCostSet? costSet;
     public bool useDirectStorage = false;
 
     public NetworkCostSet Cost => costSet;
 
+    public bool Valid => costSet is { Valid: true };
+    
     //Validation
-    public bool CanPayWith(Comp_Network networkComp)
+    public bool CanPayWith(CompNetwork networkComp)
     {
         return networkComp.NetworkParts.Any(CanPayWith);
     }
@@ -61,7 +63,7 @@ public class NetworkCost
     }
 
     //Process
-    public void DoPayWith(Comp_Network network)
+    public void DoPayWith(CompNetwork network)
     {
         if (useDirectStorage)
             DoPayWithContainer(network);
@@ -69,7 +71,7 @@ public class NetworkCost
             DoPayWithNetwork(network);
     }
 
-    private void DoPayWithContainer(Comp_Network structure)
+    private void DoPayWithContainer(CompNetwork structure)
     {
         var totalCost = Cost.TotalCost;
         if (totalCost <= 0) return;
@@ -97,7 +99,7 @@ public class NetworkCost
     }
 
     //TODO: Make totalcost a stack
-    private void DoPayWithNetwork(Comp_Network structure)
+    private void DoPayWithNetwork(CompNetwork structure)
     {
         var totalCost = Cost.TotalCost;
         if (totalCost <= 0) return;

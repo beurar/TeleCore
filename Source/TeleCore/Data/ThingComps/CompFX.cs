@@ -214,7 +214,15 @@ public class CompFX : TeleComp
         if (!parent.Spawned) return;
         if (signal is "PowerTurnedOn" or "PowerTurnedOff" or "FlickedOn" or "FlickedOff" or "Refueled" or "RanOutOfFuel"
             or "ScheduledOn" or "ScheduledOff")
-            parent.Map.mapDrawer.MapMeshDirty(parent.Position, MapMeshFlag.Things);
+            parent.Map.mapDrawer.MapMeshDirty(parent.Position, MapMeshFlagDefOf.Things);
+    }
+
+    internal override void TeleTick()
+    {
+        if (parent.def.tickerType == TickerType.Never)
+        {
+            FXTick(1);
+        }
     }
 
     public override void CompTick()
@@ -224,7 +232,8 @@ public class CompFX : TeleComp
 
     public override void CompTickRare()
     {
-        for (var i = 0; i < GenTicks.TickRareInterval; i++) FXTick(GenTicks.TickRareInterval);
+        for (var i = 0; i < GenTicks.TickRareInterval; i++) 
+            FXTick(GenTicks.TickRareInterval);
     }
 
     private void FXTick(int tickInterval)
@@ -241,12 +250,10 @@ public class CompFX : TeleComp
     //Drawing
     private bool CanDraw(FXLayerArgs args)
     {
-        if (args.data.skip)
-            return false;
-        if (!GetDrawBool(args) || GetOpacityFloat(args) <= 0)
-            return false;
-        if (!HasPower(args))
-            return false;
+        if (args.data.skip) return false;
+        if (!GetDrawBool(args)) return false;
+        if (GetOpacityFloat(args) <= 0) return false;
+        if (!HasPower(args)) return false;
         return true;
     }
 
@@ -296,7 +303,7 @@ public class CompFX : TeleComp
         
         foreach (var layer in FXLayers)
         {
-            var canDraw =  CanDraw(layer.Args);
+            var canDraw = CanDraw(layer.Args);
             if (layer.data.fxMode != FXMode.Static && canDraw)
                 layer.Draw();
         }
@@ -315,6 +322,36 @@ public class CompFX : TeleComp
 
     public override IEnumerable<Gizmo> CompGetGizmosExtra()
     {
+        if (DebugSettings.godMode)
+        {
+            var states = "";
+            foreach (var layer in FXLayers)
+            {
+                states += $"Layer {layer.Args.index} '{layer.Args.categoryTag}:{layer.Args.layerTag}':\n";
+                if (layer.data.skip)
+                {
+                    states += "  - Skipped\n";
+                    continue;
+                }
+                states += $"  - FXMode: {layer.data.fxMode}\n";
+                var drawBool = GetDrawBool(layer.Args);
+                var power = HasPower(layer.Args);
+                var opacity = GetOpacityFloat(layer.Args);
+                states += $"  - Draw: {drawBool} && {power} && {opacity > 0}\n";
+                states += $"  - Opacity: {opacity}\n";
+                states += $"  - Rotation: {GetExtraRotation(layer.Args)}\n";
+                states += $"  - Animation Speed: {GetAnimationSpeedFactor(layer.Args)}\n";
+                states += $"  - Color: {GetColorOverride(layer.Args)?.ToString() ?? "Default"}\n";
+                states += $"  - Draw Position: {GetDrawPositionOverride(layer.Args)}\n";
+                states += $"  - Action: {GetDrawFunction(layer.Args)?.ToString() ?? "None"}\n";
+            }
+            yield return new Command_Action
+            {
+                defaultLabel = "FX States",
+                defaultDesc = states,
+                action = delegate { },
+            };
+        }
         yield break;
     }
 

@@ -9,7 +9,7 @@ public class FlowValueDef : Def
 {
     internal static readonly Dictionary<string, List<FlowValueDef>> TaggedFlowValues = new ();
     
-    public FlowValueCollectionDef collectionDef;
+    public FlowValueCollectionDef? collectionDef;
     
     public float capacityFactor = 1;
     public string labelShort;
@@ -33,9 +33,14 @@ public class FlowValueDef : Def
     
     public override IEnumerable<string> ConfigErrors()
     {
-        foreach (var error in base.ConfigErrors()) yield return error;
+        foreach (var error in base.ConfigErrors())
+            yield return error;
+        
+        if (collectionDef == null)
+            yield return $"{nameof(collectionDef)} not set!";
 
-        if (viscosity == 0) yield return $"{nameof(viscosity)} cannot be 0!";
+        if (viscosity == 0)
+            yield return $"{nameof(viscosity)} cannot be 0!";
     }
 
     public override void ResolveReferences()

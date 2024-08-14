@@ -1,5 +1,6 @@
 ﻿using TeleCore.FlowCore;
 using TeleCore.Network.Data;
+using TeleCore.Primitive;
 
 namespace TeleCore.Network.Flow.Clamping;
 
@@ -13,8 +14,54 @@ public class ClampWorker_Overcommit : ClampWorker
     public override bool MaintainFlowSpeed => false;
     public override double MinDivider => 4;
     public override double MaxDivider => 1;
+    
+    public override DefValueStack<NetworkValueDef, double> ClampFunction(FlowInterface<NetworkPart, NetworkVolume, NetworkValueDef> iface, DefValueStack<NetworkValueDef, double> f, ClampType type)
+    {
+        var from = iface.From;
+        var to = iface.To;
 
-    //FlowInterface<NetworkVolume, NetworkValueDef> iface
+        double d, c, r;
+        var fTotal = f.TotalValue.Value;
+        if (fTotal == 0) return f;
+
+        if (EnforceMinPipe)
+        {
+            // Limit outflow to 1/divider of fluid content in src pipe     
+            if (type == ClampType.FlowSpeed && MaintainFlowSpeed)
+                d = 1;
+            else
+                d = 1 / MinDivider;
+            if (fTotal > 0)
+            {
+                c = from.TotalValue;
+                fTotal = ClampFlow(c, fTotal, d * c);
+            }
+            else if (f < 0)
+            {
+                c = to.TotalValue;
+                fTotal = -ClampFlow(c, -fTotal, d * c);
+            }
+        }
+
+        if (EnforceMaxPipe && (type == ClampType.FluidMove || !MaintainFlowSpeed))
+        {
+            // Limit inflow to 1/divider of remaining space in dst pipe
+            d = 1 / MaxDivider;
+            if (fTotal > 0)
+            {
+                r = to.MaxCapacity - to.TotalValue;
+                fTotal = ClampFlow(r, fTotal, d * r);
+            }
+            else if (f < 0)
+            {
+                r = from.MaxCapacity - from.TotalValue;
+                fTotal = -ClampFlow(r, -fTotal, d * r);
+            }
+        }
+
+        return f * (fTotal / f.TotalValue.Value);
+    }
+
     public override double ClampFunction(FlowInterface<NetworkPart, NetworkVolume, NetworkValueDef> iface, double f, ClampType type)
     {
         NetworkVolume t0 = iface.From;

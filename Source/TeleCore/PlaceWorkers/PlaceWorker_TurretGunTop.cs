@@ -14,10 +14,18 @@ public class PlaceWorker_TurretGunTop : PlaceWorker
         var extension = def.TurretExtension();
         foreach (var turret in extension.turrets)
         {
-            var graphic = GhostUtility.GhostGraphicFor(turret.turretTop.topGraphic.Graphic, def, ghostCol);
-            graphic.DrawFromDef(
-                GenThing.TrueCenter(center, rot, def.Size, AltitudeLayer.MetaOverlays.AltitudeFor()) +
-                turret.turretOffset, rot, def);
+            var top = turret.turretTop;
+            var graphic = GhostUtility.GhostGraphicFor(top.topGraphic.Graphic, def, ghostCol);
+            var offset = GenThing.TrueCenter(center, rot, def.Size, AltitudeLayer.MetaOverlays.AltitudeFor()) + turret.turretOffset;
+            graphic.DrawFromDef(offset, rot, def);
+            if (top.barrels != null)
+            {
+                foreach (var barrel in top.barrels)
+                {
+                    var barrelGraphic = GhostUtility.GhostGraphicFor(barrel.graphic.Graphic, def, ghostCol);
+                    barrelGraphic.DrawFromDef(offset + barrel.barrelOffset, rot, def);
+                }
+            }
         }
     }
 }

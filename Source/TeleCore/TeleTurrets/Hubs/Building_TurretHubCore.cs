@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Text;
 using RimWorld;
+using TeleCore.Static;
 using UnityEngine;
 using Verse;
 
@@ -74,18 +75,18 @@ public class Building_TurretHubCore : Building_TeleTurret
         hubTurrets.Remove(turret);
     }
 
-    public override void Draw()
+    public override void DrawAt(Vector3 drawLoc, bool flip = false)
     {
-        base.Draw();
+        base.DrawAt(drawLoc, flip);
     }
 
     public override void Print(SectionLayer layer)
     {
         base.Print(layer);
-        foreach (var turret in hubTurrets) PrintTurretCable(layer, this, turret);
+        foreach (var turret in hubTurrets) 
+            PrintTurretCable(layer, this, turret);
     }
-
-
+    
     private void PrintTurretCable(SectionLayer layer, Thing A, Thing B)
     {
         var mat = MaterialPool.MatFrom(Extension.hub.cableTexturePath);
@@ -101,7 +102,8 @@ public class Building_TurretHubCore : Building_TeleTurret
     public override string GetInspectString()
     {
         var sb = new StringBuilder(base.GetInspectString());
-        sb.AppendLine("Anticipated Connections: " + AnticipatedBlueprintsOrFrames.Count);
+        sb.AppendLine();
+        sb.AppendLine(Translations.Buildings.TurretHubAnticipated(AnticipatedBlueprintsOrFrames.Count));
         return sb.ToString().TrimEnd();
     }
 

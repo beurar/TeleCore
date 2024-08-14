@@ -58,6 +58,8 @@ internal static class UIPatches
 
         private static void AdjustList(List<ListableOption> optList)
         {
+            if (!TeleCoreMod.Settings.showToolsInMainMenu) return;
+            
             try
             {
                 var label = "Options".Translate();
@@ -150,7 +152,7 @@ internal static class UIPatches
 
         private static void WriteNetworkCost(StringBuilder stringBuilder, Dialog_BillConfig instance)
         {
-            if (instance.bill is Bill_Production_Network tBill)
+            if (instance.bill is Bill_Production_Network tBill && tBill.def.networkCost.Valid)
             {
                 stringBuilder.AppendLine("Network Cost:");
                 foreach (var cost in tBill.def.networkCost.Cost.SpecificCosts)
@@ -172,13 +174,14 @@ internal static class UIPatches
         public static void Postfix(WidgetRow row, bool worldView)
         {
             foreach (var setting in StaticData.PlaySettings)
-                if ((worldView && setting.ShowOnWorldView) || (!worldView && setting.ShowOnMapView))
-                    if (row.ButtonIcon(setting.Icon))
-                        setting.Toggle();
-            //  Find.WindowStack.Add(DefDatabase<DevToolDef>.GetNamed("ModuleVisualizerDef").GetWindow);
+            {
+                if (setting.Visible)
+                    if ((worldView && setting.ShowOnWorldView) || (!worldView && setting.ShowOnMapView))
+                        if (row.ButtonIcon(setting.ActiveIcon, tooltip: setting.Description))
+                            setting.Toggle();
+            }
         }
     }
-
 
     [HarmonyPatch(typeof(GizmoGridDrawer))]
     [HarmonyPatch(nameof(GizmoGridDrawer.DrawGizmoGrid))]
@@ -193,6 +196,19 @@ internal static class UIPatches
             {
                 startX = network.GetWidthSpecial() + startX;
             }
+            return true;
+        }
+    }
+    
+    
+    [HarmonyPatch(typeof(DesignatorManager))]
+    [HarmonyPatch("Deselect")]
+    public static class DeselectPatch
+    {
+        public static bool Prefix(DesignatorManager __instance)
+        {
+            if (__instance.SelectedDesignator is Designator_Extended { MustStaySelected: true })
+                return false;
             return true;
         }
     }

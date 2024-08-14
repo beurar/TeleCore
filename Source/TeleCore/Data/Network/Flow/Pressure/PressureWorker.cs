@@ -1,5 +1,7 @@
-﻿using TeleCore.FlowCore;
+﻿using System;
+using TeleCore.FlowCore;
 using TeleCore.Network.Data;
+using TeleCore.Primitive;
 
 namespace TeleCore.Network.Flow.Pressure;
 
@@ -10,6 +12,14 @@ public abstract class PressureWorker
     public abstract double CSquared { get; }
     public abstract double Friction { get; }
 
+
+    public virtual DefValueStack<NetworkValueDef, double> FlowFunction(
+        FlowInterface<NetworkPart, NetworkVolume, NetworkValueDef> iface, DefValueStack<NetworkValueDef, double> f)
+    {
+        throw new NotImplementedException();
+    }
+    
+    [Obsolete]
     public abstract double FlowFunction(FlowInterface<NetworkPart, NetworkVolume, NetworkValueDef> iface, double f);
 
     public abstract double PressureFunction(NetworkVolume t);

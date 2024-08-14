@@ -36,6 +36,12 @@ internal static class SubMenuThingDefList
         }
     }
 
+    public static bool IsActive(SubMenuGroupDef groupDef)
+    {
+        var dict = Categorized[groupDef];
+        return dict.Values.SelectMany(buildings => buildings).Any(def => IsActive(groupDef.parentDef, def));
+    }
+
     //Discovery
     public static bool IsActive(SubBuildMenuDef inMenu, BuildableDef def)
     {

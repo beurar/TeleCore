@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using Multiplayer.API;
+//using Multiplayer.API;
 using RimWorld;
 using TeleCore.Data.Events;
 using UnityEngine;
@@ -16,24 +16,39 @@ namespace TeleCore;
 /// </summary>
 public class Building_TeleTurret : Building_Turret, ITurretHolder, IFXLayerProvider
 {
+    private bool hasTurret;
     private bool canForceTargetDefault;
 
-    //
-    private CompCanBeDormant dormantComp;
-    private CompInitiatable initiatableComp;
-    private CompMannable mannableComp;
-    private Comp_Network networkComp;
-    private CompPowerTrader powerComp;
-    private CompRefuelable refuelComp;
+    //Comps
+    protected CompPowerTrader powerComp;
+    protected CompCanBeDormant dormantComp;
+    protected CompInitiatable initiatableComp;
+    protected CompMannable mannableComp;
+    protected CompInteractable interactableComp;
+    protected CompRefuelable refuelableComp;
+    protected CompMechPowerCell powerCellComp;
+    protected CompNetwork networkComp;
+    
     private TurretGunSet turretSet;
 
     public TurretDefExtension Extension { get; private set; }
 
     //
-    public override LocalTargetInfo CurrentTarget => turretSet.KnownTargets.First();
+    public override LocalTargetInfo CurrentTarget
+    {
+        get
+        {
+            if (!hasTurret) return LocalTargetInfo.Invalid;
+            if(turretSet.KnownTargets.Count > 0)
+                return turretSet.KnownTargets.First();
+            return LocalTargetInfo.Invalid;
+        }
+    }
+
     public override Verb AttackVerb => turretSet.AttackVerb;
     public Verb_Tele TeleVerb => turretSet.AttackVerb as Verb_Tele;
     public TurretGun MainGun => turretSet.MainGun;
+    
     public bool MannedByColonist => ManningPawn?.Faction == Faction.OfPlayer;
     public bool MannedByNonColonist => ManningPawn?.Faction != Faction.OfPlayer;
     public bool HoldingFire => turretSet.HoldingFire;
@@ -45,30 +60,47 @@ public class Building_TeleTurret : Building_Turret, ITurretHolder, IFXLayerProvi
     public virtual LocalTargetInfo TargetOverride => forcedTarget;
 
     //TurretHolder
-    public bool IsActive => Spawned && (PowerComp == null || PowerComp.PowerOn) &&
-                            (MannableComp == null || MannableComp.MannedNow);
+    public bool Active => (PowerTraderComp == null || PowerTraderComp.PowerOn) && 
+                            (DormantComp == null || DormantComp.Awake) && 
+                            (InitiatableComp == null || InitiatableComp.Initiated) && 
+                            (this.interactableComp == null) && 
+                            this.powerCellComp is not { depleted: true } &&
+                            MannableComp is not { MannedNow: false }; //TODO: Change whether manning requires activating
 
     public bool PlayerControlled => Faction == Faction.OfPlayer || MannedByColonist;
 
+    public TurretGunSet TurretSet => turretSet;
     public virtual Thing Caster => this;
     public virtual Thing HolderThing => this;
-    public new virtual CompPowerTrader PowerComp => powerComp;
+    public virtual CompPowerTrader PowerTraderComp => powerComp;
     public virtual CompCanBeDormant DormantComp => dormantComp;
     public virtual CompInitiatable InitiatableComp => initiatableComp;
     public virtual CompMannable MannableComp => mannableComp;
-    public virtual CompRefuelable RefuelComp => refuelComp;
-    public virtual Comp_Network NetworkComp => networkComp;
+    public virtual CompRefuelable RefuelComp => refuelableComp;
+    public virtual CompNetwork NetworkComp => networkComp;
     public virtual StunHandler Stunner => stunner;
 
     public virtual void Notify_OnProjectileFired()
     {
+        
     }
 
     public new bool ThreatDisabled(IAttackTargetSearcher disabledFor)
     {
+        if (!hasTurret) return true;
         if (base.ThreatDisabled(disabledFor)) return true;
-        if (PowerComp is {PowerOn: false}) return true;
+        if (PowerTraderComp is {PowerOn: false}) return true;
         return MannableComp is {MannedNow: false};
+    }
+
+    public void Notify_LostTarget(LocalTargetInfo forcedTarget)
+    {
+        turretSet?.Notify_LostTarget(forcedTarget);
+    }
+
+    public void Notify_NewTarget(LocalTargetInfo currentTarget)
+    {
+        turretSet?.Notify_NewTarget(currentTarget);
     }
 
     public override void ExposeData()
@@ -79,38 +111,63 @@ public class Building_TeleTurret : Building_Turret, ITurretHolder, IFXLayerProvi
     public override void SpawnSetup(Map map, bool respawningAfterLoad)
     {
         base.SpawnSetup(map, respawningAfterLoad);
-        //
-        powerComp = GetComp<CompPowerTrader>();
+        Extension = def.TurretExtension();
+        
         dormantComp = GetComp<CompCanBeDormant>();
         initiatableComp = GetComp<CompInitiatable>();
+        powerComp = GetComp<CompPowerTrader>();
         mannableComp = GetComp<CompMannable>();
-        refuelComp = GetComp<CompRefuelable>();
-        networkComp = GetComp<Comp_Network>();
-
-        Extension = def.TurretExtension();
-
-        turretSet = new TurretGunSet(Extension, this);
-
-        //
-        canForceTargetDefault = Extension.turrets.Any(t => t.canForceTarget);
+        interactableComp = GetComp<CompInteractable>();
+        refuelableComp = GetComp<CompRefuelable>();
+        powerCellComp = GetComp<CompMechPowerCell>();
+        networkComp = GetComp<CompNetwork>();
+        
+        
+        //Init Turrets
+        if (Extension.HasTurrets)
+        {
+            hasTurret = true;
+            turretSet = new TurretGunSet(Extension, this);
+            canForceTargetDefault = Extension.turrets.Any(t => t.canForceTarget);
+        }
     }
 
     public override void Tick()
     {
         base.Tick();
-        turretSet.TickTurrets();
+        if (hasTurret)
+        {
+            turretSet.TickTurrets();
+        }
+    }
+
+    /// <summary>
+    /// This is a custom override to simple shoot at a target directly, no cooldown or other settings.
+    /// </summary>
+    public void DoAttackNow(LocalTargetInfo targ, int turretIndex = -1)
+    {
+        turretSet.DoAttackNow(targ, turretIndex);
+    }
+
+    /// <summary>
+    /// Should be called to fix the turret's rotation to the current target.
+    /// </summary>
+    public void ClearAttack()
+    {
+        turretSet.ClearAttack();
     }
 
     //Basic Turret Functions
-    [SyncMethod]
+    //[SyncMethod]
     public sealed override void OrderAttack(LocalTargetInfo targ)
     {
-        turretSet.TryOrderAttack(targ);
+        turretSet?.TryOrderAttack(targ);
     }
 
-    [SyncMethod]
+    //[SyncMethod]
     public void ResetOrderedAttack()
     {
+        if (!hasTurret) return;
         forcedTarget = LocalTargetInfo.Invalid;
         turretSet.ResetOrderedAttack();
         OnResetOrderedAttack();
@@ -125,42 +182,41 @@ public class Building_TeleTurret : Building_Turret, ITurretHolder, IFXLayerProvi
     }
 
     //
-    public override void Draw()
+    public override void DrawAt(Vector3 drawLoc, bool flip = false)
     {
-        base.Draw();
-        turretSet.Draw();
-        TeleVerb?.DrawVerb();
+        base.DrawAt(drawLoc, flip);
+        if (!hasTurret) return;
+        turretSet.Draw(drawLoc);
+        TeleVerb?.DrawVerb(drawLoc);
     }
 
+    private static StringBuilder sb = new StringBuilder();
+    
     public override string GetInspectString()
     {
-        var sb = new StringBuilder();
+        sb.Clear();
         var inspectString = base.GetInspectString();
-        if (!inspectString.NullOrEmpty()) sb.AppendLine(inspectString);
+        if (!inspectString.NullOrEmpty())
+            sb.AppendLine(inspectString);
 
-        sb.AppendFormat(turretSet.InspectString());
+        if(hasTurret)
+            sb.AppendFormat(turretSet.InspectString());
         return sb.ToString().TrimEndNewlines();
     }
 
     //
     public override IEnumerable<Gizmo> GetGizmos()
     {
-        foreach (var gizmo in base.GetGizmos()) yield return gizmo;
+        foreach (var gizmo in base.GetGizmos()) 
+            yield return gizmo;
 
-        foreach (var turretGizmo in turretSet.TurretGizmos()) yield return turretGizmo;
+        if (!hasTurret) yield break;
+        
+        foreach (var turretGizmo in turretSet.TurretGizmos()) 
+            yield return turretGizmo;
 
         if (canForceTargetDefault)
         {
-            var targetCommand = new Command_Target
-            {
-                defaultLabel = "CommandSetForceAttackTarget".Translate(),
-                defaultDesc = "CommandSetForceAttackTargetDesc".Translate(),
-                icon = ContentFinder<Texture2D>.Get("UI/Commands/Attack"),
-                targetingParams = TargetingParameters.ForAttackAny(),
-                action = OrderAttack,
-                hotKey = KeyBindingDefOf.Misc4
-            };
-
             var command_VerbTarget = new Command_VerbTarget();
             command_VerbTarget.defaultLabel = "CommandSetForceAttackTarget".Translate();
             command_VerbTarget.defaultDesc = "CommandSetForceAttackTargetDesc".Translate();
@@ -168,7 +224,9 @@ public class Building_TeleTurret : Building_Turret, ITurretHolder, IFXLayerProvi
             command_VerbTarget.verb = AttackVerb;
             command_VerbTarget.hotKey = KeyBindingDefOf.Misc4;
             command_VerbTarget.drawRadius = false;
-            if (Spawned && true && Position.Roofed(Map)) //this.IsMortarOrProjectileFliesOverhead 
+            command_VerbTarget.requiresAvailableVerb = false;
+            command_VerbTarget.disabled = !Active;
+            if (Spawned && Position.Roofed(Map)) //TODO? this.IsMortarOrProjectileFliesOverhead
                 command_VerbTarget.Disable("CannotFire".Translate() + ": " + "Roofed".Translate().CapitalizeFirst());
             yield return command_VerbTarget;
 
@@ -197,11 +255,6 @@ public class Building_TeleTurret : Building_Turret, ITurretHolder, IFXLayerProvi
                 command_VerbTarget.Disable("CannotFire".Translate() + ": " + "Roofed".Translate().CapitalizeFirst());
             }
             */
-            yield return targetCommand;
-        }
-
-        if (DebugSettings.godMode)
-        {
         }
 
         /*

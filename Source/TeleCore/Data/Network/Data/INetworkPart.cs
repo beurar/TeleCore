@@ -42,8 +42,6 @@ public interface INetworkPart
     public bool HasContainer { get; }
     public bool HasConnection { get; }
     public bool IsLeaking { get; }
-
-    public float PassThrough { get; }
     
     public void PostDestroy(DestroyMode mode, Map map);
 

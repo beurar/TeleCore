@@ -53,7 +53,8 @@ public class MapComponent_TeleCore : MapComponent
 
         //
         mapInfoByType.Clear();
-        foreach (var mapInfo in allMapInfos) mapInfoByType.Add(mapInfo.GetType(), mapInfo);
+        foreach (var mapInfo in allMapInfos) 
+            mapInfoByType.Add(mapInfo.GetType(), mapInfo);
 
         //
         NetworkInfo = (PipeNetworkMapInfo) mapInfoByType[typeof(PipeNetworkMapInfo)];
@@ -122,7 +123,8 @@ public class MapComponent_TeleCore : MapComponent
 
     internal void TeleMapSingleTick()
     {
-        for (var i = 0; i < allMapInfos.Count; i++) allMapInfos[i].TeleTick();
+        for (var i = 0; i < allMapInfos.Count; i++) 
+            allMapInfos[i].TeleTick();
     }
 
 

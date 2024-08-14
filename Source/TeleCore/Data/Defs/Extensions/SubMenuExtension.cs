@@ -9,6 +9,8 @@ public class SubMenuExtension : DefModExtension
     public SubMenuGroupDef groupDef;
     public bool isDevOption;
 
+    public SubBuildMenuDef ParentDef => groupDef.parentDef;
+    
     public override IEnumerable<string> ConfigErrors()
     {
         foreach (var error in base.ConfigErrors()) yield return error;

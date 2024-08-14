@@ -17,7 +17,7 @@ public class JobDriver_EmptyPortableContainer : JobDriver
     private ThingWithComps NetworkParent => TargetB.Thing as ThingWithComps;
 
     private NetworkVolume Container => PortableNetworkContainer.NetworkVolume;
-    private Comp_Network NetworkComp => NetworkParent.GetComp<Comp_Network>();
+    private CompNetwork NetworkComp => NetworkParent.GetComp<CompNetwork>();
     private INetworkPart NetworkPart => NetworkComp[PortableNetworkContainer.NetworkDef];
     private NetworkVolume TargetContainer => NetworkPart.Volume;
 

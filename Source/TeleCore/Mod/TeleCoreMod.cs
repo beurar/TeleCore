@@ -8,10 +8,11 @@ using TeleCore.Static.Utilities;
 using UnityEngine;
 using Verse;
 using Verse.AI;
+using WidgetRow = TeleCore.Rendering.WidgetRow;
 
 namespace TeleCore;
 
-public class TeleCoreMod : Mod
+public class TeleCoreMod : Verse.Mod
 {
     //Static Data
     private static Harmony teleCore;
@@ -36,7 +37,7 @@ public class TeleCoreMod : Mod
         // TeleCore.Patch(originalMethod, prefix: prefixMethod);
         
         //
-        TLog.Message($"[{version}] - Init", Color.cyan);
+        TLog.Message($"[TeleCore] - Init", Color.cyan);
         modSettings = GetSettings<TeleCoreSettings>();
 
         //
@@ -70,6 +71,11 @@ public class TeleCoreMod : Mod
 
     public override void DoSettingsWindowContents(Rect inRect)
     {
-        TWidgets.DoTinyLabel(inRect, "Hi :)");
+        Listing_Standard ls = new Listing_Standard(GameFont.Small);
+        ls.Begin(inRect);
+        ls.Label("Some Settings");
+        ls.CheckboxLabeled("Show Tele Tools in main menu", ref Settings.showToolsInMainMenu);
+        ls.NewColumn();
+        ls.End();
     }
 }

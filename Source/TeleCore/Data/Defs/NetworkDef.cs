@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using TeleCore.FlowCore;
+using TeleCore.Network;
 using TeleCore.Network.Data;
 using TeleCore.Static;
 using Verse;
@@ -21,12 +22,15 @@ public class NetworkDef : FlowValueCollectionDef
 
     //Structure Ruleset
     public ThingDef? controllerDef;
+    public ThingDef? transmitterDef;
     public string labelShort;
     public GraphicData overlayGraphic;
+    
+    public float? gasThroughPutOverride;
+    public float? frictionOverride;
 
     //
     public ThingDef portableContainerDef = TeleDefOf.PortableContainer;
-    public ThingDef transmitterDef;
 
     //
     public GraphicData transmitterGraphic;

@@ -119,9 +119,17 @@ public static class TMath
         return true;
     }
 
-    //Trigonometry
+    //
     public static float OscillateBetween(float minVal, float maxVal, float duration, int currentTick)
     {
+        var midVal = (maxVal + minVal) / 2f;
+        var amplitude = (maxVal - minVal) / 2f;
+        const float phase = Mathf.PI / 2f;
+
+        var value = midVal + amplitude * Mathf.Cos(2f * Mathf.PI * currentTick / duration + phase);
+
+        return value;
+
         var sineVal = Mathf.Sin((currentTick + duration / 2f) / duration * Mathf.PI) / 2 + 0.5f;
         return Mathf.Lerp(minVal, maxVal, sineVal);
     }

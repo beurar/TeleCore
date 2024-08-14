@@ -14,13 +14,12 @@ public static class TeleContent
     //
     public static readonly Texture2D ButtonBGAtlas = ContentFinder<Texture2D>.Get("UI/Buttons/ButtonBG");
 
-    public static readonly Texture2D ButtonBGAtlasMouseover =
-        ContentFinder<Texture2D>.Get("UI/Buttons/ButtonBGMouseover");
+    public static readonly Texture2D ButtonBGAtlasMouseover = ContentFinder<Texture2D>.Get("UI/Buttons/ButtonBGMouseover");
 
     public static readonly Texture2D ButtonBGAtlasClick = ContentFinder<Texture2D>.Get("UI/Buttons/ButtonBGClick");
 
     //
-    public static readonly Texture2D EdgeArrow = ContentFinder<Texture2D>.Get("UI/Debug/EdgeArrow");
+    public static readonly Texture2D EdgeArrow = ContentFinder<Texture2D>.Get("UI/DebugIcons/EdgeArrow");
 
     //General
     public static readonly Texture2D HightlightInMenu = ContentFinder<Texture2D>.Get("UI/Icons/HighLight");
@@ -81,7 +80,7 @@ public static class TeleContent
     public static readonly Texture NodeIn_Closed = ContentFinder<Texture2D>.Get("UI/Icons/NodeIn_Closed");
 
     //Internal RW Crap /FROM TexButton
-    public static readonly Texture2D DeleteX = TexButton.DeleteX;
+    public static readonly Texture2D DeleteX = TexButton.Delete;
     public static readonly Texture2D Plus = TexButton.Plus;
     public static readonly Texture2D Minus = TexButton.Minus;
     public static readonly Texture2D Infinity = TexButton.Infinity;

@@ -14,7 +14,7 @@ internal static class ReplacePatches
     {
         public static void Postfix(ref Bill __result)
         {
-            if (__result.recipe is RecipeDef_Network {networkCost: not null} tRecipe)
+            if (__result.recipe is RecipeDef_Network {networkCost.Valid: true } tRecipe)
             {
                 var billProductionNetworkBill = new Bill_Production_Network(tRecipe);
                 __result = billProductionNetworkBill;

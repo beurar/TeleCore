@@ -23,7 +23,7 @@ public class ITab_NetworkDebug : ITab
         labelKey = "TELE.DEGBUG";
     }
 
-    private Comp_Network NetworkStructure => SelThing.TryGetComp<Comp_Network>();
+    private CompNetwork NetworkStructure => SelThing.TryGetComp<CompNetwork>();
     public INetworkPart SelPart => NetworkStructure[selTab];
 
     //

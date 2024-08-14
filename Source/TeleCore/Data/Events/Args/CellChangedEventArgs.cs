@@ -3,8 +3,17 @@ using Verse;
 
 namespace TeleCore.Data.Events;
 
-public class CellChangedEventArgs : EventArgs
+public struct CellChangedEventArgs
 {
+    public IntVec3 Cell { get; }
+    public CellRect CellRect { get; }
+
+    public Thing? Thing { get; }
+    public TerrainDef? Terrain { get; }
+
+    public ThingStateChangedEventArgs? ThingChangedArgs { get; }
+    public TerrainChangedEventArgs? TerrainChangedArgs { get; }
+    
     public CellChangedEventArgs(ThingStateChangedEventArgs args)
     {
         ThingChangedArgs = args;
@@ -20,13 +29,4 @@ public class CellChangedEventArgs : EventArgs
         CellRect = CellRect.SingleCell(Cell);
         Terrain = args.NewTerrain;
     }
-
-    public IntVec3 Cell { get; }
-    public CellRect CellRect { get; }
-
-    public Thing? Thing { get; }
-    public TerrainDef? Terrain { get; }
-
-    public ThingStateChangedEventArgs? ThingChangedArgs { get; }
-    public TerrainChangedEventArgs? TerrainChangedArgs { get; }
 }

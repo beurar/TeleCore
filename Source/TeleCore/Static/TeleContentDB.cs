@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using UnityEngine;
@@ -23,134 +24,85 @@ public static class TeleContentDB
     //public static readonly ComputeShader GlowFlooderCompute = LoadComputeShader("GlowFlooder");
 
     internal static readonly Texture2D CustomCursor_Drag = LoadTexture("CursorCustom_Drag");
-
     internal static readonly Texture2D CustomCursor_Rotate = LoadTexture("CursorCustom_Rotate");
     
     static TeleContentDB()
     {
         assetBundles = new List<AssetBundle>();
-        
-        LoadFrom(TeleCoreMod.Mod);
+        foreach (var pack in LoadedModManager.RunningModsListForReading)
+        {
+            if(pack.IsOfficialMod || pack.IsCoreMod) continue;
+            if (pack.assetBundles == null || pack.assetBundles.loadedAssetBundles.Count <= 0) continue;
+            foreach (var assetBundle in pack.assetBundles.loadedAssetBundles)
+            {
+                assetBundles.Add(assetBundle);
+            }
+        }
+
+        ListAllAssets();
     }
 
-    private static void LoadFrom(Mod mod)
+    public static void ListAllAssets()
     {
-        var path = GetCurrentSystemPath(mod);
-        if (!Directory.Exists(path)) return;
-        var files = Directory.GetFiles(path);
-        if (files.NullOrEmpty()) return;
-        foreach (var file in files)
+        foreach (var bundle in assetBundles)
         {
-            var bundle = AssetBundle.LoadFromFile(file);
-            if (bundle == null)
+            var names = bundle.GetAllAssetNames();
+            TLog.Debug($"Asset bundle '{bundle.name}' with {names.Length}");
+            foreach (var assetName in names)
             {
-                TLog.Warning($"Could not load AssetBundle at: {file}");
-                return;
-            }
-            
-            TLog.DebugSuccess($"Successfully loaded AssetBundle: {Path.GetFileName(file)}");
-            
-            assetBundles.Add(bundle);
-            foreach (var name in bundle.GetAllAssetNames())
-            {
-                TLog.Debug($"Loaded: {name}");
+                TLog.Debug("  - " + assetName);
             }
         }
     }
     
-    private static string GetCurrentSystemPath(Mod mod)
-    {
-        var pathPart = "";
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-            pathPart = "StandaloneOSX";
-        else if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            pathPart = "StandaloneWindows";
-        else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-            pathPart = "StandaloneLinux64";
-
-        return Path.Combine(mod.Content.RootDir, $@"Resources\Bundles\{pathPart}");
-    }
-
     public static ComputeShader LoadComputeShader(string shaderName)
     {
-        if(assetBundles.NullOrEmpty()) return null;
-        
-        lookupComputeShades ??= new Dictionary<string, ComputeShader>();
-        foreach (var assetBundle in assetBundles)
-        {
-            if (!lookupComputeShades.ContainsKey(shaderName))
-                lookupComputeShades[shaderName] = assetBundle.LoadAsset<ComputeShader>(shaderName);
-
-        }
-
-        if (!lookupComputeShades.TryGetValue(shaderName, out var shader) || shader == null)
-        {
-            TLog.Warning($"Could not load shader '{shaderName}'");
-            return null;
-        }
-
-        return shader;
+        return LoadAsset<ComputeShader>(shaderName, lookupComputeShades)!;
     }
-
+    
     public static Shader LoadShader(string shaderName)
     {
-        if(assetBundles.NullOrEmpty()) return null;
-        
-        lookupShades ??= new Dictionary<string, Shader>();
-
-        foreach (var assetBundle in assetBundles)
-        {
-            if (!lookupShades.ContainsKey(shaderName))
-                lookupShades[shaderName] = assetBundle.LoadAsset<Shader>(shaderName);
-        }
-
-        if (!lookupShades.TryGetValue(shaderName, out var shader) || shader == null)
-        {
-            TLog.Warning($"Could not load shader '{shaderName}'");
-            return ShaderDatabase.DefaultShader;
-        }
-
-        return shader;
+        return LoadAsset<Shader>(shaderName, lookupShades)!;
     }
-
+    
     public static Material LoadMaterial(string materialName)
     {
-        lookupMats ??= new Dictionary<string, Material>();
-
-        foreach (var assetBundle in assetBundles)
-            if (!lookupMats.ContainsKey(materialName))
-                lookupMats[materialName] = assetBundle.LoadAsset<Material>(materialName);
-
-        if (!lookupMats.TryGetValue(materialName, out var mat) || mat == null)
-        {
-            TLog.Warning($"Could not load material '{materialName}'");
-            return BaseContent.BadMat;
-        }
-
-        return mat;
+        return LoadAsset<Material>(materialName, lookupMats)!;
     }
     
     public static Texture2D LoadTexture(string textureName)
     {
+        return LoadAsset<Texture2D>(textureName, lookupTextures)!;
+    }
+    
+    private static T? LoadAsset<T>(string name, IDictionary<string, T> lookup) where T : Object
+    {
+        lookup ??= new Dictionary<string, T>();
+        if (!UnityData.IsInMainThread)
+        {
+            TLog.Error("Trying to load asset on other thread than main.");
+            return null;
+        }
         if(assetBundles.NullOrEmpty()) return null;
-        
-        if (lookupTextures == null)
-            lookupTextures = new Dictionary<string, Texture2D>();
-        
-        
-        //TODO:
-        if (!lookupTextures.ContainsKey(textureName))
+
+        T asset = null;
+        foreach (var assetBundle in assetBundles)
         {
-            //lookupTextures[textureName] = TeleCoreBundle.LoadAsset<Texture2D>(textureName);
+            if (!assetBundle.Contains(name)) continue;
+            if (!lookup.ContainsKey(name))
+            {
+                lookup[name] = asset = assetBundle.LoadAsset<T>(name);
+                break;
+            }
+            
         }
 
-        var texture = lookupTextures[textureName];
-        if (texture == null)
+        if (asset == null)
         {
-            TLog.Warning($"Could not load Texture2D '{textureName}'");
-            return BaseContent.BadTex;
+            TLog.Warning($"Could not load asset '{name}'");
+            return null;
         }
 
-        return texture;
+        return asset;
     }
 }

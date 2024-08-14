@@ -142,13 +142,23 @@ public class NetworkFlowSystem : FlowSystem<NetworkPart, NetworkVolume, NetworkV
     {
     }
 
-    protected override double FlowFunc(FlowInterface<NetworkPart, NetworkVolume, NetworkValueDef> iface, double flow)
+    protected override DefValueStack<NetworkValueDef, double> FlowFunc(FlowInterface<NetworkPart, NetworkVolume, NetworkValueDef> connection, DefValueStack<NetworkValueDef, double> previous)
     {
-        return PressureWorker.FlowFunction(iface, flow);
+        return PressureWorker.FlowFunction(connection, previous);
     }
 
-    protected override double ClampFunc(FlowInterface<NetworkPart, NetworkVolume, NetworkValueDef> iface, double flow, ClampType clampType)
+    protected override DefValueStack<NetworkValueDef, double> ClampFunc(FlowInterface<NetworkPart, NetworkVolume, NetworkValueDef> iface, DefValueStack<NetworkValueDef, double> flow, ClampType clampType)
     {
-        return ClampWorker.ClampFunction(iface, flow, clampType);
+        return ClampWorker.ClampFunction(iface , flow, clampType);
     }
+    
+    // protected override double FlowFunc(FlowInterface<NetworkPart, NetworkVolume, NetworkValueDef> iface, double previous)
+    // {
+    //     return PressureWorker.FlowFunction(iface, previous);
+    // }
+
+    // protected override double ClampFunc(FlowInterface<NetworkPart, NetworkVolume, NetworkValueDef> iface, double flow, ClampType clampType)
+    // {
+    //     return ClampWorker.ClampFunction(iface, flow, clampType);
+    // }
 }

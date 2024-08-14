@@ -20,7 +20,6 @@ public static class TWidgets
         float pixelWidth = (point1_screen - point2_screen).magnitude;
         return pixelWidth; 
     }
-
     
     //World To ScreenSpace
     public static void DrawBoxOnThing(Thing thing)
@@ -395,6 +394,27 @@ public static class TWidgets
         }
     }
 
+    public static bool ButtonColoredHighlight(Rect rect, string label, Color bgColor, bool mouseOverSound = true, int thickness = 1)
+    {
+        Color borderColor = new Color(
+            Mathf.Clamp(2 * bgColor.r, 0f, 1f),
+            Mathf.Clamp(2 * bgColor.g, 0f, 1f),
+            Mathf.Clamp(2 * bgColor.b, 0f, 1f));
+        return ButtonColoredHighlight(rect, label, bgColor, borderColor, mouseOverSound, thickness);
+    }
+
+    public static bool ButtonColoredHighlight(Rect rect, string label, Color bgColor, Color borderColor, bool mouseOverSound = true, int thickness = 1)
+    {
+        DrawColoredBox(rect, bgColor, borderColor, thickness);
+
+        Text.Anchor = TextAnchor.MiddleCenter;
+        Widgets.Label(rect, label);
+        Text.Anchor = default;
+
+        Widgets.DrawHighlightIfMouseover(rect);
+        return Widgets.ButtonInvisible(rect, mouseOverSound);
+    }
+    
     //WidgetRow Extensions
     public static void Checkbox(this WidgetRow row, ref bool checkOn, bool active, float width = 24)
     {

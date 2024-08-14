@@ -12,7 +12,6 @@ public static class TeleDefOf
 
     //Motes Special
     public static ThingDef Mote_Beam;
-    public static ThingDef Mote_MuzzleFlash;
     public static ThingDef Mote_Arc;
 
     //
@@ -20,10 +19,6 @@ public static class TeleDefOf
 
     //
     public static ThingDef PortableContainer;
-
-    //
-    public static TerrainDef ChromaKeyGreen;
-    public static TerrainDef ChromaKeyBlue;
 
     //Research
     public static LetterDef DiscoveryLetter;

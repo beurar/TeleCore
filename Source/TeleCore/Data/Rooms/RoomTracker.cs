@@ -23,6 +23,7 @@ public class RoomTracker
     private bool _wasOutSide;
     private HashSet<IntVec3> borderCells = new();
     private HashSet<IntVec3> thinRoofCells = new();
+    private HashSet<Room> borderRooms = new();
     private readonly Dictionary<Type, RoomComponent> _compsByType = new();
 
     private RoomNeighborSet _roomNeighbors = new();
@@ -234,8 +235,9 @@ public class RoomTracker
 
     public void Notify_RegisterBorderThing(Thing thing)
     {
-        HandlePotentialNeighbor(thing);
-
+        if (BorderListerThings.Contains(thing)) return;
+        
+        HandleAttachedNghb(thing);
         BorderListerThings.Add(thing);
         foreach (var comp in Comps)
         {
@@ -244,14 +246,8 @@ public class RoomTracker
         }
     }
 
-    private void HandlePotentialNeighbor(Thing thing)
+    private void HandleAttachedNghb(Thing thing)
     {
-        if (thing is Building_Door door)
-        {
-            //Add direct room
-            _roomNeighbors.Notify_AddNeighbor(door.GetRoom().RoomTracker());
-        }
-
         if (thing is Building b)
         {
             //Add room on other side
@@ -332,15 +328,17 @@ public class RoomTracker
 
     internal void DrawDebug()
     {
-        var num = Gen.HashCombineInt(GetHashCode(), 1948571531);
         GenDraw.DrawFieldEdges(Room.Cells.ToList(), Color.cyan);
 
         foreach (var comp in Comps)
         {
             comp.DrawDebug();
         }
-        
-        GenDraw.DrawFieldEdges(borderCells.ToList(), Color.blue);
+
+        var debugList = StaticListHolder<IntVec3>.RequestList("RoomTracker.DrawDebug");
+        debugList.AddRange(borderCells);
+        GenDraw.DrawFieldEdges(debugList, Color.blue);
+        debugList.Clear();
     }
     
     private string Icon(bool checkFail)
@@ -410,11 +408,22 @@ public class RoomTracker
             {
                 stepCounter = 6;
                 RegenerateListerThings();
+                RegenerateRoomRelations();
             }
         }
         catch (OverflowException oEx)
         {
             TLog.Error($"Arithmetic Overflow Exception in RegenerateData - reached step {stepCounter}: {oEx}");
+        }
+    }
+
+    private void RegenerateRoomRelations()
+    {
+        foreach (var room in borderRooms)
+        {
+            var otherTracker = room.RoomTracker();
+            if (otherTracker == this) continue;
+            _roomNeighbors.Notify_AddNeighbor(otherTracker);
         }
     }
 
@@ -438,6 +447,9 @@ public class RoomTracker
         
         foreach (var cell in borderCells)
         {
+            var edi = cell.GetEdifice(Map);
+            Notify_RegisterBorderThing(edi);
+            continue;
             var things = cell.GetThingList(Map);
             foreach (var thing in things)
             {
@@ -456,6 +468,7 @@ public class RoomTracker
         
         thinRoofCells.Clear();
         borderCells.Clear();
+        borderRooms.Clear();
         foreach (var c in Room.Cells)
         {
             if (!Map.roofGrid.RoofAt(c)?.isThickRoof ?? false)
@@ -465,9 +478,20 @@ public class RoomTracker
             {
                 var cardinal = c + GenAdj.CardinalDirections[i];
 
-                var region = cardinal.GetRegion(Map);
-                if ((region == null || region.Room != Room) && cardinal.InBounds(Map)) 
-                    borderCells.Add(cardinal);
+                var region = cardinal.GetRegion(Map, RegionType.Set_Passable);
+                if (cardinal.InBounds(Map))
+                {
+                    var noReg = region == null;
+                    var unsameRoom = !noReg && region.Room != Room;
+                    if (noReg || unsameRoom)
+                    {
+                        if (unsameRoom)
+                        {
+                            borderRooms.Add(region.Room);
+                        }
+                        borderCells.Add(cardinal);
+                    }
+                }
             }
         }
     }

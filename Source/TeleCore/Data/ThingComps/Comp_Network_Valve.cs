@@ -6,7 +6,7 @@ using Verse;
 
 namespace TeleCore;
 
-public class Comp_Network_Valve : Comp_Network
+public class Comp_Network_Valve : CompNetwork
 {
     private const float _valveOpenState = 0;
     private const float _valveClosedState = 66;

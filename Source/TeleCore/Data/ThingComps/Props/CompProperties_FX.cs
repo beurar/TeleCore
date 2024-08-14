@@ -19,7 +19,16 @@ public class CompProperties_FX : CompProperties
 
     public override IEnumerable<string> ConfigErrors(ThingDef def)
     {
-        if (def.drawerType == DrawerType.MapMeshOnly && Enumerable.Any(fxLayers, o => o.fxMode != FXMode.Static))
-            yield return $"{def} has dynamic overlays but is MapMeshOnly";
+        var hasFade = Enumerable.Any(fxLayers, o => o.fade != null);
+        var hasNonStatic = Enumerable.Any(fxLayers, o => o.fxMode != FXMode.Static);
+        if (def.drawerType == DrawerType.MapMeshOnly)
+        {
+            if(hasNonStatic)
+                yield return $"{def} has dynamic overlays but is MapMeshOnly";
+            if(hasFade)
+                yield return $"{def} has overlays with fade effect but is MapMeshOnly";
+        }
+        if(Enumerable.Any(fxLayers, o => o.fade != null && o.fxMode == FXMode.Static))
+            yield return $"{def} has static overlays with fade effect";
     }
 }

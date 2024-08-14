@@ -104,15 +104,15 @@ public abstract class RoomComponent
         Notify_BorderThingAdded(thing);
         if (IsRelevantLink(thing))
         {
-            if (thing is Building_Door door) //Special edge case
-            {
-                var doorRoom = door.GetRoom().RoomTracker().GetRoomComp(GetType());
-                var doorLink = new RoomComponentLink(thing, this, doorRoom);
-                Notify_AddLink(doorLink);
-                Notify_AddNeighbor(doorRoom);
-                
-                return;
-            }
+            //Note: Removing doors from room links, as the rooms that doors occupy already provide transfer
+            // if (thing is Building_Door door) //Special edge case
+            // {
+            //     var doorRoom = door.GetRoom().RoomTracker().GetRoomComp(GetType());
+            //     var doorLink = new RoomComponentLink(thing, this, doorRoom);
+            //     Notify_AddLink(doorLink);
+            //     Notify_AddNeighbor(doorRoom);
+            //     return;
+            // }
 
             var roomLink = new RoomComponentLink(thing, this);
             Notify_AddLink(roomLink);
@@ -145,17 +145,15 @@ public abstract class RoomComponent
     }
 
     /// <summary>
-    ///     Triggered when a character (pawn) enters the room in the game.
+    ///     Triggered when a pawn enters the room in the game.
     /// </summary>
-    /// <param name="pawn">The game character that entered the room.</param>
     public virtual void Notify_PawnEnteredRoom(Pawn pawn)
     {
     }
 
     /// <summary>
-    ///     Triggered when a character (pawn) leaves the room in the game.
+    ///     Triggered when a pawn leaves the room in the game.
     /// </summary>
-    /// <param name="pawn">The game character that left the room.</param>
     public virtual void Notify_PawnLeftRoom(Pawn pawn)
     {
     }

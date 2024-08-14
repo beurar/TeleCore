@@ -5,6 +5,7 @@ using RimWorld;
 using TeleCore.Network.Bills;
 using TeleCore.Network.Utility;
 using TeleCore.Primitive;
+using TeleCore.Static;
 using UnityEngine;
 using Verse;
 
@@ -45,7 +46,7 @@ public class ITab_CustomNetworkBills : ITab
     public ITab_CustomNetworkBills()
     {
         this.size = WinSize;
-        this.labelKey = "TR_TibResourceRefiner";
+        this.labelKey = Translations.NetworkStrings.NetworkBillsITab;
     }
 
     public override void OnOpen()

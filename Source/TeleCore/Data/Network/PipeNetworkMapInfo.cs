@@ -32,7 +32,7 @@ public class PipeNetworkMapInfo : MapInformation
     }
 
     //TODO: Currently handled by custom internal call from a comp, maybe use event subscription instead?
-    public void Notify_NewNetworkStructureSpawned(Comp_Network structure)
+    public void Notify_NewNetworkStructureSpawned(CompNetwork structure)
     {
         foreach (var part in structure.NetworkParts)
         {
@@ -40,7 +40,7 @@ public class PipeNetworkMapInfo : MapInformation
         }
     }
 
-    public void Notify_NetworkStructureDespawned(Comp_Network structure)
+    public void Notify_NetworkStructureDespawned(CompNetwork structure)
     {
         foreach (var part in structure.NetworkParts)
         {
@@ -53,7 +53,7 @@ public class PipeNetworkMapInfo : MapInformation
     /// </summary>
     public bool HasConnectionAtFor(Thing thing, IntVec3 c)
     {
-        var networkStructure = thing.TryGetComp<Comp_Network>();
+        var networkStructure = thing.TryGetComp<CompNetwork>();
         if (networkStructure == null) return false;
         for (var i = 0; i < networkStructure.NetworkParts.Count; i++)
         {

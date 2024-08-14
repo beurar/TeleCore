@@ -74,7 +74,6 @@ public class DataBrowser<T> : UIElement
 
             //Reload
             if (openFilter == false)
-                //
                 GenerateItemsFromSearch(SearchWidget.filter, true);
         }
     }

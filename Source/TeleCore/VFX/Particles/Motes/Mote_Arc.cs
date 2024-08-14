@@ -22,7 +22,7 @@ public class Mote_Arc : TeleMote
         base.Tick();
     }
 
-    public override void Draw()
+    public override void DrawAt(Vector3 drawLoc, bool flip = false)
     {
         if (drawMat == null) return;
         var alpha = Alpha;

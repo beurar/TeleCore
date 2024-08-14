@@ -86,35 +86,6 @@ public class TeleTickManager
 
             if (realTimeToTickThrough > 0f) realTimeToTickThrough = 0f;
         }
-        /*
-        var timePerMapTick = Find.TickManager.CurTimePerTick;
-        //
-        if (Mathf.Abs(Time.deltaTime - timePerMapTick) < timePerMapTick * 0.1f)
-            realTimeToTickThrough += timePerMapTick;
-        else
-            realTimeToTickThrough += Time.deltaTime;
-
-        var tickRate = Find.TickManager.TickRateMultiplier;
-        ticksThisFrame = 0;
-        clock.Reset();
-        clock.Start();
-        while (realTimeToTickThrough > 0f && ticksThisFrame < tickRate * 2f)
-        {
-            map.TeleMapSingleTick();
-
-            //
-            realTimeToTickThrough -= timePerMapTick;
-            ticksThisFrame++;
-            internalMapTicks++;
-            if (Find.TickManager.Paused || clock.ElapsedMilliseconds > 45.4545441f)
-            {
-                break;
-            }
-        }
-
-        //
-        realTimeToTickThrough = 0;
-        */
     }
 
     private void UpdateTick()
@@ -133,7 +104,8 @@ public class TeleTickManager
         clock.Start();
         while (realTimeToTickThrough > 0f && ticksThisFrameNormal < 2)
         {
-            if (!GamePaused) GameTickers?.Invoke();
+            if (!GamePaused) 
+                GameTickers?.Invoke();
 
             UITickers?.Invoke();
             GameUITickers?.Invoke();

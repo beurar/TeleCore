@@ -233,6 +233,7 @@ public class NetworkPart : INetworkPart, IExposable
         StringBuilder sb = new StringBuilder();
         if (DebugSettings.godMode)
         {
+            sb.AppendLine($"NetworkPart: {_config?.networkDef}");
             sb.AppendLine($"IsController: {IsController}");
             sb.AppendLine($"IsNode: {IsNode}");
             sb.AppendLine($"IsEdge: {IsEdge}");
@@ -245,7 +246,7 @@ public class NetworkPart : INetworkPart, IExposable
             sb.AppendLine($"PassThrough: {PassThrough}");
         }
 
-        return sb.ToString();
+        return sb.ToString().TrimEndNewlines();
     }
 
     public virtual IEnumerable<Gizmo> GetPartGizmos()

@@ -22,4 +22,10 @@ public static class TFind
     public static TeleRoot TeleRoot => MainRoot;
     public static TeleTickManager TickManager => TeleRoot.TickManager;
     public static DiscoveryTable Discoveries => StaticData.TeleWorldComp(Find.World.GetUniqueLoadID()).discoveries;
+    
+    public static GameComponent_CameraPanAndLock CameraPanNLock()
+    {
+        return Current.Game.GetComponent<GameComponent_CameraPanAndLock>();
+    }
+
 }

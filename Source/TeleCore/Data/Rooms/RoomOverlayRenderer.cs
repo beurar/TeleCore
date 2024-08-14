@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using LudeonTK;
 using UnityEngine;
 using Verse;
 
@@ -99,8 +100,6 @@ public class RoomOverlayRenderer
         mesh.uv = uvs;
 
         mesh.SetTriangles(triangles, 0);
-        mesh.RecalculateBounds();
-        mesh.RecalculateNormals();
         return mesh;
     }
 

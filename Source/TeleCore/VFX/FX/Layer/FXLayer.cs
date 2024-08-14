@@ -26,6 +26,7 @@ public class FXLayer
 
     //Dynamic Working Data
     private Vector2 drawSize = Vector2.one;
+    private float drawScale = 1f;
     private float exactRotation;
     private bool flipUV;
     private int ticksToBlink;
@@ -165,9 +166,9 @@ public class FXLayer
         if (data.fade == null) return;
         var fade = data.fade;
         if (fade.opacityRange.Average <= 0) return;
-        var opaVal = TMath.OscillateBetween(fade.opacityRange.min, fade.opacityRange.max, fade.opacityDuration,
-            tick + parentInfo.TickOffset + fade.initialOpacityOffset);
+        var opaVal = TMath.OscillateBetween(fade.opacityRange.min, fade.opacityRange.max, fade.duration, tick + parentInfo.TickOffset + fade.initialOpacityOffset);
         drawColor.a = opaVal;
+        TLog.Debug($"[{parentInfo.ParentThing}, {Index}]Opacity: {opaVal}");
     }
 
     private void TryTickSize(int tick)
@@ -177,7 +178,7 @@ public class FXLayer
         if (resize.sizeRange.Average <= 0) return;
         var sizeVal = TMath.OscillateBetween(resize.sizeRange.min, resize.sizeRange.max, resize.sizeDuration,
             tick + parentInfo.TickOffset + resize.initialSizeOffset);
-        drawSize *= sizeVal;
+        drawScale = sizeVal;
     }
 
     internal static void GetDrawInfo(Graphic g, Thing thing, ThingDef def, ref Vector3 inoutPos, Rot4 rot,
@@ -196,7 +197,8 @@ public class FXLayer
             inoutPos.z += diff / 2;
         }
 
-        inoutPos += g.data.drawOffset; //exData?.drawOffset ?? Vector3.zero;
+        inoutPos += g.data.DrawOffsetForRot(rot); //exData?.drawOffset ?? Vector3.zero;
+        
         //DrawSize
         drawSize = g.drawSize;
         var drawRotated = exData?.drawRotatedOverride ?? g.ShouldDrawRotated;
@@ -231,10 +233,9 @@ public class FXLayer
 
     public void Draw(Vector3? drawLocOverride = null)
     {
-        //
         var drawPos = drawLocOverride ?? DrawPos;
         GetDrawInfo(Graphic, parentInfo.ParentThing, parentInfo.ParentThing.def, ref drawPos, ParentRot4,
-            parentInfo.Extension, out drawSize, out _drawMat, out drawMesh, out var extraRotation, out flipUV);
+            parentInfo.Extension, out var drawSizeBase, out _drawMat, out drawMesh, out var extraRotation, out flipUV);
 
         //Colors
         var graphicColor = data.graphicData.color;
@@ -250,15 +251,18 @@ public class FXLayer
 
         PropertyBlock.SetColor(ShaderPropertyIDs.Color, graphicColor);
 
+        //Resize
+        var newSize = data.resize != null ? drawSize : drawSizeBase;
+        
         var rotationQuat = TrueRotation.ToQuat();
-
+        
         if (data.PivotOffset != null)
         {
             var pivotPoint = drawPos + data.PivotOffset.Value;
             var relativePos = rotationQuat * (drawPos - pivotPoint);
             drawPos = pivotPoint + relativePos;
         }
-
+        
         //
         if (DrawFunction != null)
         {
@@ -275,8 +279,13 @@ public class FXLayer
         }
 
         //
-        Graphics.DrawMesh(drawMesh, new Vector3(drawPos.x, _altitude, drawPos.z), rotationQuat, _drawMat, 0, null, 0,
-            PropertyBlock);
+        //var s1 = newSize;
+        //var s2 = data.graphicData.drawSize;
+        //var v3 = new Vector3(s1.x / s2.x, 1, s1.y / s2.y);
+        //var trs = Matrix4x4.TRS(drawPos, Quaternion.identity, Vector3.one * drawScale);
+        //Graphics.DrawMesh(drawMesh, trs, _drawMat, 0, null, 0, PropertyBlock);
+        //Graphics.DrawMesh(mesh, loc, quat, mat, 0);
+        Graphics.DrawMesh(drawMesh, new Vector3(drawPos.x, _altitude, drawPos.z), rotationQuat, _drawMat, 0, null, 0, PropertyBlock);
     }
 
     public void Print(SectionLayer layer)

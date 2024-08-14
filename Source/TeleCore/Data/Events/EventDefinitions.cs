@@ -39,5 +39,7 @@ public delegate void EntityTickedEvent();
 //Rooms/Regions
 public delegate void RoomCreatedEvent(RoomChangedArgs args);
 public delegate void RoomDisbandedEvent(RoomChangedArgs args);
-
 public delegate void RegionStateEvent(RegionStateChangedArgs args);
+
+//Verbs
+public delegate void ProjectileLaunchedEvent(ProjectileLaunchedArgs args);

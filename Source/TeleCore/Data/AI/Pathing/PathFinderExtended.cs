@@ -81,10 +81,10 @@ public class PathFinderExtended
         regionCostCalculator = new RegionCostCalculatorWrapper(map);
     }
 
-    public PawnPath FindPath(IntVec3 start, LocalTargetInfo dest, TraverseParms traverseParms,
-        PathEndMode peMode = PathEndMode.OnCell, PathFinderCostTuning tuning = null)
+    public PawnPath FindPath(IntVec3 start, LocalTargetInfo dest, TraverseParms traverseParms, PathEndMode peMode = PathEndMode.OnCell, PathFinderCostTuning tuning = null)
     {
-        if (DebugSettings.pathThroughWalls) traverseParms.mode = TraverseMode.PassAllDestroyableThings;
+        if (DebugSettings.pathThroughWalls) 
+            traverseParms.mode = TraverseMode.PassAllDestroyableThings;
 
         var pawn = traverseParms.pawn;
         if (pawn != null && pawn.Map != map)
@@ -157,8 +157,8 @@ public class PathFinderExtended
         var num5 = 0;
         var num6 = 0;
         var num7 = DetermineHeuristicStrength(pawn, start, dest);
-        int num8;
-        int num9;
+        float num8;
+        float num9;
         if (pawn != null)
         {
             num8 = pawn.TicksPerMoveCardinal;
@@ -347,14 +347,16 @@ public class PathFinderExtended
 
                 if (lordWalkGrid != null && !lordWalkGrid[new IntVec3(num12, 0, num13)]) num16 += costOffLordWalkGrid;
 
-                var num18 = num16 + calcGrid[curIndex].knownCost;
+                int num18 = Mathf.RoundToInt(num16 + calcGrid[curIndex].knownCost);
                 var status = calcGrid[num14].status;
                 if (status == statusClosedValue || status == statusOpenValue)
                 {
                     var num19 = 0;
-                    if (status == statusClosedValue) num19 = num8;
+                    if (status == statusClosedValue) 
+                        num19 = Mathf.RoundToInt(num8);
 
-                    if (calcGrid[num14].knownCost <= num18 + num19) continue;
+                    if (calcGrid[num14].knownCost <= num18 + num19) 
+                        continue;
                 }
 
                 if (flag8)
@@ -374,7 +376,7 @@ public class PathFinderExtended
                 {
                     var dx = Math.Abs(num12 - x);
                     var dz = Math.Abs(num13 - z);
-                    var num20 = GenMath.OctileDistance(dx, dz, num8, num9);
+                    var num20 = GenMath.OctileDistance(dx, dz, Mathf.RoundToInt(num8), Mathf.RoundToInt(num9));
                     calcGrid[num14].heuristicCost = Mathf.RoundToInt(num20 * num7);
                 }
 

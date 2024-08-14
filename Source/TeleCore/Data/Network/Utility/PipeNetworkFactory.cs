@@ -22,7 +22,7 @@ public static class PipeNetworkFactory
         if (thing is not ThingWithComps compThing)
             return false;
 
-        var networkComp = compThing.GetComp<Comp_Network>();
+        var networkComp = compThing.GetComp<CompNetwork>();
         if (networkComp == null) return false;
 
         part = networkComp[network];
