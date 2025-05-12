@@ -12,10 +12,10 @@ First of all make sure you add this mod as a dependency in your About.xml!
 ```xml
 <modDependencies>
   <li>
-    <packageId>Telefonmast.TeleCore</packageId>
-    <displayName>TeleCore</displayName>
-    <steamWorkshopUrl>https://steamcommunity.com/sharedfiles/filedetails/?id=2810454935</steamWorkshopUrl>
-    <downloadUrl>https://github.com/RealTelefonmast/TeleCore</downloadUrl>
+		  <packageId>telefonmast.core</packageId>
+		  <displayName>TeleCore</displayName>
+		  <steamWorkshopUrl>https://steamcommunity.com/sharedfiles/filedetails/?id=3188258848</steamWorkshopUrl>
+		  <downloadUrl>https://github.com/RealTelefonmast/TeleCore</downloadUrl>
   </li>
 </modDependencies>
 ```
