@@ -3,7 +3,7 @@ using Verse;
 
 namespace TeleCore;
 
-public class BeamProperties : DefModExtension
+public class BeamProperties
 {
     public float? armorPenetrationOverride;
     public int? damageBaseOverride = 100;
@@ -24,7 +24,6 @@ public class BeamProperties : DefModExtension
     public bool spawnMotePerBeam = false;
     public float staggerTime = 95.TicksToSeconds();
     public float? stoppingPowerOverride;
-
     public ThingDef BeamMoteDef => parent.beamMoteDef;
     public FleckDef BeamGroundFleckDef => parent.beamGroundFleckDef;
     public float BeamWidth => parent.beamWidth;
