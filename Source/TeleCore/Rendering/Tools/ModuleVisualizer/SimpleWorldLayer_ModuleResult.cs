@@ -29,8 +29,7 @@ public class SimpleWorldLayer_ModuleResult
     private static readonly MaterialPropertyBlock propertyBlock = new();
     private readonly List<Vector3> elevationValues = new();
 
-    //
-    private readonly List<MeshCollider> meshCollidersInOrder = new();
+    //private readonly List<MeshCollider> meshCollidersInOrder = new();
 
     private bool meshGenerated;
 
@@ -166,20 +165,21 @@ public class SimpleWorldLayer_ModuleResult
 
     private IEnumerable RegenerateMeshColliders()
     {
-        meshCollidersInOrder.Clear();
-        var gameObject = WorldTerrainColliderManager.GameObject;
-        var components = gameObject.GetComponents<MeshCollider>();
-        int j;
-        for (j = 0; j < components.Length; j++) Object.Destroy(components[j]);
-        for (var i = 0; i < subMeshes.Count; i = j + 1)
-        {
-            var meshCollider = gameObject.AddComponent<MeshCollider>();
-            meshCollider.sharedMesh = subMeshes[i].mesh;
-            meshCollidersInOrder.Add(meshCollider);
-            yield return null;
-            j = i;
-        }
+        // meshCollidersInOrder.Clear();
+        // var gameObject = WorldTerrainColliderManager.GameObject;
+        // var components = gameObject.GetComponents<MeshCollider>();
+        // for (int j = 0; j < components.Length; j++)
+        //     Object.Destroy(components[j]);
+        // for (int i = 0; i < subMeshes.Count; i++)
+        // {
+        //     var meshCollider = gameObject.AddComponent<MeshCollider>();
+        //     meshCollider.sharedMesh = subMeshes[i].mesh;
+        //     meshCollidersInOrder.Add(meshCollider);
+        //     yield return null;
+        // }
+        yield break;
     }
+
 
     private IEnumerable CalculateInterpolatedVerticesParams()
     {

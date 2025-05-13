@@ -3,7 +3,7 @@ using Verse;
 
 namespace TeleCore;
 
-public class BeamProperties
+public class BeamProperties : DefModExtension
 {
     public float? armorPenetrationOverride;
     public int? damageBaseOverride = 100;
