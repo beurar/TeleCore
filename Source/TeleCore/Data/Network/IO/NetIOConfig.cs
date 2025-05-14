@@ -98,7 +98,6 @@ public class NetIOConfig : Editable
         //var cells = cellsNorth ?? cellsEast ?? cellsSouth ?? cellsWest;
         // if (cellsNorth == null) 
         //     Rotate(cells, ref cellsNorth, Rot4.North);
-
         if (cellsEast == null) 
             Rotate(cellsNorth, ref cellsEast);
 

@@ -1,5 +1,8 @@
-﻿using System.Xml;
+﻿using System;
+using System.Globalization;
+using System.Xml;
 using RimWorld;
+using Verse;
 
 namespace TeleCore;
 
@@ -17,15 +20,45 @@ public struct TickTime
 
     private void LoadDataFromXmlCustom(XmlNode xmlRoot)
     {
-        var value = xmlRoot.Value;
+        string value = xmlRoot.InnerText?.Trim();
 
-        if (value.EndsWith("h"))
-            TotalTicks = (int) float.Parse(value.Substring(0, value.Length - 1)) * GenDate.TicksPerHour;
-        else if (value.EndsWith("d"))
-            TotalTicks = (int) float.Parse(value.Substring(0, value.Length - 1)) * GenDate.TicksPerDay;
+        if (string.IsNullOrEmpty(value))
+        {
+            Log.Error("TickTime could not load: value is null or empty.");
+            TotalTicks = 0;
+            return;
+        }
 
-        if (int.TryParse(value, out var ticksVal)) TotalTicks = ticksVal;
+        try
+        {
+            if (value.EndsWith("h"))
+            {
+                string numberOnly = value.Substring(0, value.Length - 1);
+                TotalTicks = (int)(float.Parse(numberOnly, CultureInfo.InvariantCulture) * 2500f);
+            }
+            else if (value.EndsWith("d"))
+            {
+                string numberOnly = value.Substring(0, value.Length - 1);
+                TotalTicks = (int)(float.Parse(numberOnly, CultureInfo.InvariantCulture) * 60000f);
+            }
+            else if (int.TryParse(value, NumberStyles.Any, CultureInfo.InvariantCulture, out var ticksVal))
+            {
+                TotalTicks = ticksVal;
+            }
+            else
+            {
+                Log.Error($"TickTime could not parse value: '{value}'");
+                TotalTicks = 0;
+            }
+        }
+        catch (Exception e)
+        {
+            Log.Error($"TickTime parsing failed: '{value}' → {e}");
+            TotalTicks = 0;
+        }
     }
+
+
 
     public override string ToString()
     {
