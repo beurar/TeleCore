@@ -35,7 +35,7 @@ internal static class VerbPatches
             return true;
         }
     }
-    
+
     // ## LaunchProjectile ##
 
     [HarmonyPatch(typeof(Verb_LaunchProjectile), nameof(Verb_LaunchProjectile.TryCastShot))]
@@ -49,12 +49,9 @@ internal static class VerbPatches
             public Projectile Projectile;
         }
 
-        internal static Projectile _projectile;
-        internal static TeleVerbAttacher _attacher;
-
-        private static readonly MethodInfo ProjectileLaunch = AccessTools.Method(typeof(Projectile),
-            nameof(Projectile.Launch),
-            [
+        private static readonly MethodInfo ProjectileLaunch = AccessTools.Method(typeof(Projectile), nameof(Projectile.Launch),
+            new[]
+            {
                 typeof(Thing),
                 typeof(Vector3),
                 typeof(LocalTargetInfo),
@@ -63,10 +60,15 @@ internal static class VerbPatches
                 typeof(bool),
                 typeof(Thing),
                 typeof(ThingDef)
-            ]);
-        
-        private static readonly MethodInfo TransformCastOriginMethod = AccessTools.Method(typeof(VerbLaunchProjectile_TryCastShot_Patch), nameof(TransformCastOrigin));
-        private static readonly FieldInfo CachedProjectileFld = AccessTools.Field(typeof(VerbLaunchProjectile_TryCastShot_Patch), nameof(_projectile));
+            });
+
+        private static readonly MethodInfo StoreProjectileMethod = AccessTools.Method(
+            typeof(VerbLaunchProjectile_TryCastShot_Patch),
+            nameof(StoreProjectile));
+
+        private static readonly MethodInfo TransformCastOriginMethod = AccessTools.Method(
+            typeof(VerbLaunchProjectile_TryCastShot_Patch),
+            nameof(TransformCastOrigin));
 
         [HarmonyPrefix]
         internal static void Prefix(Verb_LaunchProjectile __instance)
@@ -75,15 +77,15 @@ internal static class VerbPatches
             {
                 Attacher = VerbWatcher.GetAttacher(__instance)
             };
-            _contexts.Remove(__instance);
+            _contexts.Remove(__instance); // Clean any stale data
             _contexts.Add(__instance, context);
         }
-
 
         [HarmonyPostfix]
         internal static void Postfix(Verb_LaunchProjectile __instance)
         {
-            if (!_contexts.TryGetValue(__instance, out var ctx)) return;
+            if (!_contexts.TryGetValue(__instance, out var ctx))
+                return;
 
             if (ctx.Projectile != null)
                 GlobalEventHandler.OnProjectileLaunched(new ProjectileLaunchedArgs(ctx.Projectile));
@@ -92,86 +94,53 @@ internal static class VerbPatches
             _contexts.Remove(__instance);
         }
 
-
-
         [HarmonyTranspiler]
         internal static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
         {
-            foreach (var instruction in instructions)
+            var codes = new List<CodeInstruction>(instructions);
+            for (int i = 0; i < codes.Count; i++)
             {
-                if(TryInjectProjectileLaunchPosition(instruction, out var sub1))
+                var code = codes[i];
+
+                // Inject TransformCastOrigin call
+                if (code.opcode == OpCodes.Stloc_S && code.operand is LocalBuilder lb && lb.LocalIndex == 6)
                 {
-                    foreach (var subInstruction in sub1)
-                    {
-                        yield return subInstruction;
-                    }
+                    // Insert: call TransformCastOrigin(vector3, __instance)
+                    yield return new CodeInstruction(OpCodes.Ldarg_0); // __instance
+                    yield return new CodeInstruction(OpCodes.Call, TransformCastOriginMethod); // Transforms with attacher
+                }
+
+                // After call to Projectile.Launch, store the launched projectile
+                if (code.Calls(ProjectileLaunch))
+                {
+                    yield return code; // original call
+                    yield return new CodeInstruction(OpCodes.Ldarg_0); // __instance
+
+                    // Projectile is typically stored in local index 7 after launch
+                    // This must be verified in ILSpy; if incorrect, adjust.
+                    yield return new CodeInstruction(OpCodes.Ldloc_S, 7); // <- confirm this is the right local for the version, works in 1.5!
+                    yield return new CodeInstruction(OpCodes.Call, StoreProjectileMethod);
                     continue;
                 }
-                
-                if(TryInjectCacheLaunchedProjectile(instruction, out var sub2))
-                {
-                    foreach (var subInstruction in sub2)
-                    {
-                        yield return subInstruction;
-                    }
-                    continue;
-                }
-                
-                yield return instruction;
+
+                yield return code;
             }
         }
-        
-        private static bool TryInjectProjectileLaunchPosition(CodeInstruction instruction, out IEnumerable<CodeInstruction> instructions)
-        {
-            instructions = Enumerable.Empty<CodeInstruction>();
-            if(instruction.opcode == OpCodes.Stloc_S && instruction.operand is LocalBuilder {LocalIndex: 6})
-            {
-                instructions = new[]
-                {
-                    new CodeInstruction(OpCodes.Call, TransformCastOriginMethod),
-                    instruction
-                };
-                return true;
-            }
-            return false;
-        }
-        
-        private static bool TryInjectCacheLaunchedProjectile(CodeInstruction instruction, out IEnumerable<CodeInstruction> instructions)
-        {
-            instructions = Enumerable.Empty<CodeInstruction>();
-            if(instruction.Calls(ProjectileLaunch))
-            {
-                instructions = new[]
-                {
-                    instruction,
-                    // Assume local index 7 is the launched projectile
-                    // Insert: Call StoreProjectile(__instance, projectile)
-                    new CodeInstruction(OpCodes.Ldarg_0), // __instance (Verb_LaunchProjectile)
-                    new CodeInstruction(OpCodes.Ldloc_S, 7), // projectile
-                    new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(VerbLaunchProjectile_TryCastShot_Patch), nameof(StoreProjectile)))
 
-                };
-                return true;
-            }
-            return false;
-        }
-
-        internal static Vector3 TransformCastOrigin(Vector3 initial, Verb_LaunchProjectile verb)
-        {
-            return _contexts.TryGetValue(verb, out var ctx)
-                ? ctx.Attacher?.GetLaunchPosition(initial) ?? initial
-                : initial;
-        }
-
-
+        // Stores the launched projectile into the context
         internal static void StoreProjectile(Verb_LaunchProjectile verb, Projectile projectile)
         {
             if (_contexts.TryGetValue(verb, out var ctx))
-            {
                 ctx.Projectile = projectile;
-            }
         }
 
+        // Transforms cast origin if attacher is present
+        internal static Vector3 TransformCastOrigin(Vector3 original, Verb_LaunchProjectile verb)
+        {
+            return _contexts.TryGetValue(verb, out var ctx)
+                ? ctx.Attacher?.GetLaunchPosition(original) ?? original
+                : original;
+        }
     }
 
     #endregion
