@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
+using System.Runtime.CompilerServices;
 using HarmonyLib;
 using RimWorld;
 using TeleCore.Data.Events;
@@ -40,6 +41,14 @@ internal static class VerbPatches
     [HarmonyPatch(typeof(Verb_LaunchProjectile), nameof(Verb_LaunchProjectile.TryCastShot))]
     internal static class VerbLaunchProjectile_TryCastShot_Patch
     {
+        private static readonly ConditionalWeakTable<Verb_LaunchProjectile, LaunchContext> _contexts = new();
+
+        private class LaunchContext
+        {
+            public TeleVerbAttacher Attacher;
+            public Projectile Projectile;
+        }
+
         internal static Projectile _projectile;
         internal static TeleVerbAttacher _attacher;
 
@@ -58,23 +67,33 @@ internal static class VerbPatches
         
         private static readonly MethodInfo TransformCastOriginMethod = AccessTools.Method(typeof(VerbLaunchProjectile_TryCastShot_Patch), nameof(TransformCastOrigin));
         private static readonly FieldInfo CachedProjectileFld = AccessTools.Field(typeof(VerbLaunchProjectile_TryCastShot_Patch), nameof(_projectile));
-        
+
         [HarmonyPrefix]
-        internal static bool Prefix(Verb_LaunchProjectile __instance)
+        internal static void Prefix(Verb_LaunchProjectile __instance)
         {
-            _attacher = VerbWatcher.GetAttacher(__instance);
-            return true;
+            var context = new LaunchContext
+            {
+                Attacher = VerbWatcher.GetAttacher(__instance)
+            };
+            _contexts.Remove(__instance);
+            _contexts.Add(__instance, context);
         }
-        
+
+
         [HarmonyPostfix]
         internal static void Postfix(Verb_LaunchProjectile __instance)
         {
-            GlobalEventHandler.OnProjectileLaunched(new ProjectileLaunchedArgs(_projectile));
-            _attacher.Notify_ProjectileLaunched(_projectile);
-            _projectile = null;
-            _attacher = null;
+            if (!_contexts.TryGetValue(__instance, out var ctx)) return;
+
+            if (ctx.Projectile != null)
+                GlobalEventHandler.OnProjectileLaunched(new ProjectileLaunchedArgs(ctx.Projectile));
+
+            ctx.Attacher?.Notify_ProjectileLaunched(ctx.Projectile);
+            _contexts.Remove(__instance);
         }
-        
+
+
+
         [HarmonyTranspiler]
         internal static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
         {
@@ -125,22 +144,38 @@ internal static class VerbPatches
                 instructions = new[]
                 {
                     instruction,
-                    new CodeInstruction(OpCodes.Ldloc_S, 7),
-                    new CodeInstruction(OpCodes.Stsfld, CachedProjectileFld)
+                    // Assume local index 7 is the launched projectile
+                    // Insert: Call StoreProjectile(__instance, projectile)
+                    new CodeInstruction(OpCodes.Ldarg_0), // __instance (Verb_LaunchProjectile)
+                    new CodeInstruction(OpCodes.Ldloc_S, 7), // projectile
+                    new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(VerbLaunchProjectile_TryCastShot_Patch), nameof(StoreProjectile)))
+
                 };
                 return true;
             }
             return false;
         }
 
-        private static Vector3 TransformCastOrigin(Vector3 initial)
+        internal static Vector3 TransformCastOrigin(Vector3 initial, Verb_LaunchProjectile verb)
         {
-            return _attacher?.GetLaunchPosition(initial) ?? initial;
+            return _contexts.TryGetValue(verb, out var ctx)
+                ? ctx.Attacher?.GetLaunchPosition(initial) ?? initial
+                : initial;
         }
+
+
+        internal static void StoreProjectile(Verb_LaunchProjectile verb, Projectile projectile)
+        {
+            if (_contexts.TryGetValue(verb, out var ctx))
+            {
+                ctx.Projectile = projectile;
+            }
+        }
+
     }
 
     #endregion
-    
+
     [HarmonyPatch(typeof(PawnRenderUtility), nameof(PawnRenderUtility.DrawEquipmentAndApparelExtras))]
     internal static class PawnRenderer_DrawEquipmentAndApparelExtrasPatch
     {
