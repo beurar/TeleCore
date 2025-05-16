@@ -74,7 +74,7 @@ public static class TeleContentDB
     {
         return LoadAsset<Texture2D>(textureName, lookupTextures)!;
     }
-    
+
     private static T? LoadAsset<T>(string name, IDictionary<string, T> lookup) where T : Object
     {
         lookup ??= new Dictionary<string, T>();
@@ -83,23 +83,27 @@ public static class TeleContentDB
             TLog.Error("Trying to load asset on other thread than main.");
             return null;
         }
-        if(assetBundles.NullOrEmpty()) return null;
+        if (assetBundles.NullOrEmpty()) return null;
 
         T asset = null;
+        string targetName = name.ToLowerInvariant() + ".shader";
+
         foreach (var assetBundle in assetBundles)
         {
-            if (!assetBundle.Contains(name)) continue;
-            if (!lookup.ContainsKey(name))
+            string assetPath = assetBundle.GetAllAssetNames()
+                .FirstOrDefault(p => p.EndsWith($"/{targetName}", System.StringComparison.OrdinalIgnoreCase));
+
+            if (assetPath != null)
             {
-                lookup[name] = asset = assetBundle.LoadAsset<T>(name);
+                if (!lookup.ContainsKey(name))
+                    lookup[name] = asset = assetBundle.LoadAsset<T>(assetPath);
                 break;
             }
-            
         }
 
         if (asset == null)
         {
-            TLog.Warning($"Could not load asset '{name}'");
+            TLog.Warning($"Could not load shader asset '{name}' → looking for '{targetName}'");
             return null;
         }
 
