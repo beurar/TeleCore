@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using RimWorld;
 using TeleCore.Data.Events;
@@ -7,6 +8,7 @@ using TeleCore.Gizmos;
 using TeleCore.Network;
 using TeleCore.Network.Data;
 using TeleCore.Network.IO;
+using TeleCore.Primitive;
 using UnityEngine;
 using Verse;
 
@@ -349,6 +351,80 @@ public class CompNetwork : FXThingComp, INetworkStructure
 
     public override void FX_OnEffectSpawned(FXEffecterSpawnedEventArgs spawnedEventArgs)
     {
+    }
+
+    #endregion
+
+    #region Fluid-Helpers
+
+    /// <summary>Enumerates every part that actually stores fluid.</summary>
+    private IEnumerable<INetworkPart> StorageParts()
+    {
+        return _allNetParts.Where(p => p != null && p.Volume != null);
+    }
+
+    /// <summary>Total amount of <paramref name="def"/> contained in *all* connected storage parts.</summary>
+    public double GetTotal(NetworkValueDef def)
+    {
+        double sum = 0d;
+        foreach (var p in StorageParts())
+            sum += p.Volume.Get(def);        // assumes NetworkVolume.Get(...)
+        return sum;
+    }
+
+    /// <summary>Total across *all* defs (handy for generic “any Tiberium” checks).</summary>
+    public double GetTotal()
+    {
+        double sum = 0d;
+        foreach (var p in StorageParts())
+            sum += p.Volume.Total;           // assumes NetworkVolume.Total
+        return sum;
+    }
+
+    /// <summary>Maximum capacity across the lattice for <paramref name="def"/>.</summary>
+    public double GetCapacity(NetworkValueDef def)
+    {
+        double cap = 0d;
+        foreach (var p in StorageParts())
+            cap += p.Volume.GetCapacity(def);   // assumes NetworkVolume.GetCapacity(...)
+        return cap;
+    }
+
+    /// <summary>Attempts to withdraw <paramref name="amount"/> of <paramref name="def"/>.
+    /// Returns <c>true</c> if the full volume was removed.</summary>
+    public bool TryWithdraw(NetworkValueDef def, double amount)
+    {
+        double remaining = amount;
+        foreach (var p in StorageParts())
+        {
+            if (remaining <= 0d) break;
+
+            double avail = p.Volume.Get(def);
+            if (avail <= 0d) continue;
+
+            double take = Math.Min(avail, remaining);
+            if (p.Volume.TryConsumeOrFail(def, take))
+                remaining -= take;
+        }
+        return remaining <= 0d;
+    }
+
+    /// <summary>Attempts to inject <paramref name="amount"/> of <paramref name="def"/> into the network.</summary>
+    public bool TryInject(NetworkValueDef def, double amount)
+    {
+        double leftover = amount;
+        foreach (var p in StorageParts())
+        {
+            if (leftover <= 0d) break;
+
+            double free = p.Volume.GetCapacity(def) - p.Volume.Get(def);
+            if (free <= 0d) continue;
+
+            double push = Math.Min(free, leftover);
+            if (p.Volume.TryAdd(def, push))         // assumes TryAdd(...)
+                leftover -= push;
+        }
+        return leftover <= 0d;
     }
 
     #endregion
